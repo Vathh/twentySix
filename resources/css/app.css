@@ -8,4 +8,23 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-dark-bg: #1a1a1a;
+    --color-lighter-bg: #202020;
+    --color-light-green: #7CFC00;
+    --color-light-orange: #FFA500;
+    --color-light-white: #e0e0e0;
+}
+
+@layer components {
+    .btn {
+        @apply font-bold py-3 px-6 rounded transition-all duration-300 transform hover:cursor-pointer;
+    }
+
+    .btn-primary {
+        @apply bg-light-green text-dark-bg hover:shadow-[0_0_10px_var(--color-light-green)];
+    }
+
+    .btn-secondary {
+        @apply bg-light-green hover:bg-light-green/80 hover:shadow-lg text-dark-bg;
+    }
 }
