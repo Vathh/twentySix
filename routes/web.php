@@ -17,6 +17,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/leagues', [LeagueController::class, 'showLeaguesPage'])->name('league.leagues');
 Route::post('/leagues', [LeagueController::class, 'createLeague'])->name('createLeague');
 Route::get('/leagueCreator', [LeagueController::class, 'showLeagueCreatorPage'])->name('league.leagueCreator');
+Route::get('/leagues/{leagueId}', [LeagueController::class, 'showLeagueDetailsPage'])->name('league.leagueDetails');
 
 Route::get('/seasons', [PagesController::class, 'showSeasonsPage'])->name('season.seasons');
 

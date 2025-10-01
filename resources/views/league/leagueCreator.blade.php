@@ -19,6 +19,8 @@
 
             <button class="btn btn-primary mt-3" type="submit" name="loginBtn">Stwórz ligę</button>
 
+            <a href="{{ route('league.leagues') }}" class="btn btn-primary mt-5" type="submit" name="loginBtn">Powrót</a>
+
             @if($errors->any())
                 <ul class="px-4 py-2 border-2 rounded border-light-red text-light-red mt-8">
                     @foreach($errors->all() as $error)
