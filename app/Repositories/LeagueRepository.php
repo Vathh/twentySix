@@ -28,7 +28,9 @@ class LeagueRepository
             'name' => $name
         ]);
 
-        $league->admins()->attach($userId);
+        if(!empty($userId)) {
+            $league->admins()->attach($userId);
+        }
 
         return LeagueDomain::fromEloquent($league);
     }

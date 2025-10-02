@@ -10,6 +10,14 @@
                 <div class="flex flex-col items-center">
                     <h1 class="text-center text-light-green mb-10 text-2xl">Rejestracja</h1>
 
+                    <label class="mb-3 text-xl text-light-orange" for="login"><b>Nazwa użytkownika</b></label>
+                    <input class="mb-5 input-orange"
+                           type="text"
+                           placeholder="Wprowadź nazwę użytkownika"
+                           name="name"
+                           value="{{ old('name') }}"
+                           required>
+
                     <label class="mb-3 text-xl text-light-orange" for="login"><b>Email</b></label>
                     <input class="mb-5 input-orange"
                            type="email"

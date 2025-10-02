@@ -11,7 +11,7 @@ class LeagueDomain
         public readonly int $id,
         public readonly string $name,
         public readonly Carbon $updatedAt,
-        public readonly ?array $admins = []
+        public readonly array $admins
     )
     {}
 
@@ -20,6 +20,7 @@ class LeagueDomain
         return new self(
             id: $league->id,
             name: $league->name,
+            admins: [],
             updatedAt: $league->updated_at
         );
     }
@@ -31,9 +32,9 @@ class LeagueDomain
             name: $league->name,
             updatedAt: $league->updated_at,
             admins: $league->admins->map(fn($admin) => [
-                'id' => $admin->id,
-                'name' => $admin->name,
-            ])->toArray()
+                    'id' => $admin->id,
+                    'name' => $admin->name,
+                ])->toArray()
         );
     }
 }

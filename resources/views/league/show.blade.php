@@ -5,7 +5,7 @@
 @section('content')
 
     <div class="">
-        <p>test {{ $league->name }}</p>
+        <p class="text-light-orange">{{ $league->name }}</p>
     </div>
 
 @endsection

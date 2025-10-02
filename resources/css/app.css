@@ -30,7 +30,7 @@
     }
 
     .input-orange {
-        @apply bg-transparent text-light-orange p-4 rounded border-[0.2px] border-light-orange;
+        @apply min-w-[250px] bg-transparent text-light-orange p-4 rounded border-[0.2px] border-light-orange;
     }
 
     .nav-btn {

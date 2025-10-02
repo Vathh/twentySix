@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\PagesController;
+use App\Http\Controllers\SeasonController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PagesController::class, 'showHomePage'])->name('pages.home');
@@ -14,11 +15,14 @@ Route::get('/login', [PagesController::class, 'showLoginPage'])->name('pages.log
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::get('/leagues', [LeagueController::class, 'showLeaguesPage'])->name('league.leagues');
-Route::post('/leagues', [LeagueController::class, 'createLeague'])->name('createLeague');
-Route::get('/leagueCreator', [LeagueController::class, 'showLeagueCreatorPage'])->name('league.leagueCreator');
-Route::get('/leagues/{leagueId}', [LeagueController::class, 'showLeagueDetailsPage'])->name('league.leagueDetails');
+Route::resource('leagues', LeagueController::class);
+Route::resource('seasons', SeasonController::class);
 
-Route::get('/seasons', [PagesController::class, 'showSeasonsPage'])->name('season.seasons');
+//Route::get('/leagues', [LeagueController::class, 'index'])->name('league.index');
+//Route::post('/leagues', [LeagueController::class, 'store'])->name('league.store');
+//Route::get('/leagueCreator', [LeagueController::class, 'create'])->name('league.create');
+//Route::get('/leagues/{leagueId}', [LeagueController::class, 'show'])->name('league.show');
+
+//Route::get('/seasons', [SeasonController::class, 'index'])->name('season.index');
 
 Route::get('/tournaments', [PagesController::class, 'showTournamentsPage'])->name('tournament.tournaments');
