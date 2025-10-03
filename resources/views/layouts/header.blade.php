@@ -8,11 +8,11 @@
             @endauth
         </h1>
         <nav class="flex ">
-            <a href="/" class="nav-btn">Strona główna</a>
+            <a href="/" class="nav-btn {{ request()->routeIs('pages.home') ? 'active' : '' }}">Strona główna</a>
 
-            <a href='{{ route('leagues.index') }}' class="nav-btn">Ligi</a>
-            <a href='{{ route('seasons.index') }}' class="nav-btn">Sezony</a>
-            <a href='{{ route('tournament.tournaments') }}' class="nav-btn">Turnieje</a>
+            <a href='{{ route('leagues.index') }}' class="nav-btn {{ request()->routeIs('leagues.*') ? 'active' : '' }}">Ligi</a>
+            <a href='{{ route('seasons.index') }}' class="nav-btn {{ request()->routeIs('seasons.*') ? 'active' : '' }}">Sezony</a>
+            <a href='{{ route('tournament.tournaments') }}' class="nav-btn {{ request()->routeIs('tournaments.*') ? 'active' : '' }}">Turnieje</a>
 
             @guest
                 <a href='{{ route('pages.loginPanel') }}' class="nav-btn">Zaloguj się</a>

@@ -30,11 +30,15 @@
     }
 
     .input-orange {
-        @apply min-w-[250px] bg-transparent text-light-orange p-4 rounded border-[0.2px] border-light-orange;
+        @apply min-w-[400px] bg-transparent text-light-orange p-4 rounded border-[0.2px] border-light-orange;
     }
 
     .nav-btn {
         @apply px-3 text-light-green hover:text-light-orange transition duration-300;
+    }
+
+    .nav-btn.active {
+        @apply text-light-orange;
     }
 }
 

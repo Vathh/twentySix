@@ -29,8 +29,8 @@ class LeagueService
         return $this->leagueRepository->findByIdWithAdmins($id);
     }
 
-    public function create(string $name, int $userId): LeagueDomain
+    public function create(string $name, string $description, int $userId): LeagueDomain
     {
-        return $this->leagueRepository->create($name, $userId);
+        return $this->leagueRepository->create($name, $description, $userId);
     }
 }

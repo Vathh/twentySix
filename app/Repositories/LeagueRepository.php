@@ -22,10 +22,11 @@ class LeagueRepository
         return $league ? LeagueDomain::fromEloquentWithAdmins($league) : null;
     }
 
-    public function create(string $name, int $userId): LeagueDomain
+    public function create(string $name, string $description, int $userId): LeagueDomain
     {
         $league = League::create([
-            'name' => $name
+            'name' => $name,
+            'description' => $description,
         ]);
 
         if(!empty($userId)) {

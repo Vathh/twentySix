@@ -11,11 +11,12 @@
 
     @include('layouts.header')
 
-    <main class="container mx-auto py-8 flex-grow flex items-center justify-center">
+    <main class="container mx-auto flex-grow">
         @yield('content')
     </main>
 
     @include('layouts.footer')
 
+    @yield('scripts')
 </body>
 </html>
