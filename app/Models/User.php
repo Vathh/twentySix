@@ -52,8 +52,13 @@ class User extends Authenticatable
         return $this->hasOne(Player::class);
     }
 
-    public function leagues(): BelongsToMany
+    public function adminLeagues(): BelongsToMany
     {
         return $this->belongsToMany(League::class, 'league_user_admin');
+    }
+
+    public function relatedLeagues(): BelongsToMany
+    {
+        return $this->belongsToMany(League::class, 'league_user');
     }
 }

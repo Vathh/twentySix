@@ -16,13 +16,14 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::resource('leagues', LeagueController::class);
+Route::prefix('leagues/{leagueDomain}')->group(function () {
+   Route::get('/relatedUsers', [LeagueController::class, 'editRelatedUsers'])->name('leagues.relatedUsers');
+
+   Route::post('/relatedUsers/add', [LeagueController::class, 'addRelatedUser'])->name('leagues.relatedUsers.add');
+
+   Route::delete('/relatedUsers/{user}/remove', [LeagueController::class, 'removeRelatedUser'])->name('leagues.relatedUsers.remove');
+});
+
 Route::resource('seasons', SeasonController::class);
-
-//Route::get('/leagues', [LeagueController::class, 'index'])->name('league.index');
-//Route::post('/leagues', [LeagueController::class, 'store'])->name('league.store');
-//Route::get('/leagueCreator', [LeagueController::class, 'create'])->name('league.create');
-//Route::get('/leagues/{leagueId}', [LeagueController::class, 'show'])->name('league.show');
-
-//Route::get('/seasons', [SeasonController::class, 'index'])->name('season.index');
 
 Route::get('/tournaments', [PagesController::class, 'showTournamentsPage'])->name('tournament.tournaments');

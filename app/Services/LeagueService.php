@@ -33,4 +33,19 @@ class LeagueService
     {
         return $this->leagueRepository->create($name, $description, $userId);
     }
+
+    public function getRelatedUsers(int $leagueId): Collection
+    {
+        return $this->leagueRepository->getRelatedUsers($leagueId);
+    }
+
+    public function addRelatedUser(int $leagueId, int $userId): void
+    {
+        $this->leagueRepository->addRelatedUser($leagueId, $userId);
+    }
+
+    public function removeRelatedUser(int $leagueId, int $userId): void
+    {
+        $this->leagueRepository->removeRelatedUser($leagueId, $userId);
+    }
 }

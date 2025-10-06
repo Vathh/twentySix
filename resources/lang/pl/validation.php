@@ -118,7 +118,7 @@ return [
     'starts_with'          => 'Pole :attribute musi zaczynać się od: :values.',
     'string'               => 'Pole :attribute musi być ciągiem znaków.',
     'timezone'             => 'Pole :attribute musi być poprawną strefą czasową.',
-    'unique'               => 'Pole :attribute jest już zajęte.',
+    'unique'               => ':attribute jest już zajęta.',
     'uploaded'             => 'Pole :attribute nie udało się przesłać.',
     'url'                  => 'Format pola :attribute jest nieprawidłowy.',
     'uuid'                 => 'Pole :attribute musi być poprawnym UUID.',
@@ -127,7 +127,9 @@ return [
     'attributes' => [
         'email' => 'adres email',
         'password' => 'hasło',
-        'name' => 'nazwa użytkownika',
+        'name' => 'Nazwa użytkownika',
+        'leagueName' => 'Nazwa ligi',
+        'seasonName' => 'Nazwa sezonu',
     ],
 
 ];

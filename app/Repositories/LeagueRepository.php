@@ -35,4 +35,21 @@ class LeagueRepository
 
         return LeagueDomain::fromEloquent($league);
     }
+
+    public function getRelatedUsers(int $leagueId): Collection
+    {
+        return League::findOrFail($$leagueId)->relatedUsers->get();
+    }
+
+    public function addRelatedUser(int $leagueId, int $userId): void
+    {
+        $league = League::findOrFail($$leagueId);
+        $league->relatedUsers()->attach($userId);
+    }
+
+    public function removeRelatedUser(int $leagueId, int $userId): void
+    {
+        $league = League::findOrFail($$leagueId);
+        $league->relatedUsers()->detach($userId);
+    }
 }

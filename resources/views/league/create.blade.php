@@ -14,8 +14,8 @@
                 <input class="mb-5 input-orange"
                        type="text"
                        placeholder="Wprowadź nazwę ligi"
-                       name="name"
-                       value="{{ old('name') }}"
+                       name="leagueName"
+                       value="{{ old('leagueName') }}"
                        required>
 
                 <label class="mb-3 text-xl text-light-orange" for="description"><b>Opis ligi</b></label>

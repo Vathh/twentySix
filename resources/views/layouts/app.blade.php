@@ -9,6 +9,8 @@
 </head>
 <body class="bg-dark-bg flex flex-col min-h-screen text-light-text">
 
+    @include('components.notifications')
+
     @include('layouts.header')
 
     <main class="container mx-auto flex-grow">
