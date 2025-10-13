@@ -21,6 +21,8 @@ class LeagueDomain
 
     public static function fromEloquent(League $league): self
     {
+        $league->loadMissing('seasons');
+
         return new self(
             id: $league->id,
             name: $league->name,
@@ -39,21 +41,25 @@ class LeagueDomain
 
     public static function fromEloquentWithAdmins(League $league): self
     {
+        $league->loadMissing('admins.player', 'seasons');
+
+        $leagueAdmins = $league->admins()->get();
+
         return new self(
             id: $league->id,
             name: $league->name,
             description: $league->description,
             createdAt: $league->created_at,
             updatedAt: $league->updated_at,
-            admins: $league->admins->map(fn($admin) => [
+            admins: $league->admins()->get()->map(fn($admin) => [
                 'id' => $admin->id,
-                'name' => $admin->name
+                'name' => $admin->player->name
             ])->toArray(),
             seasons: $league->seasons->map(fn($season) => SeasonDomain::fromEloquent($season))
                 ->toArray(),
             relatedUsers: $league->relatedUsers->map(fn($user) => [
                 'id' => $user->id,
-                'name' => $user->name,
+                'name' => $user->player->name,
             ])->toArray(),
         );
     }
