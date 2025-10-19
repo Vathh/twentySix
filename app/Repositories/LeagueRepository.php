@@ -52,4 +52,24 @@ class LeagueRepository
         $league = League::findOrFail($leagueId);
         $league->relatedUsers()->detach($userId);
     }
+
+    public function addAdmin(int $leagueId, int $userId): void
+    {
+        $league = League::findOrFail($leagueId);
+        $league->admins()->attach($userId);
+    }
+
+    public function removeAdmin(int $leagueId, int $userId): void
+    {
+        $league = League::findOrFail($leagueId);
+        $league->admins()->detach($userId);
+    }
+
+    public function update(int $leagueId, string $name, string $description): void
+    {
+        League::where('id', $leagueId)->update([
+            'name' => $name,
+            'description' => $description
+        ]);
+    }
 }

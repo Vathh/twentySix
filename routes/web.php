@@ -17,11 +17,13 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::resource('leagues', LeagueController::class);
 Route::prefix('leagues/{league}')->group(function () {
-    Route::get('/relatedUsers', [LeagueController::class, 'editRelatedUsers'])->name('leagues.relatedUsers');
-
+    Route::get('/relatedUsers', [LeagueController::class, 'relatedUsers'])->name('leagues.relatedUsers');
     Route::post('/relatedUsers/add', [LeagueController::class, 'addRelatedUser'])->name('leagues.relatedUsers.add');
-
     Route::delete('/relatedUsers/remove', [LeagueController::class, 'removeRelatedUser'])->name('leagues.relatedUsers.remove');
+
+    Route::get('/admins', [LeagueController::class, 'admins'])->name('leagues.admins');
+    Route::post('/admins/add', [LeagueController::class, 'addAdmin'])->name('leagues.admins.add');
+    Route::delete('/admins/remove', [LeagueController::class, 'removeAdmin'])->name('leagues.admins.remove');
 });
 
 Route::resource('seasons', SeasonController::class);

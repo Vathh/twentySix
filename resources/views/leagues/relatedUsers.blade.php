@@ -30,6 +30,8 @@
             @endif
         </div>
 
+        <h2 class="text-2xl text-light-green text-center mb-7">Dodawanie użytkowników</h2>
+
         <form action="{{ route('leagues.relatedUsers', $league->id) }}" method="GET" class="mb-6 flex items-center space-x-4">
             <input type="text" name="search" placeholder="Szukaj użytkownika..."
                    value="{{ request('search') }}" class="input-orange flex-1">
@@ -39,7 +41,7 @@
         <x-errors/>
 
         @if(request('search') && $users->isEmpty())
-            <p class="text-light-white">Brak wyników wyszukiwania.</p>
+            <p class="text-light-white text-center">Brak wyników wyszukiwania.</p>
         @else
             <div class="flex flex-wrap gap-3">
                 @foreach($users as $user)
@@ -54,5 +56,11 @@
                 @endforeach
             </div>
         @endif
+
+        <div class="flex justify-center mt-5">
+            <a href="{{ route('leagues.show', ['league' => $league->id]) }}" class="btn btn-primary">
+                Powrót
+            </a>
+        </div>
     </div>
 @endsection

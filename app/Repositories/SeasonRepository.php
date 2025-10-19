@@ -29,4 +29,10 @@ class SeasonRepository
             return SeasonDomain::fromEloquentWithAdmins($season);
         });
     }
+
+    public function addAdmin(int $seasonId, int $userId): void
+    {
+        $season = Season::findOrFail($seasonId);
+        $season->admins()->attach($userId);
+    }
 }

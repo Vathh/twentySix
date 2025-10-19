@@ -73,4 +73,9 @@ class LeagueDomain
     {
         return $this->createdAt->format('Y-m-d');
     }
+
+    public function getAdminsIds(): array
+    {
+        return array_column($this->admins, 'id');
+    }
 }

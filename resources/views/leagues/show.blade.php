@@ -15,11 +15,11 @@
                        class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
                         ➕ Dodaj sezon
                     </a>
-                    <a href="#"
+                    <a href="{{ route('leagues.admins', $league->id) }}"
                        class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
-                        ‍💼 Dodaj administratora
+                        ‍💼 Administratorzy
                     </a>
-                    <a href="#"
+                    <a href="{{ route('leagues.edit', ['league' => $league->id]) }}"
                        class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
                         ✏️ Edytuj ligę
                     </a>

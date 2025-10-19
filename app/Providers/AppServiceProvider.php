@@ -30,5 +30,9 @@ class AppServiceProvider extends ServiceProvider
         Blade::if('leagueAdmin', function ($league) {
             return auth()->check() && in_array(auth()->id(), array_column($league->admins, 'id'));
         });
+
+        Blade::if('seasonAdmin', function ($season) {
+            return auth()->check() && in_array(auth()->id(), array_column($season->admins, 'id'));
+        });
     }
 }
