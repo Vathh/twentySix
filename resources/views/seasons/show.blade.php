@@ -8,12 +8,12 @@
 
         @seasonAdmin($season)
         <aside class="w-72 backdrop-blur bg-white/5 border-r border-white/10 p-6 flex flex-col">
-            <h2 class="text-light-green font-bold text-lg mb-6 tracking-wide">⚙️ Zarządzanie ligą</h2>
+            <h2 class="text-light-green font-bold text-lg mb-6 tracking-wide">⚙️ Zarządzanie sezonem</h2>
 
             <nav class="flex flex-col space-y-3">
                 <a href="{{ route('seasons.create') }}?seasonId={{ $season->id }}"
                    class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
-                    ➕ Dodaj sezon
+                    ➕ Dodaj turniej
                 </a>
                 <a href="{{ route('seasons.admins', $season->id) }}"
                    class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
@@ -21,7 +21,7 @@
                 </a>
                 <a href="{{ route('seasons.edit', ['season' => $season->id]) }}"
                    class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
-                    ✏️ Edytuj ligę
+                    ✏️ Edytuj sezon
                 </a>
                 <a href="{{ route('seasons.relatedUsers', $season->id) }}"
                    class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
@@ -36,6 +36,8 @@
 
         <div class="flex-1 p-10 flex justify-center">
             <div class="max-w-3xl w-full">
+
+                <h1 class="text-4xl font-bold text-light-orange mb-6 tracking-wide">{{ $season->league->name }}</h1>
 
                 <h1 class="text-4xl font-bold text-light-orange mb-6 tracking-wide">{{ $season->name }}</h1>
 

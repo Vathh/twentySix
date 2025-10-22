@@ -129,7 +129,7 @@ class SeasonController extends Controller
         $admins = $season->admins;
         $relatedUsers = $this->userService->sortByNameAndRejectAdmins($season->relatedUsers, $season->admins);
 
-        return view('leagues.admins', [
+        return view('seasons.admins', [
             'season' => $season,
             'admins' => $admins,
             'relatedUsers' => $relatedUsers

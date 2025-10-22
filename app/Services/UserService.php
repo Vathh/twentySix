@@ -51,12 +51,13 @@ class UserService
         $adminsIds = collect($admins)->pluck('id');
 
         if(count($relatedUsers) > 0){
-            $relatedUsers = collect($relatedUsers)
-                ->sortBy('name')
-                ->reject(fn ($user) => $adminsIds->contains($user['id']))
-                ->map(fn($user) => (object) $user);
+            return collect($relatedUsers)
+                    ->sortBy('name')
+                    ->reject(fn ($user) => $adminsIds->contains($user['id']))
+                    ->map(fn($user) => (object) $user)
+                    ->values();
+        }else {
+            return collect();
         }
-
-        return $relatedUsers;
     }
 }

@@ -6,13 +6,13 @@
     <div class="container mx-auto py-8">
 
         <h1 class="text-2xl font-bold text-light-green mb-6">
-            Użytkownicy ligi: {{ $season->name }}
+            Użytkownicy sezonu: {{ $season->name }}
         </h1>
 
         <div class="mb-8 bg-lighter-bg p-6 rounded-lg shadow">
             <h2 class="text-xl font-semibold text-light-orange mb-4">Aktualnie powiązani użytkownicy</h2>
             @if(empty($relatedUsers))
-                <p class="text-light-white">Brak użytkowników powiązanych z tą ligą.</p>
+                <p class="text-light-white">Brak użytkowników powiązanych z tym sezonem.</p>
             @else
                 <div class="flex flex-wrap gap-3">
                     @foreach($relatedUsers as $user)

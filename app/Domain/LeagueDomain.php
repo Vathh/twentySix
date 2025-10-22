@@ -19,9 +19,9 @@ class LeagueDomain
     )
     {}
 
-    public static function fromEloquent(League $league): self
+    public static function fromEloquent(League $league, array $with = []): self
     {
-        $league->loadMissing('seasons');
+        $league->loadMissing(array_intersect($with, ['seasons', 'admins', 'relatedUsers']));
 
         return new self(
             id: $league->id,
@@ -30,20 +30,25 @@ class LeagueDomain
             createdAt: $league->created_at,
             updatedAt: $league->updated_at,
             admins: [],
-            seasons: $league->seasons->map(fn($season) => SeasonDomain::fromEloquent($season))
-                                     ->toArray(),
-            relatedUsers: $league->relatedUsers->map(fn($user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-            ])->toArray(),
+            seasons: in_array('seasons', $with)
+                ? $league->seasons->map(fn($season) => SeasonDomain::fromEloquent($season))->toArray()
+                : [],
+            relatedUsers: in_array('relatedUsers', $with)
+                ? $league->relatedUsers->map(fn($user) => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                ])->toArray()
+                : [],
         );
     }
 
-    public static function fromEloquentWithAdmins(League $league): self
+    public static function fromEloquentWithAdmins(League $league, bool $withRelations = true): self
     {
-        $league->loadMissing('admins.player', 'seasons');
+        $league->loadMissing('admins.player');
 
-        $leagueAdmins = $league->admins()->get();
+        if($withRelations) {
+            $league->loadMissing('seasons', 'relatedUsers.player');
+        }
 
         return new self(
             id: $league->id,
@@ -55,12 +60,15 @@ class LeagueDomain
                 'id' => $admin->id,
                 'name' => $admin->player->name
             ])->toArray(),
-            seasons: $league->seasons->map(fn($season) => SeasonDomain::fromEloquent($season))
-                ->toArray(),
-            relatedUsers: $league->relatedUsers->map(fn($user) => [
-                'id' => $user->id,
-                'name' => $user->player->name,
-            ])->toArray(),
+            seasons: $withRelations
+                ? $league->seasons->map(fn($season) => SeasonDomain::fromEloquent($season, false))->toArray()
+                : [],
+            relatedUsers: $withRelations
+                ? $league->relatedUsers->map(fn($user) => [
+                    'id' => $user->id,
+                    'name' => $user->player->name,
+                ])->toArray()
+                : [],
         );
     }
 
