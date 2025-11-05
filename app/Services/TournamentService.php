@@ -3,8 +3,12 @@
 namespace App\Services;
 
 use App\Enums\GameStatus;
+use App\Enums\TournamentStatus;
 use App\Repositories\GameRepository;
 use App\Repositories\TournamentRepository;
+use Illuminate\Support\Facades\DB;
+use RuntimeException;
+use Throwable;
 
 class TournamentService
 {
@@ -25,21 +29,10 @@ class TournamentService
         $this->tournamentRepository->create($seasonId, $name, $date);
     }
 
-    public function createGroups(array $playerIds, int $groupsCount): array
+    public function tryCreateGames(int $tournamentId, array $playerIds, int $groupsCount): bool
     {
-        shuffle($playerIds);
+        $groups = $this->createGroups($playerIds, $groupsCount);
 
-        $result = [];
-
-        for ($i = 0; $i < $groupsCount; $i++) {
-            $result[$i%$groupsCount][] = $playerIds[$i];
-        }
-
-        return $result;
-    }
-
-    public function createGames($tournamentId, array $groups): void
-    {
         $gamesToInsert = [];
 
         foreach($groups as $groupIndex => $group) {
@@ -56,7 +49,19 @@ class TournamentService
             }
         }
 
-        $this->gameRepository->createGames($gamesToInsert);
+        try {
+            return DB::transaction(function () use ($tournamentId, $gamesToInsert) {
+                if($this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId))
+                {
+                    $this->gameRepository->createGames($gamesToInsert);
+                    $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::STARTED);
+                    return true;
+                }
+                return false;
+            });
+        } catch (Throwable $e) {
+            throw new RuntimeException('Nie udało się stworzyć grup', 0, $e);
+        }
     }
 
     private function generateGamesForGroup(array $group): array
@@ -70,5 +75,20 @@ class TournamentService
         }
 
         return $games;
+    }
+
+    private function createGroups(array $playerIds, int $groupsCount): array
+    {
+        shuffle($playerIds);
+
+        $result = array_fill(0, $groupsCount, []);
+
+        foreach($playerIds as $index => $playerId) {
+            $groupNumber = $index%$groupsCount;
+
+            $result[$groupNumber][] = $playerId;
+        }
+
+        return $result;
     }
 }

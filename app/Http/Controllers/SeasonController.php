@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Domain\LeagueDomain;
 use App\Domain\SeasonDomain;
 use App\Enums\AssignableEntityType;
 use App\Models\League;
@@ -15,7 +14,6 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 use Throwable;
 
 class SeasonController extends Controller

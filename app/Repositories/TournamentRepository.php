@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Enums\TournamentStatus;
 use App\Models\Tournament;
 
 class TournamentRepository
@@ -17,5 +18,20 @@ class TournamentRepository
             'name' => $name,
             'date' => $date
         ]);
+    }
+
+    /**
+     * @throws \Throwable
+     */
+    public function changeStatus(int $tournamentId, TournamentStatus $status): void
+    {
+        Tournament::where('id', $tournamentId)->update(['status' => $status]);
+    }
+
+    public function checkIfTournamentCanBeStarted(int $tournamentId): bool
+    {
+        $tournament = Tournament::findOrFail($tournamentId);
+
+        return $tournament->status === TournamentStatus::CREATED;
     }
 }

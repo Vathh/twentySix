@@ -43,23 +43,19 @@ class PlayerRepository
      */
     public function getRelatedPlayers(int $seasonId): Collection
     {
-        $allPlayers = DB::transaction(function () use ($seasonId) {
-               $season = Season::findOrFail($seasonId);
-               $seasonRelatedUsersPlayers = $season->relatedUsers->map(fn($user) => $user->player)->values();
-               $seasonGuests = $season->guests;
-               $leagueRelatedUsersPlayers = $season->league->relatedUsers->map(fn($user) => $user->player)->values();
-               $leagueGuests = $season->league->guests;
+       $season = Season::with(['league.relatedUsers.player', 'relatedUsers.player', 'guests'])->findOrFail($seasonId);
+       $seasonRelatedUsersPlayers = $season->relatedUsers->map(fn($user) => $user->player)->values();
+       $seasonGuests = $season->guests;
+       $leagueRelatedUsersPlayers = $season->league->relatedUsers->map(fn($user) => $user->player)->values();
+       $leagueGuests = $season->league->guests;
 
-                return collect()
-                        ->merge($seasonRelatedUsersPlayers)
-                        ->merge($seasonGuests)
-                        ->merge($leagueRelatedUsersPlayers)
-                        ->merge($leagueGuests)
-                        ->unique('id')
-                        ->values();
-            });
-
-        return $allPlayers;
+        return collect()
+                ->merge($seasonRelatedUsersPlayers)
+                ->merge($seasonGuests)
+                ->merge($leagueRelatedUsersPlayers)
+                ->merge($leagueGuests)
+                ->unique('id')
+                ->values();
     }
 
     private function addToLeague(string $name, int $leagueId): void

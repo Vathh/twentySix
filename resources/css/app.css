@@ -47,6 +47,10 @@
         @apply min-w-[400px] bg-transparent text-light-orange p-4 rounded border-[0.2px] border-light-orange;
     }
 
+    .select-green {
+        @apply bg-transparent text-light-green p-2 rounded border-2 border-light-green;
+    }
+
     .nav-btn {
         @apply px-3 text-light-green hover:text-light-orange transition duration-300;
     }

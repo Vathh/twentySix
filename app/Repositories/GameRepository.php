@@ -11,8 +11,6 @@ class GameRepository
      */
     public function createGames(array $games): void
     {
-        DB::transaction(function () use ($games) {
-            DB::table('games')->insert($games);
-        });
+        DB::table('games')->insert($games);
     }
 }

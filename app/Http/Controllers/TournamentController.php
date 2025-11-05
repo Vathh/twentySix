@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Domain\SeasonDomain;
 use App\Domain\TournamentDomain;
-use App\Models\Season;
 use App\Models\Tournament;
 use App\Services\PlayerService;
 use App\Services\TournamentService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TournamentController extends Controller
 {
@@ -92,7 +92,27 @@ class TournamentController extends Controller
 
     public function runTournament(Request $request, int $tournamentId)
     {
-        $tournament = $this->loadAndAuthorize($tournamentId);
+        $this->loadAndAuthorize($tournamentId);
+
+        $validated = $request->validate([
+            'selectedPlayers' => 'required',
+            'groupsCount' => ['required', Rule::in(['2', '4', '8'])]
+        ]);
+
+        $selectedPlayersIds = json_decode($request->input('selectedPlayers'), false);
+        $groupsCount = $validated['groupsCount'];
+
+        if(empty($selectedPlayersIds)) {
+            return back()->with('error', 'Wybrano zbyt mało graczy');
+        }
+
+        if(!$this->tournamentService->tryCreateGames($tournamentId, $selectedPlayersIds, $groupsCount)) {
+            return back()->with('error', 'Turniej już wystartował');
+        }
+
+        return redirect()->route('tournaments.show',
+                                        ['tournament' => $tournamentId])
+                            ->with('success', 'Turniej wystartował!');
     }
 
     public function loadAndAuthorize(int $tournamentId, array $additionalRelations = []): TournamentDomain

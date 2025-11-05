@@ -38,12 +38,20 @@
                     @endforeach
                 </div>
 
-                <form action="{{ route('tournaments.start', $tournament->id) }}" method="POST" class="mt-6 flex flex-col items-center">
+                <form action="{{ route('tournaments.run', $tournament->id) }}" method="POST" class="mt-6 flex flex-col items-center">
                     @csrf
+                    <div class="flex justify-center items-center mt-8">
+                        <label class="text-light-green text-xl mr-5">Ilość grup</label>
+                        <select name="groupsCount" class="select-green">
+                            <option value="8">8</option>
+                            <option value="4">4</option>
+                            <option value="2">2</option>
+                        </select>
+                    </div>
                     <span class="text-light-orange mb-2 font-semibold">
                         Zaznaczono: <span x-text="selected.length"></span>
                     </span>
-                    <input type="hidden" name="selected_players" x-bind:value="JSON.stringify(selected)">
+                    <input type="hidden" name="selectedPlayers" x-bind:value="JSON.stringify(selected)">
                     <button
                         type="submit"
                         class="btn btn-primary px-6 py-2 mt-4"
