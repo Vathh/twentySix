@@ -18,7 +18,8 @@ class GroupStandingDomain
         public readonly int $legsWon,
         public readonly int $legsLost,
         public readonly int $points,
-        public readonly int $legsDifference
+        public readonly int $legsDifference,
+        public readonly int $place
     )
     {
     }
@@ -42,7 +43,26 @@ class GroupStandingDomain
             legsWon: $groupStanding->legsWon,
             legsLost: $groupStanding->legsLost,
             points: $groupStanding->points,
-            legsDifference: $groupStanding->legsDifference
+            legsDifference: $groupStanding->legsDifference,
+            place: $groupStanding->place
+        );
+    }
+
+    public function withPlace(int $place): self
+    {
+        return new self(
+            id: $this->id,
+            tournament: $this->tournament,
+            groupNumber: $this->groupNumber,
+            player: $this->player,
+            matchesPlayed: $this->matchesPlayed,
+            matchesWon: $this->matchesWon,
+            matchesLost: $this->matchesLost,
+            legsWon: $this->legsWon,
+            legsLost: $this->legsLost,
+            points: $this->points,
+            legsDifference: $this->legsDifference,
+            place: $place
         );
     }
 }
