@@ -46,9 +46,12 @@ class GroupStandingService
 
         $result = collect();
 
+        $index = 1;
+
         foreach ($sortedStandingsGroupedByPointsAndLegsDifference as $group) {
             if ($group->count() === 1) {
-                $result->push($group->first());
+                $result->push($group->first()->withPlace($index));
+                $index++;
                 continue;
             }
 
@@ -56,10 +59,13 @@ class GroupStandingService
 
             foreach ($sortedGroupStandings as $standing) {
                 $result->push($standing);
+                $index++;
             }
         }
 
-        return $result;
+        return $result
+                    ->values()
+                    ->map(fn($standing, $i) => $standing->withPlace($i + 1));
     }
 
 
@@ -70,61 +76,53 @@ class GroupStandingService
      */
     public function compareByDirectGame(Collection $standingsToCompare, Collection $finishedGames): Collection
     {
-        $playerIds = $standingsToCompare->map(fn($standing) => $standing->player->id)->toArray();
+        $playerIds = $standingsToCompare->pluck('player.id')->toArray();
 
         $directGames = $finishedGames->filter(function ($game) use ($playerIds) {
-            return in_array($game->player1->id, $playerIds) && in_array($game->player2->id, $playerIds);
+            return in_array($game->player1->id, $playerIds)
+                && in_array($game->player2->id, $playerIds);
         })->values();
+
+        $playerWinsMap = $standingsToCompare->mapWithKeys(function ($standing) use ($directGames) {
+            $playerId = $standing->player->id;
+
+            $count = $directGames
+                ->where('winner.id', $playerId)
+                ->count();
+
+            return [$playerId => $count];
+        });
+
+        if ($playerWinsMap->unique()->count() === 1) {
+
+            return $standingsToCompare
+                ->shuffle()
+                ->values();
+        }
+
+        $groups = $playerWinsMap->groupBy(fn ($v) => $v)->sortKeysDesc();
 
         $result = collect();
 
-        $everyPlayerWinsCount = $standingsToCompare->mapWithKeys(function ($standing) use ($directGames) {
-            $playerId = $standing->player->id;
+        foreach ($groups as $winCount => $playersWithSameWins) {
 
-            $wins = $directGames
-                        ->where('winner.id', $playerId)
-                        ->count();
+            $subset = $standingsToCompare->filter(
+                fn($standing) => $playersWithSameWins->keys()->contains($standing->player->id)
+            );
 
-            return [$playerId => $wins];
-        });
+            if ($playersWithSameWins->count() === 1) {
+                $result->push($subset->first());
+            }
+            else {
+                $resolved = $this->compareByDirectGame(
+                                        $subset,
+                                        $directGames
+                                    );
 
-        $sortedStandingsPlaces = $standingsToCompare->map(fn($standing) => $standing->place)
-                                                    ->sort()
-                                                    ->values();
-
-
-        if($everyPlayerWinsCount->duplicates()->isNotEmpty()) {
-            $tiedPlayers = $everyPlayerWinsCount->groupBy(fn($value) => $value)
-                                                ->filter(fn($group) => $group->count() > 0)
-                                                ->flatMap(fn($group) => $group->keys());
-
-            if($tiedPlayers->count() === $everyPlayerWinsCount->count()) {
-                $sortedStandingsPlaces->shuffle();
-
-                foreach ($standingsToCompare as $index => $standing) {
-                    $result->push($standing->withPlace($sortedStandingsPlaces->get($index)));
-                }
-            } else {
-                $tiedPlayersStandings = $standingsToCompare
-                                                ->filter(fn($standing) => $tiedPlayers->contains($standing->player->id));
-
-                $comparedTiedPlayersStandings = $this->compareByDirectGame($tiedPlayersStandings, $directGames);
-
-                foreach ($comparedTiedPlayersStandings as $standing) {
-                    $result->push($standing);
-                }
+                $result = $result->merge($resolved);
             }
         }
 
-        $index = 0;
-
-        foreach($everyPlayerWinsCount as $playerId => $playerWins) {
-            $standing = $standingsToCompare->first(fn($standing) => $standing->player->id === $playerId);
-
-            $result->push($standing->withPlace($sortedStandingsPlaces[$index]));
-            $index++;
-        }
-
-        return $result;
+        return $result->values();
     }
 }
