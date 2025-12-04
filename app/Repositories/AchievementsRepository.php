@@ -8,6 +8,6 @@ class AchievementsRepository
 {
     public function createMany(array $achievements): void
     {
-        Achievement::createMany($achievements);
+        Achievement::insert($achievements);
     }
 }

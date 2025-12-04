@@ -33,17 +33,17 @@ class GroupStandingDomain
             tournament: in_array('tournament', $with)
                 ? TournamentDomain::fromEloquent($groupStanding->tournament)
                 : null,
-            groupNumber: $groupStanding->groupNumber,
+            groupNumber: $groupStanding->group_number,
             player: in_array('player', $with)
                 ? PlayerDomain::fromEloquent($groupStanding->player)
                 : null,
-            matchesPlayed: $groupStanding->matchesPlayed,
-            matchesWon: $groupStanding->matchesWon,
-            matchesLost: $groupStanding->matchesLost,
-            legsWon: $groupStanding->legsWon,
-            legsLost: $groupStanding->legsLost,
+            matchesPlayed: $groupStanding->matches_played,
+            matchesWon: $groupStanding->matches_won,
+            matchesLost: $groupStanding->matches_lost,
+            legsWon: $groupStanding->legs_won,
+            legsLost: $groupStanding->legs_lost,
             points: $groupStanding->points,
-            legsDifference: $groupStanding->legsDifference,
+            legsDifference: $groupStanding->legs_difference,
             place: $groupStanding->place
         );
     }

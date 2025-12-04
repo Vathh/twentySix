@@ -21,7 +21,7 @@ class GroupStandingService
     public function updateGroupStandings(int $tournamentId, int $groupNumber): void
     {
         $finishedGames = $this->gameRepository->getFinishedGroupGames($tournamentId, $groupNumber);
-        $groupStandings = $this->groupStandingRepository->getStandingsByGroupNumberAndTournamentId($tournamentId, $groupNumber);
+        $groupStandings = $this->groupStandingRepository->getStandingsByGroupNumberAndTournamentId($groupNumber, $tournamentId);
 
         $sortedStandings = $this->sortStandings($groupStandings, $finishedGames);
 
