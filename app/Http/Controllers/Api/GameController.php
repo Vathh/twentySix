@@ -30,7 +30,7 @@ class GameController
 
         $success = $this->gameService->update($dto);
 
-        return response()->json($success);
+        return response()->json(['success' => $success]);
     }
 
     public function getActiveGames(Request $request): JsonResponse

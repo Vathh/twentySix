@@ -16,12 +16,22 @@ class LeagueRepository
         return League::all()->map(fn($league) => LeagueDomain::fromEloquent($league));
     }
 
+    /**
+     * @param int $id
+     * @return LeagueDomain|null
+     */
     public function findByIdWithAdmins(int $id): ?LeagueDomain
     {
         $league = League::with('admins')->findOrFail($id);
         return $league ? LeagueDomain::fromEloquent($league, ['admmins']) : null;
     }
 
+    /**
+     * @param string $name
+     * @param string $description
+     * @param int $userId
+     * @return LeagueDomain
+     */
     public function create(string $name, string $description, int $userId): LeagueDomain
     {
         $league = League::create([

@@ -10,6 +10,9 @@ use Throwable;
 
 class TournamentRepository
 {
+    /**
+     * @return Collection<int, TournamentDomain>
+     */
     public function getAll(): Collection
     {
         return Tournament::all()->map(fn($tournament) => TournamentDomain::fromEloquent($tournament));

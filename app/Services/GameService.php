@@ -29,6 +29,7 @@ class GameService
     {
         try {
             DB::transaction(function () use ($dto) {
+                $this->groupStandingService->updateStandingsDetails($dto->gameResultDTO);
                 $this->gameRepository->update($dto->gameResultDTO);
                 $this->achievementsService->createMany($dto->achievementsDTOs);
                 $this->groupStandingService->updateGroupStandings($dto->gameResultDTO->tournamentId, $dto->gameResultDTO->groupNumber);

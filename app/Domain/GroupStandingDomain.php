@@ -6,7 +6,6 @@ use App\Models\GroupStanding;
 
 class GroupStandingDomain
 {
-
     public function __construct(
         public readonly int $id,
         public readonly ?TournamentDomain $tournament,

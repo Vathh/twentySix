@@ -22,7 +22,7 @@ class GroupStandingService
     public function updateGroupStandings(int $tournamentId, int $groupNumber): void
     {
         $finishedGames = $this->gameRepository->getFinishedGroupGames($tournamentId, $groupNumber);
-        $groupStandings = $this->groupStandingRepository->getStandingsByGroupNumberAndTournamentId($groupNumber, $tournamentId);
+        $groupStandings = $this->groupStandingRepository->getByGroupNumberAndTournamentId($groupNumber, $tournamentId);
 
         $sortedStandings = $this->sortStandings($groupStandings, $finishedGames);
 
@@ -30,9 +30,27 @@ class GroupStandingService
     }
 
 
+    /**
+     * @param GameResultDTO $dto
+     * @return void
+     */
     public function updateStandingsDetails(GameResultDTO $dto): void
     {
+        $this->groupStandingRepository->updateDetails(
+            playerId: $dto->player1Id,
+            hasWon: $dto->player1Id && $dto->winnerId,
+            legsWon: $dto->player1Score,
+            legsLost: $dto->player2Score,
+            tournamentId: $dto->tournamentId,
+        );
 
+        $this->groupStandingRepository->updateDetails(
+            playerId: $dto->player2Id,
+            hasWon: $dto->player2Id && $dto->winnerId,
+            legsWon: $dto->player2Score,
+            legsLost: $dto->player1Score,
+            tournamentId: $dto->tournamentId,
+        );
     }
 
     /**
@@ -116,7 +134,7 @@ class GroupStandingService
 
         $result = collect();
 
-        foreach ($groups as $winCount => $playersWithSameWins) {
+        foreach ($groups as $playersWithSameWins) {
 
             $subset = $standingsToCompare->filter(
                 fn($standing) => $playersWithSameWins->contains($standing->player->id)

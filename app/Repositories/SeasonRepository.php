@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Domain\SeasonDomain;
 use App\Models\Season;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -11,6 +12,9 @@ use Throwable;
 class SeasonRepository
 {
 
+    /**
+     * @return Collection<int, SeasonDomain>
+     */
     public function getAll(): Collection
     {
         return Season::all()->map(fn($season) => SeasonDomain::fromEloquent($season));
@@ -42,6 +46,10 @@ class SeasonRepository
         });
     }
 
+    /**
+     * @param int $seasonId
+     * @return Collection<int, User>
+     */
     public function getRelatedUsers(int $seasonId): Collection
     {
         $season = Season::with(['league.relatedUsers.player', 'relatedUsers.player'])->findOrFail($seasonId);

@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\DB;
 
 class PlayerRepository
 {
+    /**
+     * @param string $name
+     * @param int $userId
+     * @return PlayerDomain
+     */
     public function create(string $name, int $userId): PlayerDomain
     {
         $player = Player::create([
@@ -40,6 +45,7 @@ class PlayerRepository
 
     /**
      * @throws \Throwable
+     * @return Collection<int, PlayerDomain>
      */
     public function getRelatedPlayers(int $seasonId): Collection
     {
@@ -55,7 +61,7 @@ class PlayerRepository
                 ->merge($leagueRelatedUsersPlayers)
                 ->merge($leagueGuests)
                 ->unique('id')
-                ->values();
+                ->map(fn($player) => PlayerDomain::fromEloquent($player));
     }
 
     private function addToLeague(string $name, int $leagueId): void

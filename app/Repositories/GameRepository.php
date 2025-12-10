@@ -40,6 +40,11 @@ class GameRepository
             ]);
     }
 
+    /**
+     * @param int $tournamentId
+     * @param int $groupNumber
+     * @return Collection<int, GameDomain>
+     */
     public function getFinishedGroupGames(int $tournamentId, int $groupNumber): Collection
     {
         return Game::where('tournament_id', $tournamentId)
@@ -49,6 +54,10 @@ class GameRepository
                     ->map(fn($game) => GameDomain::fromEloquent($game, ['player1', 'player2', 'winner']));
     }
 
+    /**
+     * @param int $tournamentId
+     * @return Collection<int, GameDomain>
+     */
     public function getActiveGames(int $tournamentId): Collection
     {
         return Game::where('tournament_id', $tournamentId)

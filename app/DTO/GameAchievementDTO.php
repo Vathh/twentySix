@@ -19,8 +19,8 @@ class GameAchievementDTO
     public static function fromArray(array $data): GameAchievementDTO
     {
         return new self(
-            playerId: $data['playerId'],
-            tournamentId: $data['tournamentId'],
+            playerId: $data['player_id'],
+            tournamentId: $data['tournament_id'],
             value: $data['value'],
             achievementType: AchievementType::from($data['type'])
         );
