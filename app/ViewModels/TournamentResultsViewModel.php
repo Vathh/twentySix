@@ -4,6 +4,7 @@ namespace App\ViewModels;
 
 use App\Domain\GameDomain;
 use App\Domain\GroupStandingDomain;
+use App\Domain\PlayerDomain;
 use App\Domain\SeasonDomain;
 use App\Domain\TournamentDomain;
 use App\Models\Tournament;
@@ -18,19 +19,46 @@ class TournamentResultsViewModel
     {
     }
 
-    public function groupStandings()
+    public function groupStandings(): array
     {
-        return $this->tournament
-                    ->groupStandings
-                    ->map(fn($standing) => GroupStandingDomain::fromEloquent($standing, ['player']))
-                    ->groupBy('groupNumber');
+        $result = [];
+
+        $standingsDomains = $this->tournament
+                                ->groupStandings
+                                ->map(fn($standing) => GroupStandingDomain::fromEloquent($standing, ['player']));
+
+        foreach ($standingsDomains as $standing)
+        {
+            $result[$standing->groupNumber][$standing->player->id] = $standing;
+        }
+
+        return $result;
     }
 
-    public function games()
+    public function games(): array
     {
-        return $this->tournament
-                    ->games->map(fn($game) => GameDomain::fromEloquent($game, ['player1', 'player2', 'winner']))
-                    ->groupBy('groupNumber');
+        $result = [];
+
+        $gamesDomains = $this->tournament
+                    ->games->map(fn($game) => GameDomain::fromEloquent($game, ['player1', 'player2', 'winner']));
+
+        foreach ($gamesDomains as $game) {
+            $result[$game->groupNumber][$game->player1->id][$game->player2->id] = $game;
+        }
+
+        return $result;
+    }
+
+    public function players(): array
+    {
+        $result = [];
+
+        foreach ($this->tournament->groupStandings as $standing)
+        {
+            $result[$standing->gameNumber][] = PlayerDomain::fromEloquent($standing->player);
+        }
+
+        return $result;
     }
 
     public function groupNumbers(): Collection
@@ -51,14 +79,5 @@ class TournamentResultsViewModel
     public function season(): SeasonDomain
     {
         return SeasonDomain::fromEloquent($this->tournament->season, ['league', 'admins']);
-    }
-
-    public function game(int $player1Id, int $player2Id): GameDomain
-    {
-        return GameDomain::fromEloquent(
-            $this->tournament
-                ->games
-                ->first(fn($game) => in_array($player1Id, [$game->player1->id, $game->player2->id]) && in_array($player2Id, [$game->player1->id, $game->player2->id]))
-        );
     }
 }

@@ -39,7 +39,7 @@ class GameDomain
                 : null,
             player1Score: $game->player1_score,
             player2Score: $game->player2_score,
-            winner: in_array('winner', $with)
+            winner: in_array('winner', $with) && $game->winner
                 ? PlayerDomain::fromEloquent($game->winner)
                 : null,
             groupNumber: $game->group_number,

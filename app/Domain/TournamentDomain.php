@@ -2,6 +2,7 @@
 
 namespace App\Domain;
 
+use App\Enums\TournamentStatus;
 use App\Models\Tournament;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -10,14 +11,15 @@ class TournamentDomain
 {
 
     public function __construct(
-        public readonly int           $id,
-        public readonly string        $name,
-        public readonly ?Carbon       $date,
-        public readonly ?SeasonDomain $season,
-        public readonly ?Carbon       $updatedAt,
-        public readonly ?Collection   $achievements,
-        public readonly ?Collection   $games,
-        public readonly ?Collection   $groupStandings
+        public readonly int             $id,
+        public readonly string          $name,
+        public readonly ?Carbon         $date,
+        public readonly ?SeasonDomain   $season,
+        public readonly ?Carbon         $updatedAt,
+        public readonly ?Collection     $achievements,
+        public readonly ?Collection     $games,
+        public readonly ?Collection     $groupStandings,
+        public readonly TournamentStatus $status,
     )
     {
     }
@@ -42,7 +44,8 @@ class TournamentDomain
                 : collect(),
             groupStandings: in_array('groupStandings', $with)
                 ? $tournament->groupStandings->map(fn($group) => GroupStandingDomain::fromEloquent($group))->values()
-                : collect()
+                : collect(),
+            status: $tournament->status
         );
     }
 

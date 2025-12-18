@@ -1,3 +1,4 @@
+@php use App\Enums\GameStatus;use App\Enums\TournamentStatus; @endphp
 @extends('layouts.app')
 
 @section('title', $tournament ? $tournament->name : 'Szczegóły')
@@ -38,15 +39,16 @@
                     </p>
                 </div>
 
-                @if($tournament->groupStandings->count() > 0)
+                @if($tournament->status !== TournamentStatus::CREATED)
+                    @foreach($groupNumbers as $number)
                         <div class="overflow-x-auto rounded-lg p-4  bg-darker-bg border-border mt-10">
-                            <p class="text-center mb-3">Grupa 1</p>
+                            <p class="text-center mb-3">Grupa {{ $number }}</p>
                             <table class="border-collapse text-sm text-text-primary min-w-full">
                                 <thead>
                                 <tr class="bg-dark-bg text-text-muted hover:bg-thead-hover transition">
                                     <th class="px-3 py-2 text-left">Zawodnik</th>
-                                    @foreach($groupStandings[1] as $standing)
-                                        <th class="px-2 py-2 text-center">{{ $standing->player->name }}</th>
+                                    @foreach($players[$number] as $player)
+                                        <th class="px-2 py-2 text-center">{{ $player->name }}</th>
                                     @endforeach
                                     <th class="px-2 py-2 text-center">W</th>
                                     <th class="px-2 py-2 text-center">L</th>
@@ -57,48 +59,43 @@
                                 </thead>
 
                                 <tbody class="divide-y divide-border">
-                                @foreach($groupStandings[1] as $standing)
+                                @foreach($players[$number] as $rowPlayer)
                                     <tr class="hover:bg-row-hover transition">
                                         <td class="px-3 py-2 font-medium text-text-primary whitespace-nowrap">
-                                            {{ $standings->player->name }}
+                                            {{ $rowPlayer->name }}
                                         </td>
 
+                                        @foreach($players[$number] as $columnPlayer)
+                                            @if($rowPlayer->id === $columnPlayer)
+                                                <td class="px-2 py-2 text-center bg-dark-bg text-text-muted">
+                                                    X
+                                                </td>
+                                            @else
+                                                @if($games[$number][$rowPlayer->id][$columnPlayer->id]->status === GameStatus::FINISHED)
+                                                    <td class="px-2 py-2 text-center">
+                                                        {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player1Score }}
+                                                        -
+                                                        {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player2Score }}
+                                                    </td>
+                                                @else
+                                                    <td class="px-2 py-2 text-center bg-dark-bg text-text-muted">
+                                                        -
+                                                    </td>
+                                                @endif
+                                            @endif
+                                        @endforeach
 
-                                        <td class="px-2 py-2 text-center bg-dark-bg text-text-muted">
-                                            X
-                                        </td>
-                                        <td class="px-2 py-2 text-center">2:1</td>
-                                        <td class="px-2 py-2 text-center">1:2</td>
-                                        <td class="px-2 py-2 text-center">2:0</td>
-
-                                        <td class="px-2 py-2 text-center">2</td>
-                                        <td class="px-2 py-2 text-center">1</td>
-                                        <td class="px-2 py-2 text-center">5:3</td>
-                                        <td class="px-2 py-2 text-center">4</td>
-                                        <td class="px-2 py-2 text-center font-semibold text-light-green">1</td>
+                                        <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->matchesWon }}</td>
+                                        <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->matchesLost }}</td>
+                                        <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->legsDifference }}</td>
+                                        <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->points }}</td>
+                                        <td class="px-2 py-2 text-center font-semibold text-light-green">{{ $groupStandings[$number][$rowPlayer->id]->place }}</td>
                                     </tr>
                                 @endforeach
-                                <tr class="hover:bg-row-hover transition">
-                                    <td class="px-3 py-2 font-medium text-text-primary whitespace-nowrap">
-                                        Player 1
-                                    </td>
-
-                                    <td class="px-2 py-2 text-center bg-dark-bg text-text-muted">
-                                        X
-                                    </td>
-                                    <td class="px-2 py-2 text-center">2:1</td>
-                                    <td class="px-2 py-2 text-center">1:2</td>
-                                    <td class="px-2 py-2 text-center">2:0</td>
-
-                                    <td class="px-2 py-2 text-center">2</td>
-                                    <td class="px-2 py-2 text-center">1</td>
-                                    <td class="px-2 py-2 text-center">5:3</td>
-                                    <td class="px-2 py-2 text-center">4</td>
-                                    <td class="px-2 py-2 text-center font-semibold text-light-green">1</td>
-                                </tr>
                                 </tbody>
                             </table>
                         </div>
+                    @endforeach
                 @endif
             </div>
         </div>
