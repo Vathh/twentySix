@@ -38,7 +38,7 @@ class GroupStandingService
     {
         $this->groupStandingRepository->updateDetails(
             playerId: $dto->player1Id,
-            hasWon: $dto->player1Id && $dto->winnerId,
+            hasWon: $dto->player1Id === $dto->winnerId,
             legsWon: $dto->player1Score,
             legsLost: $dto->player2Score,
             tournamentId: $dto->tournamentId,
@@ -46,7 +46,7 @@ class GroupStandingService
 
         $this->groupStandingRepository->updateDetails(
             playerId: $dto->player2Id,
-            hasWon: $dto->player2Id && $dto->winnerId,
+            hasWon: $dto->player2Id === $dto->winnerId,
             legsWon: $dto->player2Score,
             legsLost: $dto->player1Score,
             tournamentId: $dto->tournamentId,

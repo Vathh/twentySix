@@ -58,7 +58,6 @@ class TournamentController extends Controller
     public function show(Tournament $tournament)
     {
         $viewModel = $this->getTournamentGroupResults->get($tournament->id);
-        $games = $viewModel->games();
 
         return view('tournaments.show', [
             'tournament' => $viewModel->tournament(),
@@ -67,6 +66,7 @@ class TournamentController extends Controller
             'players' => $viewModel->players(),
             'games' => $viewModel->games(),
             'groupNumbers' => $viewModel->groupNumbers(),
+            'achievements' => $viewModel->achievements(),
         ]);
     }
 

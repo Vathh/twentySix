@@ -15,7 +15,8 @@ class GetTournamentGroupResults
             'groupStandings.player',
             'games.player1',
             'games.player2',
-            'games.winner'
+            'games.winner',
+            'achievements.player'
         ])->findOrFail($tournamentId);
 
         return new TournamentResultsViewModel($tournament);

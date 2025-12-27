@@ -13,7 +13,7 @@ class AchievementDomain
         public readonly ?TournamentDomain $tournament,
         public readonly ?PlayerDomain $player,
         public readonly AchievementType $type,
-        public readonly int $value
+        public readonly ?int $value
     )
     {}
 

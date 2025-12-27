@@ -1,4 +1,4 @@
-@php use App\Enums\GameStatus;use App\Enums\TournamentStatus; @endphp
+@php use App\Enums\AchievementType;use App\Enums\GameStatus;use App\Enums\TournamentStatus; @endphp
 @extends('layouts.app')
 
 @section('title', $tournament ? $tournament->name : 'Szczegóły')
@@ -66,17 +66,25 @@
                                         </td>
 
                                         @foreach($players[$number] as $columnPlayer)
-                                            @if($rowPlayer->id === $columnPlayer)
+                                            @if($rowPlayer->id === $columnPlayer->id)
                                                 <td class="px-2 py-2 text-center bg-dark-bg text-text-muted">
                                                     X
                                                 </td>
                                             @else
                                                 @if($games[$number][$rowPlayer->id][$columnPlayer->id]->status === GameStatus::FINISHED)
-                                                    <td class="px-2 py-2 text-center">
-                                                        {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player1Score }}
-                                                        -
-                                                        {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player2Score }}
-                                                    </td>
+                                                    @if($rowPlayer->id === $games[$number][$rowPlayer->id][$columnPlayer->id]->player1->id)
+                                                        <td class="px-2 py-2 text-center">
+                                                            {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player1Score }}
+                                                            -
+                                                            {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player2Score }}
+                                                        </td>
+                                                    @else
+                                                        <td class="px-2 py-2 text-center">
+                                                            {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player2Score }}
+                                                            -
+                                                            {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player1Score }}
+                                                        </td>
+                                                    @endif
                                                 @else
                                                     <td class="px-2 py-2 text-center bg-dark-bg text-text-muted">
                                                         -
@@ -96,6 +104,44 @@
                             </table>
                         </div>
                     @endforeach
+
+                    <div class="overflow-x-auto rounded-lg p-4  bg-darker-bg border-border mt-10">
+                        <p class="text-center mb-3">Osiągnięcia</p>
+                        <table class="border-collapse text-sm text-text-primary min-w-full">
+                            <thead>
+                            <tr class="bg-dark-bg text-text-muted hover:bg-thead-hover transition">
+                                <th class="px-3 py-2 text-left">Zawodnik</th>
+                                <th class="px-2 py-2 text-center">180</th>
+                                <th class="px-2 py-2 text-center">170+</th>
+                                <th class="px-2 py-2 text-center">QF</th>
+                                <th class="px-2 py-2 text-center">HF</th>
+                            </tr>
+                            </thead>
+
+                            <tbody class="divide-y divide-border">
+                            @foreach($achievements as $playerAchievements)
+                                <tr class="hover:bg-row-hover transition">
+                                    <td class="px-3 py-2 font-medium text-text-primary whitespace-nowrap">
+                                        {{ $playerAchievements['player']->name }}
+                                    </td>
+                                    <td class="px-2 py-2 text-center">{{ $playerAchievements[AchievementType::MAX->value] }}</td>
+                                    <td class="px-2 py-2 text-center">{{ $playerAchievements[AchievementType::ONE_SEVENTY->value] }}</td>
+                                    <td class="px-2 py-2 text-center flex-wrap">
+                                        @foreach($playerAchievements[AchievementType::QF->value] as $achievement)
+                                            <span>{{ $achievement->value }},</span>
+                                        @endforeach
+                                    </td>
+                                    <td class="px-2 py-2 text-center flex-wrap">
+                                        @foreach($playerAchievements[AchievementType::HF->value] as $achievement)
+                                            <span>{{ $achievement->value }},</span>
+                                        @endforeach
+                                    </td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
                 @endif
             </div>
         </div>
