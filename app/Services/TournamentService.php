@@ -70,7 +70,7 @@ class TournamentService
                     $this->groupStandingRepository->createEmptyStandings($tournamentId, $groups);
                     $this->gameRepository->createGames($gamesToInsert);
                     $this->loginCodeService->generateCodes(count($groups), $tournamentId);
-                    $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::STARTED);
+                    $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::GROUP);
                     return true;
                 }
                 return false;
@@ -79,6 +79,8 @@ class TournamentService
             throw new RuntimeException('Nie udało się stworzyć grup', 0, $e);
         }
     }
+
+    public function
 
     private function generateGamesForGroup(array $group): array
     {

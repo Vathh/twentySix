@@ -65,4 +65,12 @@ class GameRepository
                     ->get()
                     ->map(fn($game) => GameDomain::fromEloquent($game, ['tournament', 'player1', 'player2']));
     }
+
+    public function checkIfPlayoffShouldBeStarted(int $tournamentId): bool
+    {
+        return Game::where('tournament_id', $tournamentId)
+                    ->where('status', GameStatus::SCHEDULED)
+                    ->get()
+                    ->count() === 0;
+    }
 }
