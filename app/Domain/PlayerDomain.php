@@ -18,6 +18,11 @@ class PlayerDomain
     {
     }
 
+    /**
+     * @param Player $player
+     * @param array $with
+     * @return self
+     */
     public static function fromEloquent(Player $player, array $with = []): self
     {
         $player->loadMissing(array_intersect($with, ['achievements']));

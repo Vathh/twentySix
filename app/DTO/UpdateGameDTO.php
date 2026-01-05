@@ -13,6 +13,10 @@ class UpdateGameDTO
     {
     }
 
+    /**
+     * @param array $data
+     * @return UpdateGameDTO
+     */
     public static function fromArray(array $data): UpdateGameDTO
     {
         return new self(

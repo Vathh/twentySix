@@ -10,6 +10,11 @@ use Illuminate\Support\Collection;
 
 class PlayoffBracketFactory
 {
+    /**
+     * @param int $tournamentId
+     * @param array $playerIds
+     * @return Collection<PlayoffGameDomain>
+     */
     public function createFor16(int $tournamentId, array $playerIds): Collection
     {
         $games = collect([
@@ -78,11 +83,11 @@ class PlayoffBracketFactory
 
                                         // FINAL & THIRD
             new PlayoffGameDomain(tournamentId: $tournamentId,
-                round: PlayoffRound::FINAL,
-                slot: PlayoffSlot::FINAL),
+                                    round: PlayoffRound::FINAL,
+                                    slot: PlayoffSlot::FINAL),
             new PlayoffGameDomain(tournamentId: $tournamentId,
-                round: PlayoffRound::THIRD,
-                slot: PlayoffSlot::THIRD)
+                                    round: PlayoffRound::THIRD,
+                                    slot: PlayoffSlot::THIRD)
         ]);
 
         $playersPool = collect($playerIds)->shuffle();

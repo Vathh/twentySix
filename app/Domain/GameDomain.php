@@ -22,6 +22,11 @@ class GameDomain
     {
     }
 
+    /**
+     * @param Game $game
+     * @param array $with
+     * @return GameDomain
+     */
     public static function fromEloquent(Game $game, array $with = []): GameDomain
     {
         $game->loadMissing(array_intersect($with, ['tournament', 'player1', 'player2', 'winner']));
@@ -47,6 +52,9 @@ class GameDomain
         );
     }
 
+    /**
+     * @return array
+     */
     public function playerIds(): array
     {
         return [$this->player1->id, $this->player2->id];

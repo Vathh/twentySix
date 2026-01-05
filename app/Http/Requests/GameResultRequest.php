@@ -26,6 +26,7 @@ class GameResultRequest extends FormRequest
     {
         return [
             'game.id' => 'required|integer|exists:games,id',
+            'game.type' => 'required|string',
             'game.player1Id' => 'required|integer|exists:players,id',
             'game.player2Id' => 'required|integer|exists:players,id',
             'game.player1Score' => 'required|integer',

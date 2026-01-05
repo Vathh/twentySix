@@ -17,6 +17,11 @@ class AchievementDomain
     )
     {}
 
+    /**
+     * @param Achievement $achievement
+     * @param array $with
+     * @return AchievementDomain
+     */
     public static function fromEloquent(Achievement $achievement, array $with = []): AchievementDomain
     {
         $achievement->loadMissing(array_intersect($with, ['tournament', 'player']));

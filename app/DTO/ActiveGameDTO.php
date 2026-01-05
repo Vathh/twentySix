@@ -10,6 +10,7 @@ class ActiveGameDTO
 
     public function __construct(
         public int $id,
+        public int $tournamentId,
         public string $type,
         public array $player1,
         public array $player2,
@@ -18,10 +19,15 @@ class ActiveGameDTO
     {
     }
 
-    public static function fromGame(GameDomain $game)
+    /**
+     * @param GameDomain $game
+     * @return ActiveGameDTO
+     */
+    public static function fromGame(GameDomain $game): ActiveGameDTO
     {
         return new self(
             id: $game->id,
+            tournamentId: $game->tournament_id,
             type: 'group',
             player1: [
                 'id' => $game->player1->id,
@@ -34,11 +40,16 @@ class ActiveGameDTO
             groupNumber: $game->groupNumber
         );
     }
-    
-    public static function fromPlayoffGame(PlayoffGame $game)
+
+    /**
+     * @param PlayoffGame $game
+     * @return ActiveGameDTO
+     */
+    public static function fromPlayoffGame(PlayoffGame $game): ActiveGameDTO
     {
         return new self(
             id: $game->id,
+            tournamentId: $game->tournament_id,
             type: 'playoff',
             player1: [
                 'id' => $game->player1->id,
@@ -47,7 +58,8 @@ class ActiveGameDTO
             player2: [
                 'id' => $game->player2->id,
                 'name' => $game->player2->name,
-            ]
+            ],
+            groupNumber: null
         );
     }
 }

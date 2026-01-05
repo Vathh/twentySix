@@ -75,4 +75,13 @@ class GroupStandingRepository
                 'points' => $hasWon ? DB::raw('points + 1') : DB::raw('points'),
             ]);
     }
+
+    public function getPlayerIdsToAdvanceFromGroups(int $tournamentId, int $placesPerGroup): Collection
+    {
+        return GroupStanding::where('tournament_id', $tournamentId)
+                                ->with('player')
+                                ->get()
+                                ->filter(fn($standing) => $standing->place <= $placesPerGroup)
+                                ->map(fn($standing) => $standing->player->id);
+    }
 }

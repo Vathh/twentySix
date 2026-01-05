@@ -19,7 +19,7 @@ class GameRepository
         DB::table('games')->insert($games);
     }
 
-    public function update(GameResultDTO $dto): void
+    public function finish(GameResultDTO $dto): void
     {
         DB::table('games')
             ->where('id', $dto->gameId)
@@ -60,7 +60,8 @@ class GameRepository
      */
     public function getActive(int $tournamentId): Collection
     {
-        return Game::where('tournament_id', $tournamentId)
+        return Game::with(['tournament', 'player1', 'player2'])
+                    ->where('tournament_id', $tournamentId)
                     ->where('status', GameStatus::SCHEDULED)
                     ->get()
                     ->map(fn($game) => GameDomain::fromEloquent($game, ['tournament', 'player1', 'player2']));

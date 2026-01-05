@@ -31,6 +31,11 @@ class PlayoffGameDomain
     {
     }
 
+    /**
+     * @param PlayoffGame $game
+     * @param array $with
+     * @return PlayoffGameDomain
+     */
     public static function fromEloquent(PlayoffGame $game, array $with = []): PlayoffGameDomain
     {
         $game->loadMissing(array_intersect($with, ['tournament', 'player1', 'player2', 'winner']));
@@ -62,6 +67,11 @@ class PlayoffGameDomain
         );
     }
 
+    /**
+     * @param int $player1Id
+     * @param int $player2Id
+     * @return PlayoffGameDomain
+     */
     public function withPlayerIds(int $player1Id, int $player2Id): PlayoffGameDomain
     {
         return new self(

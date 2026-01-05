@@ -23,6 +23,11 @@ class GroupStandingDomain
     {
     }
 
+    /**
+     * @param GroupStanding $groupStanding
+     * @param array $with
+     * @return GroupStandingDomain
+     */
     public static function fromEloquent(GroupStanding $groupStanding, array $with = []): GroupStandingDomain
     {
         $groupStanding->loadMissing(array_intersect($with, ['tournament', 'player']));
@@ -47,6 +52,10 @@ class GroupStandingDomain
         );
     }
 
+    /**
+     * @param int $place
+     * @return self
+     */
     public function withPlace(int $place): self
     {
         return new self(

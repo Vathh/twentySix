@@ -23,6 +23,11 @@ class SeasonDomain
     {
     }
 
+    /**
+     * @param Season $season
+     * @param array $with
+     * @return self
+     */
     public static function fromEloquent(Season $season, array $with = []): self
     {
         $season->loadMissing(array_intersect($with, ['league', 'admins', 'relatedUsers', 'tournaments']));
