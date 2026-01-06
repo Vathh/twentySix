@@ -34,7 +34,14 @@ class GameService
     {
         if($dto->gameResultDTO->type === GameType::PLAYOFF)
         {
-
+            try {
+                DB::transaction(function () use ($dto) {
+                    $this->playoffService->update($dto->gameResultDTO);
+                    $this->achievementsService->createMany($dto->achievementsDTOs);
+                });
+            } catch (Throwable $e) {
+                return false;
+            }
         }else if($dto->gameResultDTO->type === GameType::GROUP)
         {
             try {

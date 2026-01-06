@@ -80,8 +80,6 @@ class TournamentService
         }
     }
 
-    public function
-
     private function generateGamesForGroup(array $group): array
     {
         $games = [];

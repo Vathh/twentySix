@@ -2,7 +2,7 @@
 
 namespace App\DTO;
 
-use App\Domain\GameDomain;
+use App\Domain\Game\GameDomain;
 use App\Models\PlayoffGame;
 
 class ActiveGameDTO
@@ -59,7 +59,7 @@ class ActiveGameDTO
                 'id' => $game->player2->id,
                 'name' => $game->player2->name,
             ],
-            groupNumber: null
+            groupNumber: 0
         );
     }
 }

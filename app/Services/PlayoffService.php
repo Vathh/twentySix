@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\DTO\GameResultDTO;
+use App\Enums\PlayerSlot;
+use App\Enums\PlayoffSlot;
 use App\Factories\PlayoffBracketFactory;
 use App\Repositories\GroupStandingRepository;
 use App\Repositories\PlayoffGameRepository;
@@ -26,6 +28,7 @@ class PlayoffService
     {
         $playerIds = $this->groupStandingRepository
                             ->getPlayerIdsToAdvanceFromGroups($tournamentId, 2)
+                            ->values()
                             ->toArray();
 
         $playoffGames = $this->bracketFactory->createFor16($tournamentId, $playerIds);
@@ -33,12 +36,41 @@ class PlayoffService
         $this->gameRepository->createMany($playoffGames);
     }
 
-    public function updateGame(GameResultDTO $dto): void
+    public function update(GameResultDTO $dto): void
     {
         $gameToUpdate = $this->gameRepository->find($dto->gameId);
 
-        $winnerDestinationGame = $this->gameRepository->findByTournamentIdAndSlot($dto->tournamentId, $dto->)
+        $this->gameRepository->finish($dto);
+
+        if($gameToUpdate->slot !== PlayoffSlot::THIRD
+            && $gameToUpdate->slot !== PlayoffSlot::FINAL
+        ){
+            $winnerDestination = $gameToUpdate->winnerDestinationSlot->toDestination();
+
+            $this->advancePlayer($gameToUpdate->tournamentId,
+                                    $winnerDestination->playoffSlot,
+                                    $dto->winnerId,
+                                    $winnerDestination->playerSlot);
+
+            if ($winnerDestination->playoffSlot === PlayoffSlot::FINAL)
+            {
+                $loserId = $dto->winnerId === $dto->player1Id ? $dto->player2Id : $dto->player1Id;
+
+                $this->advancePlayer($gameToUpdate->tournamentId,
+                                        PlayoffSlot::THIRD,
+                                        $loserId,
+                                        $winnerDestination->playerSlot);
+            }
+        }
     }
 
-    public function advanceWinner()
+    public function advancePlayer(int $tournamentId, PlayoffSlot $playoffSlot, int $winnerId, PlayerSlot $playerSlot): void
+    {
+        switch ($playerSlot){
+            case PlayerSlot::A: $this->gameRepository->setPlayer1Slot($tournamentId, $playoffSlot, $winnerId);
+                break;
+            case PlayerSlot::B: $this->gameRepository->setPlayer2Slot($tournamentId, $playoffSlot, $winnerId);
+                break;
+        }
+    }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Repositories;
 
-use App\Domain\GameDomain;
+use App\Domain\Game\GameDomain;
 use App\DTO\GameResultDTO;
 use App\Enums\GameStatus;
 use App\Models\Game;
@@ -43,7 +43,7 @@ class GameRepository
     /**
      * @param int $tournamentId
      * @param int $groupNumber
-     * @return Collection<int, GameDomain>
+     * @return Collection<int, \App\Domain\Game\GameDomain>
      */
     public function getFinishedGroupGames(int $tournamentId, int $groupNumber): Collection
     {
@@ -56,7 +56,7 @@ class GameRepository
 
     /**
      * @param int $tournamentId
-     * @return Collection<int, GameDomain>
+     * @return Collection<int, \App\Domain\Game\GameDomain>
      */
     public function getActive(int $tournamentId): Collection
     {

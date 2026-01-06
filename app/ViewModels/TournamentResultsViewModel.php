@@ -3,7 +3,7 @@
 namespace App\ViewModels;
 
 use App\Domain\AchievementDomain;
-use App\Domain\GameDomain;
+use App\Domain\Game\GameDomain;
 use App\Domain\GroupStandingDomain;
 use App\Domain\PlayerDomain;
 use App\Domain\SeasonDomain;
@@ -21,6 +21,9 @@ class TournamentResultsViewModel
     {
     }
 
+    /**
+     * @return array<GroupStandingDomain>
+     */
     public function groupStandings(): array
     {
         $result = [];
@@ -37,6 +40,9 @@ class TournamentResultsViewModel
         return $result;
     }
 
+    /**
+     * @return array<GameDomain>
+     */
     public function games(): array
     {
         $result = [];
@@ -58,6 +64,9 @@ class TournamentResultsViewModel
         return $result;
     }
 
+    /**
+     * @return array<PlayerDomain>
+     */
     public function players(): array
     {
         $result = [];
@@ -80,16 +89,25 @@ class TournamentResultsViewModel
                     ->collect();
     }
 
+    /**
+     * @return TournamentDomain
+     */
     public function tournament(): TournamentDomain
     {
         return TournamentDomain::fromEloquent($this->tournament);
     }
 
+    /**
+     * @return SeasonDomain
+     */
     public function season(): SeasonDomain
     {
         return SeasonDomain::fromEloquent($this->tournament->season, ['league', 'admins']);
     }
 
+    /**
+     * @return Collection<AchievementDomain>
+     */
     public function achievements(): Collection
     {
         $achievementDomains = $this->tournament->achievements->map(fn($achievement) => AchievementDomain::fromEloquent($achievement, ['player']))->collect();
@@ -117,8 +135,6 @@ class TournamentResultsViewModel
                     break;
             }
         }
-
-        $test = collect($result);
 
         return collect($result);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Domain;
 
+use App\Domain\Game\GameDomain;
 use App\Enums\TournamentStatus;
 use App\Models\Tournament;
 use Carbon\Carbon;
@@ -62,5 +63,10 @@ class TournamentDomain
     public function getUpdatedAtDate(): string
     {
         return $this->updatedAt?->format('Y-m-d');
+    }
+
+    public function isStarted(): bool
+    {
+        return $this->status !==  TournamentStatus::CREATED;
     }
 }

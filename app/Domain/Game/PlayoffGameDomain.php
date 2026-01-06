@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Domain;
+namespace App\Domain\Game;
 
+use App\Domain\PlayerDomain;
+use App\Domain\TournamentDomain;
 use App\Enums\GameStatus;
 use App\Enums\PlayoffRound;
 use App\Enums\PlayoffSlot;
@@ -31,6 +33,32 @@ class PlayoffGameDomain
     {
     }
 
+    public static function createForBracket(
+        int $tournamentId,
+        PlayoffRound $round,
+        PlayoffSlot $slot,
+        ?WinnerDestinationSlot $winnerDestinationSlot = null
+    ): PlayoffGameDomain
+    {
+        return new self(
+            id: null,
+            tournamentId: $tournamentId,
+            tournament: null,
+            round: $round,
+            slot: $slot,
+            player1Id: null,
+            player2Id: null,
+            player1: null,
+            player2: null,
+            player1Score: null,
+            player2Score: null,
+            winnerId: null,
+            winner: null,
+            winnerDestinationSlot: $winnerDestinationSlot,
+            status: GameStatus::SCHEDULED
+        );
+    }
+
     /**
      * @param PlayoffGame $game
      * @param array $with
@@ -56,13 +84,13 @@ class PlayoffGameDomain
             player2: in_array('player2', $with)
                 ? PlayerDomain::fromEloquent($game->player2)
                 : null,
-            player1Score: $game->player1Score,
-            player2Score: $game->player2Score,
+            player1Score: $game->player1_score,
+            player2Score: $game->player2_score,
             winnerId: $game->winner_id,
             winner: in_array('winner', $with)
                 ? PlayerDomain::fromEloquent($game->winner)
                 : null,
-            winnerDestinationSlot: $game->winnerDestinationSlot,
+            winnerDestinationSlot: $game->winner_destination_slot,
             status: $game->status
         );
     }

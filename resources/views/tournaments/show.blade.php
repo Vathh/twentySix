@@ -1,4 +1,3 @@
-@php use App\Enums\AchievementType;use App\Enums\GameStatus;use App\Enums\TournamentStatus; @endphp
 @extends('layouts.app')
 
 @section('title', $tournament ? $tournament->name : 'Szczegóły')
@@ -39,7 +38,7 @@
                     </p>
                 </div>
 
-                @if($tournament->status !== TournamentStatus::CREATED)
+                @if($tournament->isStarted())
                     @foreach($groupNumbers as $number)
                         <div class="overflow-x-auto rounded-lg p-4  bg-darker-bg border-border mt-10">
                             <p class="text-center mb-3">Grupa {{ $number }}</p>
@@ -71,7 +70,7 @@
                                                     X
                                                 </td>
                                             @else
-                                                @if($games[$number][$rowPlayer->id][$columnPlayer->id]->status === GameStatus::FINISHED)
+                                                @if($games[$number][$rowPlayer->id][$columnPlayer->id]->isFinished())
                                                     @if($rowPlayer->id === $games[$number][$rowPlayer->id][$columnPlayer->id]->player1->id)
                                                         <td class="px-2 py-2 text-center">
                                                             {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player1Score }}
@@ -124,15 +123,15 @@
                                     <td class="px-3 py-2 font-medium text-text-primary whitespace-nowrap">
                                         {{ $playerAchievements['player']->name }}
                                     </td>
-                                    <td class="px-2 py-2 text-center">{{ $playerAchievements[AchievementType::MAX->value] }}</td>
-                                    <td class="px-2 py-2 text-center">{{ $playerAchievements[AchievementType::ONE_SEVENTY->value] }}</td>
+                                    <td class="px-2 py-2 text-center">{{ $playerAchievements['max'] }}</td>
+                                    <td class="px-2 py-2 text-center">{{ $playerAchievements['one_seventy'] }}</td>
                                     <td class="px-2 py-2 text-center flex-wrap">
-                                        @foreach($playerAchievements[AchievementType::QF->value] as $achievement)
+                                        @foreach($playerAchievements['qf'] as $achievement)
                                             <span>{{ $achievement->value }},</span>
                                         @endforeach
                                     </td>
                                     <td class="px-2 py-2 text-center flex-wrap">
-                                        @foreach($playerAchievements[AchievementType::HF->value] as $achievement)
+                                        @foreach($playerAchievements['hf'] as $achievement)
                                             <span>{{ $achievement->value }},</span>
                                         @endforeach
                                     </td>

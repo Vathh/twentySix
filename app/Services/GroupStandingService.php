@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Domain\GameDomain;
+use App\Domain\Game\GameDomain;
 use App\Domain\GroupStandingDomain;
 use App\DTO\GameResultDTO;
 use App\Repositories\GameRepository;
@@ -55,7 +55,7 @@ class GroupStandingService
 
     /**
      * @param Collection<int, GroupStandingDomain> $groupStandings
-     * @param Collection<int, GameDomain> $finishedGames
+     * @param Collection<int, \App\Domain\Game\GameDomain> $finishedGames
      * @return Collection<int, GroupStandingDomain>
      */
     public function sortStandings(Collection $groupStandings, Collection $finishedGames): Collection

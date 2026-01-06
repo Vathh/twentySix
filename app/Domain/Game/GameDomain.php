@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Domain;
+namespace App\Domain\Game;
 
+use App\Domain\PlayerDomain;
+use App\Domain\TournamentDomain;
 use App\Enums\GameStatus;
 use App\Models\Game;
 
@@ -58,5 +60,10 @@ class GameDomain
     public function playerIds(): array
     {
         return [$this->player1->id, $this->player2->id];
+    }
+
+    public function isFinished(): bool
+    {
+        return $this->status === GameStatus::FINISHED;
     }
 }

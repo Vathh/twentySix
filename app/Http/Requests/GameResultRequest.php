@@ -25,7 +25,7 @@ class GameResultRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'game.id' => 'required|integer|exists:games,id',
+            'game.id' => 'required|integer',
             'game.type' => 'required|string',
             'game.player1Id' => 'required|integer|exists:players,id',
             'game.player2Id' => 'required|integer|exists:players,id',

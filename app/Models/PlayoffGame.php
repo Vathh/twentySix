@@ -25,10 +25,10 @@ class PlayoffGame extends Model
     ];
 
     protected $casts = [
-        'status' => GameStatus::class,
         'round' => PlayoffRound::class,
         'slot' => PlayoffSlot::class,
-        'winner_destination_slot' => WinnerDestinationSlot::class
+        'winner_destination_slot' => WinnerDestinationSlot::class,
+        'status' => GameStatus::class,
     ];
 
     public function tournament(): BelongsTo
