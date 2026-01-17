@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Domain\Tournament\PointSchemeDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\TournamentStatus;
 use App\Models\Tournament;
@@ -44,5 +45,17 @@ class TournamentRepository
         $tournament = Tournament::findOrFail($tournamentId);
 
         return $tournament->status === TournamentStatus::CREATED;
+    }
+
+
+    /**
+     * @param int $tournamentId
+     * @return TournamentDomain|null
+     */
+    public function findByIdWithSeasonAndPointScheme(int $tournamentId): ?TournamentDomain
+    {
+        $tournament = Tournament::with(['season', 'pointScheme.rules'])->findOrFail($tournamentId);
+
+        return TournamentDomain::fromEloquent($tournament, ['season', 'pointScheme', 'pointScheme.rules']);
     }
 }

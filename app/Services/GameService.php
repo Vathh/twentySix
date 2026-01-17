@@ -10,6 +10,7 @@ use App\Enums\TournamentStatus;
 use App\Repositories\GameRepository;
 use App\Repositories\PlayoffGameRepository;
 use App\Repositories\TournamentRepository;
+use App\Services\Tournament\TournamentResultService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -23,7 +24,8 @@ class GameService
         private GroupStandingService $groupStandingService,
         private AchievementsService  $achievementsService,
         private PlayoffService       $playoffService,
-        private TournamentRepository $tournamentRepository
+        private TournamentRepository $tournamentRepository,
+        private TournamentResultService  $tournamentResultService,
     )
     {
     }
@@ -43,7 +45,9 @@ class GameService
                     $gameToUpdate->checkUpdateDataAccuracy($dto->gameResultDTO->player1Id, $dto->gameResultDTO->player2Id, $dto->gameResultDTO->winnerId);
 
                     $this->playoffService->update($dto->gameResultDTO, $gameToUpdate);
+
                     $this->achievementsService->createMany($dto->achievementsDTOs);
+
                 });
 
                 return true;
@@ -64,6 +68,7 @@ class GameService
 
                     if($this->gameRepository->checkIfPlayoffShouldBeStarted($dto->gameResultDTO->tournamentId))
                     {
+                        $this->tournamentResultService->createForGroupLosers($dto->gameResultDTO->tournamentId);
                         $this->playoffService->generateBracket($dto->gameResultDTO->tournamentId);
                         $this->tournamentRepository->changeStatus($dto->gameResultDTO->tournamentId, TournamentStatus::PLAYOFF);
                     }

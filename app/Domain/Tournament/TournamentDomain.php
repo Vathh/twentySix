@@ -69,7 +69,10 @@ class TournamentDomain
                 : collect(),
             status: $tournament->status,
             pointScheme: in_array('pointScheme', $with)
-                ? PointSchemeDomain::fromEloquent($tournament->pointScheme)
+                ? PointSchemeDomain::fromEloquent(
+                    $tournament->pointScheme,
+                    with: in_array('pointScheme.rules', $with) ? ['rules'] : []
+                )
                 : null,
         );
     }

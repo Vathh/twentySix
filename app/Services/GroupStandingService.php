@@ -155,4 +155,9 @@ class GroupStandingService
 
         return $result->values();
     }
+
+    public function getLosersGroupStandings(int $tournamentId): Collection
+    {
+        return $this->groupStandingRepository->getGroupLosers($tournamentId);
+    }
 }

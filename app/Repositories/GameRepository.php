@@ -43,7 +43,7 @@ class GameRepository
     /**
      * @param int $tournamentId
      * @param int $groupNumber
-     * @return Collection<int, \App\Domain\Game\GameDomain>
+     * @return Collection<int, GameDomain>
      */
     public function getFinishedGroupGames(int $tournamentId, int $groupNumber): Collection
     {
@@ -56,7 +56,7 @@ class GameRepository
 
     /**
      * @param int $tournamentId
-     * @return Collection<int, \App\Domain\Game\GameDomain>
+     * @return Collection<int, GameDomain>
      */
     public function getActive(int $tournamentId): Collection
     {

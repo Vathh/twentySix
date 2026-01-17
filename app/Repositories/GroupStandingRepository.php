@@ -84,4 +84,17 @@ class GroupStandingRepository
                                 ->filter(fn($standing) => $standing->place <= $placesPerGroup)
                                 ->map(fn($standing) => $standing->player->id);
     }
+
+    /**
+     * @param int $tournamentId
+     * @return Collection<GroupStandingDomain>
+     */
+    public function getGroupLosers(int $tournamentId): Collection
+    {
+        return GroupStanding::where('tournament_id', $tournamentId)
+            ->where('place', '>', 2)
+            ->get()
+            ->with(['tournament', 'player'])
+            ->map(fn($standing) => GroupStandingDomain::fromEloquent($standing, ['tournament', 'player']));
+    }
 }
