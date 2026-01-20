@@ -58,7 +58,7 @@ class TournamentResultDomain
                     : null,
             playerId: $result->player_id,
             points: $result->points,
-            place: $result->place ?: null,
+            place: $result->place,
             eliminationStage: $result->elimination_stage ?: null,
         );
     }

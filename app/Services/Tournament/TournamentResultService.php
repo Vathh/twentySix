@@ -53,11 +53,11 @@ class TournamentResultService
         $rule = $this->pointSchemeRuleRepository->find($tournament->pointScheme->id, $stage, $place);
 
         $result = $this->factory->createForPlayoff($tournament->season->id,
-                                        $tournament->id,
-                                        $playerId,
-                                        $rule->points,
-                                        $rule->place,
-                                        $stage);
+                                                    $tournament->id,
+                                                    $playerId,
+                                                    $rule->points,
+                                                    $rule->place,
+                                                    $stage);
 
         $this->resultRepository->create($result);
     }

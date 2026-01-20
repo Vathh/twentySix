@@ -11,14 +11,24 @@ class PointSchemeRuleRepository
     /**
      * @param int $schemeId
      * @param GameStage $stage
-     * @param int $place
+     * @param int|null $place
      * @return PointSchemeRuleDomain|null
      */
-    public function find(int $schemeId, GameStage $stage, int $place): ?PointSchemeRuleDomain
+    public function find(int $schemeId, GameStage $stage, ?int $place): ?PointSchemeRuleDomain
     {
-        return PointSchemeRule::where('point_scheme_id', $schemeId)
-            ->where('elimination_stage', $stage->value)
-            ->where('place', $place)
-            ->firstOrFail();
+        if($place === null){
+            return PointSchemeRuleDomain::fromEloquent(
+                            PointSchemeRule::where('point_scheme_id', $schemeId)
+                                ->where('elimination_stage', $stage->value)
+                                ->firstOrFail()
+                        );
+        } else {
+            return PointSchemeRuleDomain::fromEloquent(
+                PointSchemeRule::where('point_scheme_id', $schemeId)
+                    ->where('elimination_stage', $stage->value)
+                    ->where('place', $place)
+                    ->firstOrFail()
+            );
+        }
     }
 }

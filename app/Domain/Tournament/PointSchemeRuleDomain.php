@@ -11,7 +11,7 @@ class PointSchemeRuleDomain
     public function __construct(
         public readonly int $id,
         public readonly GameStage $stage,
-        public readonly int $place,
+        public readonly ?int $place,
         public readonly int $points,
     )
     {
@@ -25,8 +25,8 @@ class PointSchemeRuleDomain
     {
         return new self(
             id: $rule->id,
-            stage: GameStage::from($rule->elimination_stage),
-            place: $rule->place,
+            stage: $rule->elimination_stage,
+            place: $rule->place ?: null,
             points: $rule->points
         );
     }

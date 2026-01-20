@@ -46,8 +46,8 @@ class Tournament extends Model
         return $this->hasMany(GroupStanding::class);
     }
 
-    public function pointScheme(): HasOne
+    public function pointScheme(): BelongsTo
     {
-        return $this->hasOne(PointScheme::class);
+        return $this->belongsTo(PointScheme::class, 'point_scheme_id');
     }
 }

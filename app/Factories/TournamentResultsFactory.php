@@ -44,16 +44,28 @@ class TournamentResultsFactory
         );
     }
 
-    public function createForPlayoff(int $seasonId,
-                                     int $tournamentId,
-                                     int $playerId,
-                                     ?int $points,
-                                     int $place,
+    /**
+     * @param int $seasonId
+     * @param int $tournamentId
+     * @param int $playerId
+     * @param int|null $points
+     * @param int|null $place
+     * @param GameStage $stage
+     * @return TournamentResultDomain
+     */
+    public function createForPlayoff(int       $seasonId,
+                                     int       $tournamentId,
+                                     int       $playerId,
+                                     ?int      $points,
+                                     ?int      $place,
                                      GameStage $stage): TournamentResultDomain
     {
         return new TournamentResultDomain(
+            season: null,
             seasonId: $seasonId,
+            tournament: null,
             tournamentId: $tournamentId,
+            player: null,
             playerId: $playerId,
             points: $points,
             place: $place,
