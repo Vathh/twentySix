@@ -48,7 +48,7 @@ class TournamentDomain
      */
     public static function fromEloquent(Tournament $tournament, array $with = []): self
     {
-        $tournament->loadMissing(array_intersect($with, ['season', 'achievements', 'games', 'groupStandings', 'pointScheme']));
+        $tournament->loadMissing(array_intersect($with, ['season', 'achievements', 'games', 'groupStandings', 'pointScheme', 'pointScheme.rules']));
 
         return new self(
             id: $tournament->id,
@@ -90,5 +90,10 @@ class TournamentDomain
     public function isStarted(): bool
     {
         return $this->status !==  TournamentStatus::CREATED;
+    }
+
+    public function isPlayoff(): bool
+    {
+        return $this->status === TournamentStatus::PLAYOFF;
     }
 }

@@ -93,8 +93,8 @@ class GroupStandingRepository
     {
         return GroupStanding::where('tournament_id', $tournamentId)
             ->where('place', '>', 2)
-            ->get()
             ->with(['tournament', 'player'])
+            ->get()
             ->map(fn($standing) => GroupStandingDomain::fromEloquent($standing, ['tournament', 'player']));
     }
 }

@@ -14,9 +14,9 @@
             @method('PUT')
 
             <div class="flex flex-col items-center">
-                <h1 class="text-center text-light-green mb-10 text-2xl">Edycja ligi</h1>
+                <h1 class="text-center text-light-green mb-10 text-2xl">Edycja sezonu</h1>
 
-                <label class="mb-3 text-xl text-light-orange" for="leagueName"><b>Nazwa ligi</b></label>
+                <label class="mb-3 text-xl text-light-orange" for="leagueName"><b>Nazwa sezonu</b></label>
                 <input
                     class="mb-5 input-orange"
                     type="text"

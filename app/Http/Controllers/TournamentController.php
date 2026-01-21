@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Tournament\TournamentDomain;
+use App\Models\Season;
 use App\Models\Tournament;
 use App\Queries\GetTournamentGroupResults;
 use App\Services\PlayerService;
@@ -33,7 +34,8 @@ class TournamentController extends Controller
     public function create(Request $request): Factory|View
     {
         $seasonId = $request->query('seasonId');
-        $this->loadAndAuthorize($seasonId);
+
+        $this->authorize('update', Season::findOrFail($seasonId));
 
         return view('tournaments.create', ['seasonId' => $seasonId]);
     }

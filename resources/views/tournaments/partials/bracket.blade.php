@@ -3,7 +3,7 @@
         Playoff
     </h2>
 
-    <div class="flex gap-10 overflow-x-auto pb-4">
+    <div class="flex gap-10 overflow-x-auto">
 
         {{-- 1/8 FINAŁU --}}
         @if(isset($playoffGames['EIGHT']))

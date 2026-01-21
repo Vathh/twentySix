@@ -10,12 +10,14 @@
         <aside class="w-72 backdrop-blur bg-white/5 border-r border-white/10 p-6 flex flex-col">
             <h2 class="text-light-green font-bold text-lg mb-6 tracking-wide">⚙️ Zarządzanie turniejem</h2>
 
-            <nav class="flex flex-col space-y-3">
-                <a href="{{ route('tournaments.start', $tournament->id) }}"
-                   class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
-                    ➕ Rozpocznij turniej
-                </a>
-            </nav>
+            @if(!$tournament->isStarted())
+                <nav class="flex flex-col space-y-3">
+                    <a href="{{ route('tournaments.start', $tournament->id) }}"
+                       class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
+                        ➕ Rozpocznij turniej
+                    </a>
+                </nav>
+            @endif
         </aside>
         @endseasonAdmin
 
@@ -39,10 +41,10 @@
                 </div>
 
                 @if($tournament->isStarted())
-                    @include('tournaments.partials.bracket', [
-                        'playoffGames' => $playoffGames
-                    ])
-                    <h2 class="text-center text-2xl font-bold text-light-green mb-8 tracking-wide">
+                    @if($tournament->isPlayoff())
+                        @include('tournaments.partials.bracket', ['playoffGames' => $playoffGames])
+                    @endif
+                    <h2 class="text-center text-2xl font-bold text-light-green mb-8 tracking-wide mt-4">
                         Grupy
                     </h2>
                     @foreach($groupNumbers as $number)

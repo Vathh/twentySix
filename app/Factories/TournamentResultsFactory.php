@@ -19,7 +19,18 @@ class TournamentResultsFactory
     public function createManyForGroup(Collection $groupStandings, TournamentDomain $tournament): Collection
     {
         $seasonId = $tournament->season->id;
-        $pointSchemeRules = $tournament->pointScheme->rules;
+        $pointSchemeRules = $tournament->pointScheme->rules->filter(fn($rule) => $rule->stage === GameStage::GROUP);
+
+        $test = $groupStandings->map(function ($standing) use ($seasonId, $pointSchemeRules) {
+            $test = $pointSchemeRules->first(fn($rule) => $rule->place === $standing->place);
+            $test2 = $standing;
+            $test3 = $seasonId;
+            return $this->createForGroup(
+                standing: $standing,
+                seasonId: $seasonId,
+                points: $pointSchemeRules->first(fn($rule) => $rule->place === $standing->place)->points
+            );
+        });
 
         return $groupStandings->map(function ($standing) use ($seasonId, $pointSchemeRules) {
                     return $this->createForGroup(
@@ -27,6 +38,7 @@ class TournamentResultsFactory
                                 seasonId: $seasonId,
                                 points: $pointSchemeRules->where('elimination_stage', GameStage::GROUP->value)
                                     ->where('place', $standing->place)
+                                    ->first()
                                     ->points
                             );
                 });
@@ -35,8 +47,11 @@ class TournamentResultsFactory
     private function createForGroup(GroupStandingDomain $standing, int $seasonId, int $points): TournamentResultDomain
     {
         return new TournamentResultDomain(
+            season: null,
             seasonId: $seasonId,
+            tournament: null,
             tournamentId: $standing->tournament->id,
+            player: null,
             playerId: $standing->player->id,
             points: $points,
             place: $standing->place,
