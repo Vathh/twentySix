@@ -21,25 +21,11 @@ class TournamentResultsFactory
         $seasonId = $tournament->season->id;
         $pointSchemeRules = $tournament->pointScheme->rules->filter(fn($rule) => $rule->stage === GameStage::GROUP);
 
-        $test = $groupStandings->map(function ($standing) use ($seasonId, $pointSchemeRules) {
-            $test = $pointSchemeRules->first(fn($rule) => $rule->place === $standing->place);
-            $test2 = $standing;
-            $test3 = $seasonId;
-            return $this->createForGroup(
-                standing: $standing,
-                seasonId: $seasonId,
-                points: $pointSchemeRules->first(fn($rule) => $rule->place === $standing->place)->points
-            );
-        });
-
         return $groupStandings->map(function ($standing) use ($seasonId, $pointSchemeRules) {
                     return $this->createForGroup(
                                 standing: $standing,
                                 seasonId: $seasonId,
-                                points: $pointSchemeRules->where('elimination_stage', GameStage::GROUP->value)
-                                    ->where('place', $standing->place)
-                                    ->first()
-                                    ->points
+                                points: $pointSchemeRules->first(fn($rule) => $rule->place === $standing->place)->points
                             );
                 });
     }

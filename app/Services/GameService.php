@@ -121,17 +121,14 @@ class GameService
         }
     }
 
-    /** @noinspection PhpConditionAlreadyCheckedInspection */
     private function handlePlayoffGameUpdate(UpdateGameDTO $dto): bool
     {
         try {
             DB::transaction(function () use ($dto) {
                 $gameToUpdate = $this->playoffGameRepository->find($dto->gameResultDTO->gameId);
-                $gameToUpdate->checkUpdateDataAccuracy($dto->gameResultDTO->player1Id,
-                                                        $dto->gameResultDTO->player2Id,
-                                                        $dto->gameResultDTO->winnerId);
+                $gameToUpdate->checkUpdateDataAccuracy($dto->gameResultDTO);
 
-                if($gameToUpdate->round !== GameStage::FINAL && $gameToUpdate->round !== GameStage::THIRD)
+                if(!in_array($gameToUpdate->round, [GameStage::FINAL, GameStage::THIRD, GameStage::SEMI]))
                 {
                     $this->handleTournamentResultCreating($dto->gameResultDTO->winnerId,
                                                             $dto->gameResultDTO->player1Id,
@@ -147,6 +144,8 @@ class GameService
                                                             $gameToUpdate->tournamentId,
                                                             GameStage::THIRD,
                                                             3);
+
+                    $this->tournamentRepository->finishTournament($gameToUpdate->tournamentId);
                 } else if ($gameToUpdate->round === GameStage::FINAL)
                 {
                     $this->handleTournamentResultCreating($dto->gameResultDTO->winnerId,
@@ -155,6 +154,7 @@ class GameService
                                                             $gameToUpdate->tournamentId,
                                                             GameStage::FINAL,
                                                             1);
+                    $this->tournamentRepository->finishTournament($gameToUpdate->tournamentId);
                 }
 
                 $this->playoffService->update($dto->gameResultDTO, $gameToUpdate);

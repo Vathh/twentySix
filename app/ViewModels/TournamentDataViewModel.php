@@ -9,11 +9,12 @@ use App\Domain\GroupStandingDomain;
 use App\Domain\PlayerDomain;
 use App\Domain\SeasonDomain;
 use App\Domain\Tournament\TournamentDomain;
+use App\Domain\Tournament\TournamentResultDomain;
 use App\Enums\AchievementType;
 use App\Models\Tournament;
 use Illuminate\Support\Collection;
 
-class TournamentResultsViewModel
+class TournamentDataViewModel
 {
 
     public function __construct(
@@ -66,7 +67,9 @@ class TournamentResultsViewModel
     {
         $result = [];
 
-        $playoffGameDomains = $this->tournament->playoffGames->map(fn($game) => PlayoffGameDomain::fromEloquent($game, ['player1', 'player2', 'winner']));
+        $playoffGameDomains = $this->tournament
+                                    ->playoffGames
+                                    ->map(fn($game) => PlayoffGameDomain::fromEloquent($game, ['player1', 'player2', 'winner']));
 
         foreach ($playoffGameDomains as $game) {
             $result[$game->round->value][] = $game;
@@ -121,7 +124,9 @@ class TournamentResultsViewModel
      */
     public function achievements(): Collection
     {
-        $achievementDomains = $this->tournament->achievements->map(fn($achievement) => AchievementDomain::fromEloquent($achievement, ['player']))->collect();
+        $achievementDomains = $this->tournament
+                                    ->achievements
+                                    ->map(fn($achievement) => AchievementDomain::fromEloquent($achievement, ['player']));
 
         $result = [];
 
@@ -148,5 +153,14 @@ class TournamentResultsViewModel
         }
 
         return collect($result);
+    }
+
+    public function results(): Collection
+    {
+        $resultDomains = $this->tournament
+                                ->results
+                                ->map(fn($result) => TournamentResultDomain::fromEloquent($result, ['player']));
+
+
     }
 }

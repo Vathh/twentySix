@@ -65,4 +65,21 @@ class TournamentRepository
 
         return TournamentDomain::fromEloquent($tournament, ['season', 'pointScheme']);
     }
+
+    /**
+     * @throws Throwable
+     */
+    public function finishTournament(int $tournamentId): void
+    {
+        $tournament = Tournament::with(['games', 'playoffGames'])->findOrFail($tournamentId);
+
+        if($tournament->games->count() === 0 && $tournament->playoffGames->count() === 0) {
+            $this->changeStatus($tournamentId, TournamentStatus::FINISHED);
+        }
+    }
+
+    public function updatePointSchemeId(int $tournamentId, int $pointSchemeId): void
+    {
+        Tournament::where('id', $tournamentId)->update(['point_scheme_id' => $pointSchemeId]);
+    }
 }

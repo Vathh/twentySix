@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Domain\Tournament\TournamentDomain;
 use App\Models\Season;
 use App\Models\Tournament;
-use App\Queries\GetTournamentGroupResults;
+use App\Queries\GetTournamentData;
 use App\Services\PlayerService;
 use App\Services\Tournament\TournamentService;
 use Illuminate\Contracts\View\Factory;
@@ -18,8 +18,8 @@ class TournamentController extends Controller
 
     public function __construct(
         private TournamentService $tournamentService,
-        private PlayerService $playerService,
-        private GetTournamentGroupResults $getTournamentGroupResults,
+        private PlayerService     $playerService,
+        private GetTournamentData $getTournamentGroupResults,
     )
     {
     }
@@ -69,6 +69,7 @@ class TournamentController extends Controller
             'playoffGames' => $viewModel->playoffGames(),
             'groupNumbers' => $viewModel->groupNumbers(),
             'achievements' => $viewModel->achievements(),
+            'tab' => \request()->get('tab', 'results'),
         ]);
     }
 

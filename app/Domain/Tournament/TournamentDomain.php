@@ -92,8 +92,8 @@ class TournamentDomain
         return $this->status !==  TournamentStatus::CREATED;
     }
 
-    public function isPlayoff(): bool
+    public function hasPlayoffBracket(): bool
     {
-        return $this->status === TournamentStatus::PLAYOFF;
+        return in_array($this->status, [TournamentStatus::PLAYOFF, TournamentStatus::FINISHED]);
     }
 }

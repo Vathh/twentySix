@@ -3,11 +3,11 @@
 namespace App\Queries;
 
 use App\Models\Tournament;
-use App\ViewModels\TournamentResultsViewModel;
+use App\ViewModels\TournamentDataViewModel;
 
-class GetTournamentGroupResults
+class GetTournamentData
 {
-    public function get(int $tournamentId): TournamentResultsViewModel
+    public function get(int $tournamentId): TournamentDataViewModel
     {
         $tournament = Tournament::with([
             'season.league',
@@ -19,9 +19,10 @@ class GetTournamentGroupResults
             'playoffGames.player1',
             'playoffGames.player2',
             'playoffGames.winner',
-            'achievements.player'
+            'achievements.player',
+            'results.player'
         ])->findOrFail($tournamentId);
 
-        return new TournamentResultsViewModel($tournament);
+        return new TournamentDataViewModel($tournament);
     }
 }

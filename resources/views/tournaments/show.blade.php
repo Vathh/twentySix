@@ -40,114 +40,42 @@
                     </p>
                 </div>
 
-                @if($tournament->isStarted())
-                    @if($tournament->isPlayoff())
-                        @include('tournaments.partials.bracket', ['playoffGames' => $playoffGames])
-                    @endif
-                    <h2 class="text-center text-2xl font-bold text-light-green mb-8 tracking-wide mt-4">
-                        Grupy
-                    </h2>
-                    @foreach($groupNumbers as $number)
-                        <div class="overflow-x-auto rounded-lg p-4  bg-darker-bg border-border mt-10">
-                            <p class="text-center mb-3">Grupa {{ $number }}</p>
-                            <table class="border-collapse text-sm text-text-primary min-w-full">
-                                <thead>
-                                <tr class="bg-dark-bg text-text-muted hover:bg-thead-hover transition">
-                                    <th class="px-3 py-2 text-left">Zawodnik</th>
-                                    @foreach($players[$number] as $player)
-                                        <th class="px-2 py-2 text-center">{{ $player->name }}</th>
-                                    @endforeach
-                                    <th class="px-2 py-2 text-center">W</th>
-                                    <th class="px-2 py-2 text-center">L</th>
-                                    <th class="px-2 py-2 text-center">Legi</th>
-                                    <th class="px-2 py-2 text-center">Pkt</th>
-                                    <th class="px-2 py-2 text-center">Miejsce</th>
-                                </tr>
-                                </thead>
+                <div class="flex border-b border-white/10 mb-8">
+                    @php
+                        $tabs = [
+                            'results' => 'Wyniki',
+                            'playoff' => 'Playoff',
+                            'groups' => 'Grupy',
+                            'achievements' => 'Osiągnięcia',
+                        ];
+                    @endphp
 
-                                <tbody class="divide-y divide-border">
-                                @foreach($players[$number] as $rowPlayer)
-                                    <tr class="hover:bg-row-hover transition">
-                                        <td class="px-3 py-2 font-medium text-text-primary whitespace-nowrap">
-                                            {{ $rowPlayer->name }}
-                                        </td>
-
-                                        @foreach($players[$number] as $columnPlayer)
-                                            @if($rowPlayer->id === $columnPlayer->id)
-                                                <td class="px-2 py-2 text-center bg-dark-bg text-text-muted">
-                                                    X
-                                                </td>
-                                            @else
-                                                @if($games[$number][$rowPlayer->id][$columnPlayer->id]->isFinished())
-                                                    @if($rowPlayer->id === $games[$number][$rowPlayer->id][$columnPlayer->id]->player1->id)
-                                                        <td class="px-2 py-2 text-center">
-                                                            {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player1Score }}
-                                                            -
-                                                            {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player2Score }}
-                                                        </td>
-                                                    @else
-                                                        <td class="px-2 py-2 text-center">
-                                                            {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player2Score }}
-                                                            -
-                                                            {{ $games[$number][$rowPlayer->id][$columnPlayer->id]->player1Score }}
-                                                        </td>
-                                                    @endif
-                                                @else
-                                                    <td class="px-2 py-2 text-center bg-dark-bg text-text-muted">
-                                                        -
-                                                    </td>
-                                                @endif
-                                            @endif
-                                        @endforeach
-
-                                        <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->matchesWon }}</td>
-                                        <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->matchesLost }}</td>
-                                        <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->legsDifference }}</td>
-                                        <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->points }}</td>
-                                        <td class="px-2 py-2 text-center font-semibold text-light-green">{{ $groupStandings[$number][$rowPlayer->id]->place }}</td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                    @foreach($tabs as $key => $label)
+                        <a href="{{ route('tournaments.show', [$tournament->id, 'tab' => $key]) }}"
+                           class="px-5 py-3 text-sm font-semibold transition
+                  {{ $tab === $key
+                        ? 'border-b-2 border-light-green text-light-green'
+                        : 'text-text-muted hover:text-light-green' }}">
+                            {{ $label }}
+                        </a>
                     @endforeach
+                </div>
 
-                    <div class="overflow-x-auto rounded-lg p-4  bg-darker-bg border-border mt-10">
-                        <p class="text-center mb-3">Osiągnięcia</p>
-                        <table class="border-collapse text-sm text-text-primary min-w-full">
-                            <thead>
-                            <tr class="bg-dark-bg text-text-muted hover:bg-thead-hover transition">
-                                <th class="px-3 py-2 text-left">Zawodnik</th>
-                                <th class="px-2 py-2 text-center">180</th>
-                                <th class="px-2 py-2 text-center">170+</th>
-                                <th class="px-2 py-2 text-center">QF</th>
-                                <th class="px-2 py-2 text-center">HF</th>
-                            </tr>
-                            </thead>
-
-                            <tbody class="divide-y divide-border">
-                            @foreach($achievements as $playerAchievements)
-                                <tr class="hover:bg-row-hover transition">
-                                    <td class="px-3 py-2 font-medium text-text-primary whitespace-nowrap">
-                                        {{ $playerAchievements['player']->name }}
-                                    </td>
-                                    <td class="px-2 py-2 text-center">{{ $playerAchievements['max'] }}</td>
-                                    <td class="px-2 py-2 text-center">{{ $playerAchievements['one_seventy'] }}</td>
-                                    <td class="px-2 py-2 text-center flex-wrap">
-                                        @foreach($playerAchievements['qf'] as $achievement)
-                                            <span>{{ $achievement->value }},</span>
-                                        @endforeach
-                                    </td>
-                                    <td class="px-2 py-2 text-center flex-wrap">
-                                        @foreach($playerAchievements['hf'] as $achievement)
-                                            <span>{{ $achievement->value }},</span>
-                                        @endforeach
-                                    </td>
-                                </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                @if($tournament->isStarted())
+                    @if($tab === 'playoff')
+                        @if($tournament->hasPlayoffBracket())
+                            @include('tournaments.tabs.playoff', ['playoffGames' => $playoffGames])
+                        @endif
+                    @elseif($tab === 'groups')
+                        @include('tournaments.tabs.groups', ['groupNumbers' => $groupNumbers,
+                                                            'players' => $players,
+                                                            'games' => $games,
+                                                            'groupStandings' => $groupStandings])
+                    @elseif($tab === 'results')
+                        @include('tournaments.tabs.results')
+                    @elseif($tab === 'achievements')
+                        @include('tournaments.tabs.achievements', ['achievements' => $achievements])
+                    @endif
 
                 @endif
             </div>

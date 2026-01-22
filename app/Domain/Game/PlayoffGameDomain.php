@@ -4,6 +4,7 @@ namespace App\Domain\Game;
 
 use App\Domain\PlayerDomain;
 use App\Domain\Tournament\TournamentDomain;
+use App\DTO\GameResultDTO;
 use App\Enums\GameStatus;
 use App\Enums\GameStage;
 use App\Enums\PlayoffSlot;
@@ -139,17 +140,15 @@ class PlayoffGameDomain
         );
     }
 
-    public function checkUpdateDataAccuracy(int $player1Id,
-                                            int $player2Id,
-                                            int $winnerId): void
+    public function checkUpdateDataAccuracy(GameResultDTO $dto): void
     {
-        if( $player1Id !== $this->player1Id ||
-            $player2Id !== $this->player2Id)
+        if( $dto->player1Id !== $this->player1Id ||
+            $dto->player2Id !== $this->player2Id)
         {
             throw new DomainException('Nieprawidłowe id graczy.');
         }
 
-        if( !in_array($winnerId, [$this->player1Id, $this->player2Id]) )
+        if( !in_array($dto->winnerId, [$this->player1Id, $this->player2Id]) )
         {
             throw new DomainException('Id zwycięzcy nieprawidłowe');
         }
@@ -157,6 +156,19 @@ class PlayoffGameDomain
         if($this->status === GameStatus::FINISHED)
         {
             throw new DomainException('Mecz został już ukończony.');
+        }
+
+        if($dto->player1Score > $dto->player2Score)
+        {
+            if($dto->winnerId !== $this->player1Id)
+            {
+                throw new DomainException('Id zwycięzcy nieprawidłowe.');
+            }
+        } else {
+            if($dto->winnerId !== $this->player2Id)
+            {
+                throw new DomainException('Id zwycięzcy nieprawidłowe.');
+            }
         }
     }
 }

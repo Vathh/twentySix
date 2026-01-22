@@ -50,4 +50,9 @@ class Tournament extends Model
     {
         return $this->belongsTo(PointScheme::class, 'point_scheme_id');
     }
+
+    public function results(): HasMany
+    {
+        return $this->hasMany(TournamentResult::class);
+    }
 }

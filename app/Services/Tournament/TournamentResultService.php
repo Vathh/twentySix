@@ -34,7 +34,7 @@ class TournamentResultService
 
         $tournament = $this->tournamentRepository->findWithSeasonAndPointSchemeRules($tournamentId);
 
-        $results = $this->factory->createManyForGroup($tournament->pointScheme->rules, $tournament);
+        $results = $this->factory->createManyForGroup($standings, $tournament);
 
         $this->resultRepository->createMany($results->toArray());
     }

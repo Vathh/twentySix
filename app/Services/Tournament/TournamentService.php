@@ -8,6 +8,7 @@ use App\Repositories\GameRepository;
 use App\Repositories\GroupStandingRepository;
 use App\Repositories\TournamentRepository;
 use App\Services\LoginCodeService;
+use App\Services\PointSchemeService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -21,6 +22,7 @@ class TournamentService
         private GameRepository          $gameRepository,
         private GroupStandingRepository $groupStandingRepository,
         private LoginCodeService        $loginCodeService,
+        private PointSchemeService      $pointSchemeService
     )
     {
     }
@@ -43,6 +45,8 @@ class TournamentService
 
     public function tryCreateGroupGames(int $tournamentId, array $playerIds, int $groupsCount): bool
     {
+        $playersAmount = count($playerIds);
+
         $groups = $this->createGroups($playerIds, $groupsCount);
 
         $gamesToInsert = [];
@@ -64,8 +68,10 @@ class TournamentService
         }
 
         try {
-            return DB::transaction(function () use ($tournamentId, $gamesToInsert, $groups) {
-                if ($this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId)) {
+            return DB::transaction(function () use ($tournamentId, $gamesToInsert, $groups, $playersAmount) {
+                if ($this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId))
+                {
+                    $this->updatePointSchemeId($tournamentId, $playersAmount);
                     $this->groupStandingRepository->createEmptyStandings($tournamentId, $groups);
                     $this->gameRepository->createGames($gamesToInsert);
                     $this->loginCodeService->generateCodes(count($groups), $tournamentId);
@@ -75,7 +81,7 @@ class TournamentService
                 return false;
             });
         } catch (Throwable $e) {
-            throw new RuntimeException('Nie udało się stworzyć grup', 0, $e);
+            throw new RuntimeException('Nie udało się stworzyć grup', $e);
         }
     }
 
@@ -105,5 +111,12 @@ class TournamentService
         }
 
         return $result;
+    }
+
+    private function updatePointSchemeId(int $tournamentId, int $playersAmount): void
+    {
+        $pointScheme = $this->pointSchemeService->findByPlayersAmount($playersAmount);
+
+        $this->tournamentRepository->updatePointSchemeId($tournamentId, $pointScheme->id);
     }
 }
