@@ -13,12 +13,14 @@ class PlayerDomain
     /**
      * @param int $id
      * @param string $name
+     * @param int|null $userId
      * @param Collection<AchievementDomain> $achievements
      */
     public function __construct(
         public readonly int         $id,
         public readonly string      $name,
-        public readonly Collection $achievements
+        public readonly ?int        $userId = null,
+        public readonly Collection $achievements = null
     )
     {
     }
@@ -39,6 +41,7 @@ class PlayerDomain
         return new self(
             id: $player->id,
             name: $player->name,
+            userId: $player->user_id,
             achievements: in_array('achievements', $with)
                 ? $player->achievements->map(fn($achievement) => AchievementDomain::fromEloquent($achievement))->values()
                 : collect()

@@ -4,7 +4,9 @@ namespace App\Services;
 use App\Domain\LeagueDomain;
 use App\Domain\SeasonDomain;
 use App\Models\League;
+use App\Repositories\PlayerRepository;
 use App\Repositories\SeasonRepository;
+use App\Services\PlayerService;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -12,7 +14,11 @@ use Throwable;
 class SeasonService
 {
 
-    public function __construct(private SeasonRepository $seasonRepository)
+    public function __construct(
+        private SeasonRepository $seasonRepository,
+        private PlayerService $playerService,
+        private PlayerRepository $playerRepository
+    )
     {
     }
 
@@ -49,6 +55,33 @@ class SeasonService
 
     public function addRelatedUser(int $seasonId, int $userId): void
     {
+        // Pobierz gracza użytkownika (domenowy obiekt)
+        $playerDomain = $this->playerRepository->findByUserId($userId);
+        
+        // Pobierz sezon z ligą i gośćmi (domenowy obiekt)
+        $seasonDomain = $this->seasonRepository->findByIdWithLeagueAndGuests($seasonId);
+
+        // Jeśli użytkownik ma gracza (Player), sprawdź czy nie ma konfliktu z gościem
+        if ($playerDomain) {
+            $playerName = $playerDomain->name;
+
+            // Sprawdź gości w sezonie
+            $guestInSeason = $this->playerService->findGuestByName($playerName, $seasonId, null);
+            if ($guestInSeason) {
+                $newName = $this->playerService->generateUniqueGuestName($playerName, $seasonId, null);
+                $this->playerService->updateGuestName($guestInSeason->id, $newName);
+            }
+
+            // Sprawdź gości w lidze
+            if ($seasonDomain->league) {
+                $guestInLeague = $this->playerService->findGuestByName($playerName, null, $seasonDomain->league->id);
+                if ($guestInLeague) {
+                    $newName = $this->playerService->generateUniqueGuestName($playerName, null, $seasonDomain->league->id);
+                    $this->playerService->updateGuestName($guestInLeague->id, $newName);
+                }
+            }
+        }
+
         $this->seasonRepository->addRelatedUser($seasonId, $userId);
     }
 

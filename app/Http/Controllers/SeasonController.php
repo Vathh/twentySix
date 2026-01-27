@@ -203,7 +203,7 @@ class SeasonController extends Controller
                 'required',
                 'string',
                 'max:20',
-                new UniquePlayerInSeasonAndLeague($seasonId, $season->league->id),
+                new \App\Rules\UniquePlayerNameInSeason($seasonId, $season->league->id),
             ],
         ]);
 

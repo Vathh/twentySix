@@ -6,11 +6,9 @@ use App\Domain\PlayerDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameStatus;
 use App\Models\Game;
-use DomainException;
 
-class GroupGameDomain
+class GroupGameDomain extends GameDomain
 {
-
     /**
      * @param int $id
      * @param TournamentDomain|null $tournament
@@ -23,17 +21,26 @@ class GroupGameDomain
      * @param GameStatus $status
      */
     public function __construct(
-        public readonly int $id,
+        int $id,
         public readonly ?TournamentDomain $tournament,
-        public readonly ?PlayerDomain $player1,
-        public readonly ?PlayerDomain $player2,
-        public readonly int $player1Score,
-        public readonly int $player2Score,
-        public readonly ?PlayerDomain $winner,
+        ?PlayerDomain $player1,
+        ?PlayerDomain $player2,
+        int $player1Score,
+        int $player2Score,
+        ?PlayerDomain $winner,
         public readonly int $groupNumber,
-        public readonly GameStatus $status
+        GameStatus $status
     )
     {
+        parent::__construct(
+            id: $id,
+            player1: $player1,
+            player2: $player2,
+            player1Score: $player1Score,
+            player2Score: $player2Score,
+            winner: $winner,
+            status: $status
+        );
     }
 
     /**
@@ -45,58 +52,35 @@ class GroupGameDomain
     {
         $game->loadMissing(array_intersect($with, ['tournament', 'player1', 'player2', 'winner']));
 
+        $player1 = in_array('player1', $with) && $game->player1
+            ? PlayerDomain::fromEloquent($game->player1)
+            : null;
+        $player2 = in_array('player2', $with) && $game->player2
+            ? PlayerDomain::fromEloquent($game->player2)
+            : null;
+        $winner = in_array('winner', $with) && $game->winner
+            ? PlayerDomain::fromEloquent($game->winner)
+            : null;
+
         return new self(
             id: $game->id,
-            tournament: in_array('tournament', $with)
+            tournament: in_array('tournament', $with) && $game->tournament
                 ? TournamentDomain::fromEloquent($game->tournament)
                 : null,
-            player1: in_array('player1', $with)
-                ? PlayerDomain::fromEloquent($game->player1)
-                : null,
-            player2: in_array('player2', $with)
-                ? PlayerDomain::fromEloquent($game->player2)
-                : null,
-            player1Score: $game->player1_score,
-            player2Score: $game->player2_score,
-            winner: in_array('winner', $with) && $game->winner
-                ? PlayerDomain::fromEloquent($game->winner)
-                : null,
+            player1: $player1,
+            player2: $player2,
+            player1Score: $game->player1_score ?? 0,
+            player2Score: $game->player2_score ?? 0,
+            winner: $winner,
             groupNumber: $game->group_number,
             status: $game->status
         );
     }
 
-    /**
-     * @return array
-     */
-    public function playerIds(): array
+    public function checkUpdateDataAccuracy(int $player1Id, int $player2Id, int $winnerId): void
     {
-        return [$this->player1->id, $this->player2->id];
-    }
-
-    public function isFinished(): bool
-    {
-        return $this->status === GameStatus::FINISHED;
-    }
-
-    public function checkUpdateDataAccuracy(int $player1Id,
-                                            int $player2Id,
-                                            int $winnerId): void
-    {
-        if( $player1Id !== $this->player1->id ||
-            $player2Id !== $this->player2->id)
-        {
-            throw new DomainException('Nieprawidłowe id graczy.');
-        }
-
-        if( !in_array($winnerId, [$this->player1->id, $this->player2->id]) )
-        {
-            throw new DomainException('Id zwycięzcy nieprawidłowe');
-        }
-
-        if($this->status === GameStatus::FINISHED)
-        {
-            throw new DomainException('Mecz został już ukończony.');
-        }
+        $this->validatePlayers($player1Id, $player2Id);
+        $this->validateWinner($winnerId);
+        $this->validateNotFinished();
     }
 }

@@ -9,7 +9,7 @@ class GameAchievementDTO
 
     public function __construct(
         public int             $playerId,
-        public int             $tournamentId,
+        public ?int            $tournamentId,
         public ?int            $value,
         public AchievementType $type,
     )
@@ -20,7 +20,7 @@ class GameAchievementDTO
     {
         return new self(
             playerId: $data['playerId'],
-            tournamentId: $data['tournamentId'],
+            tournamentId: $data['tournamentId'] ?? null,
             value: $data['value'] ?? null,
             type: AchievementType::from($data['type'])
         );

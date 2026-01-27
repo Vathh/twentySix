@@ -82,4 +82,14 @@ class LeagueRepository
             'description' => $description
         ]);
     }
+
+    /**
+     * @param int $leagueId
+     * @return LeagueDomain
+     */
+    public function findByIdWithGuests(int $leagueId): LeagueDomain
+    {
+        $league = League::with('guests')->findOrFail($leagueId);
+        return LeagueDomain::fromEloquent($league, ['guests']);
+    }
 }

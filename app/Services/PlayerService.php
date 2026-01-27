@@ -43,4 +43,40 @@ class PlayerService
             return collect();
         }
     }
+
+    /**
+     * Zmienia nazwę gościa, aby uniknąć konfliktu z zarejestrowanym graczem
+     * @param int $playerId
+     * @param string $newName
+     * @return void
+     */
+    public function updateGuestName(int $playerId, string $newName): void
+    {
+        $this->playerRepository->updateGuestName($playerId, $newName);
+    }
+
+    /**
+     * Znajduje gościa o danej nazwie w sezonie lub lidze
+     * @param string $name
+     * @param int|null $seasonId
+     * @param int|null $leagueId
+     * @return PlayerDomain|null
+     */
+    public function findGuestByName(string $name, ?int $seasonId = null, ?int $leagueId = null): ?PlayerDomain
+    {
+        return $this->playerRepository->findGuestByName($name, $seasonId, $leagueId);
+    }
+
+    /**
+     * Generuje unikalną nazwę dla gościa
+     * Format: "Tomek", "Tomek 1", "Tomek 2", itd.
+     * @param string $baseName
+     * @param int|null $seasonId
+     * @param int|null $leagueId
+     * @return string
+     */
+    public function generateUniqueGuestName(string $baseName, ?int $seasonId = null, ?int $leagueId = null): string
+    {
+        return $this->playerRepository->generateUniqueGuestName($baseName, $seasonId, $leagueId);
+    }
 }

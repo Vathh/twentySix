@@ -4,12 +4,16 @@ namespace App\Services;
 
 use App\Domain\LeagueDomain;
 use App\Repositories\LeagueRepository;
+use App\Repositories\PlayerRepository;
+use App\Services\PlayerService;
 use Illuminate\Support\Collection;
 
 class LeagueService
 {
     public function __construct(
-        private LeagueRepository $leagueRepository
+        private LeagueRepository $leagueRepository,
+        private PlayerService $playerService,
+        private PlayerRepository $playerRepository
     )
     {
     }
@@ -37,6 +41,24 @@ class LeagueService
 
     public function addRelatedUser(int $leagueId, int $userId): void
     {
+        // Pobierz gracza użytkownika (domenowy obiekt)
+        $playerDomain = $this->playerRepository->findByUserId($userId);
+        
+        // Pobierz ligę z gośćmi (domenowy obiekt)
+        $leagueDomain = $this->leagueRepository->findByIdWithGuests($leagueId);
+
+        // Jeśli użytkownik ma gracza (Player), sprawdź czy nie ma konfliktu z gościem
+        if ($playerDomain) {
+            $playerName = $playerDomain->name;
+
+            // Sprawdź gości w lidze
+            $guestInLeague = $this->playerService->findGuestByName($playerName, null, $leagueId);
+            if ($guestInLeague) {
+                $newName = $this->playerService->generateUniqueGuestName($playerName, null, $leagueId);
+                $this->playerService->updateGuestName($guestInLeague->id, $newName);
+            }
+        }
+
         $this->leagueRepository->addRelatedUser($leagueId, $userId);
     }
 

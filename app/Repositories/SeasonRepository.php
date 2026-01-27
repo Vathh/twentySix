@@ -85,4 +85,14 @@ class SeasonRepository
         $season = Season::findOrFail($seasonId);
         $season->admins()->detach($userId);
     }
+
+    /**
+     * @param int $seasonId
+     * @return SeasonDomain
+     */
+    public function findByIdWithLeagueAndGuests(int $seasonId): SeasonDomain
+    {
+        $season = Season::with(['league', 'guests'])->findOrFail($seasonId);
+        return SeasonDomain::fromEloquent($season, ['league', 'guests']);
+    }
 }

@@ -11,7 +11,7 @@ class AchievementsRepository
     {
         $mapped = array_map(fn (GameAchievementDTO $dto) => [
                                 'player_id' => $dto->playerId,
-                                "tournament_id" => $dto->tournamentId,
+                                "tournament_id" => $dto->tournamentId, // null dla szybkich meczów
                                 "value" => $dto->value,
                                 "type" => $dto->type,
                                 'created_at' => now(),

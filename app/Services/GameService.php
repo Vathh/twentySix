@@ -12,6 +12,8 @@ use App\Repositories\GameRepository;
 use App\Repositories\PlayoffGameRepository;
 use App\Repositories\TournamentRepository;
 use App\Services\Tournament\TournamentResultService;
+use App\Services\MatchLegService;
+use App\Services\QuickGameService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -27,6 +29,8 @@ class GameService
         private PlayoffService       $playoffService,
         private TournamentRepository $tournamentRepository,
         private TournamentResultService  $tournamentResultService,
+        private MatchLegService      $matchLegService,
+        private QuickGameService    $quickGameService,
     )
     {
     }
@@ -44,6 +48,9 @@ class GameService
         }else if($dto->gameResultDTO->type === GameType::GROUP)
         {
             return $this->handleGroupGameUpdate($dto);
+        }else if($dto->gameResultDTO->type === GameType::QUICK_MATCH)
+        {
+            return $this->quickGameService->updateQuickGame($dto);
         }
 
         return false;
@@ -161,6 +168,15 @@ class GameService
 
                 $this->achievementsService->createMany($dto->achievementsDTOs);
 
+                // Zapisz szczegóły legów jeśli są dostępne
+                if (!empty($dto->legsDTOs)) {
+                    $this->matchLegService->createMany(
+                        $dto->legsDTOs,
+                        gameId: null,
+                        playoffGameId: $gameToUpdate->id
+                    );
+                }
+
             });
 
             return true;
@@ -183,6 +199,15 @@ class GameService
                 $this->achievementsService->createMany($dto->achievementsDTOs);
                 $this->groupStandingService->updateGroupStandings($dto->gameResultDTO->tournamentId,
                                                                     $dto->gameResultDTO->groupNumber);
+
+                // Zapisz szczegóły legów jeśli są dostępne
+                if (!empty($dto->legsDTOs)) {
+                    $this->matchLegService->createMany(
+                        $dto->legsDTOs,
+                        gameId: $dto->gameResultDTO->gameId,
+                        playoffGameId: null
+                    );
+                }
 
                 $this->handlePlayoffStart($dto->gameResultDTO->tournamentId);
 

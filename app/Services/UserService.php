@@ -3,13 +3,16 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Repositories\UserRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class UserService
 {
 
-    public function __construct()
+    public function __construct(
+        private UserRepository $userRepository
+    )
     {
     }
 
@@ -59,5 +62,17 @@ class UserService
         }else {
             return collect();
         }
+    }
+
+    /**
+     * Wyszukuje użytkowników po nazwie gracza (dla API)
+     * @param string $searchTerm
+     * @param int $excludeUserId
+     * @param int $limit
+     * @return Collection
+     */
+    public function searchByPlayerName(string $searchTerm, int $excludeUserId, int $limit = 20): Collection
+    {
+        return $this->userRepository->searchByPlayerName($searchTerm, $excludeUserId, $limit);
     }
 }

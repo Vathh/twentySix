@@ -201,8 +201,7 @@ class LeagueController extends Controller
                 'required',
                 'string',
                 'max:20',
-                Rule::unique('players', 'name')
-                    ->where('league_id', $leagueId),
+                new \App\Rules\UniquePlayerNameInLeague($leagueId),
             ],
         ]);
 
