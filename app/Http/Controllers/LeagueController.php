@@ -7,6 +7,7 @@ use App\Enums\AssignableEntityType;
 use App\Models\League;
 use App\Models\User;
 use App\Services\LeagueService;
+use App\Services\LeagueStatsService;
 use App\Services\PlayerService;
 use App\Services\UserService;
 use Illuminate\Contracts\View\Factory;
@@ -20,9 +21,10 @@ class LeagueController extends Controller
 {
     public function __construct(
         private LeagueService $leagueService,
+        private LeagueStatsService $leagueStatsService,
         private UserService $userService,
         private PlayerService $playerService
-    ){
+    ) {
         $this->authorizeResource(League::class, 'league');
     }
 
@@ -59,9 +61,12 @@ class LeagueController extends Controller
             ->sortByDesc(fn($season) => $season->updatedAt)
             ->values();
 
+        $standings = $this->leagueStatsService->getTop40($league->id);
+
         return view('leagues.show', [
             'league' => $leagueDomain,
-            'seasons' => $seasons
+            'seasons' => $seasons,
+            'standings' => $standings,
         ]);
     }
 
