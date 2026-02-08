@@ -8,6 +8,7 @@ use App\Rules\UniquePlayerNameForRegistered;
 use App\Services\PlayerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthController
@@ -79,13 +80,35 @@ class AuthController
         ], 201);
     }
 
-    public function login(Request $request)
+    /**
+     * Logowanie na konto gracza (email + hasło). Zwraca token do użycia w API.
+     * Używane w aplikacji mobilnej przy „Zaloguj się”.
+     */
+    public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'email' => 'required|string|email',
-            'password' => 'required|string|max:30',
+            'password' => 'required|string|max:255',
         ]);
 
+        $user = User::where('email', $validated['email'])->first();
 
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
+            return response()->json([
+                'message' => 'Nieprawidłowy email lub hasło',
+            ], 401);
+        }
+
+        $token = $user->createToken('mobile-app')->plainTextToken;
+        $user->load('player');
+
+        return response()->json([
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'email' => $user->email,
+                'name' => $user->player->name ?? null,
+            ],
+        ]);
     }
 }

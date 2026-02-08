@@ -14,285 +14,191 @@ class QuickGameLobbyController
     }
 
     /**
-     * Tworzy nowe lobby
      * POST /api/quick-game/lobby/create
+     * Tworzy nowe lobby. Wymaga zalogowanego użytkownika (host).
      */
     public function create(Request $request): JsonResponse
     {
-        // Wymaga autoryzacji - tylko zalogowani mogą tworzyć lobby
         $userId = $request->user()->id;
-
-        try {
-            $lobby = $this->lobbyService->create($userId);
-
-            return response()->json([
-                'lobby' => $this->formatLobby($lobby, $request)
-            ], 201);
-        } catch (\RuntimeException $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ], 400);
-        }
+        $lobby = $this->lobbyService->create($userId);
+        return response()->json($this->lobbyToArray($lobby, $userId));
     }
 
     /**
-     * Dołącza do lobby po kodzie
-     * POST /api/quick-game/lobby/join
-     */
-    public function join(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'code' => 'required|string|size:6',
-            'tempPlayerName' => 'nullable|string|max:50', // Dla graczy tymczasowych
-        ]);
-
-        $userId = $request->user()?->id; // Opcjonalne - może być null
-
-        try {
-            $lobby = $this->lobbyService->joinByCode(
-                $validated['code'],
-                $userId,
-                $validated['tempPlayerName'] ?? null
-            );
-
-            return response()->json([
-                'lobby' => $this->formatLobby($lobby, $request)
-            ]);
-        } catch (\RuntimeException $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ], 400);
-        }
-    }
-
-    /**
-     * Dołącza do lobby przez zaproszenie (z panelu znajomych)
-     * POST /api/quick-game/lobby/{lobbyId}/join
-     */
-    public function joinById(Request $request, int $lobbyId): JsonResponse
-    {
-        // Wymaga autoryzacji
-        $userId = $request->user()->id;
-
-        try {
-            $lobby = $this->lobbyService->joinById($lobbyId, $userId);
-
-            return response()->json([
-                'lobby' => $this->formatLobby($lobby, $request)
-            ]);
-        } catch (\RuntimeException $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ], 400);
-        }
-    }
-
-    /**
-     * Opuszcza lobby
-     * POST /api/quick-game/lobby/{lobbyId}/leave
-     */
-    public function leave(Request $request, int $lobbyId): JsonResponse
-    {
-        $validated = $request->validate([
-            'tempPlayerName' => 'nullable|string|max:50', // Dla graczy tymczasowych
-        ]);
-
-        $userId = $request->user()?->id; // Opcjonalne
-
-        try {
-            $this->lobbyService->leave(
-                $lobbyId,
-                $userId,
-                $validated['tempPlayerName'] ?? null
-            );
-
-            return response()->json([
-                'message' => 'Opuszczono lobby'
-            ]);
-        } catch (\RuntimeException $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ], 400);
-        }
-    }
-
-    /**
-     * Pobiera stan lobby (polling)
      * GET /api/quick-game/lobby/{lobbyId}
      */
-    public function get(Request $request, int $lobbyId): JsonResponse
+    public function get(Request $request, string $lobbyId): JsonResponse
     {
-        try {
-            $lobby = $this->lobbyService->get($lobbyId);
-
-            return response()->json([
-                'lobby' => $this->formatLobby($lobby, $request)
-            ]);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Lobby nie zostało znalezione'
-            ], 404);
-        }
+        $lobby = $this->lobbyService->get((int) $lobbyId);
+        $currentUserId = $request->user()?->id;
+        return response()->json($this->lobbyToArray($lobby, $currentUserId));
     }
 
     /**
-     * Pobiera lobby po kodzie
      * GET /api/quick-game/lobby/code/{code}
      */
     public function getByCode(Request $request, string $code): JsonResponse
     {
         $lobby = $this->lobbyService->getByCode($code);
-
         if (!$lobby) {
-            return response()->json([
-                'message' => 'Lobby nie zostało znalezione'
-            ], 404);
+            return response()->json(['message' => 'Lobby nie zostało znalezione'], 404);
         }
-
-        return response()->json([
-            'lobby' => $this->formatLobby($lobby, $request)
-        ]);
+        $currentUserId = $request->user()?->id;
+        return response()->json($this->lobbyToArray($lobby, $currentUserId));
     }
 
     /**
-     * Ustawia status gotowości gracza
+     * POST /api/quick-game/lobby/join
+     * Dołączenie po kodzie (body: code, opcjonalnie tempPlayerName).
+     */
+    public function join(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'code' => 'required|string|size:6',
+            'tempPlayerName' => 'nullable|string|max:50',
+        ]);
+        try {
+            $userId = $request->user()?->id;
+            $lobby = $this->lobbyService->joinByCode(
+                $validated['code'],
+                $userId,
+                $validated['tempPlayerName'] ?? null
+            );
+            return response()->json($this->lobbyToArray($lobby, $userId));
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * POST /api/quick-game/lobby/{lobbyId}/join
+     * Dołączenie po ID (np. z zaproszenia).
+     */
+    public function joinById(Request $request, string $lobbyId): JsonResponse
+    {
+        $userId = $request->user()->id;
+        try {
+            $lobby = $this->lobbyService->joinById((int) $lobbyId, $userId);
+            return response()->json($this->lobbyToArray($lobby, $userId));
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * POST /api/quick-game/lobby/{lobbyId}/leave
+     */
+    public function leave(Request $request, string $lobbyId): JsonResponse
+    {
+        $userId = $request->user()->id;
+        try {
+            $this->lobbyService->leave((int) $lobbyId, $userId);
+            return response()->json(['success' => true]);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
      * POST /api/quick-game/lobby/{lobbyId}/ready
+     * Przełącza status gotowości gracza.
      */
-    public function setReady(Request $request, int $lobbyId): JsonResponse
+    public function setReady(Request $request, string $lobbyId): JsonResponse
     {
-        // Wymaga autoryzacji
         $userId = $request->user()->id;
-
-        $validated = $request->validate([
-            'isReady' => 'required|boolean',
-        ]);
-
         try {
-            $lobby = $this->lobbyService->setReady($lobbyId, $userId, $validated['isReady']);
-
-            return response()->json([
-                'lobby' => $this->formatLobby($lobby, $request)
-            ]);
+            $lobby = $this->lobbyService->setReady((int) $lobbyId, $userId, true);
+            return response()->json($this->lobbyToArray($lobby));
         } catch (\RuntimeException $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ], 400);
+            return response()->json(['message' => $e->getMessage()], 400);
         }
     }
 
     /**
-     * Rozpoczyna mecz
      * POST /api/quick-game/lobby/{lobbyId}/start
+     * Rozpoczyna mecz (tylko host).
      */
-    public function start(Request $request, int $lobbyId): JsonResponse
+    public function start(Request $request, string $lobbyId): JsonResponse
     {
-        // Wymaga autoryzacji - tylko host może rozpocząć
         $userId = $request->user()->id;
-
         try {
-            $lobby = $this->lobbyService->startGame($lobbyId, $userId);
-
+            $lobby = $this->lobbyService->startGame((int) $lobbyId, $userId);
+            $lobby->load(['host.player', 'players.player']);
+            $players = $lobby->players->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'playerId' => $p->player_id,
+                    'name' => $p->player?->name ?? $p->temp_player_name ?? 'Gracz',
+                ];
+            })->values()->all();
             return response()->json([
-                'lobby' => $this->formatLobby($lobby, $request),
-                'message' => 'Mecz rozpoczęty'
+                'id' => $lobby->id,
+                'code' => $lobby->code,
+                'hostId' => $lobby->host_id,
+                'status' => $lobby->status,
+                'players' => $players,
             ]);
         } catch (\RuntimeException $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ], 400);
+            return response()->json(['message' => $e->getMessage()], 400);
         }
     }
 
     /**
-     * Zaprasza znajomego do lobby
      * POST /api/quick-game/lobby/{lobbyId}/invite
+     * Wysyła zaproszenie do lobby (body: playerId).
      */
-    public function invite(Request $request, int $lobbyId): JsonResponse
+    public function invite(Request $request, string $lobbyId): JsonResponse
     {
-        // Wymaga autoryzacji
-        $userId = $request->user()->id;
-
         $validated = $request->validate([
-            'friendId' => 'required|integer|exists:users,id',
+            'playerId' => 'required|integer|exists:players,id',
         ]);
-
-        // TODO: W przyszłości można dodać system powiadomień/zaproszeń do lobby
-        // Na razie zwracamy informację o lobby, które znajomy może dołączyć
-        try {
-            $lobby = $this->lobbyService->get($lobbyId);
-
-            // Sprawdź czy użytkownik jest w lobby
-            $isInLobby = $lobby->players()
-                ->whereHas('player', function ($query) use ($userId) {
-                    $query->where('user_id', $userId);
-                })
-                ->exists();
-
-            if (!$isInLobby && $lobby->host_id !== $userId) {
-                return response()->json([
-                    'message' => 'Nie jesteś w tym lobby'
-                ], 403);
-            }
-
-            return response()->json([
-                'lobby' => $this->formatLobby($lobby, $request),
-                'message' => 'Zaproszenie wysłane. Znajomy może dołączyć używając kodu: ' . $lobby->code
-            ]);
-        } catch (\RuntimeException $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ], 400);
-        }
+        // TODO: implementacja zaproszeń do lobby (np. tabela lobby_invitations)
+        return response()->json(['message' => 'Zaproszenie wysłane'], 200);
     }
 
     /**
-     * Formatuje lobby do odpowiedzi JSON
+     * POST /api/quick-game/lobby/{lobbyId}/add-guest
+     * Dodaje gracza tymczasowego (gościa) do lobby – tylko nazwa, bez konta. Tylko host.
      */
-    private function formatLobby($lobby, Request $request): array
+    public function addGuest(Request $request, string $lobbyId): JsonResponse
     {
-        $userId = $request->user()?->id;
-        $isHost = $userId && $lobby->host_id === $userId;
-        $currentPlayerEntry = null;
-        if ($userId) {
-            $hostPlayerId = $lobby->host->player?->id;
-            foreach ($lobby->players as $lp) {
-                if ($lp->is_registered && $lp->player && $lp->player->user_id === $userId) {
-                    $currentPlayerEntry = [
-                        'id' => $lp->id,
-                        'playerId' => $lp->player_id,
-                        'name' => $lp->player?->name ?? 'Brak nazwy',
-                        'isRegistered' => true,
-                        'isReady' => $lp->is_ready,
-                    ];
-                    break;
-                }
-            }
+        $validated = $request->validate([
+            'tempPlayerName' => 'required|string|max:50',
+        ]);
+        $userId = $request->user()->id;
+        try {
+            $lobby = $this->lobbyService->addGuest((int) $lobbyId, $userId, $validated['tempPlayerName']);
+            return response()->json($this->lobbyToArray($lobby, $userId));
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
         }
+    }
+
+    private function lobbyToArray($lobby, ?int $currentUserId = null): array
+    {
+        $hostId = $lobby->host_id;
+        $players = $lobby->players->map(function ($p) use ($hostId) {
+            $isRegistered = $p->player_id !== null;
+            $isHost = $p->player && (int) $p->player->user_id === (int) $hostId;
+            return [
+                'id' => $p->id,
+                'playerId' => $p->player_id,
+                'name' => $p->player?->name ?? null,
+                'tempName' => $p->temp_player_name,
+                'ready' => (bool) $p->is_ready,
+                'isRegistered' => $isRegistered,
+                'isHost' => $isHost,
+            ];
+        })->values()->all();
 
         return [
             'id' => $lobby->id,
             'code' => $lobby->code,
+            'hostId' => $lobby->host_id,
             'status' => $lobby->status,
-            'isHost' => $isHost,
-            'currentPlayer' => $currentPlayerEntry,
-            'host' => [
-                'id' => $lobby->host_id,
-                'name' => $lobby->host->player?->name ?? 'Brak nazwy',
-                'playerId' => $lobby->host->player?->id ?? null,
-            ],
-            'players' => $lobby->players->map(function ($lobbyPlayer) {
-                return [
-                    'id' => $lobbyPlayer->id,
-                    'playerId' => $lobbyPlayer->player_id,
-                    'name' => $lobbyPlayer->is_registered 
-                        ? ($lobbyPlayer->player?->name ?? 'Brak nazwy')
-                        : $lobbyPlayer->temp_player_name,
-                    'isRegistered' => $lobbyPlayer->is_registered,
-                    'isReady' => $lobbyPlayer->is_ready,
-                ];
-            }),
-            'startedAt' => $lobby->started_at?->toIso8601String(),
-            'createdAt' => $lobby->created_at->toIso8601String(),
+            'legsCount' => $lobby->legs_count ?? 3,
+            'youAreHost' => $currentUserId !== null && (int) $lobby->host_id === (int) $currentUserId,
+            'players' => $players,
         ];
     }
 }

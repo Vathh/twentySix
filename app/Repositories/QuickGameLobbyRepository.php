@@ -4,39 +4,24 @@ namespace App\Repositories;
 
 use App\Models\QuickGameLobby;
 use App\Models\QuickGameLobbyPlayer;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class QuickGameLobbyRepository
 {
-    /**
-     * Tworzy nowe lobby
-     * @param int $hostId ID użytkownika tworzącego lobby
-     * @return QuickGameLobby
-     */
-    public function create(int $hostId): QuickGameLobby
+    public function create(int $hostUserId): QuickGameLobby
     {
         return QuickGameLobby::create([
-            'host_id' => $hostId,
+            'host_id' => $hostUserId,
             'status' => 'waiting',
         ]);
     }
 
-    /**
-     * Znajduje lobby po ID
-     * @param int $lobbyId
-     * @return QuickGameLobby
-     */
     public function find(int $lobbyId): QuickGameLobby
     {
         return QuickGameLobby::with(['host.player', 'players.player'])
             ->findOrFail($lobbyId);
     }
 
-    /**
-     * Znajduje lobby po kodzie
-     * @param string $code
-     * @return QuickGameLobby|null
-     */
     public function findByCode(string $code): ?QuickGameLobby
     {
         return QuickGameLobby::with(['host.player', 'players.player'])
@@ -44,34 +29,9 @@ class QuickGameLobbyRepository
             ->first();
     }
 
-    /**
-     * Dodaje gracza do lobby
-     * @param int $lobbyId
-     * @param int|null $playerId ID gracza (null dla tymczasowego)
-     * @param string|null $tempPlayerName Nazwa gracza tymczasowego
-     * @param bool $isRegistered
-     * @return QuickGameLobbyPlayer
-     */
-    public function addPlayer(int $lobbyId, ?int $playerId, ?string $tempPlayerName = null, bool $isRegistered = true): QuickGameLobbyPlayer
+    public function addPlayer(int $lobbyId, ?int $playerId, ?string $tempPlayerName, bool $isRegistered): void
     {
-        // Sprawdź czy gracz już jest w lobby (tylko dla zarejestrowanych)
-        if ($isRegistered && $playerId) {
-            $existing = QuickGameLobbyPlayer::where('lobby_id', $lobbyId)
-                ->where('player_id', $playerId)
-                ->first();
-
-            if ($existing) {
-                throw new \RuntimeException('Gracz już jest w lobby');
-            }
-        }
-
-        // Sprawdź limit graczy (max 6)
-        $playersCount = QuickGameLobbyPlayer::where('lobby_id', $lobbyId)->count();
-        if ($playersCount >= 6) {
-            throw new \RuntimeException('Lobby jest pełne (max 6 graczy)');
-        }
-
-        return QuickGameLobbyPlayer::create([
+        QuickGameLobbyPlayer::create([
             'lobby_id' => $lobbyId,
             'player_id' => $playerId,
             'temp_player_name' => $tempPlayerName,
@@ -80,70 +40,43 @@ class QuickGameLobbyRepository
         ]);
     }
 
-    /**
-     * Usuwa gracza z lobby
-     * @param int $lobbyId
-     * @param int|null $playerId ID gracza (null dla tymczasowego - wtedy użyj tempPlayerName)
-     * @param string|null $tempPlayerName Nazwa gracza tymczasowego
-     * @return void
-     */
-    public function removePlayer(int $lobbyId, ?int $playerId, ?string $tempPlayerName = null): void
+    public function removePlayer(int $lobbyId, ?int $playerId, ?string $tempPlayerName): void
     {
         $query = QuickGameLobbyPlayer::where('lobby_id', $lobbyId);
-
-        if ($playerId) {
+        if ($playerId !== null) {
             $query->where('player_id', $playerId);
-        } elseif ($tempPlayerName) {
-            $query->where('temp_player_name', $tempPlayerName)
-                  ->whereNull('player_id');
+        } elseif ($tempPlayerName !== null) {
+            $query->where('temp_player_name', $tempPlayerName);
         } else {
-            throw new \RuntimeException('Musisz podać playerId lub tempPlayerName');
+            return;
         }
-
-        $deleted = $query->delete();
-
-        if ($deleted === 0) {
-            throw new \RuntimeException('Gracz nie został znaleziony w lobby');
-        }
+        $query->delete();
     }
 
-    /**
-     * Ustawia status gotowości gracza
-     * @param int $lobbyId
-     * @param int|null $playerId
-     * @param bool $isReady
-     * @return void
-     */
-    public function setPlayerReady(int $lobbyId, ?int $playerId, bool $isReady): void
+    public function delete(int $lobbyId): void
+    {
+        QuickGameLobbyPlayer::where('lobby_id', $lobbyId)->delete();
+        QuickGameLobby::destroy($lobbyId);
+    }
+
+    public function setPlayerReady(int $lobbyId, int $playerId, bool $isReady): void
     {
         QuickGameLobbyPlayer::where('lobby_id', $lobbyId)
             ->where('player_id', $playerId)
             ->update(['is_ready' => $isReady]);
     }
 
-    /**
-     * Rozpoczyna mecz (zmienia status lobby na 'in_progress')
-     * @param int $lobbyId
-     * @return QuickGameLobby
-     */
     public function startGame(int $lobbyId): QuickGameLobby
     {
-        $lobby = QuickGameLobby::findOrFail($lobbyId);
-        $lobby->update([
-            'status' => 'in_progress',
-            'started_at' => now(),
-        ]);
-
-        return $lobby->fresh(['host.player', 'players.player']);
-    }
-
-    /**
-     * Usuwa lobby
-     * @param int $lobbyId
-     * @return void
-     */
-    public function delete(int $lobbyId): void
-    {
-        QuickGameLobby::destroy($lobbyId);
+        $this->find($lobbyId); // ensure lobby exists
+        $now = now();
+        DB::table('quick_game_lobbies')
+            ->where('id', $lobbyId)
+            ->update([
+                'status' => 'started',
+                'started_at' => $now,
+                'updated_at' => $now,
+            ]);
+        return $this->find($lobbyId);
     }
 }

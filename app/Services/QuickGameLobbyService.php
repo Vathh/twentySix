@@ -138,6 +138,42 @@ class QuickGameLobbyService
     }
 
     /**
+     * Dodaje gracza tymczasowego (gościa) do lobby – bez konta, tylko nazwa.
+     * Tylko host może dodawać gości. Dla kogoś, kto stoi obok i chce zagrać bez rejestracji.
+     *
+     * @param int $lobbyId
+     * @param int $hostUserId ID hosta (tylko host może dodać gościa)
+     * @param string $tempPlayerName Nazwa wyświetlana gościa
+     * @return QuickGameLobby
+     */
+    public function addGuest(int $lobbyId, int $hostUserId, string $tempPlayerName): QuickGameLobby
+    {
+        $lobby = $this->lobbyRepository->find($lobbyId);
+
+        if ($lobby->host_id !== $hostUserId) {
+            throw new \RuntimeException('Tylko host może dodawać gości do lobby');
+        }
+
+        if ($lobby->status !== 'waiting') {
+            throw new \RuntimeException('Lobby nie przyjmuje już graczy');
+        }
+
+        $name = trim($tempPlayerName);
+        if ($name === '') {
+            throw new \RuntimeException('Podaj nazwę gracza');
+        }
+
+        $playersCount = $lobby->players()->count();
+        if ($playersCount >= 6) {
+            throw new \RuntimeException('W lobby może być maksymalnie 6 graczy');
+        }
+
+        $this->lobbyRepository->addPlayer($lobby->id, null, $name, false);
+
+        return $lobby->fresh(['host.player', 'players.player']);
+    }
+
+    /**
      * Ustawia status gotowości gracza
      * @param int $lobbyId
      * @param int $userId
@@ -178,6 +214,20 @@ class QuickGameLobbyService
         $playersCount = $lobby->players()->count();
         if ($playersCount < 2) {
             throw new \RuntimeException('Musi być co najmniej 2 graczy');
+        }
+
+        // Wszyscy zarejestrowani gracze muszą być gotowi; host jest zawsze uznawany za gotowego
+        $hostPlayerId = $lobby->host->player?->id;
+        foreach ($lobby->players as $lp) {
+            if ($lp->player_id === null) {
+                continue; // gość – nie liczymy gotowości
+            }
+            if ($lp->player_id === $hostPlayerId) {
+                continue; // host – zawsze gotowy
+            }
+            if (!$lp->is_ready) {
+                throw new \RuntimeException('Wszyscy zarejestrowani gracze muszą potwierdzić gotowość');
+            }
         }
 
         return $this->lobbyRepository->startGame($lobbyId);

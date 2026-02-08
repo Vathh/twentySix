@@ -38,6 +38,6 @@ class QuickGameLobby extends Model
 
     public function players(): HasMany
     {
-        return $this->hasMany(QuickGameLobbyPlayer::class)->orderBy('created_at');
+        return $this->hasMany(QuickGameLobbyPlayer::class, 'lobby_id')->orderBy('created_at');
     }
 }

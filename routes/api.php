@@ -7,7 +7,8 @@ use App\Http\Controllers\Api\QuickGameController;
 use App\Http\Controllers\Api\QuickGameLobbyController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/login', [AuthController::class, 'tournamentLogin']);
+Route::post('/login', [AuthController::class, 'tournamentLogin']); // kod turnieju – do sędziowania
+Route::post('/account/login', [AuthController::class, 'login']);   // email + hasło – konto gracza
 Route::post('/register', [AuthController::class, 'register']);
 
 // Quick game update - może być bez auth (gracze tymczasowi)
@@ -54,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{lobbyId}/ready', [QuickGameLobbyController::class, 'setReady']);
         Route::post('/{lobbyId}/start', [QuickGameLobbyController::class, 'start']);
         Route::post('/{lobbyId}/invite', [QuickGameLobbyController::class, 'invite']);
+        Route::post('/{lobbyId}/add-guest', [QuickGameLobbyController::class, 'addGuest']);
     });
 
 });

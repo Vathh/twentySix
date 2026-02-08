@@ -22,7 +22,7 @@ class QuickGameLobbyPlayer extends Model
 
     public function lobby(): BelongsTo
     {
-        return $this->belongsTo(QuickGameLobby::class);
+        return $this->belongsTo(QuickGameLobby::class, 'lobby_id');
     }
 
     public function player(): BelongsTo
