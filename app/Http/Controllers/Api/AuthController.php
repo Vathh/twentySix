@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\LoginCode;
 use App\Models\User;
 use App\Rules\UniquePlayerNameForRegistered;
-use App\Services\PlayerService;
+use App\Services\Player\PlayerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -112,3 +112,12 @@ class AuthController
         ]);
     }
 }
+
+
+
+
+
+
+
+
+

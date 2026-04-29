@@ -4,11 +4,11 @@ namespace App\Services\Tournament;
 
 use App\Enums\GameStage;
 use App\Factories\TournamentResultsFactory;
-use App\Repositories\PointSchemeRepository;
-use App\Repositories\PointSchemeRuleRepository;
-use App\Repositories\TournamentRepository;
-use App\Repositories\TournamentResultRepository;
-use App\Services\GroupStandingService;
+use App\Repositories\PointScheme\PointSchemeRepository;
+use App\Repositories\PointScheme\PointSchemeRuleRepository;
+use App\Repositories\Tournament\TournamentRepository;
+use App\Repositories\Tournament\TournamentResultRepository;
+use App\Services\GroupStanding\GroupStandingService;
 use Illuminate\Support\Collection;
 
 class TournamentResultService
@@ -70,3 +70,14 @@ class TournamentResultService
         $this->resultRepository->create($result);
     }
 }
+
+
+
+
+
+
+
+
+
+
+

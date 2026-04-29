@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Services\QuickGameSessionService;
+use App\Services\QuickGame\QuickGameSessionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -59,3 +59,12 @@ class QuickGameSessionController
         }
     }
 }
+
+
+
+
+
+
+
+
+

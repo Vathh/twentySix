@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use App\Models\League;
 use App\Policies\LeaguePolicy;
-use App\Services\FriendshipService;
+use App\Services\Friends\FriendshipService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
@@ -47,3 +47,12 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 }
+
+
+
+
+
+
+
+
+

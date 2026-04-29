@@ -4,11 +4,11 @@ namespace App\Services\Tournament;
 
 use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
-use App\Repositories\GameRepository;
-use App\Repositories\GroupStandingRepository;
-use App\Repositories\TournamentRepository;
-use App\Services\LoginCodeService;
-use App\Services\PointSchemeService;
+use App\Repositories\Game\GameRepository;
+use App\Repositories\GroupStanding\GroupStandingRepository;
+use App\Repositories\Tournament\TournamentRepository;
+use App\Services\Tournament\LoginCodeService;
+use App\Services\PointScheme\PointSchemeService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -120,3 +120,14 @@ class TournamentService
         $this->tournamentRepository->updatePointSchemeId($tournamentId, $pointScheme->id);
     }
 }
+
+
+
+
+
+
+
+
+
+
+

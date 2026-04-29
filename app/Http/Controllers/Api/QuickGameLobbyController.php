@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Services\QuickGameLobbyService;
+use App\Services\QuickGame\QuickGameLobbyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -150,16 +150,22 @@ class QuickGameLobbyController
         $legsCount = $request->input('legsCount');
         $gameType = $request->input('gameType');
         $scoringMode = $request->input('scoringMode');
+        $playerOrderIds = $request->input('playerOrder');
+        if (!is_array($playerOrderIds)) {
+            $playerOrderIds = null;
+        }
         try {
             $lobby = $this->lobbyService->startGame(
                 (int) $lobbyId,
                 $userId,
                 $legsCount !== null ? (int) $legsCount : null,
                 $gameType !== null && in_array($gameType, ['501', 'cricket'], true) ? $gameType : null,
-                $scoringMode !== null && in_array($scoringMode, ['one_device', 'each_own'], true) ? $scoringMode : null
+                $scoringMode !== null && in_array($scoringMode, ['one_device', 'each_own'], true) ? $scoringMode : null,
+                $playerOrderIds
             );
             $lobby->load(['host.player', 'players.player', 'session']);
-            $players = $lobby->players->map(function ($p) {
+            $orderedPlayers = $this->getOrderedLobbyPlayers($lobby);
+            $players = $orderedPlayers->map(function ($p) {
                 return [
                     'id' => $p->id,
                     'playerId' => $p->player_id,
@@ -169,7 +175,7 @@ class QuickGameLobbyController
             $sessionId = $lobby->session?->id;
             $isHost = (int) $lobby->host_id === (int) $userId;
             $myPlayerIndex = null;
-            foreach ($lobby->players as $i => $lp) {
+            foreach ($orderedPlayers as $i => $lp) {
                 if ($lp->player_id && $lp->player && (int) $lp->player->user_id === (int) $userId) {
                     $myPlayerIndex = $i;
                     break;
@@ -258,7 +264,8 @@ class QuickGameLobbyController
     private function lobbyToArray($lobby, ?int $currentUserId = null): array
     {
         $hostId = $lobby->host_id;
-        $players = $lobby->players->map(function ($p) use ($hostId) {
+        $orderedPlayers = $this->getOrderedLobbyPlayers($lobby);
+        $players = $orderedPlayers->map(function ($p) use ($hostId) {
             $isRegistered = $p->player_id !== null;
             $isHost = $p->player && (int) $p->player->user_id === (int) $hostId;
             return [
@@ -291,7 +298,7 @@ class QuickGameLobbyController
             }
             $out['myPlayerIndex'] = null;
             if ($currentUserId !== null) {
-                foreach ($lobby->players as $i => $lp) {
+                foreach ($orderedPlayers as $i => $lp) {
                     if ($lp->player_id && $lp->player && (int) $lp->player->user_id === (int) $currentUserId) {
                         $out['myPlayerIndex'] = $i;
                         break;
@@ -302,4 +309,34 @@ class QuickGameLobbyController
 
         return $out;
     }
+
+    private function getOrderedLobbyPlayers($lobby)
+    {
+        $players = $lobby->players;
+        if ($lobby->status !== 'started') {
+            return $players->values();
+        }
+
+        $lobby->load('session');
+        $sessionState = $lobby->session?->state;
+        $orderIds = is_array($sessionState) ? ($sessionState['playerOrderLobbyPlayerIds'] ?? null) : null;
+        if (!is_array($orderIds) || count($orderIds) === 0) {
+            return $players->values();
+        }
+
+        $orderPos = array_flip(array_map('intval', $orderIds));
+        return $players->sortBy(function ($p) use ($orderPos) {
+            $id = (int) $p->id;
+            return $orderPos[$id] ?? (10000 + $id);
+        })->values();
+    }
 }
+
+
+
+
+
+
+
+
+

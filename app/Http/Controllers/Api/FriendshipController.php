@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Services\FriendshipService;
-use App\Services\UserService;
+use App\Services\Friends\FriendshipService;
+use App\Services\User\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -258,3 +258,12 @@ class FriendshipController
         ]);
     }
 }
+
+
+
+
+
+
+
+
+

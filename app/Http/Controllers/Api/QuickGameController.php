@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\DTO\QuickGameDTO;
-use App\Repositories\PlayerRepository;
-use App\Services\QuickGameService;
+use App\Repositories\Player\PlayerRepository;
+use App\Services\QuickGame\QuickGameService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -101,3 +101,12 @@ class QuickGameController
         return response()->json(['success' => true]);
     }
 }
+
+
+
+
+
+
+
+
+

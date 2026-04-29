@@ -7,9 +7,9 @@ use App\Enums\AssignableEntityType;
 use App\Models\League;
 use App\Models\Season;
 use App\Rules\UniquePlayerInSeasonAndLeague;
-use App\Services\PlayerService;
-use App\Services\SeasonService;
-use App\Services\UserService;
+use App\Services\Player\PlayerService;
+use App\Services\Season\SeasonService;
+use App\Services\User\UserService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -238,3 +238,12 @@ class SeasonController extends Controller
         return SeasonDomain::fromEloquent($season, $allRelations);
     }
 }
+
+
+
+
+
+
+
+
+

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\GameResultRequest;
-use App\Services\GameService;
+use App\Services\Game\GameService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -42,3 +42,12 @@ class GameController
         return response()->json($games);
     }
 }
+
+
+
+
+
+
+
+
+

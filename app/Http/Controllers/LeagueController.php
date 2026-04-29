@@ -6,10 +6,10 @@ use App\Domain\LeagueDomain;
 use App\Enums\AssignableEntityType;
 use App\Models\League;
 use App\Models\User;
-use App\Services\LeagueService;
-use App\Services\LeagueStatsService;
-use App\Services\PlayerService;
-use App\Services\UserService;
+use App\Services\League\LeagueService;
+use App\Services\League\LeagueStatsService;
+use App\Services\Player\PlayerService;
+use App\Services\User\UserService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -241,3 +241,12 @@ class LeagueController extends Controller
         return LeagueDomain::fromEloquent($league, $allRelations);
     }
 }
+
+
+
+
+
+
+
+
+
