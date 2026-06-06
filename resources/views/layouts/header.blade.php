@@ -1,7 +1,7 @@
 <header class="bg-dark-bg text-light-white py-6 border-b-1 border-light-green">
     <div class="container mx-auto flex justify-between items-center">
         <h1 class="text-2xl font-bold text-light-green">
-            DartScore
+            twentySix
             @auth
                 <span class="text-light-green pl-5">/</span>
                 <span class="text-light-orange pl-5 text-xl">{{ Auth::user()->player?->name ?? 'Użytkownik' }}</span>

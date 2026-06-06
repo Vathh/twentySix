@@ -1,9 +1,9 @@
-# Logika biznesowa – system DartScore (backend + aplikacja mobilna)
+# Logika biznesowa – twentySix (backend + aplikacja mobilna)
 
-**Wspólny dokument** dla obu aplikacji działających w syntezie:
+**Wspólny dokument** dla obu części produktu **twentySix**:
 
-- **DartScore** – backend (Laravel) + panel webowy (organizacja lig, turniejów, generowanie kodów)
-- **Suwalska-Liga-Darta-MobileApp** – aplikacja mobilna (sędziowanie, szybki mecz)
+- **Backend + web** (`twentysix-backend`) – Laravel, panel, API, WebSocket
+- **Mobile** (`twentysix-mobile`) – React Native / Expo
 
 Stanowi **jedną wspólną wersję** logiki biznesowej przy rozwoju obu projektów.
 
@@ -49,8 +49,8 @@ Każda z nich ma **inny sposób uwierzytelnienia** i **inny cel** – nie miesza
 - **Marcin** (Olsztyn) gra w Olsztyńskiej Lidze Darta. Z **Kubą** (też z ligi) gra sparingi – sędziują je w aplikacji w sekcji **Szybki mecz** (logowanie na konto, zaproszenia, lobby).
 - W sobotę w klubie Marcin **uruchamia turniej** w ramach Olsztyńskiej Ligi (panel webowy). System generuje **kody logowania do turnieju**. Marcin rozdaje je osobom sędziującym (m.in. Kubie).
 - **Kuba** przy tarczy wpisuje w aplikacji kod w sekcji **Turniej** i dostaje listę **tylko meczów tego turnieju** (Olsztyńska Liga).
-- **Grzegorz** (Suwałki) prowadzi Suwalską Ligę Darta. Uruchamia swój turniej – system generuje **jego** kody. Sędziowie Grzegorza wpisują **jego** kod i widzą **tylko mecze Suwalskiej Ligi**.
-- Dzięki temu: **kod Marcina ≠ kod Grzegorza** → sędziowie widzą tylko ten turniej, który ich dotyczy. Nie ma mieszania lig/turniejów.
+- **Grzegorz** (inna liga w twentySix) prowadzi własną ligę. Uruchamia swój turniej – system generuje **jego** kody. Sędziowie wpisują **jego** kod i widzą **tylko mecze tego turnieju**.
+- Dzięki temu: **kod Marcina ≠ kod Grzegorza** → sędziowie widzą tylko turniej, który ich dotyczy. Nie ma mieszania lig/turniejów.
 
 ---
 
@@ -63,9 +63,9 @@ Każda z nich ma **inny sposób uwierzytelnienia** i **inny cel** – nie miesza
 
 ---
 
-## Rola backendu (DartScore) i mobilki
+## Rola backendu i aplikacji mobilnej
 
-| Obszar | Backend (DartScore) | Aplikacja mobilna |
+| Obszar | Backend (twentySix) | Aplikacja mobilna |
 |--------|---------------------|--------------------|
 | **Konto gracza** | Rejestracja, logowanie (`/api/account/login`), token Sanctum dla użytkownika | Ekrany: logowanie (email+hasło), lobby Szybki mecz, zaproszenia |
 | **Turniej** | Generowanie kodów przy starcie turnieju, logowanie kodem (`POST /api/login`), token dla sędziego, lista meczów po `tournamentId` | Ekran: wpisanie kodu turnieju → lista meczów tego turnieju |
@@ -105,9 +105,9 @@ Po uruchomieniu **`php artisan migrate:fresh --seed`** (lub sam `DemoDataSeeder`
 
 | Kontekst | Email | Hasło |
 |----------|-------|-------|
-| Administrator demo (liga „Suwałki — Liga demonstracyjna”, sezon, turnieje) | `demo-admin@dartscore.local` | `password` |
+| Administrator demo (liga „twentySix — Liga demonstracyjna”, sezon, turnieje) | `demo-admin@twentysix.local` | `password` |
 
-- **Logowanie na konto (Szybki mecz):** konta `gracz1@test.pl` … `gracz8@test.pl` (hasło `password`) tworzy **`DemoPlayersSeeder`** — znajomi i zaproszenia (pending / rejected) między nimi. Administrator turniejów: `demo-admin@dartscore.local` / `password`.
+- **Logowanie na konto (Szybki mecz):** konta `gracz1@test.pl` … `gracz8@test.pl` (hasło `password`) tworzy **`DemoPlayersSeeder`** — znajomi i zaproszenia (pending / rejected) między nimi. Administrator turniejów: `demo-admin@twentysix.local` / `password`.
 - **Kod turnieju:** kody powstają **przy starcie turnieju** w panelu. Turniej demo **„Mistrzostwa 32 — pełny bracket (demo)”** startuje już w seedzie — gotowe kody sędziowskie są w tabeli `login_codes` (pole `tournament_id` wskazuje ten turniej). Dla nowego turnieju uruchomionego ręcznie w panelu kody pojawią się tak samo po starcie.
 
 ---

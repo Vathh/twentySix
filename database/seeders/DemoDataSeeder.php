@@ -31,7 +31,7 @@ use Illuminate\Support\Collection;
  */
 class DemoDataSeeder extends Seeder
 {
-    private const ADMIN_EMAIL = 'demo-admin@dartscore.local';
+    private const ADMIN_EMAIL = 'demo-admin@twentysix.local';
 
     private const BIG_TOURNAMENT = 'Mistrzostwa 32 — pełny bracket (demo)';
 
@@ -41,7 +41,7 @@ class DemoDataSeeder extends Seeder
     private const IDEMPOTENCY_LEAGUE_NAME = 'Białystok — Podlaska Liga Darta';
 
     private const LEAGUE_NAMES = [
-        'Suwałki — Liga demonstracyjna',
+        'twentySix — Liga demonstracyjna',
         'Olsztyn — Warmińsko-Mazurska Liga',
         self::IDEMPOTENCY_LEAGUE_NAME,
     ];
@@ -94,7 +94,7 @@ class DemoDataSeeder extends Seeder
 
         if (League::where('name', self::LEAGUE_NAMES[0])->exists()) {
             $this->command?->warn(
-                'Wykryto starą wersję danych demo (np. tylko liga suwalska). Aby załadować 3 ligi × 2 sezony × 2 turnieje, uruchom: php artisan migrate:fresh --seed'
+                'Wykryto starą wersję danych demo. Aby załadować 3 ligi × 2 sezony × 2 turnieje, uruchom: php artisan migrate:fresh --seed'
             );
 
             return;
@@ -132,7 +132,7 @@ class DemoDataSeeder extends Seeder
     private function seedLeagueSuwalki(User $admin, TournamentService $tournamentService, GameService $gameService): void
     {
         $league = League::create([
-            'name' => 'Suwałki — Liga demonstracyjna',
+            'name' => 'twentySix — Liga demonstracyjna',
             'description' => 'Dane wygenerowane przez DemoDataSeeder (m.in. pełny bracket 32).',
         ]);
         $league->admins()->sync([$admin->id]);

@@ -12,7 +12,7 @@ Obecne repozytorium jest połączone ze starym remote. Chcemy stworzyć nowe rep
 
 ### 2. Usuń pliki lock (jeśli istnieją)
 ```powershell
-cd d:\projects\Cursor\DartScore
+cd d:\projects\Cursor\twentysix-backend
 Remove-Item -Force .git\index.lock -ErrorAction SilentlyContinue
 Remove-Item -Force .git\config.lock -ErrorAction SilentlyContinue
 ```
@@ -38,7 +38,7 @@ git commit -m "Implementacja faz 1-4: szczegóły meczów, rejestracja mobilna, 
 
 ### 5. Stwórz nowe repozytorium na GitHubie
 1. Przejdź na https://github.com/new
-2. Stwórz nowe repozytorium (np. `DartScore-Development` lub inna nazwa)
+2. Stwórz nowe repozytorium (np. `twentySix-backend` lub inna nazwa)
 3. **NIE** inicjalizuj go z README, .gitignore lub licencją
 
 ### 6. Połącz lokalne repozytorium z nowym remote
@@ -53,7 +53,7 @@ git push -u origin main
 Jeśli chcesz rozpocząć od zera (bez historii commitów):
 
 ```powershell
-cd d:\projects\Cursor\DartScore
+cd d:\projects\Cursor\twentysix-backend
 # Usuń obecny .git
 Remove-Item -Recurse -Force .git
 
