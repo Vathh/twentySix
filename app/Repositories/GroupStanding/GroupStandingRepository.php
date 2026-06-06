@@ -78,21 +78,39 @@ class GroupStandingRepository
 
     public function getPlayerIdsToAdvanceFromGroups(int $tournamentId, int $placesPerGroup): Collection
     {
+        return $this->getAdvancingPlayersWithGroups($tournamentId, $placesPerGroup)
+            ->pluck('player_id');
+    }
+
+    /**
+     * Awansujący z numerem grupy (do losowania pierwszej rundy playoff).
+     *
+     * @return Collection<int, array{player_id: int, group_number: int}>
+     */
+    public function getAdvancingPlayersWithGroups(int $tournamentId, int $placesPerGroup): Collection
+    {
         return GroupStanding::where('tournament_id', $tournamentId)
-                                ->with('player')
-                                ->get()
-                                ->filter(fn($standing) => $standing->place <= $placesPerGroup)
-                                ->map(fn($standing) => $standing->player->id);
+            ->where('place', '<=', $placesPerGroup)
+            ->where('place', '>', 0)
+            ->orderBy('group_number')
+            ->orderBy('place')
+            ->get()
+            ->map(fn (GroupStanding $standing) => [
+                'player_id' => $standing->player_id,
+                'group_number' => $standing->group_number,
+            ])
+            ->values();
     }
 
     /**
      * @param int $tournamentId
+     * @param int $advancePerGroup
      * @return Collection<GroupStandingDomain>
      */
-    public function getGroupLosers(int $tournamentId): Collection
+    public function getGroupLosers(int $tournamentId, int $advancePerGroup): Collection
     {
         return GroupStanding::where('tournament_id', $tournamentId)
-            ->where('place', '>', 2)
+            ->where('place', '>', $advancePerGroup)
             ->with(['tournament', 'player'])
             ->get()
             ->map(fn($standing) => GroupStandingDomain::fromEloquent($standing, ['tournament', 'player']));

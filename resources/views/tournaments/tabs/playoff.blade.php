@@ -5,6 +5,18 @@
 
     <div class="flex gap-10 overflow-x-auto pb-6">
 
+        {{-- 1/16 FINAŁU --}}
+        @if(isset($playoffGames['SIXTEEN']))
+            <div class="flex flex-col min-w-[220px]">
+                <p class="text-center text-sm text-text-muted mb-2">1/16 finału</p>
+                <div class="flex flex-col gap-4">
+                    @foreach($playoffGames['SIXTEEN'] as $game)
+                        @include('tournaments.partials.bracket-game', ['game' => $game])
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         {{-- 1/8 FINAŁU --}}
         @if(isset($playoffGames['EIGHT']))
             <div class="flex flex-col min-w-[220px]">

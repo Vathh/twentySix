@@ -22,6 +22,9 @@ class Tournament extends Model
         'date',
         'status',
         'point_scheme_id',
+        'groups_count',
+        'advance_per_group',
+        'tablets_count',
     ];
 
     protected $casts = [

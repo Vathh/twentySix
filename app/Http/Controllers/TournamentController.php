@@ -8,10 +8,11 @@ use App\Models\Tournament\Tournament;
 use App\Queries\GetTournamentData;
 use App\Services\Player\PlayerService;
 use App\Services\Tournament\TournamentService;
+use App\Support\Tournament\TournamentStartRules;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class TournamentController extends Controller
 {
@@ -98,7 +99,10 @@ class TournamentController extends Controller
 
         return view('tournaments.start', [
             'tournament' => $tournament,
-            'players' => $players
+            'players' => $players,
+            'groupCountOptions' => TournamentStartRules::allowedGroupCounts(),
+            'advancesByGroupCount' => TournamentStartRules::advancesByGroupCount(),
+            'minPlayers' => TournamentStartRules::MIN_PLAYERS,
         ]);
     }
 
@@ -108,18 +112,36 @@ class TournamentController extends Controller
 
         $validated = $request->validate([
             'selectedPlayers' => 'required',
-            'groupsCount' => ['required', Rule::in(['2', '4', '8'])]
+            'groupsCount' => ['required', 'integer', 'min:2'],
+            'advancePerGroup' => ['sometimes', 'integer', 'min:1'],
+            'tabletsCount' => ['sometimes', 'integer', 'min:1'],
         ]);
 
         $selectedPlayersIds = json_decode($request->input('selectedPlayers'), false);
-        $groupsCount = $validated['groupsCount'];
+        $groupsCount = (int) $validated['groupsCount'];
+        $advancePerGroup = isset($validated['advancePerGroup'])
+            ? (int) $validated['advancePerGroup']
+            : 2;
+        $tabletsCount = isset($validated['tabletsCount'])
+            ? (int) $validated['tabletsCount']
+            : $groupsCount;
 
-        if(empty($selectedPlayersIds)) {
+        if (empty($selectedPlayersIds)) {
             return back()->with('error', 'Wybrano zbyt mało graczy');
         }
 
-        if(!$this->tournamentService->tryCreateGroupGames($tournamentId, $selectedPlayersIds, $groupsCount)) {
-            return back()->with('error', 'Turniej już wystartował');
+        try {
+            if (! $this->tournamentService->tryCreateGroupGames(
+                $tournamentId,
+                $selectedPlayersIds,
+                $groupsCount,
+                $advancePerGroup,
+                $tabletsCount,
+            )) {
+                return back()->with('error', 'Turniej już wystartował');
+            }
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
         }
 
         return redirect()->route('tournaments.show',

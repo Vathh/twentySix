@@ -25,6 +25,9 @@ class TournamentDomain
      * @param Collection<GroupStandingDomain> $groupStandings
      * @param TournamentStatus $status
      * @param PointSchemeDomain|null $pointScheme
+     * @param int|null $groupsCount
+     * @param int|null $advancePerGroup
+     * @param int|null $tabletsCount
      */
     public function __construct(
         public readonly int                 $id,
@@ -37,6 +40,9 @@ class TournamentDomain
         public readonly Collection         $groupStandings,
         public readonly TournamentStatus    $status,
         public readonly ?PointSchemeDomain   $pointScheme,
+        public readonly ?int                $groupsCount = null,
+        public readonly ?int                $advancePerGroup = null,
+        public readonly ?int                $tabletsCount = null,
     )
     {
     }
@@ -79,7 +85,27 @@ class TournamentDomain
                     with: in_array('pointScheme.rules', $with) ? ['rules'] : []
                 )
                 : null,
+            groupsCount: $tournament->groups_count,
+            advancePerGroup: $tournament->advance_per_group,
+            tabletsCount: $tournament->tablets_count,
         );
+    }
+
+    /** Liczba graczy w drabince playoff (`grupy × awans`). Null przed startem turnieju. */
+    public function bracketSize(): ?int
+    {
+        if ($this->groupsCount === null || $this->advancePerGroup === null) {
+            return null;
+        }
+
+        return $this->groupsCount * $this->advancePerGroup;
+    }
+
+    public function hasStartConfiguration(): bool
+    {
+        return $this->groupsCount !== null
+            && $this->advancePerGroup !== null
+            && $this->tabletsCount !== null;
     }
 
     public function getDate(): ?string

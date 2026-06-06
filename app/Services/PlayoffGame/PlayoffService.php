@@ -9,6 +9,8 @@ use App\Enums\PlayoffSlot;
 use App\Factories\PlayoffBracketFactory;
 use App\Repositories\GroupStanding\GroupStandingRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
+use App\Repositories\Tournament\TournamentRepository;
+use App\Support\Tournament\PlayoffFirstRoundPairing;
 
 class PlayoffService
 {
@@ -17,6 +19,7 @@ class PlayoffService
         private PlayoffBracketFactory $bracketFactory,
         private PlayoffGameRepository $gameRepository,
         private GroupStandingRepository $groupStandingRepository,
+        private TournamentRepository $tournamentRepository,
     )
     {
     }
@@ -27,12 +30,17 @@ class PlayoffService
      */
     public function generateBracket(int $tournamentId): void
     {
-        $playerIds = $this->groupStandingRepository
-                            ->getPlayerIdsToAdvanceFromGroups($tournamentId, 2)
-                            ->values()
-                            ->toArray();
+        $advancePerGroup = $this->tournamentRepository->getAdvancePerGroup($tournamentId);
 
-        $playoffGames = $this->bracketFactory->createFor16($tournamentId, $playerIds);
+        $advancingPlayers = $this->groupStandingRepository
+            ->getAdvancingPlayersWithGroups($tournamentId, $advancePerGroup)
+            ->all();
+
+        $bracketSize = $this->tournamentRepository->getBracketSize($tournamentId);
+
+        $firstRoundPairs = PlayoffFirstRoundPairing::pair($advancingPlayers);
+
+        $playoffGames = $this->bracketFactory->create($tournamentId, $bracketSize, $firstRoundPairs);
 
         $this->gameRepository->createMany($playoffGames);
     }

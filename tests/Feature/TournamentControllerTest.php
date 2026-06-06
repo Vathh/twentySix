@@ -9,6 +9,7 @@ use App\Models\Player\Player;
 use App\Models\PointScheme\PointScheme;
 use App\Models\PointScheme\PointSchemeRule;
 use App\Models\Season\Season;
+use App\Models\Tournament\LoginCode;
 use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Services\PlayerService;
@@ -171,9 +172,39 @@ class TournamentControllerTest extends TestCase
 
         $tournament->refresh();
         $this->assertEquals(TournamentStatus::GROUP, $tournament->status);
+        $this->assertSame(2, $tournament->groups_count);
+        $this->assertSame(2, $tournament->advance_per_group);
+        $this->assertSame(2, $tournament->tablets_count);
         $this->assertDatabaseHas('games', [
             'tournament_id' => $tournament->id,
         ]);
+        $this->assertSame(2, LoginCode::where('tournament_id', $tournament->id)->count());
+    }
+
+    public function test_run_tournament_uses_custom_tablets_count(): void
+    {
+        $this->actingAs($this->adminUser);
+        $tournament = Tournament::create([
+            'name' => 'Test Tournament',
+            'season_id' => $this->season->id,
+            'date' => '2024-06-01',
+        ]);
+
+        $selectedPlayers = [$this->player1->id, $this->player2->id, $this->player3->id, $this->player4->id];
+
+        $response = $this->post("/tournaments/{$tournament->id}/run", [
+            'selectedPlayers' => json_encode($selectedPlayers),
+            'groupsCount' => 2,
+            'advancePerGroup' => 2,
+            'tabletsCount' => 5,
+        ]);
+
+        $response->assertRedirect("/tournaments/{$tournament->id}");
+        $response->assertSessionHas('success');
+
+        $tournament->refresh();
+        $this->assertSame(5, $tournament->tablets_count);
+        $this->assertSame(5, LoginCode::where('tournament_id', $tournament->id)->count());
     }
 
     public function test_tournament_cannot_be_started_twice(): void
@@ -219,7 +250,7 @@ class TournamentControllerTest extends TestCase
         $response->assertSessionHas('error');
     }
 
-    public function test_tournament_groups_count_must_be_valid(): void
+    public function test_tournament_groups_count_must_be_power_of_two(): void
     {
         $this->actingAs($this->adminUser);
         $tournament = Tournament::create([
@@ -232,10 +263,29 @@ class TournamentControllerTest extends TestCase
 
         $response = $this->post("/tournaments/{$tournament->id}/run", [
             'selectedPlayers' => json_encode($selectedPlayers),
-            'groupsCount' => '3', // Nieprawidłowa wartość (dozwolone: 2, 4, 8)
+            'groupsCount' => 3,
         ]);
 
         $response->assertSessionHasErrors('groupsCount');
+    }
+
+    public function test_tournament_requires_at_least_four_players(): void
+    {
+        $this->actingAs($this->adminUser);
+        $tournament = Tournament::create([
+            'name' => 'Test Tournament',
+            'season_id' => $this->season->id,
+            'date' => '2024-06-01',
+        ]);
+
+        $selectedPlayers = [$this->player1->id, $this->player2->id, $this->player3->id];
+
+        $response = $this->post("/tournaments/{$tournament->id}/run", [
+            'selectedPlayers' => json_encode($selectedPlayers),
+            'groupsCount' => 2,
+        ]);
+
+        $response->assertSessionHasErrors('selectedPlayers');
     }
 }
 

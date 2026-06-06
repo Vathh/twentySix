@@ -7,6 +7,7 @@ use App\Domain\GroupStandingDomain;
 use App\DTO\GameResultDTO;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\GroupStanding\GroupStandingRepository;
+use App\Repositories\Tournament\TournamentRepository;
 use Illuminate\Support\Collection;
 
 class GroupStandingService
@@ -15,6 +16,7 @@ class GroupStandingService
     public function __construct(
         private GameRepository          $gameRepository,
         private GroupStandingRepository $groupStandingRepository,
+        private TournamentRepository    $tournamentRepository,
     )
     {
     }
@@ -158,7 +160,9 @@ class GroupStandingService
 
     public function getLosersGroupStandings(int $tournamentId): Collection
     {
-        return $this->groupStandingRepository->getGroupLosers($tournamentId);
+        $advancePerGroup = $this->tournamentRepository->getAdvancePerGroup($tournamentId);
+
+        return $this->groupStandingRepository->getGroupLosers($tournamentId, $advancePerGroup);
     }
 }
 
