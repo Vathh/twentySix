@@ -75,6 +75,33 @@ class UserService
     {
         return $this->userRepository->searchByPlayerName($searchTerm, $excludeUserId, $limit);
     }
+
+    /**
+     * Wyszukiwarka użytkowników do zaproszeń turniejowych (web).
+     *
+     * @param  Collection<int, int>  $excludeUserIds
+     */
+    public function searchForTournamentInvitations(string $search, Collection $excludeUserIds): Collection
+    {
+        if (trim($search) === '') {
+            return collect();
+        }
+
+        if (strlen($search) < 5) {
+            throw ValidationException::withMessages([
+                'search' => 'Wpisz co najmniej 5 znaków, aby wyszukać użytkowników.',
+            ]);
+        }
+
+        return User::whereHas('player', function ($query) use ($search) {
+            $query->where('name', 'LIKE', "%{$search}%");
+        })
+            ->with('player')
+            ->get()
+            ->sortBy('player.name')
+            ->reject(fn ($user) => $excludeUserIds->contains($user->id))
+            ->values();
+    }
 }
 
 

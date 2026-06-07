@@ -1,7 +1,12 @@
 @php
-    $matchUrl = $game->id && $game->isFinished()
-        ? route('matches.show', ['type' => 'playoff', 'id' => $game->id])
-        : null;
+    $matchUrl = null;
+    if ($game->id) {
+        if ($game->isFinished()) {
+            $matchUrl = route('matches.show', ['type' => 'playoff', 'id' => $game->id]);
+        } elseif ($game->status === \App\Enums\GameStatus::IN_PROGRESS) {
+            $matchUrl = route('matches.live', ['type' => 'playoff', 'id' => $game->id]);
+        }
+    }
 @endphp
 @if($matchUrl)
 <a href="{{ $matchUrl }}" class="block bg-white/5 border border-white/10 rounded-xl p-3 backdrop-blur shadow-sm hover:border-light-green/50 transition cursor-pointer">

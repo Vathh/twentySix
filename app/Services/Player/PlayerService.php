@@ -5,6 +5,8 @@ namespace App\Services\Player;
 use App\Domain\PlayerDomain;
 use App\Enums\AssignableEntityType;
 use App\Repositories\Player\PlayerRepository;
+use App\Repositories\Tournament\TournamentGuestParticipantRepository;
+use App\Repositories\Tournament\TournamentInvitationRepository;
 use Illuminate\Support\Collection;
 use RuntimeException;
 use Throwable;
@@ -12,8 +14,11 @@ use function Laravel\Prompts\error;
 
 class PlayerService
 {
-    public function __construct(private PlayerRepository $playerRepository)
-    {
+    public function __construct(
+        private PlayerRepository $playerRepository,
+        private TournamentInvitationRepository $tournamentInvitationRepository,
+        private TournamentGuestParticipantRepository $tournamentGuestParticipantRepository,
+    ) {
     }
 
     public function create(string $name, int $userId): void
@@ -42,6 +47,47 @@ class PlayerService
         } catch (Throwable $e) {
             return collect();
         }
+    }
+
+    /**
+     * @return Collection<int, PlayerDomain>
+     */
+    public function getRelatedRegisteredUsers(int $seasonId): Collection
+    {
+        return $this->playerRepository->getRelatedRegisteredUsers($seasonId);
+    }
+
+    /**
+     * @return Collection<int, PlayerDomain>
+     */
+    public function getSeasonGuests(int $seasonId): Collection
+    {
+        return $this->playerRepository->getSeasonGuests($seasonId);
+    }
+
+    /**
+     * @return Collection<int, PlayerDomain>
+     */
+    public function getTournamentGuestParticipants(int $tournamentId): Collection
+    {
+        return $this->tournamentGuestParticipantRepository->getPlayersForTournament($tournamentId);
+    }
+
+    /**
+     * Uczestnicy turnieju: zaakceptowane zaproszenia + goście dodani do turnieju.
+     *
+     * @return Collection<int, PlayerDomain>
+     */
+    public function getTournamentStartPool(int $tournamentId, int $seasonId): Collection
+    {
+        $accepted = $this->tournamentInvitationRepository->getAcceptedPlayers($tournamentId);
+        $guests = $this->tournamentGuestParticipantRepository->getPlayersForTournament($tournamentId);
+
+        return $accepted
+            ->merge($guests)
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
     }
 
     /**

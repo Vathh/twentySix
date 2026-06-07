@@ -16,6 +16,10 @@
             @if($isLive)
                 <span class="px-2 py-0.5 rounded text-xs bg-light-orange/20 text-light-orange">Na żywo</span>
             @endif
+            <a href="{{ route('matches.live', ['type' => $kind, 'id' => $matchId]) }}"
+               class="px-3 py-1 rounded text-xs font-semibold border border-light-orange text-light-orange hover:bg-light-orange/10 transition">
+                Podgląd live
+            </a>
         </div>
 
         <h1 class="text-2xl font-bold text-light-green mb-6">

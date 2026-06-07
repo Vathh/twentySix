@@ -11,8 +11,8 @@ Ostatnia aktualizacja: czerwiec 2026.
 
 | Obszar | Postęp | Najważniejsze luki |
 |--------|--------|-------------------|
-| **Web** | ~70% | Korekta wyniku na webie, live Echo, zaproszenia turniejowe |
-| **API** | ~80% | Zaproszenia turniejowe, lock tabletu (mobile) |
+| **Web** | ~80% | Korekta wyniku na webie |
+| **API** | ~85% | Lock tabletu (mobile) |
 | **Mobile** | ~50% | Zob. [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) |
 
 Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `product.md`.
@@ -26,14 +26,15 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Twórca ligi = organizator | ✅ | `LeagueRepository`, `LeagueController`, `LeaguePolicy` |
 | Współadmin per liga (pełne prawa) | ✅ | `/leagues/{id}/admins/*`, `LeaguePolicy` |
 | Turniej: goście (nazwa) | ✅ | `SeasonController`, `PlayerRepository` |
-| Turniej: zaproszenia (wyszukiwarka + akceptacja) | ❌ | Tylko bezpośrednie `relatedUsers` — brak modelu zaproszenia |
+| Turniej: zaproszenia (wyszukiwarka + akceptacja) | ⚠️ | Strona startu: wysyłka, masowy invite ze składu; mobile: akceptacja/wycofanie |
 | Start turnieju: liczba grup | ✅ | `start.blade.php` — potęgi 2 (2…64), `TournamentStartRules` |
 | Start: walidowany awans z grupy | ✅ | Kreator + `TournamentStartValidator` |
 | Start: liczba kodów tabletów (≠ liczba grup) | ✅ | `tabletsCount` w kreatorze, `LoginCodeService` |
-| Start: tylko zaakceptowani + goście | ⚠️ | Wybór podzbioru graczy, bez statusu zaproszenia |
+| Start: tylko zaakceptowani + goście | ✅ | `getTournamentStartPool`, walidacja przy `run` |
 | Publiczny podgląd lig/turniejów | ⚠️ | Widoki istnieją; weryfikacja gościa bez logowania — do sprawdzenia |
 | Korekta wyniku / walkower na webie | ❌ | `matches/show` — tylko podgląd; edycja tylko przez API |
-| Live WebSocket na webie | ❌ | Brak klienta Echo/Reverb w assetach frontowych |
+| Live podgląd meczu (WebSocket) | ✅ | `matches/{type}/{id}/live`, `match-live.js`, Reverb `match.state` |
+| Live WebSocket na webie (turniej) | ❌ | Brak widoku live całego turnieju z WS |
 | Znajomi na webie | ⚠️ | UI częściowo; product: poza MVP na webie |
 
 ---
@@ -44,7 +45,7 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 |---------------|--------|---------------|
 | Min. 2 graczy quick game | ✅ | `QuickGameLobbyService::start` |
 | Min. 4 graczy turniej | ✅ | `TournamentStartValidator`, `TournamentController` |
-| Pula: zaakceptowani + goście | ❌ | Brak encji zaproszenia turniejowego |
+| Pula: zaakceptowani + goście | ✅ | `tournament_invitations`, `PlayerService::getTournamentStartPool` |
 | Podział grup (od grupy 1, równe wielkości) | ✅ | `TournamentGroupDistribution` |
 | Round-robin w grupie | ✅ | `generateGamesForGroup` |
 | Tie-breakery grupowe | ✅ | `GroupStandingService` |
@@ -55,7 +56,7 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Statusy meczu + lock tabletu | ⚠️ | `GameStatus`, `inProgress`/`active` — mobile nie zawsze woła lock |
 | Kody tabletów | ✅ | `POST /api/login`, `LoginCodeService` |
 | Znajomi (invite/accept/reject) | ✅ | `/api/friends/*` |
-| Zaproszenia turniejowe API | ❌ | — |
+| Zaproszenia turniejowe API | ✅ | `/api/tournaments/invitations/*` |
 | Lobby quick game | ✅ | `/api/quick-game/lobby/*` |
 | Lobby: tylko znajomi | ❌ | Brak walidacji friends-only + goście w API |
 | Quick game: `one_device` / `each_own` | ✅ | `scoring_mode` w lobby |
@@ -87,8 +88,8 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 ## Priorytetowe zadania do MVP (sugerowana kolejność)
 
 1. ~~**Turniej — logika:** podział grup, awans z grupy, bracket dynamiczny, playoff R1 bez par z grupy, min. 4 graczy.~~ ✅ *(czerwiec 2026)*
-2. **Zaproszenia turniejowe:** API + web (wysyłka) + mobile (akceptacja).
-3. **Web:** edycja wyniku / walkower + live Echo.
+2. ~~**Zaproszenia turniejowe:** API + web (wysyłka) + mobile (akceptacja).~~ ✅ *(czerwiec 2026)*
+3. **Web:** edycja wyniku / walkower; ~~live podgląd meczu~~ ✅ *(czerwiec 2026)*.
 4. **Tablet mobile:** lock meczu, playoff UI, scoring API + WS.
 5. **Quick game:** FFA do 8, rotacja openera lega, friends-only, multi-device 3+.
 6. **Offline / solo** na mobile.

@@ -15,6 +15,14 @@ Route::get('/matches/{type}/{id}', [MatchController::class, 'show'])
     ->where('type', 'group|playoff|quick')
     ->whereNumber('id')
     ->name('matches.show');
+Route::get('/matches/{type}/{id}/live', [MatchController::class, 'live'])
+    ->where('type', 'group|playoff|quick')
+    ->whereNumber('id')
+    ->name('matches.live');
+Route::get('/matches/{type}/{id}/live/state', [MatchController::class, 'liveState'])
+    ->where('type', 'group|playoff|quick')
+    ->whereNumber('id')
+    ->name('matches.live.state');
 
 Route::get('/register', [PagesController::class, 'showRegisterPage'])->name('pages.registerPanel');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
@@ -62,4 +70,10 @@ Route::resource('tournaments', TournamentController::class);
 Route::prefix('tournaments/{tournament}')->group(function () {
    Route::get('/start', [TournamentController::class, 'start'])->name('tournaments.start');
    Route::post('/run', [TournamentController::class, 'runTournament'])->name('tournaments.run');
+   Route::post('/invitations/send', [TournamentController::class, 'sendInvitation'])->name('tournaments.invitations.send');
+   Route::post('/invitations/bulk', [TournamentController::class, 'sendBulkInvitations'])->name('tournaments.invitations.bulk');
+   Route::post('/invitations/{invitation}/cancel', [TournamentController::class, 'cancelInvitation'])->name('tournaments.invitations.cancel');
+   Route::post('/invitations/{invitation}/remove', [TournamentController::class, 'removeParticipant'])->name('tournaments.invitations.remove');
+   Route::post('/participants/guests/add', [TournamentController::class, 'addGuestParticipant'])->name('tournaments.participants.guests.add');
+   Route::delete('/participants/guests/remove', [TournamentController::class, 'removeGuestParticipant'])->name('tournaments.participants.guests.remove');
 });

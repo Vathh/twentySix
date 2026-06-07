@@ -51,6 +51,25 @@
                                         </a>
                                     </td>
                                 @endif
+                            @elseif($games[$number][$rowPlayer->id][$columnPlayer->id]->status === \App\Enums\GameStatus::IN_PROGRESS)
+                                @php($cellGame = $games[$number][$rowPlayer->id][$columnPlayer->id])
+                                @if($rowPlayer->id === $cellGame->player1->id)
+                                    <td class="px-2 py-2 text-center">
+                                        <a href="{{ route('matches.live', ['type' => 'group', 'id' => $cellGame->id]) }}" class="text-light-orange hover:underline" title="Podgląd na żywo">
+                                            {{ $cellGame->player1Score }}
+                                            -
+                                            {{ $cellGame->player2Score }}
+                                        </a>
+                                    </td>
+                                @else
+                                    <td class="px-2 py-2 text-center">
+                                        <a href="{{ route('matches.live', ['type' => 'group', 'id' => $cellGame->id]) }}" class="text-light-orange hover:underline" title="Podgląd na żywo">
+                                            {{ $cellGame->player2Score }}
+                                            -
+                                            {{ $cellGame->player1Score }}
+                                        </a>
+                                    </td>
+                                @endif
                             @else
                                 <td class="px-2 py-2 text-center bg-dark-bg text-text-muted">
                                     -

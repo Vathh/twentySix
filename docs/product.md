@@ -185,8 +185,57 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 
 ### Zaproszenia do turnieju
 
-- Wysyłka: admin na **webie** (wyszukiwarka).
-- Akceptacja: **mobile**.
+- Wysyłka: admin na **webie** — **na stronie startu turnieju** (bez osobnej podstrony): wyszukiwarka + lista zaproszonych + masowe zaproszenia ze składu ligi.
+- Akceptacja / wycofanie udziału: **mobile**.
+- Goście (nazwa od admina): edycja puli gości na ekranach sezonu/ligi; na stronie startu admin **dodaje gościa do turnieju** z listy powiązanych.
+
+#### Stały skład ligi (`relatedUsers`)
+
+- Liga (i opcjonalnie sezon) utrzymuje listę **powiązanych użytkowników** — **stali bywalcy**, którzy regularnie grają w turniejach tej ligi.
+- Lista **nie wpisuje** nikogo automatycznie do turnieju — służy do **szybkiego masowego wysyłania zaproszeń** (zaznaczenie wielu osób → wyślij zaproszenia).
+- Na stronie startu turnieju skład do masowego invite = **suma `league.relatedUsers` + `season.relatedUsers` bez duplikatów** (jak dziś `getRelatedPlayers`, ale tylko użytkownicy z kontem — bez gości).
+- Zarządzanie składem (dodawanie/usuwanie osób z listy ligi/sezonu) pozostaje na dotychczasowych ekranach `relatedUsers`.
+
+#### Strona startu turnieju (web) — jeden ekran
+
+#### Strona startu turnieju (web) — układ B
+
+1. **Uczestnicy turnieju** (na górze; na desktopie sticky z ograniczoną wysokością listy i przewijaniem) — skład startowy; licznik min. graczy; usuwanie (×).
+2. **Dodaj uczestników** — jedna sekcja z zakładkami:
+   - **Zarejestrowani:** wyszukiwarka, zaproszenia w toku (bez accepted), stały skład ligi (masowy invite).
+   - **Goście:** powiązani goście ligi/sezonu → „Dodaj” do turnieju.
+3. **Start turnieju** — grupy / awans / tablety (wszyscy z segmentu uczestników).
+
+#### Statusy zaproszenia turniejowego
+
+| Status | Znaczenie | Kto ustawia |
+| ------ | --------- | ----------- |
+| `pending` | Oczekuje na odpowiedź gracza | — (po wysłaniu) |
+| `accepted` | Gracz potwierdził udział | gracz (mobile) |
+| `rejected` | Gracz odrzucił | gracz (mobile) |
+| `cancelled` | Admin anulował zaproszenie **pending** | admin (web) |
+| `withdrawn` | Gracz wycofał udział **po akceptacji** | gracz (mobile) |
+| `removed` | Admin usunął gracza **po akceptacji** | admin (web) |
+
+- Do puli startowej wchodzą wyłącznie uczestnicy z segmentu **„Uczestnicy turnieju”**: zaproszenia **`accepted`** + goście **jawnie dodani do turnieju** (`tournament_guest_participants`).
+- Admin może **anulować** zaproszenie w statusie `pending`.
+- Admin może **wyrzucić** gracza ze statusem `accepted` → `removed` — **tylko przed startem turnieju** (MVP).
+- Gracz może **wycofać udział** ze statusem `accepted` → `withdrawn` — **tylko przed startem turnieju** (MVP).
+- **Ponowne zaproszenie:** admin może wysłać zaproszenie ponownie po `rejected`, `cancelled`, `withdrawn`, `removed` (nowy rekord lub reaktywacja — brak duplikatu przy `pending` / `accepted`).
+
+**Poza MVP (docelowo):** po starcie turnieju admin może wyrzucić / gracz wycofać udział — wszystkie mecze takiego zawodnika stają się **walkowerami** (auto 2:0).
+
+#### API (mobile)
+
+- `GET /api/tournaments/invitations/received` — oczekujące + zaakceptowane (do ekranu akceptacji / wycofania).
+- `POST /api/tournaments/invitations/{id}/accept`
+- `POST /api/tournaments/invitations/{id}/reject`
+- `POST /api/tournaments/invitations/{id}/withdraw` — tylko własne, status `accepted`, turniej **nie wystartował**
+
+#### Mobile — ekran zaproszeń
+
+- **Jeden ekran** z zakładkami: **Turniej** | **Pojedynek** (quick game / lobby).
+- MVP: gracz sam wchodzi w ekran i odświeża listę (pull). **Push** — docelowo.
 
 ## Liga i punktacja (MVP)
 
@@ -323,7 +372,7 @@ Ten sam silnik liczenia i model wyniku w API (turniej + quick game 501).
 
 ## Otwarte pytania
 
-*Brak otwartych pytań produktowych na ten moment. Nowe wpisy dodajemy tutaj, gdy pojawi się niejasność w trakcie implementacji.*
+*Brak otwartych pytań produktowych — decyzje z czerwca 2026 zapisane w sekcji „Zaproszenia do turnieju”.*
 
 ## Uwagi dla implementacji (stan kodu vs produkt)
 
@@ -335,3 +384,4 @@ Poniższe **rozbieżności** wynikają z wcześniejszej pracy bez `product.md`. 
 | Awans z grupy | Wybór admina przy starcie | ✅ `advance_per_group`, `PlayoffService` |
 | Losowanie playoff | Bez par z tej samej grupy (runda 1) | ✅ `PlayoffFirstRoundPairing` |
 | Rozmiar drabinki | Zależny od `grupy × awans` | ✅ `PlayoffBracketFactory::create` (MVP do 32) |
+| Zaproszenia turniejowe | Encja per turniej; web na stronie startu; akceptacja mobile | ❌ Bezpośrednie `relatedUsers` zamiast zaproszeń |

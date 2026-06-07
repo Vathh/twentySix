@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FriendshipController;
 use App\Http\Controllers\Api\GameController;
 use App\Http\Controllers\Api\QuickGameController;
-use App\Http\Controllers\Api\QuickGameLobbyController;
+use App\Http\Controllers\Api\TournamentInvitationController;
 use App\Http\Controllers\Api\Match\GroupGameScoringController;
 use App\Http\Controllers\Api\Match\PlayoffGameScoringController;
 use App\Http\Controllers\Api\Match\QuickGameScoringController;
@@ -72,6 +72,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/create', [QuickGameController::class, 'create']);
         Route::get('/active', [QuickGameController::class, 'getActive']);
         Route::post('/inProgress', [QuickGameController::class, 'setStatusInProgress']);
+    });
+
+    Route::prefix('tournaments/invitations')->group(function () {
+        Route::get('/received', [TournamentInvitationController::class, 'received']);
+        Route::post('/{invitationId}/accept', [TournamentInvitationController::class, 'accept'])->whereNumber('invitationId');
+        Route::post('/{invitationId}/reject', [TournamentInvitationController::class, 'reject'])->whereNumber('invitationId');
+        Route::post('/{invitationId}/withdraw', [TournamentInvitationController::class, 'withdraw'])->whereNumber('invitationId');
     });
 
     Route::prefix('quick-game/lobby')->group(function () {

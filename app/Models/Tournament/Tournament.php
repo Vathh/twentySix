@@ -9,6 +9,8 @@ use App\Models\GroupStanding\GroupStanding;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\PointScheme\PointScheme;
 use App\Models\Season\Season;
+use App\Models\Tournament\TournamentGuestParticipant;
+use App\Models\Tournament\TournamentInvitation;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -65,6 +67,16 @@ class Tournament extends Model
     public function results(): HasMany
     {
         return $this->hasMany(TournamentResult::class);
+    }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(TournamentInvitation::class);
+    }
+
+    public function guestParticipants(): HasMany
+    {
+        return $this->hasMany(TournamentGuestParticipant::class);
     }
 }
 

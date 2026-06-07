@@ -151,6 +151,41 @@ class PlayerRepository
                 ->map(fn($player) => PlayerDomain::fromEloquent($player));
     }
 
+    /**
+     * Zarejestrowani użytkownicy ze składu ligi + sezonu (bez gości).
+     *
+     * @return Collection<int, PlayerDomain>
+     */
+    public function getRelatedRegisteredUsers(int $seasonId): Collection
+    {
+        $season = Season::with(['league.relatedUsers.player', 'relatedUsers.player'])->findOrFail($seasonId);
+
+        return collect()
+            ->merge($season->relatedUsers->map(fn ($user) => $user->player))
+            ->merge($season->league->relatedUsers->map(fn ($user) => $user->player))
+            ->filter()
+            ->unique('id')
+            ->map(fn ($player) => PlayerDomain::fromEloquent($player))
+            ->values();
+    }
+
+    /**
+     * Goście sezonu i ligi (bez zarejestrowanych użytkowników).
+     *
+     * @return Collection<int, PlayerDomain>
+     */
+    public function getSeasonGuests(int $seasonId): Collection
+    {
+        $season = Season::with(['league.guests', 'guests'])->findOrFail($seasonId);
+
+        return collect()
+            ->merge($season->guests)
+            ->merge($season->league->guests)
+            ->unique('id')
+            ->map(fn ($player) => PlayerDomain::fromEloquent($player))
+            ->values();
+    }
+
     private function addToLeague(string $name, int $leagueId): void
     {
         $league = League::findOrFail($leagueId);
