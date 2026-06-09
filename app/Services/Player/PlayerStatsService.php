@@ -61,7 +61,7 @@ class PlayerStatsService
     {
         $data = $this->playerStatRepository->getDataForTournamentStats($playerId);
         $stats = $this->buildStatsArray(null, $data['achievements']);
-        $stats['matches'] = $data['matches_count'];
+        $stats['games'] = $data['games_count'];
         if ($data['avg_from_legs'] !== null) {
             $stats['avg_three_darts'] = round($data['avg_from_legs'], 2);
         }
@@ -71,7 +71,7 @@ class PlayerStatsService
     private function rowToQuickStatsArray(PlayerStat $stat): array
     {
         return [
-            'matches' => $stat->quick_matches,
+            'games' => $stat->quick_games,
             'avg_three_darts' => $stat->quick_avg_three_darts,
             'highest_hf' => $stat->quick_highest_hf,
             'fastest_qf' => $stat->quick_fastest_qf,
@@ -85,7 +85,7 @@ class PlayerStatsService
     private function rowToTournamentStatsArray(PlayerStat $stat): array
     {
         return [
-            'matches' => $stat->tournament_matches,
+            'games' => $stat->tournament_games,
             'avg_three_darts' => $stat->tournament_avg_three_darts,
             'highest_hf' => $stat->tournament_highest_hf,
             'fastest_qf' => $stat->tournament_fastest_qf,
@@ -99,7 +99,7 @@ class PlayerStatsService
     private function emptyStatsArray(): array
     {
         return [
-            'matches' => 0,
+            'games' => 0,
             'avg_three_darts' => null,
             'highest_hf' => null,
             'fastest_qf' => null,
@@ -113,12 +113,12 @@ class PlayerStatsService
     /**
      * Buduje tablicę statystyk z surowych wyników i achievementów (logika biznesowa).
      *
-     * @param object|null $results { matches: int, avg_average: ?float }
+     * @param object|null $results { games: int, avg_average: ?float }
      * @param Collection<int, object> $achievements { type: string, value: ?int }
      */
     private function buildStatsArray(?object $results, Collection $achievements): array
     {
-        $matches = $results ? (int) $results->matches : 0;
+        $gamesPlayed = $results ? (int) $results->games : 0;
         $avgThreeDarts = $results && $results->avg_average !== null
             ? round((float) $results->avg_average, 2)
             : null;
@@ -151,7 +151,7 @@ class PlayerStatsService
         }
 
         return [
-            'matches' => $matches,
+            'games' => $gamesPlayed,
             'avg_three_darts' => $avgThreeDarts,
             'highest_hf' => $highestHf,
             'fastest_qf' => $fastestQf,

@@ -20,9 +20,9 @@ return new class extends Migration
 
             $table->foreignId('player_id')->constrained('players')->onDelete('cascade');
 
-            $table->unsignedInteger('matches_played')->default(0);
-            $table->unsignedInteger('matches_won')->default(0);
-            $table->unsignedInteger('matches_lost')->default(0);
+            $table->unsignedInteger('games_played')->default(0);
+            $table->unsignedInteger('games_won')->default(0);
+            $table->unsignedInteger('games_lost')->default(0);
             $table->unsignedInteger('legs_won')->default(0);
             $table->unsignedInteger('legs_lost')->default(0);
             $table->integer('points')->default(0);

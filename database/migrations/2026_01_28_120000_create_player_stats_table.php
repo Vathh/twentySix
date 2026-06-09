@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('player_id')->unique()->constrained('players')->onDelete('cascade');
 
             // Quick game stats (z quick_game_results + achievements gdzie tournament_id null)
-            $table->unsignedInteger('quick_matches')->default(0);
+            $table->unsignedInteger('quick_games')->default(0);
             $table->decimal('quick_avg_three_darts', 6, 2)->nullable();
             $table->unsignedInteger('quick_highest_hf')->nullable();
             $table->unsignedInteger('quick_fastest_qf')->nullable();
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->unsignedInteger('quick_count_qf')->default(0);
 
             // Tournament stats (z games/playoff_games + achievements gdzie tournament_id not null)
-            $table->unsignedInteger('tournament_matches')->default(0);
+            $table->unsignedInteger('tournament_games')->default(0);
             $table->decimal('tournament_avg_three_darts', 6, 2)->nullable();
             $table->unsignedInteger('tournament_highest_hf')->nullable();
             $table->unsignedInteger('tournament_fastest_qf')->nullable();

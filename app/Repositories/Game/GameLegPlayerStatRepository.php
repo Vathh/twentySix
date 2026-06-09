@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Game;
 
-use App\DTO\Match\CloseLegPlayerStatsDTO;
+use App\DTO\GameScoring\CloseLegPlayerStatsDTO;
 use App\Models\Game\GameLegPlayerStat;
 use Illuminate\Support\Collection;
 

@@ -12,9 +12,9 @@ class GroupStandingDomain
      * @param TournamentDomain|null $tournament
      * @param int $groupNumber
      * @param PlayerDomain|null $player
-     * @param int $matchesPlayed
-     * @param int $matchesWon
-     * @param int $matchesLost
+     * @param int $gamesPlayed
+     * @param int $gamesWon
+     * @param int $gamesLost
      * @param int $legsWon
      * @param int $legsLost
      * @param int $points
@@ -26,9 +26,9 @@ class GroupStandingDomain
         public readonly ?TournamentDomain $tournament,
         public readonly int $groupNumber,
         public readonly ?PlayerDomain $player,
-        public readonly int $matchesPlayed,
-        public readonly int $matchesWon,
-        public readonly int $matchesLost,
+        public readonly int $gamesPlayed,
+        public readonly int $gamesWon,
+        public readonly int $gamesLost,
         public readonly int $legsWon,
         public readonly int $legsLost,
         public readonly int $points,
@@ -56,9 +56,9 @@ class GroupStandingDomain
             player: in_array('player', $with)
                 ? PlayerDomain::fromEloquent($groupStanding->player)
                 : null,
-            matchesPlayed: $groupStanding->matches_played,
-            matchesWon: $groupStanding->matches_won,
-            matchesLost: $groupStanding->matches_lost,
+            gamesPlayed: $groupStanding->games_played,
+            gamesWon: $groupStanding->games_won,
+            gamesLost: $groupStanding->games_lost,
             legsWon: $groupStanding->legs_won,
             legsLost: $groupStanding->legs_lost,
             points: $groupStanding->points,
@@ -78,9 +78,9 @@ class GroupStandingDomain
             tournament: $this->tournament,
             groupNumber: $this->groupNumber,
             player: $this->player,
-            matchesPlayed: $this->matchesPlayed,
-            matchesWon: $this->matchesWon,
-            matchesLost: $this->matchesLost,
+            gamesPlayed: $this->gamesPlayed,
+            gamesWon: $this->gamesWon,
+            gamesLost: $this->gamesLost,
             legsWon: $this->legsWon,
             legsLost: $this->legsLost,
             points: $this->points,

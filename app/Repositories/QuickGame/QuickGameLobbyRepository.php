@@ -133,7 +133,7 @@ class QuickGameLobbyRepository
         return $this->find($lobbyId);
     }
 
-    public function attachMatchMeta(int $lobbyId, ?int $quickGameId, array $playerOrderLobbyPlayerIds): void
+    public function attachGameMeta(int $lobbyId, ?int $quickGameId, array $playerOrderLobbyPlayerIds): void
     {
         DB::table('quick_game_lobbies')->where('id', $lobbyId)->update([
             'quick_game_id' => $quickGameId,

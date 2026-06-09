@@ -43,6 +43,16 @@ class PlayoffGameRepository
             ]);
     }
 
+    public function tryLockScheduled(int $gameId): bool
+    {
+        return DB::table('playoff_games')
+            ->where('id', $gameId)
+            ->where('status', GameStatus::SCHEDULED)
+            ->whereNotNull('player1_id')
+            ->whereNotNull('player2_id')
+            ->update(['status' => GameStatus::IN_PROGRESS]) === 1;
+    }
+
     /**
      * @param int $tournamentId
      * @return Collection<PlayoffGameDomain>

@@ -36,7 +36,7 @@
                                 @php($cellGame = $games[$number][$rowPlayer->id][$columnPlayer->id])
                                 @if($rowPlayer->id === $cellGame->player1->id)
                                     <td class="px-2 py-2 text-center">
-                                        <a href="{{ route('matches.show', ['type' => 'group', 'id' => $cellGame->id]) }}" class="text-light-green hover:underline">
+                                        <a href="{{ route('games.show', ['type' => 'group', 'id' => $cellGame->id]) }}" class="text-light-green hover:underline">
                                             {{ $cellGame->player1Score }}
                                             -
                                             {{ $cellGame->player2Score }}
@@ -44,7 +44,7 @@
                                     </td>
                                 @else
                                     <td class="px-2 py-2 text-center">
-                                        <a href="{{ route('matches.show', ['type' => 'group', 'id' => $cellGame->id]) }}" class="text-light-green hover:underline">
+                                        <a href="{{ route('games.show', ['type' => 'group', 'id' => $cellGame->id]) }}" class="text-light-green hover:underline">
                                             {{ $cellGame->player2Score }}
                                             -
                                             {{ $cellGame->player1Score }}
@@ -55,7 +55,7 @@
                                 @php($cellGame = $games[$number][$rowPlayer->id][$columnPlayer->id])
                                 @if($rowPlayer->id === $cellGame->player1->id)
                                     <td class="px-2 py-2 text-center">
-                                        <a href="{{ route('matches.live', ['type' => 'group', 'id' => $cellGame->id]) }}" class="text-light-orange hover:underline" title="Podgląd na żywo">
+                                        <a href="{{ route('games.live', ['type' => 'group', 'id' => $cellGame->id]) }}" class="text-light-orange hover:underline" title="Podgląd na żywo">
                                             {{ $cellGame->player1Score }}
                                             -
                                             {{ $cellGame->player2Score }}
@@ -63,7 +63,7 @@
                                     </td>
                                 @else
                                     <td class="px-2 py-2 text-center">
-                                        <a href="{{ route('matches.live', ['type' => 'group', 'id' => $cellGame->id]) }}" class="text-light-orange hover:underline" title="Podgląd na żywo">
+                                        <a href="{{ route('games.live', ['type' => 'group', 'id' => $cellGame->id]) }}" class="text-light-orange hover:underline" title="Podgląd na żywo">
                                             {{ $cellGame->player2Score }}
                                             -
                                             {{ $cellGame->player1Score }}
@@ -78,8 +78,8 @@
                         @endif
                     @endforeach
 
-                    <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->matchesWon }}</td>
-                    <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->matchesLost }}</td>
+                    <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->gamesWon }}</td>
+                    <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->gamesLost }}</td>
                     <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->legsDifference }}</td>
                     <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->points }}</td>
                     <td class="px-2 py-2 text-center font-semibold text-light-green">{{ $groupStandings[$number][$rowPlayer->id]->place }}</td>

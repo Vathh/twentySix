@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Game;
 
-use App\DTO\Match\RecordVisitDTO;
+use App\DTO\GameScoring\RecordVisitDTO;
 use App\Models\Game\GameVisit;
 use Illuminate\Support\Collection;
 
@@ -46,7 +46,7 @@ class GameVisitRepository
     /**
      * @return Collection<int, GameVisit>
      */
-    public function getActiveForMatchLegs(array $gameLegIds): Collection
+    public function getActiveForGameLegs(array $gameLegIds): Collection
     {
         if ($gameLegIds === []) {
             return collect();

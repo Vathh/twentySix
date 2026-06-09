@@ -7,25 +7,25 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('playerProfileData', () => ({
         activeTab: 'overview',
-        matchHistory: {
-            items: @json($matchHistoryItems),
-            hasMore: @json($matchHistoryHasMore),
+        gameHistory: {
+            items: @json($gameHistoryItems),
+            hasMore: @json($gameHistoryHasMore),
             page: 1,
             loading: false
         },
-        loadMoreMatches() {
-            if (this.matchHistory.loading || !this.matchHistory.hasMore) return;
-            this.matchHistory.loading = true;
-            fetch('{{ route('players.matches', $player) }}?page=' + (this.matchHistory.page + 1), {
+        loadMoreGames() {
+            if (this.gameHistory.loading || !this.gameHistory.hasMore) return;
+            this.gameHistory.loading = true;
+            fetch('{{ route('players.games', $player) }}?page=' + (this.gameHistory.page + 1), {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(r => r.json())
             .then(data => {
-                this.matchHistory.items = this.matchHistory.items.concat(data.items);
-                this.matchHistory.hasMore = data.has_more;
-                this.matchHistory.page++;
+                this.gameHistory.items = this.gameHistory.items.concat(data.items);
+                this.gameHistory.hasMore = data.has_more;
+                this.gameHistory.page++;
             })
-            .finally(() => { this.matchHistory.loading = false; });
+            .finally(() => { this.gameHistory.loading = false; });
         },
         typeLabel(type) {
             if (type === 'quick') return 'Szybki mecz';
@@ -101,7 +101,7 @@ document.addEventListener('alpine:init', () => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="border-b border-border/50"><td class="py-2 pr-4">Rozegrane mecze</td><td>{{ $quickStats['matches'] }}</td></tr>
+                            <tr class="border-b border-border/50"><td class="py-2 pr-4">Rozegrane mecze</td><td>{{ $quickStats['games'] }}</td></tr>
                             <tr class="border-b border-border/50"><td class="py-2 pr-4">Średnia (3 lotki)</td><td>{{ $quickStats['avg_three_darts'] ?? '–' }}</td></tr>
                             <tr class="border-b border-border/50"><td class="py-2 pr-4">Najwyższy finish (HF)</td><td>{{ $quickStats['highest_hf'] ?? '–' }}</td></tr>
                             <tr class="border-b border-border/50"><td class="py-2 pr-4">Najszybsza lotka (QF)</td><td>{{ $quickStats['fastest_qf'] !== null ? $quickStats['fastest_qf'] . ' lotek' : '–' }}</td></tr>
@@ -126,7 +126,7 @@ document.addEventListener('alpine:init', () => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="border-b border-border/50"><td class="py-2 pr-4">Rozegrane mecze</td><td>{{ $tournamentStats['matches'] }}</td></tr>
+                            <tr class="border-b border-border/50"><td class="py-2 pr-4">Rozegrane mecze</td><td>{{ $tournamentStats['games'] }}</td></tr>
                             <tr class="border-b border-border/50"><td class="py-2 pr-4">Średnia (3 lotki)</td><td>{{ $tournamentStats['avg_three_darts'] ?? '–' }}</td></tr>
                             <tr class="border-b border-border/50"><td class="py-2 pr-4">Najwyższy finish (HF)</td><td>{{ $tournamentStats['highest_hf'] ?? '–' }}</td></tr>
                             <tr class="border-b border-border/50"><td class="py-2 pr-4">Najszybsza lotka (QF)</td><td>{{ $tournamentStats['fastest_qf'] !== null ? $tournamentStats['fastest_qf'] . ' lotek' : '–' }}</td></tr>
@@ -158,7 +158,7 @@ document.addEventListener('alpine:init', () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                <template x-for="(m, i) in matchHistory.items" :key="i">
+                                <template x-for="(m, i) in gameHistory.items" :key="i">
                                     <tr class="border-b border-border/50 hover:bg-darker-bg/30 transition">
                                         <td class="px-4 py-3" x-text="m.date_formatted"></td>
                                         <td class="px-4 py-3" x-text="typeLabel(m.type)"></td>
@@ -170,7 +170,7 @@ document.addEventListener('alpine:init', () => {
                                         <td class="px-4 py-3" x-text="m.tournament_name || '–'"></td>
                                     </tr>
                                 </template>
-                                <tr x-show="matchHistory.items.length === 0">
+                                <tr x-show="gameHistory.items.length === 0">
                                     <td colspan="6" class="px-4 py-8 text-center text-light-gray">Brak meczów w historii.</td>
                                 </tr>
                             </tbody>
@@ -178,11 +178,11 @@ document.addEventListener('alpine:init', () => {
                     </div>
                     <div class="p-4 border-t border-border flex justify-center">
                         <button type="button"
-                                @click="loadMoreMatches()"
-                                x-show="matchHistory.hasMore"
-                                :disabled="matchHistory.loading"
+                                @click="loadMoreGames()"
+                                x-show="gameHistory.hasMore"
+                                :disabled="gameHistory.loading"
                                 class="btn btn-mini disabled:opacity-50 disabled:cursor-not-allowed">
-                            <span x-text="matchHistory.loading ? 'Ładowanie…' : 'Załaduj więcej'"></span>
+                            <span x-text="gameHistory.loading ? 'Ładowanie…' : 'Załaduj więcej'"></span>
                         </button>
                     </div>
                 </div>

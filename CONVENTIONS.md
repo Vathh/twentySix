@@ -2,10 +2,10 @@
 
 ## Nazewnictwo - Game vs Match
 
-**WAŻNE:** W projekcie zawsze używamy słowa **Game** zamiast **Match** do określania rozgrywek.
+**WAŻNE:** W projekcie zawsze używamy słowa **Game** zamiast **Match** do określania rozgrywek — w kodzie, URL-ach, trasach, zmiennych i kolumnach DB.
 
 ### Powód
-Słowo `match` jest słowem kluczowym w języku PHP, dlatego unikamy jego używania dla zachowania czystości kodu i uniknięcia potencjalnych konfliktów.
+Słowo `match` jest słowem kluczowym w PHP (`match ($x) { ... }`). Unikamy go w identyfikatorach, żeby kod był jednoznaczny. Dotyczy to także URL-i (`/games/...`) i nazw tras (`games.show`), bo odnoszą się do rozgrywki, nie do składni języka.
 
 ### Zasady
 - ✅ Używamy: `Game`, `GameLeg`, `GameService`, `QuickGame`, `GroupGame`, `PlayoffGame`
@@ -52,11 +52,11 @@ app/
 
 ## Szczegóły meczu, wizyty i statystyki (plan wdrożenia)
 
-Dotyczy meczów turniejowych (`games`, `playoff_games`) oraz towarzyskich (`quick_games`). W kodzie domenowym nadal **Game**, na WWW route może być `/matches/{type}/{id}` (czytelny URL).
+Dotyczy meczów turniejowych (`games`, `playoff_games`) oraz towarzyskich (`quick_games`). W kodzie i na WWW używamy **Game** — route `/games/{type}/{id}`.
 
-### Strona WWW meczu
+### Strona WWW rozgrywki
 
-- Jeden kontroler / widok (np. `MatchController@show`) z adapterem ładującym `group` | `playoff` | `quick`.
+- Jeden kontroler / widok (`GameViewController@show`) z adapterem ładującym `group` | `playoff` | `quick`.
 - Etykieta typu: **turniejowy** (grupa / playoff + nazwa turnieju) lub **towarzyski** (quick game).
 - Linki: kafelek drabinki playoff, wynik w tabeli grupy → ta sama strona.
 - **Skuteczność na double (mecz):** agregat z legów — `sum(double_successes) / sum(double_attempts)` tylko dla legów, gdzie `double_tracked = true` (per gracz).
@@ -120,7 +120,7 @@ Unikalność: `(game_leg_id, player_id)`. Uzupełniane przy **zamknięciu lega**
 
 ### API — osobne endpointy, wspólna logika
 
-Osobne ścieżki (łatwiejsza autoryzacja i walidacja), **wspólne serwisy** (np. `RecordVisitService`, `BuildMatchStateService`, `CloseLegService`) — bez duplikacji reguł biznesowych.
+Osobne ścieżki (łatwiejsza autoryzacja i walidacja), **wspólne serwisy** (np. `GameScoringService`, `GameScoringStateBuilder`) — bez duplikacji reguł biznesowych.
 
 Przykładowy przepływ (kształt roboczy):
 

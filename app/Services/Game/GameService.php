@@ -5,15 +5,21 @@ namespace App\Services\Game;
 use App\DTO\ActiveGameDTO;
 use App\DTO\GameResultDTO;
 use App\DTO\UpdateGameDTO;
+use App\Enums\GameKind;
 use App\Enums\GameStage;
+use App\Enums\GameStatus;
 use App\Enums\GameType;
 use App\Enums\TournamentStatus;
+use App\Models\Game\Game;
+use App\Models\PlayoffGame\PlayoffGame;
+use App\Support\GameScoring\GameScoringContext;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Services\Achievements\AchievementsService;
 use App\Services\Game\GameLegService;
+use App\Services\Game\GameLockService;
 use App\Services\GroupStanding\GroupStandingService;
 use App\Services\League\LeagueStatsService;
 use App\Services\Player\PlayerStatsService;
@@ -39,27 +45,78 @@ class GameService
         private GameLegService      $gameLegService,
         private PlayerStatsService   $playerStatsService,
         private LeagueStatsService   $leagueStatsService,
+        private GameLockService     $gameLockService,
     )
     {
     }
 
     public function setStatusInProgress(int $gameId): void
     {
-        $this->gameRepository->setStatusInProgress($gameId);
+        $this->gameLockService->lock($gameId, GameType::GROUP);
+    }
+
+    public function lockGame(int $gameId, GameType $type): void
+    {
+        $this->gameLockService->lock($gameId, $type);
     }
 
     public function update(UpdateGameDTO $dto): bool
     {
-        if($dto->gameResultDTO->type === GameType::PLAYOFF)
-        {
+        if ($this->isFinishedGameAchievementsUpdate($dto)) {
+            return $this->saveAchievementsForFinishedGame($dto);
+        }
+
+        if ($dto->gameResultDTO->type === GameType::PLAYOFF) {
             return $this->handlePlayoffGameUpdate($dto);
-        }else if($dto->gameResultDTO->type === GameType::GROUP)
-        {
+        }
+
+        if ($dto->gameResultDTO->type === GameType::GROUP) {
             return $this->handleGroupGameUpdate($dto);
         }
 
         // Quick games są obsługiwane przez /api/quick-game/update
         return false;
+    }
+
+    /**
+     * Po zamknięciu ostatniego lega przez scoring API — tabele, playoff, statystyki (bez ponownego finish).
+     */
+    public function finalizeTournamentGameFromScoring(GameScoringContext $context, Game|PlayoffGame $gameModel): void
+    {
+        if ($context->tournamentId === null) {
+            return;
+        }
+
+        if ($gameModel->status !== GameStatus::FINISHED) {
+            return;
+        }
+
+        $dto = $this->buildGameResultDtoFromModel($context, $gameModel);
+
+        match ($context->kind) {
+            GameKind::GROUP => $this->finalizeGroupGameFromScoring($dto),
+            GameKind::PLAYOFF => $this->finalizePlayoffGameFromScoring($dto),
+            GameKind::QUICK => null,
+        };
+    }
+
+    public function saveAchievementsForFinishedGame(UpdateGameDTO $dto): bool
+    {
+        try {
+            DB::transaction(function () use ($dto) {
+                $this->assertGameIsFinished($dto->gameResultDTO);
+                $this->achievementsService->createMany($dto->achievementsDTOs);
+            });
+
+            return true;
+        } catch (Throwable $e) {
+            \Log::error('Achievements-only game update failed', [
+                'gameId' => $dto->gameResultDTO->gameId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 
     /**
@@ -178,18 +235,7 @@ class GameService
                     );
                 }
 
-                // Aktualizuj cache statystyk graczy (tylko zarejestrowanych)
-                foreach ([$dto->gameResultDTO->player1Id, $dto->gameResultDTO->player2Id] as $playerId) {
-                    $player = $this->playerRepository->findById($playerId);
-                    if ($player !== null && $player->userId !== null) {
-                        $this->playerStatsService->recalculateAndSave($player->id);
-                    }
-                }
-
-                $leagueId = $this->tournamentRepository->getLeagueIdForTournament($gameToUpdate->tournamentId);
-                if ($leagueId !== null) {
-                    $this->leagueStatsService->recalculateForLeague($leagueId);
-                }
+                $this->recalculatePlayerAndLeagueStats($dto->gameResultDTO);
             });
 
             return true;
@@ -227,18 +273,7 @@ class GameService
                     );
                 }
 
-                // Aktualizuj cache statystyk graczy (tylko zarejestrowanych)
-                foreach ([$dto->gameResultDTO->player1Id, $dto->gameResultDTO->player2Id] as $playerId) {
-                    $player = $this->playerRepository->findById($playerId);
-                    if ($player !== null && $player->userId !== null) {
-                        $this->playerStatsService->recalculateAndSave($player->id);
-                    }
-                }
-
-                $leagueId = $this->tournamentRepository->getLeagueIdForTournament($dto->gameResultDTO->tournamentId);
-                if ($leagueId !== null) {
-                    $this->leagueStatsService->recalculateForLeague($leagueId);
-                }
+                $this->recalculatePlayerAndLeagueStats($dto->gameResultDTO);
 
                 $this->handlePlayoffStart($dto->gameResultDTO->tournamentId);
 
@@ -247,6 +282,116 @@ class GameService
             return true;
         } catch (Throwable $e) {
             return false;
+        }
+    }
+
+    private function finalizeGroupGameFromScoring(GameResultDTO $dto): void
+    {
+        DB::transaction(function () use ($dto) {
+            $this->groupStandingService->updateStandingsDetails($dto);
+            $this->groupStandingService->updateGroupStandings($dto->tournamentId, $dto->groupNumber);
+            $this->recalculatePlayerAndLeagueStats($dto);
+            $this->handlePlayoffStart($dto->tournamentId);
+        });
+    }
+
+    private function finalizePlayoffGameFromScoring(GameResultDTO $dto): void
+    {
+        DB::transaction(function () use ($dto) {
+            $gameToUpdate = $this->playoffGameRepository->find($dto->gameId);
+
+            if (! in_array($gameToUpdate->round, [GameStage::FINAL, GameStage::THIRD, GameStage::SEMI])) {
+                $this->handleTournamentResultCreating(
+                    $dto->winnerId,
+                    $dto->player1Id,
+                    $dto->player2Id,
+                    $gameToUpdate->tournamentId,
+                    $gameToUpdate->round,
+                    null,
+                );
+            } elseif ($gameToUpdate->round === GameStage::THIRD) {
+                $this->handleTournamentResultCreating(
+                    $dto->winnerId,
+                    $dto->player1Id,
+                    $dto->player2Id,
+                    $gameToUpdate->tournamentId,
+                    GameStage::THIRD,
+                    3,
+                );
+                $this->tournamentRepository->finishTournament($gameToUpdate->tournamentId);
+            } elseif ($gameToUpdate->round === GameStage::FINAL) {
+                $this->handleTournamentResultCreating(
+                    $dto->winnerId,
+                    $dto->player1Id,
+                    $dto->player2Id,
+                    $gameToUpdate->tournamentId,
+                    GameStage::FINAL,
+                    1,
+                );
+                $this->tournamentRepository->finishTournament($gameToUpdate->tournamentId);
+            }
+
+            $this->playoffService->applyWinnerAdvancement($dto, $gameToUpdate);
+            $this->recalculatePlayerAndLeagueStats($dto);
+        });
+    }
+
+    private function buildGameResultDtoFromModel(GameScoringContext $context, Game|PlayoffGame $gameModel): GameResultDTO
+    {
+        return new GameResultDTO(
+            gameId: (int) $gameModel->id,
+            type: $context->kind === GameKind::PLAYOFF ? GameType::PLAYOFF : GameType::GROUP,
+            player1Id: (int) $gameModel->player1_id,
+            player2Id: (int) $gameModel->player2_id,
+            player1Score: (int) $gameModel->player1_score,
+            player2Score: (int) $gameModel->player2_score,
+            winnerId: (int) $gameModel->winner_id,
+            tournamentId: $context->tournamentId,
+            groupNumber: $gameModel instanceof Game ? (int) $gameModel->group_number : 0,
+        );
+    }
+
+    private function isFinishedGameAchievementsUpdate(UpdateGameDTO $dto): bool
+    {
+        if ($dto->achievementsDTOs === []) {
+            return false;
+        }
+
+        return match ($dto->gameResultDTO->type) {
+            GameType::GROUP => $this->gameRepository->find($dto->gameResultDTO->gameId)?->status === GameStatus::FINISHED,
+            GameType::PLAYOFF => $this->playoffGameRepository->find($dto->gameResultDTO->gameId)?->status === GameStatus::FINISHED,
+            default => false,
+        };
+    }
+
+    private function assertGameIsFinished(GameResultDTO $dto): void
+    {
+        $finished = match ($dto->type) {
+            GameType::GROUP => $this->gameRepository->find($dto->gameId)?->status === GameStatus::FINISHED,
+            GameType::PLAYOFF => $this->playoffGameRepository->find($dto->gameId)?->status === GameStatus::FINISHED,
+            default => false,
+        };
+
+        if (! $finished) {
+            throw new \DomainException('Mecz nie jest zakończony — nie można zapisać samych achievementów.');
+        }
+    }
+
+    private function recalculatePlayerAndLeagueStats(GameResultDTO $dto): void
+    {
+        foreach ([$dto->player1Id, $dto->player2Id] as $playerId) {
+            $player = $this->playerRepository->findById($playerId);
+            if ($player !== null && $player->userId !== null) {
+                $this->playerStatsService->recalculateAndSave($player->id);
+            }
+        }
+
+        $tournamentId = $dto->tournamentId;
+        if ($tournamentId !== null) {
+            $leagueId = $this->tournamentRepository->getLeagueIdForTournament($tournamentId);
+            if ($leagueId !== null) {
+                $this->leagueStatsService->recalculateForLeague($leagueId);
+            }
         }
     }
 

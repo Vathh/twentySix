@@ -5,9 +5,9 @@ use App\Http\Controllers\Api\FriendshipController;
 use App\Http\Controllers\Api\GameController;
 use App\Http\Controllers\Api\QuickGameController;
 use App\Http\Controllers\Api\TournamentInvitationController;
-use App\Http\Controllers\Api\Match\GroupGameScoringController;
-use App\Http\Controllers\Api\Match\PlayoffGameScoringController;
-use App\Http\Controllers\Api\Match\QuickGameScoringController;
+use App\Http\Controllers\Api\GameScoring\GroupGameScoringController;
+use App\Http\Controllers\Api\GameScoring\PlayoffGameScoringController;
+use App\Http\Controllers\Api\GameScoring\QuickGameScoringController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'tournamentLogin']); // kod turnieju – do sędziowania

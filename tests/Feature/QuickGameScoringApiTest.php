@@ -57,7 +57,7 @@ class QuickGameScoringApiTest extends TestCase
             'player2DoubleTracked' => false,
         ]);
         $startLeg->assertOk()
-            ->assertJsonPath('match.kind', 'quick')
+            ->assertJsonPath('game.kind', 'quick')
             ->assertJsonPath('currentLeg.legNumber', 1);
 
         $legId = $startLeg->json('currentLeg.id');
@@ -95,7 +95,7 @@ class QuickGameScoringApiTest extends TestCase
             ],
         ]);
         $close->assertOk()
-            ->assertJsonPath('match.player1LegsWon', 1);
+            ->assertJsonPath('game.player1LegsWon', 1);
 
         $this->assertDatabaseHas('game_visits', [
             'game_leg_id' => $legId,

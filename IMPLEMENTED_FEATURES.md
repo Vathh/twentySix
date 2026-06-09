@@ -32,8 +32,8 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Start: liczba kodów tabletów (≠ liczba grup) | ✅ | `tabletsCount` w kreatorze, `LoginCodeService` |
 | Start: tylko zaakceptowani + goście | ✅ | `getTournamentStartPool`, walidacja przy `run` |
 | Publiczny podgląd lig/turniejów | ⚠️ | Widoki istnieją; weryfikacja gościa bez logowania — do sprawdzenia |
-| Korekta wyniku / walkower na webie | ✅ | `matches/show` — formularz admina sezonu, `MatchResultCorrectionService` |
-| Live podgląd meczu (WebSocket) | ✅ | `matches/{type}/{id}/live`, `match-live.js`, Reverb `match.state` |
+| Korekta wyniku / walkower na webie | ✅ | `games/show` — formularz admina sezonu, `GameResultCorrectionService` |
+| Live podgląd meczu (WebSocket) | ✅ | `games/{type}/{id}/live`, `game-live.js`, Reverb `game.state` |
 | Live WebSocket na webie (turniej) | ❌ | Brak widoku live całego turnieju z WS |
 | Znajomi na webie | ⚠️ | UI częściowo; product: poza MVP na webie |
 
@@ -53,7 +53,7 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Awans z grupy (wybór admina) | ✅ | `advance_per_group` na turnieju, `PlayoffService` |
 | Bracket `groups × awans` (potęga 2) | ✅ | `PlayoffBracketFactory::create` (2–32) |
 | Playoff R1: bez par z tej samej grupy | ✅ | `PlayoffFirstRoundPairing` |
-| Statusy meczu + lock tabletu | ⚠️ | `GameStatus`, `inProgress`/`active` — mobile nie zawsze woła lock |
+| Statusy meczu + lock tabletu | ✅ | `GameLockService`, `POST /api/game/inProgress`, mobile `lockTournamentGame` |
 | Kody tabletów | ✅ | `POST /api/login`, `LoginCodeService` |
 | Znajomi (invite/accept/reject) | ✅ | `/api/friends/*` |
 | Zaproszenia turniejowe API | ✅ | `/api/tournaments/invitations/*` |
@@ -61,10 +61,12 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Lobby: tylko znajomi | ❌ | Brak walidacji friends-only + goście w API |
 | Quick game: `one_device` / `each_own` | ✅ | `scoring_mode` w lobby |
 | Quick game FFA do 8 | ⚠️ | Cap 6 w lobby; wynik multi-player częściowy |
-| Scoring API turniej + quick | ✅ | `MatchScoringService`, osobne kontrolery |
+| Scoring API turniej + quick | ✅ | `GameScoringService`, osobne kontrolery |
+| Finalizacja turnieju po scoring API | ✅ | `GameService::finalizeTournamentGameFromScoring` po `closeLeg` (tabele, playoff, statystyki) |
+| Achievementy na zakończonym meczu | ✅ | `POST /api/game/update` — tryb achievements-only gdy gra `FINISHED` |
 | Achievementy turniejowe | ✅ | `AchievementsService` |
 | Auto point scheme | ✅ | `PointSchemeService::findByPlayersAmount` |
-| WebSocket (Reverb) | ✅ | `MatchScoringStateUpdated`, `QuickGameLobbyUpdated`, `channels.php` |
+| WebSocket (Reverb) | ✅ | `GameScoringStateUpdated`, `QuickGameLobbyUpdated`, `channels.php` |
 
 ---
 
@@ -73,7 +75,7 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Wymaganie MVP | Status |
 |---------------|--------|
 | Tablet: kod + lista meczów + H2H | ⚠️ |
-| Tablet: grupy → mecze; playoff płaska lista | ⚠️ |
+| Tablet: grupy → mecze; playoff płaska lista | ✅ | `ActiveGameDTO.roundLabel`, mobile `GameList.jsx` |
 | Lock meczu `w trakcie` | ❌ |
 | Quick game: tryby urządzeń (2P online) | ✅ |
 | Quick game FFA 3–8 + rotacja legów | ⚠️ |
@@ -90,7 +92,7 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 1. ~~**Turniej — logika:** podział grup, awans z grupy, bracket dynamiczny, playoff R1 bez par z grupy, min. 4 graczy.~~ ✅ *(czerwiec 2026)*
 2. ~~**Zaproszenia turniejowe:** API + web (wysyłka) + mobile (akceptacja).~~ ✅ *(czerwiec 2026)*
 3. ~~**Web:** edycja wyniku / walkower; live podgląd meczu~~ ✅ *(czerwiec 2026)*.
-4. **Tablet mobile:** lock meczu, playoff UI, scoring API + WS.
+4. ~~**Tablet mobile:** lock meczu; playoff UI; scoring API + WS.~~ ✅ *(czerwiec 2026)*
 5. **Quick game:** FFA do 8, rotacja openera lega, friends-only, multi-device 3+.
 6. **Offline / solo** na mobile.
 
@@ -106,6 +108,7 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Parowanie R1 | `tests/Unit/Tournament/PlayoffFirstRoundPairingTest.php` |
 | Awans / playoff | `tests/Feature/PlayoffAdvanceTest.php` |
 | Flow E2E (start → grupy → playoff) | `tests/Feature/TournamentFlowTest.php` |
+| Scoring API → finalizacja turnieju | `tests/Feature/TournamentGameScoringFinalizeTest.php` |
 | Start HTTP | `tests/Feature/TournamentControllerTest.php` |
 
 ---

@@ -11,7 +11,7 @@ class PlayerStat extends Model
 
     protected $fillable = [
         'player_id',
-        'quick_matches',
+        'quick_games',
         'quick_avg_three_darts',
         'quick_highest_hf',
         'quick_fastest_qf',
@@ -19,7 +19,7 @@ class PlayerStat extends Model
         'quick_count_170_plus',
         'quick_count_hf',
         'quick_count_qf',
-        'tournament_matches',
+        'tournament_games',
         'tournament_avg_three_darts',
         'tournament_highest_hf',
         'tournament_fastest_qf',

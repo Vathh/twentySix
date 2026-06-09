@@ -14,7 +14,9 @@ class ActiveGameDTO
         public string $type,
         public array $player1,
         public array $player2,
-        public ?int $groupNumber
+        public ?int $groupNumber,
+        public ?string $round = null,
+        public ?string $roundLabel = null,
     )
     {
     }
@@ -37,7 +39,9 @@ class ActiveGameDTO
                 'id' => $game->player2->id,
                 'name' => $game->player2->name,
             ],
-            groupNumber: $game->groupNumber
+            groupNumber: $game->groupNumber,
+            round: null,
+            roundLabel: null,
         );
     }
 
@@ -59,7 +63,9 @@ class ActiveGameDTO
                 'id' => $game->player2->id,
                 'name' => $game->player2->name,
             ],
-            groupNumber: 0
+            groupNumber: null,
+            round: $game->round->value,
+            roundLabel: $game->round->label(),
         );
     }
 }

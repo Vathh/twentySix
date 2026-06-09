@@ -20,7 +20,7 @@ use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Services\Game\GameService;
 use App\Services\Tournament\TournamentService;
-use Database\Seeders\Support\DemoMatchScoringFactory;
+use Database\Seeders\Support\DemoGameScoringFactory;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -165,7 +165,7 @@ class DemoDataSeeder extends Seeder
         }
         $this->finishAllPlayoffGamesPlayer1Wins($big->id, $gameService);
         $big->update(['status' => TournamentStatus::FINISHED]);
-        DemoMatchScoringFactory::seedTournament($big->id);
+        DemoGameScoringFactory::seedTournament($big->id);
 
         $small = Tournament::create([
             'season_id' => $seasonA->id,

@@ -22,7 +22,7 @@ class QuickGameService
         private QuickGameRepository $quickGameRepository,
         private PlayerRepository $playerRepository,
         private AchievementsService $achievementsService,
-        private GameLegService $matchLegService
+        private GameLegService $gameLegService
     )
     {
     }
@@ -87,7 +87,7 @@ class QuickGameService
 
                 // Zapisz szczegóły legów jeśli są dostępne
                 if (!empty($dto->legsDTOs)) {
-                    $this->matchLegService->createMany(
+                    $this->gameLegService->createMany(
                         $dto->legsDTOs,
                         gameId: null,
                         playoffGameId: null,

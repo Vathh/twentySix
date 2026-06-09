@@ -31,13 +31,12 @@ class GameRepository
             ]);
     }
 
-    public function setStatusInProgress(int $gameId): void
+    public function tryLockScheduled(int $gameId): bool
     {
-        DB::table('games')
+        return DB::table('games')
             ->where('id', $gameId)
-            ->update([
-                'status' => GameStatus::IN_PROGRESS
-            ]);
+            ->where('status', GameStatus::SCHEDULED)
+            ->update(['status' => GameStatus::IN_PROGRESS]) === 1;
     }
 
     /**

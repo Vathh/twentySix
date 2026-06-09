@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\GameType;
+use App\Http\Requests\LockGameRequest;
 use App\Http\Requests\GameResultRequest;
 use App\Services\Game\GameService;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,13 +18,20 @@ class GameController
     {
     }
 
-    public function setStatusInProgress(Request $request): void
+    public function setStatusInProgress(LockGameRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'gameId' => 'required',
-        ]);
+        $validated = $request->validated();
 
-        $this->gameService->setStatusInProgress($validated['gameId']);
+        try {
+            $this->gameService->lockGame(
+                (int) $validated['gameId'],
+                GameType::from($validated['type']),
+            );
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        }
+
+        return response()->json(['success' => true]);
     }
 
     public function update(GameResultRequest $request): JsonResponse
@@ -42,13 +52,3 @@ class GameController
         return response()->json($games);
     }
 }
-
-
-
-
-
-
-
-
-
-

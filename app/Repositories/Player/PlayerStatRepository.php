@@ -19,15 +19,15 @@ class PlayerStatRepository
     /**
      * Zapisuje lub aktualizuje statystyki gracza w player_stats.
      *
-     * @param array{matches: int, avg_three_darts: ?float, highest_hf: ?int, fastest_qf: ?int, count_max: int, count_170_plus: int, count_hf: int, count_qf: int} $quickStats
-     * @param array{matches: int, avg_three_darts: ?float, highest_hf: ?int, fastest_qf: ?int, count_max: int, count_170_plus: int, count_hf: int, count_qf: int} $tournamentStats
+     * @param array{games: int, avg_three_darts: ?float, highest_hf: ?int, fastest_qf: ?int, count_max: int, count_170_plus: int, count_hf: int, count_qf: int} $quickStats
+     * @param array{games: int, avg_three_darts: ?float, highest_hf: ?int, fastest_qf: ?int, count_max: int, count_170_plus: int, count_hf: int, count_qf: int} $tournamentStats
      */
     public function upsert(int $playerId, array $quickStats, array $tournamentStats): void
     {
         PlayerStat::query()->updateOrCreate(
             ['player_id' => $playerId],
             [
-                'quick_matches' => $quickStats['matches'],
+                'quick_games' => $quickStats['games'],
                 'quick_avg_three_darts' => $quickStats['avg_three_darts'],
                 'quick_highest_hf' => $quickStats['highest_hf'],
                 'quick_fastest_qf' => $quickStats['fastest_qf'],
@@ -35,7 +35,7 @@ class PlayerStatRepository
                 'quick_count_170_plus' => $quickStats['count_170_plus'],
                 'quick_count_hf' => $quickStats['count_hf'],
                 'quick_count_qf' => $quickStats['count_qf'],
-                'tournament_matches' => $tournamentStats['matches'],
+                'tournament_games' => $tournamentStats['games'],
                 'tournament_avg_three_darts' => $tournamentStats['avg_three_darts'],
                 'tournament_highest_hf' => $tournamentStats['highest_hf'],
                 'tournament_fastest_qf' => $tournamentStats['fastest_qf'],
@@ -56,7 +56,7 @@ class PlayerStatRepository
     {
         $results = DB::table('quick_game_results')
             ->where('player_id', $playerId)
-            ->selectRaw('COUNT(*) as matches, AVG(average) as avg_average')
+            ->selectRaw('COUNT(*) as games, AVG(average) as avg_average')
             ->first();
 
         $achievements = DB::table('achievements')
@@ -70,18 +70,18 @@ class PlayerStatRepository
     /**
      * Dane do wyliczenia statystyk turniejowych (games, playoff_games, game_legs, achievements z tournament_id).
      *
-     * @return array{matches_count: int, avg_from_legs: float|null, achievements: Collection<int, object>}
+     * @return array{games_count: int, avg_from_legs: float|null, achievements: Collection<int, object>}
      */
     public function getDataForTournamentStats(int $playerId): array
     {
-        $matchesCount = DB::table('games')
+        $gamesCount = DB::table('games')
             ->where(function ($q) use ($playerId) {
                 $q->where('player1_id', $playerId)->orWhere('player2_id', $playerId);
             })
             ->where('status', 'finished')
             ->count();
 
-        $matchesCount += DB::table('playoff_games')
+        $gamesCount += DB::table('playoff_games')
             ->where(function ($q) use ($playerId) {
                 $q->where('player1_id', $playerId)->orWhere('player2_id', $playerId);
             })
@@ -96,7 +96,7 @@ class PlayerStatRepository
             ->get();
 
         return [
-            'matches_count' => $matchesCount,
+            'games_count' => $gamesCount,
             'avg_from_legs' => $avgFromLegs,
             'achievements' => $achievements,
         ];

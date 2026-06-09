@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeagueController;
-use App\Http\Controllers\MatchController;
+use App\Http\Controllers\GameViewController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\SeasonController;
@@ -11,23 +11,23 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PagesController::class, 'showHomePage'])->name('pages.home');
 
-Route::get('/matches/{type}/{id}', [MatchController::class, 'show'])
+Route::get('/games/{type}/{id}', [GameViewController::class, 'show'])
     ->where('type', 'group|playoff|quick')
     ->whereNumber('id')
-    ->name('matches.show');
-Route::post('/matches/{type}/{id}/result', [MatchController::class, 'updateResult'])
+    ->name('games.show');
+Route::post('/games/{type}/{id}/result', [GameViewController::class, 'updateResult'])
     ->where('type', 'group|playoff')
     ->whereNumber('id')
     ->middleware('auth')
-    ->name('matches.result.update');
-Route::get('/matches/{type}/{id}/live', [MatchController::class, 'live'])
+    ->name('games.result.update');
+Route::get('/games/{type}/{id}/live', [GameViewController::class, 'live'])
     ->where('type', 'group|playoff|quick')
     ->whereNumber('id')
-    ->name('matches.live');
-Route::get('/matches/{type}/{id}/live/state', [MatchController::class, 'liveState'])
+    ->name('games.live');
+Route::get('/games/{type}/{id}/live/state', [GameViewController::class, 'liveState'])
     ->where('type', 'group|playoff|quick')
     ->whereNumber('id')
-    ->name('matches.live.state');
+    ->name('games.live.state');
 
 Route::get('/register', [PagesController::class, 'showRegisterPage'])->name('pages.registerPanel');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
@@ -38,7 +38,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/players/search', [PlayerController::class, 'search'])->name('players.search');
 Route::get('/players/{player}', [PlayerController::class, 'show'])->name('players.show');
-Route::get('/players/{player}/matches', [PlayerController::class, 'matchHistory'])->name('players.matches');
+Route::get('/players/{player}/games', [PlayerController::class, 'gameHistory'])->name('players.games');
 Route::post('/players/{player}/add-friend', [PlayerController::class, 'addFriend'])->name('players.add-friend')->middleware('auth');
 
 Route::resource('leagues', LeagueController::class);

@@ -112,12 +112,61 @@ class GameControllerApiTest extends TestCase
 
         $response = $this->postJson('/api/game/inProgress', [
             'gameId' => $game->id,
+            'type' => 'group',
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(200)
+            ->assertJson(['success' => true]);
 
         $this->assertDatabaseHas('games', [
             'id' => $game->id,
+            'status' => GameStatus::IN_PROGRESS->value,
+        ]);
+    }
+
+    public function test_lock_fails_when_game_already_in_progress(): void
+    {
+        Sanctum::actingAs($this->user);
+
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::IN_PROGRESS,
+        ]);
+
+        $response = $this->postJson('/api/game/inProgress', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ]);
+
+        $response->assertStatus(409);
+    }
+
+    public function test_user_can_lock_playoff_game(): void
+    {
+        Sanctum::actingAs($this->user);
+
+        $playoffGame = PlayoffGame::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'round' => 'QUARTER',
+            'slot' => PlayoffSlot::QF_1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $response = $this->postJson('/api/game/inProgress', [
+            'gameId' => $playoffGame->id,
+            'type' => 'playoff',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('playoff_games', [
+            'id' => $playoffGame->id,
             'status' => GameStatus::IN_PROGRESS->value,
         ]);
     }

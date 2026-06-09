@@ -3,9 +3,9 @@
 namespace App\Repositories\Game;
 
 use App\DTO\GameLegDTO;
-use App\Enums\MatchKind;
+use App\Enums\GameKind;
 use App\Models\Game\GameLeg;
-use App\Support\Match\MatchContext;
+use App\Support\GameScoring\GameScoringContext;
 
 class GameLegRepository
 {
@@ -73,29 +73,29 @@ class GameLegRepository
             ->get();
     }
 
-    public function getForContext(MatchContext $context): \Illuminate\Support\Collection
+    public function getForContext(GameScoringContext $context): \Illuminate\Support\Collection
     {
         return match ($context->kind) {
-            MatchKind::GROUP => $this->getByGameId($context->matchId),
-            MatchKind::PLAYOFF => $this->getByPlayoffGameId($context->matchId),
-            MatchKind::QUICK => $this->getByQuickGameId($context->matchId),
+            GameKind::GROUP => $this->getByGameId($context->gameId),
+            GameKind::PLAYOFF => $this->getByPlayoffGameId($context->gameId),
+            GameKind::QUICK => $this->getByQuickGameId($context->gameId),
         };
     }
 
-    public function findOpenForContext(MatchContext $context): ?GameLeg
+    public function findOpenForContext(GameScoringContext $context): ?GameLeg
     {
         $query = GameLeg::query()->whereNull('finished_at');
 
         match ($context->kind) {
-            MatchKind::GROUP => $query->where('game_id', $context->matchId),
-            MatchKind::PLAYOFF => $query->where('playoff_game_id', $context->matchId),
-            MatchKind::QUICK => $query->where('quick_game_id', $context->matchId),
+            GameKind::GROUP => $query->where('game_id', $context->gameId),
+            GameKind::PLAYOFF => $query->where('playoff_game_id', $context->gameId),
+            GameKind::QUICK => $query->where('quick_game_id', $context->gameId),
         };
 
         return $query->first();
     }
 
-    public function startLeg(MatchContext $context, int $legNumber): GameLeg
+    public function startLeg(GameScoringContext $context, int $legNumber): GameLeg
     {
         $data = [
             'leg_number' => $legNumber,
@@ -108,9 +108,9 @@ class GameLegRepository
         ];
 
         match ($context->kind) {
-            MatchKind::GROUP => $data['game_id'] = $context->matchId,
-            MatchKind::PLAYOFF => $data['playoff_game_id'] = $context->matchId,
-            MatchKind::QUICK => $data['quick_game_id'] = $context->matchId,
+            GameKind::GROUP => $data['game_id'] = $context->gameId,
+            GameKind::PLAYOFF => $data['playoff_game_id'] = $context->gameId,
+            GameKind::QUICK => $data['quick_game_id'] = $context->gameId,
         };
 
         return GameLeg::create($data);

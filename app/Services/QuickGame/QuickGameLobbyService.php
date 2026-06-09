@@ -277,7 +277,7 @@ class QuickGameLobbyService
         $lobby = $this->lobbyRepository->startGame($lobbyId, $legs, $game, $mode);
 
         $quickGameId = $this->createLiveQuickGameIfEligible($lobby, $legs, $finalOrderIds);
-        $this->lobbyRepository->attachMatchMeta($lobbyId, $quickGameId, $finalOrderIds);
+        $this->lobbyRepository->attachGameMeta($lobbyId, $quickGameId, $finalOrderIds);
 
         $lobby = $this->lobbyRepository->find($lobbyId);
         $this->broadcastLobbyUpdated($lobby);
