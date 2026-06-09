@@ -15,6 +15,11 @@ Route::get('/matches/{type}/{id}', [MatchController::class, 'show'])
     ->where('type', 'group|playoff|quick')
     ->whereNumber('id')
     ->name('matches.show');
+Route::post('/matches/{type}/{id}/result', [MatchController::class, 'updateResult'])
+    ->where('type', 'group|playoff')
+    ->whereNumber('id')
+    ->middleware('auth')
+    ->name('matches.result.update');
 Route::get('/matches/{type}/{id}/live', [MatchController::class, 'live'])
     ->where('type', 'group|playoff|quick')
     ->whereNumber('id')

@@ -69,6 +69,62 @@ class TournamentResultService
 
         $this->resultRepository->create($result);
     }
+
+    /**
+     * Aktualizuje miejsca i punkty podium (finał 1–2 lub mecz o 3. miejsce 3–4).
+     */
+    public function syncPodium(
+        int $tournamentId,
+        int $winnerId,
+        int $player1Id,
+        int $player2Id,
+        GameStage $stage,
+        int $winnerPlace,
+    ): void {
+        $loserId = $winnerId === $player1Id ? $player2Id : $player1Id;
+
+        $this->upsertPodiumPlace($tournamentId, $winnerId, $stage, $winnerPlace);
+        $this->upsertPodiumPlace($tournamentId, $loserId, $stage, $winnerPlace + 1);
+    }
+
+    public function syncFinalPodium(int $tournamentId, int $winnerId, int $player1Id, int $player2Id): void
+    {
+        $this->syncPodium($tournamentId, $winnerId, $player1Id, $player2Id, GameStage::FINAL, 1);
+    }
+
+    public function syncThirdPodium(int $tournamentId, int $winnerId, int $player1Id, int $player2Id): void
+    {
+        $this->syncPodium($tournamentId, $winnerId, $player1Id, $player2Id, GameStage::THIRD, 3);
+    }
+
+    public function clearPodiumStage(int $tournamentId, GameStage $stage): void
+    {
+        $this->resultRepository->clearPodiumStage($tournamentId, $stage);
+    }
+
+    private function upsertPodiumPlace(int $tournamentId, int $playerId, GameStage $stage, int $place): void
+    {
+        $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
+
+        if ($tournament->pointScheme === null) {
+            throw new \RuntimeException("Tournament {$tournamentId} does not have a point scheme assigned");
+        }
+
+        if ($tournament->season === null) {
+            throw new \RuntimeException("Tournament {$tournamentId} does not have a season assigned");
+        }
+
+        $rule = $this->pointSchemeRuleRepository->find($tournament->pointScheme->id, $stage, $place);
+
+        $this->resultRepository->upsertForPlayer(
+            seasonId: $tournament->season->id,
+            tournamentId: $tournamentId,
+            playerId: $playerId,
+            points: $rule->points,
+            place: $rule->place,
+            stage: $stage,
+        );
+    }
 }
 
 

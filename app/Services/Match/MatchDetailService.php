@@ -23,6 +23,7 @@ class MatchDetailService
         private GameLegRepository $gameLegRepository,
         private GameVisitRepository $gameVisitRepository,
         private GameLegPlayerStatRepository $gameLegPlayerStatRepository,
+        private MatchAuthorizationService $matchAuthorizationService,
     ) {
     }
 
@@ -138,6 +139,13 @@ class MatchDetailService
             'label' => $label,
             'subtitle' => $subtitle,
             'backUrl' => $backUrl,
+            'tournamentId' => $tournamentId,
+            'groupNumber' => $match instanceof Game ? (int) $match->group_number : null,
+            'legsToWin' => $context->legsToWin,
+            'canCorrectResult' => $this->matchAuthorizationService->canCorrectTournamentMatch(
+                $tournamentId,
+                $context->kind,
+            ),
             'status' => $match->status instanceof GameStatus ? $match->status->value : $match->status,
             'player1' => $match->player1,
             'player2' => $match->player2,

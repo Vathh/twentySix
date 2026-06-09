@@ -11,7 +11,7 @@ Ostatnia aktualizacja: czerwiec 2026.
 
 | Obszar | Postęp | Najważniejsze luki |
 |--------|--------|-------------------|
-| **Web** | ~80% | Korekta wyniku na webie |
+| **Web** | ~85% | — |
 | **API** | ~85% | Lock tabletu (mobile) |
 | **Mobile** | ~50% | Zob. [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) |
 
@@ -32,7 +32,7 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Start: liczba kodów tabletów (≠ liczba grup) | ✅ | `tabletsCount` w kreatorze, `LoginCodeService` |
 | Start: tylko zaakceptowani + goście | ✅ | `getTournamentStartPool`, walidacja przy `run` |
 | Publiczny podgląd lig/turniejów | ⚠️ | Widoki istnieją; weryfikacja gościa bez logowania — do sprawdzenia |
-| Korekta wyniku / walkower na webie | ❌ | `matches/show` — tylko podgląd; edycja tylko przez API |
+| Korekta wyniku / walkower na webie | ✅ | `matches/show` — formularz admina sezonu, `MatchResultCorrectionService` |
 | Live podgląd meczu (WebSocket) | ✅ | `matches/{type}/{id}/live`, `match-live.js`, Reverb `match.state` |
 | Live WebSocket na webie (turniej) | ❌ | Brak widoku live całego turnieju z WS |
 | Znajomi na webie | ⚠️ | UI częściowo; product: poza MVP na webie |
@@ -89,7 +89,7 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 
 1. ~~**Turniej — logika:** podział grup, awans z grupy, bracket dynamiczny, playoff R1 bez par z grupy, min. 4 graczy.~~ ✅ *(czerwiec 2026)*
 2. ~~**Zaproszenia turniejowe:** API + web (wysyłka) + mobile (akceptacja).~~ ✅ *(czerwiec 2026)*
-3. **Web:** edycja wyniku / walkower; ~~live podgląd meczu~~ ✅ *(czerwiec 2026)*.
+3. ~~**Web:** edycja wyniku / walkower; live podgląd meczu~~ ✅ *(czerwiec 2026)*.
 4. **Tablet mobile:** lock meczu, playoff UI, scoring API + WS.
 5. **Quick game:** FFA do 8, rotacja openera lega, friends-only, multi-device 3+.
 6. **Offline / solo** na mobile.

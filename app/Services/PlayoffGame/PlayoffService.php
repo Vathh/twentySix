@@ -48,7 +48,11 @@ class PlayoffService
     public function update(GameResultDTO $dto, PlayoffGameDomain $gameToUpdate): void
     {
         $this->gameRepository->finish($dto);
+        $this->applyWinnerAdvancement($dto, $gameToUpdate);
+    }
 
+    public function applyWinnerAdvancement(GameResultDTO $dto, PlayoffGameDomain $gameToUpdate): void
+    {
         if($gameToUpdate->slot !== PlayoffSlot::THIRD
             && $gameToUpdate->slot !== PlayoffSlot::FINAL
             && $gameToUpdate->winnerDestinationSlot !== null

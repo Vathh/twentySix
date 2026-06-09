@@ -74,6 +74,30 @@ class PlayoffGameRepository
             ->where('slot', $slot)
             ->update(['player2_id' => $playerId]);
     }
+
+    public function resetFinishedBranchFromSlot(int $tournamentId, PlayoffSlot $slot): void
+    {
+        $game = PlayoffGame::where('tournament_id', $tournamentId)
+            ->where('slot', $slot)
+            ->first();
+
+        if ($game === null || $game->status !== GameStatus::FINISHED) {
+            return;
+        }
+
+        $destinationSlot = $game->winner_destination_slot?->toDestination()?->playoffSlot;
+
+        $game->update([
+            'player1_score' => 0,
+            'player2_score' => 0,
+            'winner_id' => null,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        if ($destinationSlot !== null) {
+            $this->resetFinishedBranchFromSlot($tournamentId, $destinationSlot);
+        }
+    }
 }
 
 

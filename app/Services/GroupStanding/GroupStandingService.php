@@ -36,6 +36,33 @@ class GroupStandingService
      * @param GameResultDTO $dto
      * @return void
      */
+    public function recalculateGroupFromFinishedGames(int $tournamentId, int $groupNumber): void
+    {
+        $this->groupStandingRepository->resetGroup($tournamentId, $groupNumber);
+
+        $finishedGames = $this->gameRepository->getFinishedGroupGames($tournamentId, $groupNumber);
+
+        foreach ($finishedGames as $game) {
+            if ($game->player1 === null || $game->player2 === null || $game->winner === null) {
+                continue;
+            }
+
+            $this->updateStandingsDetails(new GameResultDTO(
+                gameId: $game->id,
+                type: \App\Enums\GameType::GROUP,
+                player1Id: $game->player1->id,
+                player2Id: $game->player2->id,
+                player1Score: $game->player1Score,
+                player2Score: $game->player2Score,
+                winnerId: $game->winner->id,
+                tournamentId: $tournamentId,
+                groupNumber: $groupNumber,
+            ));
+        }
+
+        $this->updateGroupStandings($tournamentId, $groupNumber);
+    }
+
     public function updateStandingsDetails(GameResultDTO $dto): void
     {
         $this->groupStandingRepository->updateDetails(

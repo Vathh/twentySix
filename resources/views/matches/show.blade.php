@@ -35,7 +35,85 @@
                 <span class="text-text-muted mx-3">:</span>
                 <span class="{{ (int)$winnerId === (int)$player2->id ? 'text-light-green' : '' }}">{{ $player2Score }}</span>
             </p>
+            @if($status !== 'finished')
+                <p class="text-text-muted text-xs mt-2">
+                    @if($status === 'in_progress')
+                        Mecz w trakcie — możesz wymusić wynik końcowy poniżej.
+                    @else
+                        Mecz jeszcze nie rozegrany.
+                    @endif
+                </p>
+            @endif
         </div>
+
+        @if($canCorrectResult ?? false)
+            <div class="bg-darker-bg rounded-lg p-6 mb-8 border border-light-orange/40">
+                <h2 class="text-lg font-semibold text-light-orange mb-1">Korekta wyniku / walkower</h2>
+                <p class="text-text-muted text-sm mb-4">
+                    BO{{ ($legsToWin ?? 2) * 2 - 1 }} — wpisz wynik w legach (np. 2:0, 2:1). Po zapisie tabele i drabinka przeliczą się automatycznie.
+                </p>
+
+                <form method="POST" action="{{ route('matches.result.update', ['type' => $kind, 'id' => $matchId]) }}" class="space-y-4">
+                    @csrf
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <label class="block">
+                            <span class="text-sm text-text-muted">{{ $player1->name }}</span>
+                            <input
+                                type="number"
+                                name="player1_score"
+                                min="0"
+                                max="{{ $legsToWin ?? 2 }}"
+                                value="{{ old('player1_score', $player1Score) }}"
+                                class="mt-1 w-full rounded border border-border bg-dark-bg px-3 py-2 text-light-white"
+                                required
+                            >
+                        </label>
+                        <label class="block">
+                            <span class="text-sm text-text-muted">{{ $player2->name }}</span>
+                            <input
+                                type="number"
+                                name="player2_score"
+                                min="0"
+                                max="{{ $legsToWin ?? 2 }}"
+                                value="{{ old('player2_score', $player2Score) }}"
+                                class="mt-1 w-full rounded border border-border bg-dark-bg px-3 py-2 text-light-white"
+                                required
+                            >
+                        </label>
+                    </div>
+                    <button type="submit"
+                            class="px-4 py-2 rounded bg-light-green text-dark-bg font-semibold text-sm hover:opacity-90 transition">
+                        Zapisz wynik
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-4 border-t border-border">
+                    <p class="text-sm text-text-muted mb-3">Walkover (2:0 w legach):</p>
+                    <div class="flex flex-wrap gap-2">
+                        <form method="POST" action="{{ route('matches.result.update', ['type' => $kind, 'id' => $matchId]) }}">
+                            @csrf
+                            <input type="hidden" name="walkover" value="1">
+                            <input type="hidden" name="winner_id" value="{{ $player1->id }}">
+                            <button type="submit"
+                                    onclick="return confirm('Ustawić walkover 2:0 dla {{ $player1->name }}?')"
+                                    class="px-3 py-2 rounded border border-light-orange text-light-orange text-sm hover:bg-light-orange/10 transition">
+                                Walkover → {{ $player1->name }}
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('matches.result.update', ['type' => $kind, 'id' => $matchId]) }}">
+                            @csrf
+                            <input type="hidden" name="walkover" value="1">
+                            <input type="hidden" name="winner_id" value="{{ $player2->id }}">
+                            <button type="submit"
+                                    onclick="return confirm('Ustawić walkover 2:0 dla {{ $player2->name }}?')"
+                                    class="px-3 py-2 rounded border border-light-orange text-light-orange text-sm hover:bg-light-orange/10 transition">
+                                Walkover → {{ $player2->name }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <div class="grid md:grid-cols-2 gap-6 mb-8">
             @foreach($players as $p)

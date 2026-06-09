@@ -62,6 +62,20 @@ class GroupStandingRepository
         }
     }
 
+    public function resetGroup(int $tournamentId, int $groupNumber): void
+    {
+        GroupStanding::where('tournament_id', $tournamentId)
+            ->where('group_number', $groupNumber)
+            ->update([
+                'matches_played' => 0,
+                'matches_won' => 0,
+                'matches_lost' => 0,
+                'legs_won' => 0,
+                'legs_lost' => 0,
+                'points' => 0,
+            ]);
+    }
+
     public function updateDetails(int $playerId, bool $hasWon, int $legsWon, int $legsLost, int $tournamentId): void
     {
         GroupStanding::where('player_id', $playerId)
