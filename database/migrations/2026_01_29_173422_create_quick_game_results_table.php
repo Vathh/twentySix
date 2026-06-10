@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('quick_game_results', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('quick_game_id')->constrained('quick_games')->cascadeOnDelete();
+            $table->foreignId('player_id')->constrained('players')->cascadeOnDelete();
+            $table->unsignedTinyInteger('score')->default(0);
+            $table->unsignedTinyInteger('place')->default(0);
+            $table->decimal('average', 8, 2)->nullable();
+            $table->unsignedSmallInteger('darts_thrown')->nullable();
+            $table->unsignedSmallInteger('points_earned')->nullable();
             $table->timestamps();
         });
     }

@@ -6,7 +6,7 @@ use App\Models\League\League;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
 use App\Models\Users\User;
-use App\Services\PlayerService;
+use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

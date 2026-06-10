@@ -6,7 +6,7 @@ use App\Enums\GameStatus;
 use App\Models\Player\Player;
 use App\Models\QuickGame\QuickGame;
 use App\Models\Users\User;
-use App\Services\PlayerService;
+use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;

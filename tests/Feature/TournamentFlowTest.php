@@ -20,7 +20,7 @@ use App\Models\Tournament\LoginCode;
 use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Services\Game\GameService;
-use App\Services\PlayerService;
+use App\Services\Player\PlayerService;
 use App\Support\Tournament\PlayoffFirstRoundPairing;
 use App\Support\Tournament\TournamentGroupDistribution;
 use Illuminate\Foundation\Testing\RefreshDatabase;

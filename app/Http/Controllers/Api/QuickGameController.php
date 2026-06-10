@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\DTO\QuickGame\QuickGameResultDTO;
-use App\DTO\QuickGameDTO;
+use App\DTO\QuickGame\QuickGameDTO;
 use App\Http\Requests\QuickGameResultRequest;
 use App\Repositories\Player\PlayerRepository;
 use App\Services\QuickGame\QuickGameService;

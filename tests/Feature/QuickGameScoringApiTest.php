@@ -7,7 +7,7 @@ use App\Models\Game\GameVisit;
 use App\Models\Player\Player;
 use App\Models\QuickGame\QuickGame;
 use App\Models\Users\User;
-use App\Services\PlayerService;
+use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;

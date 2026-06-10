@@ -18,7 +18,7 @@ use App\Models\PointScheme\PointSchemeRule;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
-use App\Services\PlayerService;
+use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;

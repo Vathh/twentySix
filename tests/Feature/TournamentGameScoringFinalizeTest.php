@@ -18,7 +18,7 @@ use App\Models\PointScheme\PointSchemeRule;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
-use App\Services\PlayerService;
+use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -74,6 +74,8 @@ class TournamentGameScoringFinalizeTest extends TestCase
 
         PointSchemeRule::create(['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::GROUP->value, 'place' => 2, 'points' => 2]);
         PointSchemeRule::create(['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::GROUP->value, 'place' => 1, 'points' => 4]);
+        PointSchemeRule::create(['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::QUARTER->value, 'place' => null, 'points' => 6]);
+        PointSchemeRule::create(['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::SEMI->value, 'place' => null, 'points' => 8]);
         $this->tournament->update(['point_scheme_id' => $smallScheme->id]);
 
         $this->player1 = Player::where('user_id', $this->user->id)->first();
@@ -314,13 +316,12 @@ class TournamentGameScoringFinalizeTest extends TestCase
             'clientVisitId' => (string) Str::uuid(),
         ])->assertOk();
 
-        $close = $this->postJson("/api/{$prefix}/{$gameId}/legs/{$legId}/close", [
+        $this->postJson("/api/{$prefix}/{$gameId}/legs/{$legId}/close", [
             'winnerId' => $winnerId,
             'players' => [
                 ['playerId' => $player1Id, 'doubleTracked' => false],
                 ['playerId' => $player2Id, 'doubleTracked' => false],
             ],
-        ]);
-        $close->assertOk();
+        ])->assertOk();
     }
 }
