@@ -57,7 +57,7 @@ readonly class GameScoringContext
             player1Id: (int) $game->player1_id,
             player2Id: (int) $game->player2_id,
             tournamentId: null,
-            legsToWin: max(1, (int) ($game->legs_count ?? 3)),
+            legsToWin: max(1, (int) ($game->legs_count ?? 2)),
         );
     }
 

@@ -39,7 +39,7 @@ class QuickGameController
                 $dto->player1Id,
                 $dto->player2Id,
                 $userId,
-                (int) ($validated['legsCount'] ?? 3),
+                (int) ($validated['legsCount'] ?? 2),
             );
 
             return response()->json([

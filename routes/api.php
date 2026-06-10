@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FriendshipController;
 use App\Http\Controllers\Api\GameController;
 use App\Http\Controllers\Api\QuickGameController;
+use App\Http\Controllers\Api\QuickGameLobbyController;
 use App\Http\Controllers\Api\TournamentInvitationController;
 use App\Http\Controllers\Api\GameScoring\GroupGameScoringController;
 use App\Http\Controllers\Api\GameScoring\PlayoffGameScoringController;
@@ -16,10 +17,6 @@ Route::post('/register', [AuthController::class, 'register']);
 
 // Quick game update - może być bez auth (gracze tymczasowi)
 Route::post('/quick-game/update', [QuickGameController::class, 'update']);
-
-// Lobby endpoints - niektóre wymagają auth, niektóre nie
-Route::get('/quick-game/lobby/code/{code}', [QuickGameLobbyController::class, 'getByCode']);
-Route::post('/quick-game/lobby/join', [QuickGameLobbyController::class, 'join']); // Może być bez auth
 
 Route::middleware('auth:sanctum')->group(function () {
 

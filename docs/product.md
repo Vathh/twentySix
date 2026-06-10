@@ -251,7 +251,9 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 
 ### Quick game (MVP)
 
-- Lobby zakłada zalogowany użytkownik; zaproszenia — akceptacja na **mobile**.
+- Lobby zakłada zalogowany użytkownik (host).
+- **Dołączenie wyłącznie przez zaproszenie** — host zaprasza znajomego z listy znajomych; zaproszony **akceptuje** na mobile i wtedy dołącza do lobby (`POST …/lobby/{id}/join`).
+- **Brak kodów lobby** w quick game — kody 6-znakowe dotyczą **tylko turniejów** (logowanie tabletu / sędziowanie). Quick game nie generuje ani nie udostępnia kodu do dołączenia.
 - Tylko **znajomi**; max **8** zawodników.
 - **FFA** — każdy gra sam (1v1, 1v1v1v1…; nie drużyny 2v2).
 - Format: **501 double out, BO3** (do **2 wygranych legów**).
@@ -385,3 +387,4 @@ Poniższe **rozbieżności** wynikają z wcześniejszej pracy bez `product.md`. 
 | Losowanie playoff | Bez par z tej samej grupy (runda 1) | ✅ `PlayoffFirstRoundPairing` |
 | Rozmiar drabinki | Zależny od `grupy × awans` | ✅ `PlayoffBracketFactory::create` (MVP do 32) |
 | Zaproszenia turniejowe | Encja per turniej; web na stronie startu; akceptacja mobile | ❌ Bezpośrednie `relatedUsers` zamiast zaproszeń |
+| Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ (kody lobby usunięte; `joinById` wymaga zaproszenia) |

@@ -17,7 +17,7 @@ class QuickGameRepository
      * @param int $player2Id
      * @return int ID utworzonego meczu
      */
-    public function create(int $player1Id, int $player2Id, int $legsCount = 3, ?int $lobbyId = null): int
+    public function create(int $player1Id, int $player2Id, int $legsCount = 2, ?int $lobbyId = null): int
     {
         $quickGame = QuickGame::create([
             'lobby_id' => $lobbyId,

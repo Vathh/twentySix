@@ -14,6 +14,7 @@ class QuickGameLobbyRepository
         return QuickGameLobby::create([
             'host_id' => $hostUserId,
             'status' => 'waiting',
+            'legs_count' => 2,
         ]);
     }
 
@@ -21,13 +22,6 @@ class QuickGameLobbyRepository
     {
         return QuickGameLobby::with(['host.player', 'players.player'])
             ->findOrFail($lobbyId);
-    }
-
-    public function findByCode(string $code): ?QuickGameLobby
-    {
-        return QuickGameLobby::with(['host.player', 'players.player'])
-            ->where('code', $code)
-            ->first();
     }
 
     public function addPlayer(int $lobbyId, ?int $playerId, ?string $tempPlayerName, bool $isRegistered): void

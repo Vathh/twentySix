@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\QuickGame\QuickGameLobby;
+use App\Services\QuickGame\QuickGameLobbyService;
 
 class QuickGameLobbyPayload
 {
@@ -33,10 +34,9 @@ class QuickGameLobbyPayload
 
         $out = [
             'id' => $lobby->id,
-            'code' => $lobby->code,
             'hostId' => $lobby->host_id,
             'status' => $lobby->status,
-            'legsCount' => $lobby->legs_count ?? 3,
+            'legsCount' => $lobby->legs_count ?? QuickGameLobbyService::DEFAULT_LEGS_TO_WIN,
             'gameType' => $lobby->game_type ?? '501',
             'scoringMode' => $lobby->scoring_mode ?? 'each_own',
             'players' => $players,

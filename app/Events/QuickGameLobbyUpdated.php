@@ -16,7 +16,7 @@ class QuickGameLobbyUpdated implements ShouldBroadcastNow
 
     public function __construct(public QuickGameLobby $lobby)
     {
-        $this->lobby->loadMissing(['host.player', 'players.player', 'session']);
+        $this->lobby->loadMissing(['host.player', 'players.player']);
     }
 
     /**

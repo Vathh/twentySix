@@ -7,13 +7,11 @@ use App\Models\QuickGame\QuickGame;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 
 class QuickGameLobby extends Model
 {
     protected $fillable = [
         'host_id',
-        'code',
         'status',
         'legs_count',
         'game_type',
@@ -27,17 +25,6 @@ class QuickGameLobby extends Model
         'started_at' => 'datetime',
         'player_order' => 'array',
     ];
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($lobby) {
-            if (empty($lobby->code)) {
-                $lobby->code = strtoupper(Str::random(6));
-            }
-        });
-    }
 
     public function host(): BelongsTo
     {

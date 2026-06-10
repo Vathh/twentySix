@@ -30,37 +30,6 @@ class QuickGameLobbyController
         return response()->json(QuickGameLobbyPayload::fromLobby($lobby, $currentUserId));
     }
 
-    public function getByCode(Request $request, string $code): JsonResponse
-    {
-        $lobby = $this->lobbyService->getByCode($code);
-        if (! $lobby) {
-            return response()->json(['message' => 'Lobby nie zostało znalezione'], 404);
-        }
-        $currentUserId = $request->user()?->id;
-
-        return response()->json(QuickGameLobbyPayload::fromLobby($lobby, $currentUserId));
-    }
-
-    public function join(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'code' => 'required|string|size:6',
-            'tempPlayerName' => 'nullable|string|max:50',
-        ]);
-        try {
-            $userId = $request->user()?->id;
-            $lobby = $this->lobbyService->joinByCode(
-                $validated['code'],
-                $userId,
-                $validated['tempPlayerName'] ?? null
-            );
-
-            return response()->json(QuickGameLobbyPayload::fromLobby($lobby, $userId));
-        } catch (\RuntimeException $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
-        }
-    }
-
     public function joinById(Request $request, string $lobbyId): JsonResponse
     {
         $userId = $request->user()->id;

@@ -4,16 +4,22 @@ namespace App\Services\QuickGame;
 
 use App\Events\QuickGameLobbyUpdated;
 use App\Models\QuickGame\QuickGameLobby;
+use App\Repositories\Friends\FriendshipRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameLobbyRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 
 class QuickGameLobbyService
 {
+    public const MAX_LOBBY_PLAYERS = 8;
+
+    public const DEFAULT_LEGS_TO_WIN = 2;
+
     public function __construct(
         private QuickGameLobbyRepository $lobbyRepository,
         private PlayerRepository $playerRepository,
         private QuickGameRepository $quickGameRepository,
+        private FriendshipRepository $friendshipRepository,
     ) {
     }
 
@@ -37,40 +43,6 @@ class QuickGameLobbyService
         return $fresh;
     }
 
-    /**
-     * Dołącza do lobby po kodzie
-     */
-    public function joinByCode(string $code, ?int $userId = null, ?string $tempPlayerName = null): QuickGameLobby
-    {
-        $lobby = $this->lobbyRepository->findByCode($code);
-
-        if (! $lobby) {
-            throw new \RuntimeException('Lobby nie zostało znalezione');
-        }
-
-        if ($lobby->status !== 'waiting') {
-            throw new \RuntimeException('Lobby nie przyjmuje już graczy');
-        }
-
-        if ($userId) {
-            $player = $this->playerRepository->findByUserId($userId);
-            if (! $player) {
-                throw new \RuntimeException('Nie znaleziono gracza dla użytkownika');
-            }
-            $this->lobbyRepository->addPlayer($lobby->id, $player->id, null, true);
-        } else {
-            if (! $tempPlayerName) {
-                throw new \RuntimeException('Musisz podać nazwę gracza tymczasowego');
-            }
-            $this->lobbyRepository->addPlayer($lobby->id, null, $tempPlayerName, false);
-        }
-
-        $fresh = $lobby->fresh(['host.player', 'players.player']);
-        $this->broadcastLobbyUpdated($fresh);
-
-        return $fresh;
-    }
-
     public function joinById(int $lobbyId, int $userId): QuickGameLobby
     {
         $lobby = $this->lobbyRepository->find($lobbyId);
@@ -79,9 +51,25 @@ class QuickGameLobbyService
             throw new \RuntimeException('Lobby nie przyjmuje już graczy');
         }
 
+        $this->assertLobbyHasRoom($lobby);
+        $this->assertRegisteredUserIsHostFriend($lobby, $userId);
+
         $player = $this->playerRepository->findByUserId($userId);
         if (! $player) {
             throw new \RuntimeException('Nie znaleziono gracza dla użytkownika');
+        }
+
+        if ((int) $lobby->host_id === $userId) {
+            throw new \RuntimeException('Host jest już w lobby');
+        }
+
+        $alreadyInLobby = $lobby->players->contains('player_id', $player->id);
+        if ($alreadyInLobby) {
+            throw new \RuntimeException('Jesteś już w tym lobby');
+        }
+
+        if (! $this->lobbyRepository->hasPendingInvitation($lobbyId, $player->id)) {
+            throw new \RuntimeException('Brak aktywnego zaproszenia do tego lobby');
         }
 
         $this->lobbyRepository->addPlayer($lobby->id, $player->id, null, true);
@@ -114,6 +102,16 @@ class QuickGameLobbyService
             throw new \RuntimeException('Zaproszenie do tego gracza zostało już wysłane');
         }
 
+        $this->assertLobbyHasRoom($lobby);
+
+        $invited = $this->playerRepository->findById($invitedPlayerId);
+        if (! $invited || $invited->userId === null) {
+            throw new \RuntimeException('Nie znaleziono gracza');
+        }
+        if (! $this->friendshipRepository->areFriends($hostUserId, $invited->userId)) {
+            throw new \RuntimeException('Do quick game można zapraszać tylko znajomych');
+        }
+
         $this->lobbyRepository->createInvitation($lobbyId, $invitedPlayerId);
         $this->broadcastLobbyUpdatedById($lobbyId);
     }
@@ -133,7 +131,6 @@ class QuickGameLobbyService
                 return [
                     'id' => $inv->id,
                     'lobbyId' => $lobby->id,
-                    'lobbyCode' => $lobby->code,
                     'hostName' => $hostName,
                 ];
             });
@@ -173,11 +170,6 @@ class QuickGameLobbyService
         return $this->lobbyRepository->find($lobbyId);
     }
 
-    public function getByCode(string $code): ?QuickGameLobby
-    {
-        return $this->lobbyRepository->findByCode($code);
-    }
-
     public function addGuest(int $lobbyId, int $hostUserId, string $tempPlayerName): QuickGameLobby
     {
         $lobby = $this->lobbyRepository->find($lobbyId);
@@ -190,22 +182,7 @@ class QuickGameLobbyService
             throw new \RuntimeException('Lobby nie przyjmuje już graczy');
         }
 
-        $name = trim($tempPlayerName);
-        if ($name === '') {
-            throw new \RuntimeException('Podaj nazwę gracza');
-        }
-
-        $playersCount = $lobby->players()->count();
-        if ($playersCount >= 6) {
-            throw new \RuntimeException('W lobby może być maksymalnie 6 graczy');
-        }
-
-        $this->lobbyRepository->addPlayer($lobby->id, null, $name, false);
-
-        $fresh = $lobby->fresh(['host.player', 'players.player']);
-        $this->broadcastLobbyUpdated($fresh);
-
-        return $fresh;
+        throw new \RuntimeException('W quick game MVP można grać tylko ze znajomymi — gracze tymczasowi są niedostępni');
     }
 
     public function setReady(int $lobbyId, int $userId, bool $isReady): QuickGameLobby
@@ -259,7 +236,7 @@ class QuickGameLobbyService
             }
         }
 
-        $legs = $legsCount ?? $lobby->legs_count ?? 3;
+        $legs = $legsCount ?? $lobby->legs_count ?? self::DEFAULT_LEGS_TO_WIN;
         $game = $gameType ?? $lobby->game_type ?? '501';
         $mode = $scoringMode ?? $lobby->scoring_mode ?? 'each_own';
 
@@ -344,5 +321,23 @@ class QuickGameLobbyService
         $this->quickGameRepository->setStatusInProgress($quickGameId);
 
         return $quickGameId;
+    }
+
+    private function assertLobbyHasRoom(QuickGameLobby $lobby): void
+    {
+        if ($lobby->players()->count() >= self::MAX_LOBBY_PLAYERS) {
+            throw new \RuntimeException('W lobby może być maksymalnie '.self::MAX_LOBBY_PLAYERS.' graczy');
+        }
+    }
+
+    private function assertRegisteredUserIsHostFriend(QuickGameLobby $lobby, int $userId): void
+    {
+        if ((int) $lobby->host_id === $userId) {
+            return;
+        }
+
+        if (! $this->friendshipRepository->areFriends((int) $lobby->host_id, $userId)) {
+            throw new \RuntimeException('Do quick game można dołączyć tylko jako znajomy hosta');
+        }
     }
 }

@@ -35,7 +35,7 @@ class QuickGameService
      * @return int ID utworzonego meczu
      * @throws \RuntimeException
      */
-    public function createQuickGame(int $player1Id, int $player2Id, int $requestingUserId, int $legsCount = 3): int
+    public function createQuickGame(int $player1Id, int $player2Id, int $requestingUserId, int $legsCount = 2): int
     {
         // Sprawdź czy gracze są zarejestrowani (mają user_id)
         $player1 = $this->playerRepository->findById($player1Id);
