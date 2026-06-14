@@ -107,7 +107,7 @@ class QuickGameController
 
     /**
      * POST /api/quick-game/update
-     * Lobby: players[] bez gameId. Po scoring API: gameId + achievements (opcjonalnie players).
+     * Po zakończeniu meczu FFA online: gameId + achievementy (wynik zapisuje silnik FFA).
      */
     public function update(QuickGameResultRequest $request): JsonResponse
     {
@@ -115,11 +115,7 @@ class QuickGameController
         $dto = QuickGameResultDTO::fromArray($validated);
 
         try {
-            $this->quickGameService->finishFromMobile(
-                $dto,
-                isset($validated['lobbyId']) ? (int) $validated['lobbyId'] : null,
-                isset($validated['gameId']) ? (int) $validated['gameId'] : null,
-            );
+            $this->quickGameService->attachAchievements((int) $validated['gameId'], $dto->achievements);
 
             return response()->json(['success' => true]);
         } catch (\Throwable $e) {

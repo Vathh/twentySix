@@ -7,7 +7,6 @@ use App\Models\QuickGame\QuickGameLobby;
 use App\Repositories\Friends\FriendshipRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameLobbyRepository;
-use App\Repositories\QuickGame\QuickGameRepository;
 
 class QuickGameLobbyService
 {
@@ -18,7 +17,7 @@ class QuickGameLobbyService
     public function __construct(
         private QuickGameLobbyRepository $lobbyRepository,
         private PlayerRepository $playerRepository,
-        private QuickGameRepository $quickGameRepository,
+        private QuickGameFfaScoringService $ffaScoringService,
         private FriendshipRepository $friendshipRepository,
     ) {
     }
@@ -253,8 +252,14 @@ class QuickGameLobbyService
 
         $lobby = $this->lobbyRepository->startGame($lobbyId, $legs, $game, $mode);
 
-        $quickGameId = $this->createLiveQuickGameIfEligible($lobby, $legs, $finalOrderIds);
-        $this->lobbyRepository->attachGameMeta($lobbyId, $quickGameId, $finalOrderIds);
+        $ffaSessionId = $this->ffaScoringService->createSessionForLobby(
+            $lobby,
+            $legs,
+            $game,
+            $mode,
+            $finalOrderIds,
+        );
+        $this->lobbyRepository->attachFfaMeta($lobbyId, $ffaSessionId, $finalOrderIds);
 
         $lobby = $this->lobbyRepository->find($lobbyId);
         $this->broadcastLobbyUpdated($lobby);
@@ -286,41 +291,6 @@ class QuickGameLobbyService
     private function broadcastLobbyUpdated(QuickGameLobby $lobby): void
     {
         broadcast(new QuickGameLobbyUpdated($lobby));
-    }
-
-    private function createLiveQuickGameIfEligible(QuickGameLobby $lobby, int $legsCount, array $playerOrderLobbyPlayerIds = []): ?int
-    {
-        $lobby->loadMissing('players');
-        if ($lobby->players->count() !== 2) {
-            return null;
-        }
-
-        $registered = $lobby->players->filter(fn ($p) => $p->player_id !== null)->values();
-        if ($registered->count() !== 2) {
-            return null;
-        }
-
-        $ordered = $registered;
-        if (count($playerOrderLobbyPlayerIds) >= 2) {
-            $byLobbyPlayerId = $registered->keyBy('id');
-            $sorted = collect($playerOrderLobbyPlayerIds)
-                ->map(fn ($lpId) => $byLobbyPlayerId->get((int) $lpId))
-                ->filter()
-                ->values();
-            if ($sorted->count() === 2) {
-                $ordered = $sorted;
-            }
-        }
-
-        $quickGameId = $this->quickGameRepository->create(
-            (int) $ordered[0]->player_id,
-            (int) $ordered[1]->player_id,
-            $legsCount,
-            $lobby->id,
-        );
-        $this->quickGameRepository->setStatusInProgress($quickGameId);
-
-        return $quickGameId;
     }
 
     private function assertLobbyHasRoom(QuickGameLobby $lobby): void

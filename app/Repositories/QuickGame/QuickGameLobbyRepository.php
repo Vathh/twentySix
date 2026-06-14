@@ -127,10 +127,10 @@ class QuickGameLobbyRepository
         return $this->find($lobbyId);
     }
 
-    public function attachGameMeta(int $lobbyId, ?int $quickGameId, array $playerOrderLobbyPlayerIds): void
+    public function attachFfaMeta(int $lobbyId, int $ffaSessionId, array $playerOrderLobbyPlayerIds): void
     {
         DB::table('quick_game_lobbies')->where('id', $lobbyId)->update([
-            'quick_game_id' => $quickGameId,
+            'ffa_session_id' => $ffaSessionId,
             'player_order' => json_encode(array_values(array_map('intval', $playerOrderLobbyPlayerIds))),
             'updated_at' => now(),
         ]);

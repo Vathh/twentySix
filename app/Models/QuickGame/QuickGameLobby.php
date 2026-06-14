@@ -4,6 +4,7 @@ namespace App\Models\QuickGame;
 
 use App\Models\Users\User;
 use App\Models\QuickGame\QuickGame;
+use App\Models\QuickGame\QuickGameFfaSession;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,6 +18,7 @@ class QuickGameLobby extends Model
         'game_type',
         'scoring_mode',
         'quick_game_id',
+        'ffa_session_id',
         'player_order',
         'started_at',
     ];
@@ -44,6 +46,11 @@ class QuickGameLobby extends Model
     public function quickGame(): BelongsTo
     {
         return $this->belongsTo(QuickGame::class, 'quick_game_id');
+    }
+
+    public function ffaSession(): BelongsTo
+    {
+        return $this->belongsTo(QuickGameFfaSession::class, 'ffa_session_id');
     }
 }
 

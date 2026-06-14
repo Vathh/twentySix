@@ -8,6 +8,7 @@ use App\Models\QuickGame\QuickGame;
 use App\Models\Users\User;
 use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -274,49 +275,86 @@ class QuickGameApiTest extends TestCase
                  ->assertJson(['success' => false]); // Powinno zwrócić false z powodu walidacji
     }
 
-    /** Scenariusz z lobby: mobilka wysyła POST /api/quick-game/update z listą players (bez gameId). */
+    /** @deprecated Trening = mobile only. Wynik online zapisuje FFA; endpoint tylko dla achievementów. */
     public function test_quick_game_update_with_players_array_from_lobby(): void
+    {
+        $this->markTestSkipped('Usunięto bulk POST wyniku offline — użyj FFA sync lub treningu mobile.');
+    }
+
+    /** @deprecated patrz test_quick_game_update_with_players_array_from_lobby */
+    public function test_quick_game_update_ffa_five_players_from_lobby(): void
+    {
+        $this->markTestSkipped('Usunięto bulk POST wyniku offline — wynik FFA zapisuje QuickGameFfaScoringService.');
+    }
+
+    public function test_quick_game_update_requires_game_id(): void
     {
         Sanctum::actingAs($this->user1);
 
-        $response = $this->postJson('/api/quick-game/update', [
-            'players' => [
+        $this->postJson('/api/quick-game/update', [
+            'achievements' => [],
+        ])->assertStatus(422);
+    }
+
+    public function test_quick_game_update_accepts_achievements_after_ffa_finish(): void
+    {
+        Sanctum::actingAs($this->user1);
+
+        $lobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+        $friend = User::factory()->create(['email' => 'ach-friend@test.com']);
+        app(PlayerService::class)->create('AchFriend', $friend->id);
+        $friendPlayer = Player::where('user_id', $friend->id)->first();
+        $this->postJson('/api/friends/add', ['friendId' => $friend->id])->assertCreated();
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/invite", [
+            'playerId' => $friendPlayer->id,
+        ])->assertOk();
+
+        Sanctum::actingAs($friend);
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/join")->assertOk();
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/ready")->assertOk();
+
+        Sanctum::actingAs($this->user1);
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/ready")->assertOk();
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
+            'legsCount' => 1,
+            'gameType' => '501',
+            'scoringMode' => 'each_own',
+        ])->assertOk();
+
+        $hostPlayer = Player::where('user_id', $this->user1->id)->first();
+        $visits = [
+            ['playerId' => $hostPlayer->id, 'score' => 180, 'remainingBefore' => 501, 'remainingAfter' => 321],
+            ['playerId' => $friendPlayer->id, 'score' => 180, 'remainingBefore' => 501, 'remainingAfter' => 321],
+            ['playerId' => $hostPlayer->id, 'score' => 180, 'remainingBefore' => 321, 'remainingAfter' => 141],
+            ['playerId' => $friendPlayer->id, 'score' => 180, 'remainingBefore' => 321, 'remainingAfter' => 141],
+            ['playerId' => $hostPlayer->id, 'score' => 141, 'remainingBefore' => 141, 'remainingAfter' => 0, 'closedLeg' => true],
+        ];
+        foreach ($visits as $v) {
+            Sanctum::actingAs(
+                (int) $v['playerId'] === (int) $hostPlayer->id ? $this->user1 : $friend
+            );
+            $payload = array_merge([
+                'dartsInVisit' => 3,
+                'closedLeg' => false,
+                'bust' => false,
+                'clientVisitId' => (string) Str::uuid(),
+            ], $v);
+            $this->postJson("/api/quick-game/lobby/{$lobbyId}/ffa/visits", $payload)->assertOk();
+        }
+
+        $session = \App\Models\QuickGame\QuickGameFfaSession::where('lobby_id', $lobbyId)->first();
+        $this->assertNotNull($session->quick_game_id);
+
+        $this->postJson('/api/quick-game/update', [
+            'gameId' => $session->quick_game_id,
+            'achievements' => [
                 [
-                    'playerId' => $this->player1->id,
-                    'score' => 2,
-                    'place' => 1,
-                    'average' => 85.5,
-                    'dartsThrown' => 45,
-                    'pointsEarned' => 1500,
-                ],
-                [
-                    'playerId' => $this->player2->id,
-                    'score' => 1,
-                    'place' => 2,
-                    'average' => 72.0,
-                    'dartsThrown' => 48,
-                    'pointsEarned' => 1200,
+                    'playerId' => $hostPlayer->id,
+                    'type' => 'max',
+                    'value' => null,
                 ],
             ],
-            'achievements' => [],
-            'lobbyId' => null,
-        ]);
-
-        $response->assertStatus(200)->assertJson(['success' => true]);
-
-        $this->assertDatabaseHas('quick_games', [
-            'status' => GameStatus::FINISHED->value,
-        ]);
-        $this->assertDatabaseHas('quick_game_results', [
-            'player_id' => $this->player1->id,
-            'score' => 2,
-            'place' => 1,
-        ]);
-        $this->assertDatabaseHas('quick_game_results', [
-            'player_id' => $this->player2->id,
-            'score' => 1,
-            'place' => 2,
-        ]);
+        ])->assertOk()->assertJson(['success' => true]);
     }
 
     public function test_finished_quick_game_does_not_appear_in_active_list(): void

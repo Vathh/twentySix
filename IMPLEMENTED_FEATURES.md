@@ -57,11 +57,13 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Kody tabletów | ✅ | `POST /api/login`, `LoginCodeService` |
 | Znajomi (invite/accept/reject) | ✅ | `/api/friends/*` |
 | Zaproszenia turniejowe API | ✅ | `/api/tournaments/invitations/*` |
-| Lobby quick game | ✅ | `/api/quick-game/lobby/*` |
-| Lobby: tylko znajomi | ❌ | Brak walidacji friends-only + goście w API |
-| Quick game: `one_device` / `each_own` | ✅ | `scoring_mode` w lobby |
-| Quick game FFA do 8 | ⚠️ | Cap 6 w lobby; wynik multi-player częściowy |
-| Scoring API turniej + quick | ✅ | `GameScoringService`, osobne kontrolery |
+| Lobby quick game | ✅ | `/api/quick-game/lobby/*`, FFA `/ffa/*` |
+| Lobby: tylko znajomi | ✅ | `QuickGameLobbyService::invite`, testy MVP |
+| Quick game: `one_device` / `each_own` | ✅ | Unified FFA N=2..8 + WS |
+| Quick game FFA do 8 | ✅ | `QuickGameFfaScoringService`, cap 8 |
+| Scoring API turniej | ✅ | `GameScoringService`, group/playoff |
+| Legacy H2H quick scoring | ❌ wycofane | API `/quick-games/{id}/scoring/*` usunięte; quick online tylko FFA z lobby |
+| Achievementy quick game online | ✅ | `POST /api/quick-game/update` (tylko `gameId` + achievements) |
 | Finalizacja turnieju po scoring API | ✅ | `GameService::finalizeTournamentGameFromScoring` po `closeLeg` (tabele, playoff, statystyki) |
 | Achievementy na zakończonym meczu | ✅ | `POST /api/game/update` — tryb achievements-only gdy gra `FINISHED` |
 | Achievementy turniejowe | ✅ | `AchievementsService` |
@@ -77,12 +79,10 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Tablet: kod + lista meczów + H2H | ⚠️ |
 | Tablet: grupy → mecze; playoff płaska lista | ✅ | `ActiveGameDTO.roundLabel`, mobile `GameList.jsx` |
 | Lock meczu `w trakcie` | ❌ |
-| Quick game: tryby urządzeń (2P online) | ✅ |
-| Quick game FFA 3–8 + rotacja legów | ⚠️ |
+| Quick game: tryby urządzeń (online FFA) | ✅ |
+| Quick game FFA 2–8 + rotacja legów | ✅ |
+| Trening mobile (bez zapisu) | ✅ | `TrainingMatchSetup.jsx` |
 | Znajomi: invite + accept (mobile) | ⚠️ |
-| Akceptacja zaproszenia turniejowego | ❌ |
-| Akceptacja lobby | ✅ |
-| Offline / solo ćwiczenia | ❌ |
 | Marka twentySix w UI | ⚠️ |
 
 ---
@@ -93,8 +93,8 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 2. ~~**Zaproszenia turniejowe:** API + web (wysyłka) + mobile (akceptacja).~~ ✅ *(czerwiec 2026)*
 3. ~~**Web:** edycja wyniku / walkower; live podgląd meczu~~ ✅ *(czerwiec 2026)*.
 4. ~~**Tablet mobile:** lock meczu; playoff UI; scoring API + WS.~~ ✅ *(czerwiec 2026)*
-5. **Quick game:** FFA do 8, rotacja openera lega, friends-only, multi-device 3+.
-6. **Offline / solo** na mobile.
+5. ~~**Quick game:** FFA do 8, rotacja openera, friends-only, multi-device 3+.~~ ✅ *(czerwiec 2026)*
+6. ~~**Trening mobile** (offline/local, bez zapisu).~~ ✅ *(czerwiec 2026)*
 
 ---
 
@@ -109,7 +109,9 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Awans / playoff | `tests/Feature/PlayoffAdvanceTest.php` |
 | Flow E2E (start → grupy → playoff) | `tests/Feature/TournamentFlowTest.php` |
 | Scoring API → finalizacja turnieju | `tests/Feature/TournamentGameScoringFinalizeTest.php` |
-| Start HTTP | `tests/Feature/TournamentControllerTest.php` |
+| Quick game FFA finalize | `tests/Feature/QuickGameFfaScoringApiTest.php` |
+| Lobby MVP | `tests/Feature/QuickGameLobbyMvpTest.php` |
+| Achievementy po FFA | `tests/Feature/QuickGameApiTest.php` |
 
 ---
 

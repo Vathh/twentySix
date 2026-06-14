@@ -36,14 +36,14 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 ### Niezarejestrowany
 
 - **Web:** przeglądanie publicznych lig, turniejów, wyników, tabel i statystyk (docelowo także pojedynczych meczów).
-- **Mobile:** mecze **offline** bez zapisu do bazy i bez historii (w tym mecz ćwiczeniowy solo).
+- **Mobile:** mecze **treningowe** bez zapisu do bazy (offline lub z internetem — wynik znika po meczu); quick game online wymaga konta i sieci.
 
 ### Zarejestrowany
 
 - Wszystko, co gość na webie.
 - Znajomi (zaproszenie + akceptacja — **MVP: mobile**).
 - Własne statystyki i historia (turnieje + quick game online).
-- **Mobile:** lobby quick game, akceptacja zaproszeń (turniej, lobby, znajomi), tablet turniejowy, offline/solo ćwiczenia.
+- **Mobile:** lobby quick game online, akceptacja zaproszeń (turniej, lobby, znajomi), tablet turniejowy, **mecz treningowy** (lokalny, bez zapisu).
 - Docelowo: znajomi i komunikator na webie, odznaczenia, link live quick game.
 
 ### Premium (docelowo)
@@ -78,11 +78,11 @@ Quick game: FFA (każdy gra sam), max **8** graczy, 501 BO3, wybór **jedno urz�
 
 ## Tryby meczów (podsumowanie)
 
-| Tryb                      | Zapis w bazie | Live (WebSocket) |
-| ------------------------- | ------------- | ---------------- |
-| Quick game online (lobby) | tak           | tak              |
-| Turniej (kod tabletu)     | tak           | tak              |
-| Offline / solo ćwiczenia  | nie           | nie              |
+| Tryb                      | Zapis w bazie | Live (WebSocket) | Wymaga internetu |
+| ------------------------- | ------------- | ---------------- | ---------------- |
+| Quick game online (lobby) | tak           | tak              | tak (sync meczu) |
+| Turniej (kod tabletu)     | tak           | tak              | tak              |
+| **Trening (mobile)**      | **nie**       | **nie**          | **nie**          |
 
 ## Status meczu turniejowego
 
@@ -103,7 +103,7 @@ Wybór → API → `w trakcie` (lock); inne tablety nie widzą meczu; race → b
 | Rola                   | MVP                                                                 | Docelowo               |
 | ---------------------- | ------------------------------------------------------------------- | ---------------------- |
 | Gość (web)             | Podgląd lig/turniejów                                               | + pojedyncze mecze     |
-| Gość (mobile)          | Offline, solo ćwiczenia                                             | bez zmian              |
+| Gość (mobile)          | Trening (bez konta), turniej kodem tabletu                          | bez zmian              |
 | Użytkownik             | Quick game, turnieje, znajomi (zaproszenia/akceptacja **mobile**)   | + komunikator, web     |
 | **Organizator**        | **Twórca ligi = organizator**; uprawnienia w lidze                  | premium                |
 | **Współadministrator** | Pełne prawa, cała liga (MVP)                                        | granularne uprawnienia |
@@ -249,7 +249,9 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - Zaproszenie + akceptacja — **wyłącznie mobile** (wysyłka i akceptacja).
 - Docelowo: także **web** (przy komunikatorze).
 
-### Quick game (MVP)
+### Quick game online (MVP)
+
+**Wymaga:** konto zalogowane, internet, lobby ze znajomymi.
 
 - Lobby zakłada zalogowany użytkownik (host).
 - **Dołączenie wyłącznie przez zaproszenie** — host zaprasza znajomego z listy znajomych; zaproszony **akceptuje** na mobile i wtedy dołącza do lobby (`POST …/lobby/{id}/join`).
@@ -267,7 +269,44 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
   - Leg 4 (jeśli potrzebny przy BO3) zaczyna **D** → kolejność: **D → A → B → C**.
 - Start bez pełnej akceptacji — grają tylko **zaakceptowani** zaproszeni.
 - **Minimum 2** zaakceptowanych zawodników do startu.
-- Wyniki w statystykach gracza.
+- Wyniki w statystykach gracza (zapis w bazie po zakończeniu meczu FFA).
+
+### Mecz treningowy (mobile, MVP)
+
+**Wymaga:** tylko aplikacja mobilna — **bez konta**, **bez internetu**, **bez zapisu** w bazie po meczu.
+
+Przeznaczenie: grupa znajomych przy tarczy (np. w klubie bez Wi‑Fi) albo szybka gra „na miejscu”, gdy nie chcemy zapisywać wyniku w statystykach — **nawet jeśli internet jest dostępny**.
+
+| Aspekt | Trening | Quick game online |
+| ------ | ------- | ----------------- |
+| Wejście w app | **Trening** (ekran konfiguracji) | **Quick game** → lobby |
+| Konto | nie wymagane | wymagane |
+| Internet | nie wymagany | wymagany (sync) |
+| Zapis wyniku | **nie** — dane znikają po zamknięciu meczu | tak (`quick_games`, statystyki) |
+| Gracze | 2–8, **imiona wpisane lokalnie** (bez kont) | 2–8, tylko **znajomi** z kont |
+| Format | 501 double out, BO3 (pierwszy do 2 legów) | j.w. |
+| Tryb urządzeń | **`one_device`** — jeden telefon wpisuje wszystkich | `one_device` lub `each_own` + sync |
+| Reguły FFA | ta sama rotacja openera i kolejność tur co online | j.w. |
+
+**Implementacja:** scoring wyłącznie w aplikacji (`GameScoringScreen`, lokalne reducery). Backend **nie uczestniczy** w treningu — endpoint `POST /quick-game/update` z pełną tablicą graczy (dawny „offline quick”) można usunąć w osobnym kroku.
+
+**Poza MVP treningu:** sync wielu telefonów bez konta, zapis opcjonalny, krykiet.
+
+### FFA 3–8 graczy — oba tryby urządzeń (quick game online, MVP)
+
+Quick game **2–8 graczy** obsługuje **oba** tryby wybrane w lobby:
+
+| Liczba graczy | `one_device` | `each_own` |
+| ------------- | ------------ | ---------- |
+| **2** | ✅ host wpisuje obu | ✅ FFA sync API + WS |
+| **3–8** | ✅ **wymagane** — np. pięciu kumpli przy jednej tarczy, jeden telefon/tablet wpisuje wszystkich | ✅ **wymagane** — ci sami gracze **zdalnie**, każdy na swoim telefonie, wpisuje **tylko w swojej turze**; wspólny stan przez API + WebSocket |
+
+**Przykłady (product):**
+
+- **Na miejscu:** 5 znajomych w klubie → lobby 5 osób, tryb **jedno urządzenie**, host wpisuje rzuty wszystkich na jednym tablecie.
+- **Zdalnie:** tych samych 5 znajomych, każdy w domu → lobby 5 osób, tryb **każdy na swoim**, ten sam widok meczu na każdym telefonie, synchronizacja tur i rotacji openera lega.
+
+Te same reguły FFA (kolejność z lobby, rotacja openera, BO3, wynik w statystykach) obowiązują w **obu** trybach. Różni się tylko **kto wpisuje punkty** i **mechanizm synchronizacji** (brak sync między telefonami vs API/WS).
 
 ### Quick game — tryb urządzeń (wybór w lobby)
 
@@ -275,8 +314,8 @@ Już istniejący wybór w lobby mobilnym:
 
 | Tryb | Zachowanie |
 | ---- | ---------- |
-| **Jedno urządzenie** | Jedna osoba na jednym telefonie/tablecie wpisuje rzuty **wszystkich** zawodników (jak sędziowanie). |
-| **Każdy na własnym urządzeniu** | Ten sam widok meczu na każdym telefonie, **synchronizacja przez API** + WebSocket. Zawodnik wpisuje rzuty **tylko w swojej kolejce** — czeka na turę, nie gra równolegle. |
+| **Jedno urządzenie** | Jedna osoba (zwykle **host**) na jednym telefonie/tablecie wpisuje rzuty **wszystkich** zawodników (jak sędziowanie). Dotyczy **2–8** graczy FFA. Pozostali widzą postęp meczu (lobby / ekran meczu), ale **nie wpisują** punktów. |
+| **Każdy na własnym urządzeniu** | Ten sam widok meczu na każdym telefonie, **synchronizacja przez API** + WebSocket. Zawodnik wpisuje rzuty **tylko w swojej kolejce** — czeka na turę. Dotyczy **2–8** graczy (jeden silnik FFA). |
 
 - Turniej na tablecie = zawsze model **jednego urządzenia** (head-to-head).
 - **Krykiet** — poza MVP (kod w toku, wrócimy później).
@@ -291,8 +330,8 @@ Już istniejący wybór w lobby mobilnym:
 | Kontekst            | Gra                 | Format MVP          |
 | ------------------- | ------------------- | ------------------- |
 | Turniej (tablet)    | 501 head-to-head    | 501 double out, BO3 (do 2 legów) |
-| Quick game          | 501 multi FFA       | 501 double out, BO3 (pierwszy do 2 legów) |
-| Offline / ćwiczenia | 501                 | bez zapisu          |
+| Quick game online   | 501 multi FFA       | 501 double out, BO3 (pierwszy do 2 legów) |
+| Trening (mobile)    | 501 multi FFA       | 501 double out, BO3; **bez zapisu**       |
 | Krykiet             | —                   | poza MVP            |
 
 Ten sam silnik liczenia i model wyniku w API (turniej + quick game 501).
@@ -301,7 +340,7 @@ Ten sam silnik liczenia i model wyniku w API (turniej + quick game 501).
 
 - **Web (twentySix):** ligi/turnieje, start turnieju, zaproszenia do turnieju (wysyłka), korekta wyników, live, publiczny podgląd. Znajomi — poza MVP na webie.
 - **API:** walidacja grup×awans, podział do grup, statusy meczów, quick game (oba tryby urządzeń), zaproszenia, achievementy, point schemes.
-- **Mobile:** tablet, quick game, znajomi (MVP), akceptacja zaproszeń (turniej, lobby, znajomi), offline/solo.
+- **Mobile:** tablet, quick game online, **trening (lokalny)**, znajomi (MVP), akceptacja zaproszeń (turniej, lobby, znajomi).
 
 ## MVP (wersja 1 — musi działać)
 
@@ -325,8 +364,10 @@ Ten sam silnik liczenia i model wyniku w API (turniej + quick game 501).
 
 - Znajomi (zaproszenie + akceptacja)
 - Akceptacja turniej + lobby
-- Quick game: wybór urządzeń, FFA, 501 BO3
+- Quick game online: FFA **2–8**, **oba tryby urządzeń** (`one_device` + `each_own`), 501 BO3
+- **Trening:** FFA 2–8, `one_device`, 501 BO3, bez konta i bez zapisu (działa offline)
 - Tablet turniejowy
+- Ekran startowy: **Quick game online** vs **Trening**
 
 ## Poza MVP (świadomie później)
 
@@ -388,3 +429,5 @@ Poniższe **rozbieżności** wynikają z wcześniejszej pracy bez `product.md`. 
 | Rozmiar drabinki | Zależny od `grupy × awans` | ✅ `PlayoffBracketFactory::create` (MVP do 32) |
 | Zaproszenia turniejowe | Encja per turniej; web na stronie startu; akceptacja mobile | ❌ Bezpośrednie `relatedUsers` zamiast zaproszeń |
 | Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ (kody lobby usunięte; `joinById` wymaga zaproszenia) |
+| FFA 2–8 oba tryby urządzeń | `one_device` i `each_own` dla 2–8 graczy | ✅ unified FFA (`QuickGameFfaScoringService`, lobby `/ffa/*`, WS) |
+| Rotacja openera lega | opener+1 po legu | ✅ mobile (4B) |

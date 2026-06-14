@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Player\Player;
-use App\Models\QuickGame\QuickGame;
 use App\Models\QuickGame\QuickGameLobby;
 use App\Models\QuickGame\QuickGameLobbyPlayer;
 use App\Models\Users\User;
@@ -130,11 +129,13 @@ class QuickGameLobbyMvpTest extends TestCase
             ->assertJsonPath('legsCount', 2)
             ->assertJsonPath('status', 'started');
 
-        $quickGameId = $start->json('quickGameId');
-        $this->assertNotNull($quickGameId);
+        $ffaSessionId = $start->json('ffaSessionId');
+        $this->assertNotNull($ffaSessionId);
 
-        $quickGame = QuickGame::find($quickGameId);
-        $this->assertSame(2, (int) $quickGame->legs_count);
+        $session = \App\Models\QuickGame\QuickGameFfaSession::find($ffaSessionId);
+        $this->assertNotNull($session);
+        $this->assertSame(2, (int) $session->legs_to_win);
+        $this->assertCount(2, $session->player_order);
     }
 
     public function test_join_without_invitation_is_rejected(): void

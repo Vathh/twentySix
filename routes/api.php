@@ -4,19 +4,18 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FriendshipController;
 use App\Http\Controllers\Api\GameController;
 use App\Http\Controllers\Api\QuickGameController;
+use App\Http\Controllers\Api\QuickGameFfaController;
 use App\Http\Controllers\Api\QuickGameLobbyController;
 use App\Http\Controllers\Api\TournamentInvitationController;
 use App\Http\Controllers\Api\GameScoring\GroupGameScoringController;
 use App\Http\Controllers\Api\GameScoring\PlayoffGameScoringController;
-use App\Http\Controllers\Api\GameScoring\QuickGameScoringController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'tournamentLogin']); // kod turnieju – do sędziowania
 Route::post('/account/login', [AuthController::class, 'login']);   // email + hasło – konto gracza
 Route::post('/register', [AuthController::class, 'register']);
 
-// Quick game update - może być bez auth (gracze tymczasowi)
-Route::post('/quick-game/update', [QuickGameController::class, 'update']);
+// Wynik quick game online finalizuje silnik FFA; ten endpoint tylko dla achievementów po meczu.
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -42,14 +41,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/legs/{leg}/close', [PlayoffGameScoringController::class, 'closeLeg'])->whereNumber('leg');
     });
 
-    Route::prefix('quick-games/{quickGame}')->whereNumber('quickGame')->group(function () {
-        Route::get('/scoring/state', [QuickGameScoringController::class, 'state']);
-        Route::post('/legs', [QuickGameScoringController::class, 'startLeg']);
-        Route::post('/legs/{leg}/visits', [QuickGameScoringController::class, 'recordVisit'])->whereNumber('leg');
-        Route::post('/legs/{leg}/visits/undo', [QuickGameScoringController::class, 'undoVisit'])->whereNumber('leg');
-        Route::post('/legs/{leg}/close', [QuickGameScoringController::class, 'closeLeg'])->whereNumber('leg');
-    });
-
     Route::prefix('friends')->group(function () {
         Route::post('/add', [FriendshipController::class, 'addFriend']);
         Route::delete('/remove', [FriendshipController::class, 'removeFriend']);
@@ -69,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/create', [QuickGameController::class, 'create']);
         Route::get('/active', [QuickGameController::class, 'getActive']);
         Route::post('/inProgress', [QuickGameController::class, 'setStatusInProgress']);
+        Route::post('/update', [QuickGameController::class, 'update']);
     });
 
     Route::prefix('tournaments/invitations')->group(function () {
@@ -90,6 +82,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{lobbyId}/start', [QuickGameLobbyController::class, 'start']);
         Route::post('/{lobbyId}/invite', [QuickGameLobbyController::class, 'invite']);
         Route::post('/{lobbyId}/add-guest', [QuickGameLobbyController::class, 'addGuest']);
+        Route::get('/{lobbyId}/ffa/state', [QuickGameFfaController::class, 'state']);
+        Route::post('/{lobbyId}/ffa/visits', [QuickGameFfaController::class, 'recordVisit']);
+        Route::post('/{lobbyId}/ffa/visits/undo', [QuickGameFfaController::class, 'undoVisit']);
     });
 
 });

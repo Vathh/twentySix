@@ -42,8 +42,8 @@ class QuickGameLobbyPayload
             'players' => $players,
         ];
 
-        if ($lobby->status === 'started' && $lobby->quick_game_id) {
-            $out['quickGameId'] = $lobby->quick_game_id;
+        if ($lobby->status === 'started' && $lobby->ffa_session_id) {
+            $out['ffaSessionId'] = $lobby->ffa_session_id;
         }
 
         if ($currentUserId !== null) {
