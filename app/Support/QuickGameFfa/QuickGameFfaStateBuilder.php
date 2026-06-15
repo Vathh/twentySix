@@ -17,12 +17,42 @@ class QuickGameFfaStateBuilder
         $players = Player::whereIn('id', $playerIds)->get()->keyBy('id');
         $legsWon = $this->computeLegsWon($activeVisits, $playerIds);
         $currentLegVisits = $activeVisits->where('leg_number', $session->current_leg_number);
+        $allLegGroups = $activeVisits->groupBy('leg_number');
 
         $playerStates = [];
         foreach ($playerIds as $orderIndex => $playerId) {
             $player = $players->get($playerId);
             $legVisits = $currentLegVisits->where('player_id', $playerId);
             $remaining = $this->remainingForPlayer($session, $legVisits);
+            $playerAll = $activeVisits
+                ->where('player_id', $playerId)
+                ->where('bust', false);
+            $legByLegScores = [];
+            $legsAverages = [];
+            $dartsPerLeg = [];
+
+            foreach ($allLegGroups as $legNum => $legAllVisits) {
+                if ((int) $legNum === (int) $session->current_leg_number) {
+                    continue;
+                }
+
+                $playerLegVisits = $legAllVisits
+                    ->where('player_id', $playerId)
+                    ->where('bust', false);
+                if ($playerLegVisits->isEmpty()) {
+                    continue;
+                }
+
+                $legByLegScores[] = $playerLegVisits->pluck('score')->values()->all();
+                $avg = $this->legAverage($playerLegVisits);
+                if ($avg !== null) {
+                    $legsAverages[] = $avg;
+                }
+
+                if ($this->legWinnerPlayerId($legAllVisits) === (int) $playerId) {
+                    $dartsPerLeg[] = (int) ($playerLegVisits->sum('darts_in_visit') ?: ($playerLegVisits->count() * 3));
+                }
+            }
 
             $playerStates[] = [
                 'playerId' => (int) $playerId,
@@ -32,6 +62,11 @@ class QuickGameFfaStateBuilder
                 'remaining' => $remaining,
                 'legAverage' => $this->legAverage($legVisits),
                 'gameAverage' => $this->gameAverage($activeVisits, (int) $playerId, $session->starting_score),
+                'legByLegScores' => $legByLegScores,
+                'legsAverages' => $legsAverages,
+                'dartsPerLeg' => $dartsPerLeg,
+                'matchDartsThrown' => (int) ($playerAll->sum('darts_in_visit') ?: ($playerAll->count() * 3)),
+                'matchPointsEarned' => (int) $playerAll->sum('score'),
             ];
         }
 
@@ -97,17 +132,23 @@ class QuickGameFfaStateBuilder
         $byLeg = $visits->groupBy('leg_number');
 
         foreach ($byLeg as $legVisits) {
-            $winner = $legVisits
-                ->filter(fn ($v) => $v->closed_leg && ! $v->bust && (int) $v->remaining_after === 0)
-                ->sortByDesc('visit_number')
-                ->first();
-
-            if ($winner && isset($legsWon[$winner->player_id])) {
-                $legsWon[$winner->player_id]++;
+            $winnerId = $this->legWinnerPlayerId($legVisits);
+            if ($winnerId !== null && isset($legsWon[$winnerId])) {
+                $legsWon[$winnerId]++;
             }
         }
 
         return $legsWon;
+    }
+
+    private function legWinnerPlayerId(Collection $legVisits): ?int
+    {
+        $winner = $legVisits
+            ->filter(fn ($v) => $v->closed_leg && ! $v->bust && (int) $v->remaining_after === 0)
+            ->sortByDesc('visit_number')
+            ->first();
+
+        return $winner ? (int) $winner->player_id : null;
     }
 
     private function remainingForPlayer(QuickGameFfaSession $session, Collection $legVisits): int

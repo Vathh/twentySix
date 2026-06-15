@@ -68,7 +68,7 @@ class QuickGameLobbyMvpTest extends TestCase
             ->assertJsonPath('message', 'Do quick game można zapraszać tylko znajomych');
     }
 
-    public function test_add_guest_is_rejected_in_mvp(): void
+    public function test_host_can_add_guest(): void
     {
         $lobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
 
@@ -76,8 +76,43 @@ class QuickGameLobbyMvpTest extends TestCase
             'tempPlayerName' => 'Gość',
         ]);
 
-        $response->assertStatus(400)
-            ->assertJsonFragment(['message' => 'W quick game MVP można grać tylko ze znajomymi — gracze tymczasowi są niedostępni']);
+        $response->assertOk()
+            ->assertJsonCount(2, 'players')
+            ->assertJsonPath('players.1.name', 'Gość')
+            ->assertJsonPath('players.1.isRegistered', false);
+
+        $this->assertDatabaseHas('quick_game_lobby_players', [
+            'lobby_id' => $lobbyId,
+            'temp_player_name' => 'Gość',
+            'is_registered' => false,
+        ]);
+    }
+
+    public function test_start_with_guest_requires_one_device_mode(): void
+    {
+        $lobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/add-guest", [
+            'tempPlayerName' => 'Kumpel',
+        ])->assertOk();
+
+        $start = $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
+            'legsCount' => 2,
+            'gameType' => '501',
+            'scoringMode' => 'each_own',
+        ]);
+
+        $start->assertStatus(400)
+            ->assertJsonPath('message', 'Gracze tymczasowi wymagają trybu „na jednym urządzeniu”');
+
+        $startOk = $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
+            'legsCount' => 2,
+            'gameType' => '501',
+            'scoringMode' => 'one_device',
+        ]);
+
+        $startOk->assertOk()
+            ->assertJsonPath('status', 'started');
     }
 
     public function test_lobby_rejects_ninth_player(): void

@@ -17,15 +17,15 @@
                 <td class="px-3 py-2 font-medium text-text-primary whitespace-nowrap">
                     {{ $playerAchievements['player']->name }}
                 </td>
-                <td class="px-2 py-2 text-center">{{ $playerAchievements['max'] }}</td>
-                <td class="px-2 py-2 text-center">{{ $playerAchievements['one_seventy'] }}</td>
+                <td class="px-2 py-2 text-center">{{ $playerAchievements['max'] ?? 0 }}</td>
+                <td class="px-2 py-2 text-center">{{ $playerAchievements['one_seventy'] ?? 0 }}</td>
                 <td class="px-2 py-2 text-center flex-wrap">
-                    @foreach($playerAchievements['qf'] as $achievement)
+                    @foreach($playerAchievements['qf'] ?? [] as $achievement)
                         <span>{{ $achievement->value }},</span>
                     @endforeach
                 </td>
                 <td class="px-2 py-2 text-center flex-wrap">
-                    @foreach($playerAchievements['hf'] as $achievement)
+                    @foreach($playerAchievements['hf'] ?? [] as $achievement)
                         <span>{{ $achievement->value }},</span>
                     @endforeach
                 </td>

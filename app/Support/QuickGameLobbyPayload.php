@@ -18,13 +18,13 @@ class QuickGameLobbyPayload
         $lobbyPlayers = QuickGameLobbyPlayerOrder::sort($lobby->players, $orderIds);
 
         $players = $lobbyPlayers->map(function ($p) use ($lobby) {
-            $isRegistered = $p->player_id !== null;
+            $isRegistered = (bool) $p->is_registered;
             $isHost = $p->player && (int) $p->player->user_id === (int) $lobby->host_id;
 
             return [
                 'id' => $p->id,
                 'playerId' => $p->player_id,
-                'name' => $p->player?->name ?? null,
+                'name' => $p->player?->name ?? $p->temp_player_name,
                 'tempName' => $p->temp_player_name,
                 'ready' => (bool) $p->is_ready,
                 'isRegistered' => $isRegistered,

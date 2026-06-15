@@ -327,6 +327,24 @@ Już istniejący wybór w lobby mobilnym:
 
 ## Reguły meczu (MVP)
 
+### Statystyki w trakcie meczu (mobile — licznik i zakładka „Statystyki”)
+
+Wspólne dla **quick game online**, **treningu** i (tam gdzie dotyczy) **turnieju na tablecie**. Średnie w UI zawsze w formacie **xx.xx** (np. `9.00`).
+
+| Pole / etykieta UI | Znaczenie | Kto ma wartość |
+| ------------------ | --------- | -------------- |
+| **ms** — średnia meczowa (`matchAverage` / `gameAverage`) | Średnia 3-dartowa ze **wszystkich** rzutów gracza w meczu (wygrane i przegrane legi + bieżący leg). | Zawsze obaj / wszyscy gracze, gdy mają co najmniej jedną wizytę. |
+| **ls** — średnia legowa bieżąca (`currentLegAverage` / `legAverage`) | Średnia 3-dartowa w **aktualnie trwającym** legu. | Zawsze obaj / wszyscy, gdy mają rzuty w bieżącym legu. |
+| **Najlepszy leg** (sekcja *Średnia*) — `max(legsAverages)` | Najwyższa średnia legowa spośród **zakończonych** legów, w których gracz brał udział — **niezależnie od wyniku lega** (wygrany lub przegrany). | Zawsze liczona dla każdego gracza, który rozegrał co najmniej jeden zakończony leg. |
+| **Najlepszy leg** (sekcja *Osiągi*) — `min(dartsPerLeg)` | **Najmniejsza** liczba lotek potrzebnych graczowi do **zamknięcia lega**, który **wygrał**. To liczba lotek zwycięzcy lega, nie przegranego. | Tylko gracze, którzy **wygrali co najmniej jeden** zakończony leg; inaczej `-`. |
+| `legsAverages[]` | Średnia legowa per zakończony leg — **każdy** rozegrany leg (wygrany i przegrany). | Backend / reducer — pod „najlepszą średnią legową”. |
+| `dartsPerLeg[]` | Liczba lotek gracza w legu, który **wygrał** (checkout). | Tylko wygrane legi — pod „najlepszy leg” w osiągach. |
+| Osiągi 60+, 80+, 100+, 140+, 180 | Liczba wizyt w przedziałach punktowych w meczu. | Wszystkie wizyty gracza (`legByLegScores` + bieżący leg). |
+
+**Implementacja (skrót):** quick game FFA — `QuickGameFfaStateBuilder` liczy `legsAverages` dla każdego zakończonego lega z udziałem gracza; `dartsPerLeg` tylko gdy `legWinnerPlayerId === playerId`. Mobile: `applyFfaScoringState` → reducer `SYNC_FROM_SERVER`.
+
+### Format gry
+
 | Kontekst            | Gra                 | Format MVP          |
 | ------------------- | ------------------- | ------------------- |
 | Turniej (tablet)    | 501 head-to-head    | 501 double out, BO3 (do 2 legów) |

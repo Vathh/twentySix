@@ -130,24 +130,29 @@ class TournamentDataViewModel
 
         $result = [];
 
-        foreach ($achievementDomains as $achievement)
-        {
+        foreach ($achievementDomains as $achievement) {
+            if ($achievement->player === null) {
+                continue;
+            }
+
+            $playerId = $achievement->player->id;
+
+            if (! isset($result[$playerId]['player'])) {
+                $result[$playerId]['player'] = $achievement->player;
+                $result[$playerId]['max'] = 0;
+                $result[$playerId]['one_seventy'] = 0;
+                $result[$playerId]['qf'] = [];
+                $result[$playerId]['hf'] = [];
+            }
+
             switch ($achievement->type) {
                 case AchievementType::ONE_SEVENTY:
                 case AchievementType::MAX:
-                    if(empty($result[$achievement->player->id]['player'])){
-                        $result[$achievement->player->id]['player'] = $achievement->player;
-                    }
-                    if(empty($result[$achievement->player->id][$achievement->type->value])){
-                        $result[$achievement->player->id][$achievement->type->value] = 1;
-                    }else
-                    {
-                        $result[$achievement->player->id][$achievement->type->value]++;
-                    }
+                    $result[$playerId][$achievement->type->value]++;
                     break;
                 case AchievementType::HF:
                 case AchievementType::QF:
-                    $result[$achievement->player->id][$achievement->type->value][] = $achievement;
+                    $result[$playerId][$achievement->type->value][] = $achievement;
                     break;
             }
         }

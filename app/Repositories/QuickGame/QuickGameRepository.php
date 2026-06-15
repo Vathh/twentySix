@@ -130,12 +130,12 @@ class QuickGameRepository
      */
     public function saveResults(int $quickGameId, array $playerResults): void
     {
-        $data = array_map(function ($playerResult) use ($quickGameId) {
+        $rows = array_map(function ($playerResult) use ($quickGameId) {
             return [
                 'quick_game_id' => $quickGameId,
                 'player_id' => $playerResult->playerId,
                 'score' => $playerResult->score,
-                'place' => $playerResult->place,
+                'place' => $playerResult->place ?? 0,
                 'average' => $playerResult->average,
                 'darts_thrown' => $playerResult->dartsThrown,
                 'points_earned' => $playerResult->pointsEarned,
@@ -144,9 +144,11 @@ class QuickGameRepository
             ];
         }, $playerResults);
 
-        if (!empty($data)) {
-            \App\Models\QuickGame\QuickGameResult::insert($data);
+        if ($rows === []) {
+            return;
         }
+
+        \App\Models\QuickGame\QuickGameResult::insert($rows);
     }
 }
 

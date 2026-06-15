@@ -27,6 +27,16 @@ class PlayerRepository
         return PlayerDomain::fromEloquent($player);
     }
 
+    public function createQuickGameGuest(string $name): PlayerDomain
+    {
+        $player = Player::create([
+            'name' => $name,
+            'user_id' => null,
+        ]);
+
+        return PlayerDomain::fromEloquent($player);
+    }
+
     /**
      * @throws \Throwable
      */

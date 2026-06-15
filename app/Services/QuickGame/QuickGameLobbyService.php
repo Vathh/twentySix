@@ -181,7 +181,22 @@ class QuickGameLobbyService
             throw new \RuntimeException('Lobby nie przyjmuje już graczy');
         }
 
-        throw new \RuntimeException('W quick game MVP można grać tylko ze znajomymi — gracze tymczasowi są niedostępni');
+        $this->assertLobbyHasRoom($lobby);
+
+        $name = trim($tempPlayerName);
+        if ($name === '') {
+            throw new \RuntimeException('Podaj imię gracza tymczasowego');
+        }
+
+        $this->assertGuestNameAvailableInLobby($lobby, $name);
+
+        $guest = $this->playerRepository->createQuickGameGuest($name);
+        $this->lobbyRepository->addPlayer($lobby->id, $guest->id, $name, false);
+
+        $fresh = $this->lobbyRepository->find($lobbyId);
+        $this->broadcastLobbyUpdated($fresh);
+
+        return $fresh;
     }
 
     public function setReady(int $lobbyId, int $userId, bool $isReady): QuickGameLobby
@@ -222,9 +237,15 @@ class QuickGameLobbyService
             throw new \RuntimeException('Musi być co najmniej 2 graczy');
         }
 
+        $mode = $scoringMode ?? $lobby->scoring_mode ?? 'each_own';
+
+        if ($this->lobbyHasTempGuests($lobby) && $mode === 'each_own') {
+            throw new \RuntimeException('Gracze tymczasowi wymagają trybu „na jednym urządzeniu”');
+        }
+
         $hostPlayerId = $lobby->host->player?->id;
         foreach ($lobby->players as $lp) {
-            if ($lp->player_id === null) {
+            if (! $lp->is_registered) {
                 continue;
             }
             if ($lp->player_id === $hostPlayerId) {
@@ -237,7 +258,6 @@ class QuickGameLobbyService
 
         $legs = $legsCount ?? $lobby->legs_count ?? self::DEFAULT_LEGS_TO_WIN;
         $game = $gameType ?? $lobby->game_type ?? '501';
-        $mode = $scoringMode ?? $lobby->scoring_mode ?? 'each_own';
 
         $players = $lobby->players->values();
         $defaultOrderIds = $players->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
@@ -277,6 +297,12 @@ class QuickGameLobbyService
 
     public function updateScoringMode(int $lobbyId, int $hostUserId, string $scoringMode): QuickGameLobby
     {
+        $lobby = $this->lobbyRepository->find($lobbyId);
+
+        if ($scoringMode === 'each_own' && $this->lobbyHasTempGuests($lobby)) {
+            throw new \RuntimeException('Gracze tymczasowi wymagają trybu „na jednym urządzeniu”');
+        }
+
         $lobby = $this->lobbyRepository->updateScoringMode($lobbyId, $hostUserId, $scoringMode);
         $this->broadcastLobbyUpdated($lobby);
 
@@ -308,6 +334,23 @@ class QuickGameLobbyService
 
         if (! $this->friendshipRepository->areFriends((int) $lobby->host_id, $userId)) {
             throw new \RuntimeException('Do quick game można dołączyć tylko jako znajomy hosta');
+        }
+    }
+
+    private function lobbyHasTempGuests(QuickGameLobby $lobby): bool
+    {
+        return $lobby->players->contains(fn ($lp) => ! $lp->is_registered);
+    }
+
+    private function assertGuestNameAvailableInLobby(QuickGameLobby $lobby, string $name): void
+    {
+        $normalized = mb_strtolower($name);
+
+        foreach ($lobby->players as $lp) {
+            $displayName = $lp->player?->name ?? $lp->temp_player_name ?? '';
+            if (mb_strtolower(trim($displayName)) === $normalized) {
+                throw new \RuntimeException('Gracz o tej nazwie jest już w lobby');
+            }
         }
     }
 }
