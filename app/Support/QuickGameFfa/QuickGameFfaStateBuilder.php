@@ -32,7 +32,7 @@ class QuickGameFfaStateBuilder
             $dartsPerLeg = [];
 
             foreach ($allLegGroups as $legNum => $legAllVisits) {
-                if ((int) $legNum === (int) $session->current_leg_number) {
+                if ($session->isInProgress() && (int) $legNum === (int) $session->current_leg_number) {
                     continue;
                 }
 

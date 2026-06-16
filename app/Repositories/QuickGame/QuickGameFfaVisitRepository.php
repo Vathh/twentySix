@@ -61,6 +61,19 @@ class QuickGameFfaVisitRepository
         ]);
     }
 
+    public function updateFromDto(QuickGameFfaVisit $visit, RecordFfaVisitDTO $dto): QuickGameFfaVisit
+    {
+        $visit->update([
+            'score' => $dto->score,
+            'remaining_after' => $dto->remainingAfter,
+            'darts_in_visit' => $dto->dartsInVisit,
+            'closed_leg' => $dto->closedLeg,
+            'bust' => $dto->bust,
+        ]);
+
+        return $visit->fresh();
+    }
+
     public function voidLastForLeg(QuickGameFfaSession $session, int $legNumber): ?QuickGameFfaVisit
     {
         $visit = QuickGameFfaVisit::where('ffa_session_id', $session->id)

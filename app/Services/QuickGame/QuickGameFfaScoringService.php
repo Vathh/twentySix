@@ -99,11 +99,6 @@ class QuickGameFfaScoringService
                 throw new DomainException('Mecz jest już zakończony.');
             }
 
-            $existing = $this->visitRepository->findByClientVisitId($dto->clientVisitId);
-            if ($existing !== null) {
-                return $this->broadcastState($session, $userId);
-            }
-
             $playerIds = $session->player_order ?? [];
             $n = count($playerIds);
             if ($n < 2) {
@@ -121,8 +116,24 @@ class QuickGameFfaScoringService
 
             $this->assertCanSubmitVisit($session, $userId, $dto->playerId);
 
-            $this->visitRepository->create($session, (int) $session->current_leg_number, $dto);
-            $this->applyTurnAfterVisit($session, $dto, $n);
+            $existing = $this->visitRepository->findByClientVisitId($dto->clientVisitId);
+            if ($existing !== null) {
+                if ($existing->is_voided) {
+                    throw new DomainException('Ta wizyta została już cofnięta.');
+                }
+                if ((int) $existing->ffa_session_id !== (int) $session->id) {
+                    throw new DomainException('Nieprawidłowa wizyta.');
+                }
+                $this->visitRepository->updateFromDto($existing, $dto);
+                if ($this->isVisitComplete($dto)) {
+                    $this->applyTurnAfterVisit($session, $dto, $n);
+                }
+            } else {
+                $this->visitRepository->create($session, (int) $session->current_leg_number, $dto);
+                if ($this->isVisitComplete($dto)) {
+                    $this->applyTurnAfterVisit($session, $dto, $n);
+                }
+            }
 
             $this->sessionRepository->incrementVersion($session);
             $this->sessionRepository->save($session);
@@ -217,6 +228,15 @@ class QuickGameFfaScoringService
         }
 
         $session->current_player_index = ((int) $session->current_player_index + 1) % $n;
+    }
+
+    private function isVisitComplete(RecordFfaVisitDTO $dto): bool
+    {
+        if ($dto->bust || $dto->closedLeg) {
+            return true;
+        }
+
+        return $dto->dartsInVisit >= 3;
     }
 
     private function advanceAfterLegClosed(
