@@ -8,6 +8,17 @@ use Illuminate\Support\Collection;
 
 class LoginCodeRepository
 {
+    /**
+     * @return Collection<int, string>
+     */
+    public function findCodesByTournamentId(int $tournamentId): Collection
+    {
+        return LoginCode::query()
+            ->where('tournament_id', $tournamentId)
+            ->orderBy('id')
+            ->pluck('code');
+    }
+
     public function save(Collection $codes, int $tournamentId): void
     {
         $codesToInsert = [];

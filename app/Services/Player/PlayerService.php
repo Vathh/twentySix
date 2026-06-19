@@ -78,7 +78,7 @@ class PlayerService
      *
      * @return Collection<int, PlayerDomain>
      */
-    public function getTournamentStartPool(int $tournamentId, int $seasonId): Collection
+    public function getTournamentStartPool(int $tournamentId): Collection
     {
         $accepted = $this->tournamentInvitationRepository->getAcceptedPlayers($tournamentId);
         $guests = $this->tournamentGuestParticipantRepository->getPlayersForTournament($tournamentId);

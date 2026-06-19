@@ -25,6 +25,14 @@ class LoginCodeService
 
         $this->loginCodeRepository->save($result, $tournamentId);
     }
+
+    /**
+     * @return Collection<int, string>
+     */
+    public function getCodesForTournament(int $tournamentId): Collection
+    {
+        return $this->loginCodeRepository->findCodesByTournamentId($tournamentId);
+    }
 }
 
 

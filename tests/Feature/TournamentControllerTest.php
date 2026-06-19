@@ -287,5 +287,78 @@ class TournamentControllerTest extends TestCase
 
         $response->assertSessionHasErrors('selectedPlayers');
     }
+
+    public function test_admin_sees_login_codes_on_started_tournament(): void
+    {
+        $this->withoutVite();
+
+        $tournament = Tournament::create([
+            'name' => 'Test Tournament',
+            'season_id' => $this->season->id,
+            'date' => '2024-06-01',
+            'status' => TournamentStatus::GROUP,
+            'groups_count' => 2,
+            'advance_per_group' => 2,
+            'tablets_count' => 2,
+        ]);
+
+        LoginCode::create(['code' => 'ABCD12', 'tournament_id' => $tournament->id]);
+        LoginCode::create(['code' => 'WXYZ34', 'tournament_id' => $tournament->id]);
+
+        $response = $this->actingAs($this->adminUser)->get("/tournaments/{$tournament->id}");
+
+        $response->assertOk();
+        $response->assertSee('Kody logowania na tablety');
+        $response->assertSee('ABCD12');
+        $response->assertSee('WXYZ34');
+        $response->assertSee('Tablet 1');
+        $response->assertSee('Tablet 2');
+    }
+
+    public function test_regular_user_does_not_see_login_codes(): void
+    {
+        $this->withoutVite();
+
+        $tournament = Tournament::create([
+            'name' => 'Test Tournament',
+            'season_id' => $this->season->id,
+            'date' => '2024-06-01',
+            'status' => TournamentStatus::GROUP,
+            'groups_count' => 2,
+            'advance_per_group' => 2,
+            'tablets_count' => 1,
+        ]);
+
+        LoginCode::create(['code' => 'SECR37', 'tournament_id' => $tournament->id]);
+
+        $response = $this->actingAs($this->regularUser)->get("/tournaments/{$tournament->id}");
+
+        $response->assertOk();
+        $response->assertDontSee('Kody logowania na tablety');
+        $response->assertDontSee('SECR37');
+    }
+
+    public function test_guest_does_not_see_login_codes(): void
+    {
+        $this->withoutVite();
+
+        $tournament = Tournament::create([
+            'name' => 'Test Tournament',
+            'season_id' => $this->season->id,
+            'date' => '2024-06-01',
+            'status' => TournamentStatus::GROUP,
+            'groups_count' => 2,
+            'advance_per_group' => 2,
+            'tablets_count' => 1,
+        ]);
+
+        LoginCode::create(['code' => 'GUES78', 'tournament_id' => $tournament->id]);
+
+        $response = $this->get("/tournaments/{$tournament->id}");
+
+        $response->assertOk();
+        $response->assertDontSee('Kody logowania na tablety');
+        $response->assertDontSee('GUES78');
+    }
 }
 

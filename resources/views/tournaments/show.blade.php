@@ -6,31 +6,28 @@
 
     <div class="flex min-h-screen bg-dark-bg text-light-white">
 
-        @seasonAdmin($season)
-        <aside class="w-72 backdrop-blur bg-white/5 border-r border-white/10 p-6 flex flex-col">
-            <h2 class="text-light-green font-bold text-lg mb-6 tracking-wide">⚙️ Zarządzanie turniejem</h2>
-
-            @if(!$tournament->isStarted())
-                <nav class="flex flex-col space-y-3">
-                    <a href="{{ route('tournaments.start', $tournament->id) }}"
-                       class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
-                        ➕ Rozpocznij turniej
-                    </a>
-                </nav>
-            @endif
-        </aside>
-        @endseasonAdmin
+        @if($season)
+            @seasonAdmin($season)
+                @include('tournaments.partials.admin-sidebar')
+            @endseasonAdmin
+        @elseif(auth()->check() && auth()->user()->can_create_leagues)
+            @include('tournaments.partials.admin-sidebar')
+        @endif
 
         <div class="flex-1 p-10 flex justify-center">
             <div class="max-w-3xl w-full">
 
-                <h2 class="text-4xl font-bold text-light-green mb-6 tracking-wide hover:text-light-orange transition-all duration-300 hover:cursor-pointer">
-                    <a href="{{ route('leagues.show', $season->league->id) }}">{{ $season->league->name }}</a>
-                </h2>
+                @if($season)
+                    <h2 class="text-4xl font-bold text-light-green mb-6 tracking-wide hover:text-light-orange transition-all duration-300 hover:cursor-pointer">
+                        <a href="{{ route('leagues.show', $season->league->id) }}">{{ $season->league->name }}</a>
+                    </h2>
 
-                <h1 class="text-3xl font-bold text-light-green mb-6 tracking-wide hover:text-light-orange transition-all duration-300 hover:cursor-pointer">
-                    <a href="{{ route('seasons.show', $season->id) }}">{{ $season->name }}</a>
-                </h1>
+                    <h1 class="text-3xl font-bold text-light-green mb-6 tracking-wide hover:text-light-orange transition-all duration-300 hover:cursor-pointer">
+                        <a href="{{ route('seasons.show', $season->id) }}">{{ $season->name }}</a>
+                    </h1>
+                @else
+                    <p class="text-sm text-light-orange mb-4">Turniej jednorazowy</p>
+                @endif
 
                 <h1 class="text-2xl font-bold text-light-orange mb-6 tracking-wide">{{ $tournament->name }}</h1>
 
@@ -40,7 +37,15 @@
                     </p>
                 </div>
 
-                <div class="flex border-b border-white/10 mb-8">
+                @if(session('success'))
+                    <div class="mt-4 p-3 bg-green-900/50 border border-green-600 rounded text-light-green">{{ session('success') }}</div>
+                @endif
+
+                @if($canManageTournament && $tournament->isStarted() && $loginCodes->isNotEmpty())
+                    @include('tournaments.partials.login-codes', ['loginCodes' => $loginCodes])
+                @endif
+
+                <div class="flex border-b border-white/10 mb-8 mt-8">
                     @php
                         $tabs = [
                             'results' => 'Wyniki',

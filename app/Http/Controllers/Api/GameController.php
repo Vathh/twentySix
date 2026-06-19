@@ -34,6 +34,22 @@ class GameController
         return response()->json(['success' => true]);
     }
 
+    public function releaseLock(LockGameRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        try {
+            $this->gameService->releaseGameLock(
+                (int) $validated['gameId'],
+                GameType::from($validated['type']),
+            );
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
     public function update(GameResultRequest $request): JsonResponse
     {
         $dto = $request->toDTO();

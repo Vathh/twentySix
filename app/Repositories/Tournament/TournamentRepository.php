@@ -23,16 +23,17 @@ class TournamentRepository
     }
 
     public function create(
-        int     $seasonId,
+        ?int    $seasonId,
         string  $name,
         ?string $date
-    ): void
-    {
-        Tournament::create([
+    ): int {
+        $tournament = Tournament::create([
             'season_id' => $seasonId,
             'name' => $name,
-            'date' => $date
+            'date' => $date,
         ]);
+
+        return (int) $tournament->id;
     }
 
     /**

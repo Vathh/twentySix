@@ -40,12 +40,11 @@ class TournamentService
     }
 
     public function create(
-        int     $seasonId,
+        ?int    $seasonId,
         string  $name,
         ?string $date = null
-    ): void
-    {
-        $this->tournamentRepository->create($seasonId, $name, $date);
+    ): int {
+        return $this->tournamentRepository->create($seasonId, $name, $date);
     }
 
     /**

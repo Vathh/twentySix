@@ -39,6 +39,14 @@ class GameRepository
             ->update(['status' => GameStatus::IN_PROGRESS]) === 1;
     }
 
+    public function tryUnlockInProgress(int $gameId): bool
+    {
+        return DB::table('games')
+            ->where('id', $gameId)
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->update(['status' => GameStatus::SCHEDULED]) === 1;
+    }
+
     /**
      * @param int $tournamentId
      * @param int $groupNumber

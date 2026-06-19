@@ -125,6 +125,19 @@ class GameLegRepository
             'finished_at' => now(),
         ]);
     }
+
+    public function deleteForContext(GameScoringContext $context): void
+    {
+        $query = GameLeg::query();
+
+        match ($context->kind) {
+            GameKind::GROUP => $query->where('game_id', $context->gameId),
+            GameKind::PLAYOFF => $query->where('playoff_game_id', $context->gameId),
+            GameKind::QUICK => $query->where('quick_game_id', $context->gameId),
+        };
+
+        $query->delete();
+    }
 }
 
 

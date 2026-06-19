@@ -324,4 +324,59 @@ class TournamentGameScoringFinalizeTest extends TestCase
             ],
         ])->assertOk();
     }
+
+    public function test_group_scoring_upserts_visit_by_client_visit_id(): void
+    {
+        Sanctum::actingAs($this->user);
+
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $start = $this->postJson("/api/group-games/{$game->id}/legs", [
+            'player1DoubleTracked' => true,
+            'player2DoubleTracked' => true,
+        ]);
+        $start->assertOk()
+            ->assertJsonPath('format', 'h2h')
+            ->assertJsonPath('meta.kind', 'tournament_group')
+            ->assertJsonPath('turn.legNumber', 1);
+        $legId = $start->json('currentLeg.id');
+        $clientVisitId = (string) Str::uuid();
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits", [
+            'playerId' => $this->player1->id,
+            'score' => 60,
+            'remainingBefore' => 501,
+            'remainingAfter' => 441,
+            'dartsInVisit' => 1,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => $clientVisitId,
+        ])->assertOk();
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits", [
+            'playerId' => $this->player1->id,
+            'score' => 100,
+            'remainingBefore' => 501,
+            'remainingAfter' => 401,
+            'dartsInVisit' => 2,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => $clientVisitId,
+        ])->assertOk();
+
+        $this->assertDatabaseCount('game_visits', 1);
+        $this->assertDatabaseHas('game_visits', [
+            'game_leg_id' => $legId,
+            'client_visit_id' => $clientVisitId,
+            'score' => 100,
+            'darts_in_visit' => 2,
+            'remaining_after' => 401,
+        ]);
+    }
 }

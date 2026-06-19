@@ -12,6 +12,7 @@ use App\Repositories\Game\GameLegRepository;
 use App\Repositories\Game\GameVisitRepository;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
+use App\Support\GameScoring\ScoringStateContract;
 
 class GameScoringStateBuilder
 {
@@ -58,7 +59,7 @@ class GameScoringStateBuilder
             ),
         ];
 
-        return [
+        return ScoringStateContract::enrichH2h([
             'game' => [
                 'id' => $context->gameId,
                 'kind' => $context->kind->value,
@@ -94,7 +95,7 @@ class GameScoringStateBuilder
                     'bust' => $v->bust,
                 ])->values()->all()
                 : [],
-        ];
+        ]);
     }
 
     /**

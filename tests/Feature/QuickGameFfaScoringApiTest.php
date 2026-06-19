@@ -76,7 +76,10 @@ class QuickGameFfaScoringApiTest extends TestCase
 
         $visit->assertOk()
             ->assertJsonPath('players.0.remaining', 441)
-            ->assertJsonPath('session.currentPlayerIndex', 1);
+            ->assertJsonPath('session.currentPlayerIndex', 1)
+            ->assertJsonPath('format', 'ffa')
+            ->assertJsonPath('turn.currentPlayerIndex', 1)
+            ->assertJsonPath('meta.kind', 'quick_ffa');
 
         $this->getJson("/api/quick-game/lobby/{$lobbyId}/ffa/state")
             ->assertOk()

@@ -4,6 +4,7 @@ namespace App\Support\QuickGameFfa;
 
 use App\Models\Player\Player;
 use App\Models\QuickGame\QuickGameFfaSession;
+use App\Support\GameScoring\ScoringStateContract;
 use Illuminate\Support\Collection;
 
 class QuickGameFfaStateBuilder
@@ -119,7 +120,7 @@ class QuickGameFfaStateBuilder
             }
         }
 
-        return $out;
+        return ScoringStateContract::enrichFfa($out);
     }
 
     /**

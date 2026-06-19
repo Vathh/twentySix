@@ -48,6 +48,40 @@ class TournamentStartRulesTest extends TestCase
         $this->assertSame([2, 4, 8, 16, 32, 64], TournamentStartRules::allowedGroupCounts());
     }
 
+    public function test_allowed_group_counts_for_eight_players(): void
+    {
+        $this->assertSame([2], TournamentStartRules::allowedGroupCountsForPlayers(8));
+    }
+
+    public function test_allowed_group_counts_for_twelve_players(): void
+    {
+        $this->assertSame([2, 4], TournamentStartRules::allowedGroupCountsForPlayers(12));
+    }
+
+    public function test_allowed_group_counts_for_four_players_is_empty(): void
+    {
+        $this->assertSame([], TournamentStartRules::allowedGroupCountsForPlayers(4));
+    }
+
+    public function test_max_players_in_largest_group(): void
+    {
+        $this->assertSame(4, TournamentStartRules::maxPlayersInLargestGroup(8, 2));
+        $this->assertSame(4, TournamentStartRules::maxPlayersInLargestGroup(13, 4));
+    }
+
+    public function test_allowed_advance_for_players_filters_by_group_size(): void
+    {
+        $this->assertSame([1, 2, 4], TournamentStartRules::allowedAdvancePerGroupForPlayers(8, 2));
+        $this->assertSame([1, 2], TournamentStartRules::allowedAdvancePerGroupForPlayers(12, 4));
+    }
+
+    public function test_advances_by_group_count_for_players(): void
+    {
+        $map = TournamentStartRules::advancesByGroupCountForPlayers(8);
+
+        $this->assertSame([1, 2, 4], $map[2]);
+    }
+
     public function test_advances_by_group_count_includes_eight_groups(): void
     {
         $map = TournamentStartRules::advancesByGroupCount();

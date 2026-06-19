@@ -31,9 +31,9 @@
     </div>
 
     @canCreateLeagues
-    <a href="{{ route('seasons.create') }}"
+    <a href="{{ route('tournaments.create') }}"
        class="fixed bottom-30 right-20 btn-primary py-5 px-8 rounded-xl font-bold">
-        Stwórz nowy sezon
+        Stwórz nowy turniej
     </a>
     @endcanCreateLeagues
 

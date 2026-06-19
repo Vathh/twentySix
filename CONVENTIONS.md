@@ -10,6 +10,7 @@ Słowo `match` jest słowem kluczowym w PHP (`match ($x) { ... }`). Unikamy go w
 ### Zasady
 - ✅ Używamy: `Game`, `GameLeg`, `GameService`, `QuickGame`, `GroupGame`, `PlayoffGame`
 - ❌ Unikamy: `Match`, `MatchLeg`, `MatchService` (z wyjątkiem przypadków gdzie jest to konieczne w kontekście PHP)
+- ❌ Mobile / API scoring: `matchScoring`, `useMatchScoring`, `resolveMatchContext` — używaj **`gameScoring`**, **`useGameScoring`**, **`resolveGameContext`**
 
 ### Przykłady
 - `GameLeg` zamiast `MatchLeg`

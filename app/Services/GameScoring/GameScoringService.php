@@ -126,6 +126,14 @@ class GameScoringService
 
         $existing = $this->gameVisitRepository->findByClientVisitId($dto->clientVisitId);
         if ($existing !== null) {
+            if ($existing->is_voided) {
+                throw new DomainException('Ta wizyta została już cofnięta.');
+            }
+            if ((int) $existing->game_leg_id !== (int) $leg->id) {
+                throw new DomainException('Nieprawidłowa wizyta.');
+            }
+            $this->gameVisitRepository->updateFromDto($existing, $dto);
+
             return $this->broadcastState($context, $game);
         }
 

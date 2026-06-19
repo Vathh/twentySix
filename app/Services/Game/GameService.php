@@ -60,6 +60,11 @@ class GameService
         $this->gameLockService->lock($gameId, $type);
     }
 
+    public function releaseGameLock(int $gameId, GameType $type): void
+    {
+        $this->gameLockService->release($gameId, $type);
+    }
+
     public function update(UpdateGameDTO $dto): bool
     {
         if ($this->isFinishedGameAchievementsUpdate($dto)) {

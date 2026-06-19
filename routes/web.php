@@ -80,5 +80,6 @@ Route::prefix('tournaments/{tournament}')->group(function () {
    Route::post('/invitations/{invitation}/cancel', [TournamentController::class, 'cancelInvitation'])->name('tournaments.invitations.cancel');
    Route::post('/invitations/{invitation}/remove', [TournamentController::class, 'removeParticipant'])->name('tournaments.invitations.remove');
    Route::post('/participants/guests/add', [TournamentController::class, 'addGuestParticipant'])->name('tournaments.participants.guests.add');
+   Route::post('/participants/guests/create', [TournamentController::class, 'createGuestParticipant'])->name('tournaments.participants.guests.create');
    Route::delete('/participants/guests/remove', [TournamentController::class, 'removeGuestParticipant'])->name('tournaments.participants.guests.remove');
 });

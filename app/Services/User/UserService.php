@@ -87,9 +87,9 @@ class UserService
             return collect();
         }
 
-        if (strlen($search) < 5) {
+        if (strlen($search) < 2) {
             throw ValidationException::withMessages([
-                'search' => 'Wpisz co najmniej 5 znaków, aby wyszukać użytkowników.',
+                'search' => 'Wpisz co najmniej 2 znaki, aby wyszukać użytkowników.',
             ]);
         }
 

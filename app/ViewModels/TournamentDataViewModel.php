@@ -112,10 +112,14 @@ class TournamentDataViewModel
     }
 
     /**
-     * @return SeasonDomain
+     * @return SeasonDomain|null
      */
-    public function season(): SeasonDomain
+    public function season(): ?SeasonDomain
     {
+        if ($this->tournament->season === null) {
+            return null;
+        }
+
         return SeasonDomain::fromEloquent($this->tournament->season, ['league', 'admins']);
     }
 

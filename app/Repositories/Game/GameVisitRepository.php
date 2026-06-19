@@ -30,6 +30,20 @@ class GameVisitRepository
         ]);
     }
 
+    public function updateFromDto(GameVisit $visit, RecordVisitDTO $dto): GameVisit
+    {
+        $visit->update([
+            'score' => $dto->score,
+            'remaining_before' => $dto->remainingBefore,
+            'remaining_after' => $dto->remainingAfter,
+            'darts_in_visit' => $dto->dartsInVisit,
+            'closed_leg' => $dto->closedLeg,
+            'bust' => $dto->bust,
+        ]);
+
+        return $visit->fresh();
+    }
+
     /**
      * @return Collection<int, GameVisit>
      */
@@ -41,6 +55,18 @@ class GameVisitRepository
             ->orderBy('visit_number')
             ->orderBy('id')
             ->get();
+    }
+
+    public function countActiveForGameLegs(array $gameLegIds): int
+    {
+        if ($gameLegIds === []) {
+            return 0;
+        }
+
+        return GameVisit::query()
+            ->whereIn('game_leg_id', $gameLegIds)
+            ->where('is_voided', false)
+            ->count();
     }
 
     /**

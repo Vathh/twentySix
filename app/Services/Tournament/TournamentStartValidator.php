@@ -34,6 +34,34 @@ class TournamentStartValidator
             $errors['groupsCount'] = 'Liczba grup nie może przekraczać liczby zawodników.';
         }
 
+        if (
+            $groupsCount > 0
+            && $playerCount >= TournamentStartRules::MIN_PLAYERS
+            && intdiv($playerCount, $groupsCount) < TournamentStartRules::MIN_PLAYERS_PER_GROUP
+        ) {
+            $errors['groupsCount'] = sprintf(
+                'Każda grupa musi mieć co najmniej %d zawodników (przy %d graczach i %d grupach to %d na grupę).',
+                TournamentStartRules::MIN_PLAYERS_PER_GROUP,
+                $playerCount,
+                $groupsCount,
+                intdiv($playerCount, $groupsCount),
+            );
+        }
+
+        $allowedGroupCounts = TournamentStartRules::allowedGroupCountsForPlayers($playerCount);
+
+        if (
+            $playerCount >= TournamentStartRules::MIN_PLAYERS
+            && $allowedGroupCounts !== []
+            && ! in_array($groupsCount, $allowedGroupCounts, true)
+        ) {
+            $errors['groupsCount'] = sprintf(
+                'Dozwolona liczba grup przy %d zawodnikach: %s.',
+                $playerCount,
+                implode(', ', $allowedGroupCounts),
+            );
+        }
+
         if (! TournamentStartRules::isPowerOfTwo($advancePerGroup)) {
             $errors['advancePerGroup'] = 'Awans z grupy musi być potęgą 2 (1, 2, 4, …).';
         }
@@ -56,25 +84,31 @@ class TournamentStartValidator
             );
         }
 
-        $allowedAdvances = TournamentStartRules::allowedAdvancePerGroup($groupsCount);
+        $allowedAdvances = $playerCount >= TournamentStartRules::MIN_PLAYERS
+            ? TournamentStartRules::allowedAdvancePerGroupForPlayers($playerCount, $groupsCount)
+            : TournamentStartRules::allowedAdvancePerGroup($groupsCount);
 
         if (
             $allowedAdvances !== []
             && TournamentStartRules::isPowerOfTwo($advancePerGroup)
             && ! in_array($advancePerGroup, $allowedAdvances, true)
         ) {
+            $maxInGroup = TournamentStartRules::maxPlayersInLargestGroup($playerCount, $groupsCount);
+
             $errors['advancePerGroup'] = sprintf(
-                'Dla %d grup dozwolony awans to: %s.',
+                'Dla %d grup i %d zawodników dozwolony awans to: %s (największa grupa: %d).',
                 $groupsCount,
+                $playerCount,
                 implode(', ', $allowedAdvances),
+                $maxInGroup,
             );
         }
 
         if ($groupsCount > 0 && $allowedAdvances === [] && ! isset($errors['groupsCount'])) {
             $errors['groupsCount'] = sprintf(
-                'Dla %d grup nie da się ustawić awansu spełniającego limit %d graczy w drabince (MVP).',
+                'Przy %d zawodnikach i %d grupach nie da się ustawić awansu (drabinka MVP lub rozmiar grup).',
+                $playerCount,
                 $groupsCount,
-                TournamentStartRules::MAX_BRACKET_SIZE,
             );
         }
 
