@@ -291,6 +291,60 @@ class TournamentGameScoringFinalizeTest extends TestCase
         ]);
     }
 
+    public function test_rejects_bulk_update_on_already_finished_game(): void
+    {
+        Sanctum::actingAs($this->user);
+
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player3->id,
+            'player2_id' => $this->player4->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $this->closeScoringLeg(
+            'group-games',
+            $game->id,
+            $this->player1->id,
+            $this->player1->id,
+            $this->player2->id,
+        );
+        $this->closeScoringLeg(
+            'group-games',
+            $game->id,
+            $this->player1->id,
+            $this->player1->id,
+            $this->player2->id,
+        );
+
+        $response = $this->postJson('/api/game/update', [
+            'game' => [
+                'id' => $game->id,
+                'type' => GameType::GROUP->value,
+                'tournamentId' => $this->tournament->id,
+                'groupNumber' => 1,
+                'player1Id' => $this->player1->id,
+                'player2Id' => $this->player2->id,
+                'player1Score' => 2,
+                'player2Score' => 0,
+                'winnerId' => $this->player1->id,
+            ],
+            'achievements' => [],
+            'legs' => [],
+        ]);
+
+        $response->assertOk()->assertJson(['success' => false]);
+    }
+
     private function closeScoringLeg(
         string $prefix,
         int $gameId,

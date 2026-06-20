@@ -17,6 +17,7 @@ use App\Repositories\Game\GameVisitRepository;
 use App\Services\Game\GameService;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
+use App\Support\GameScoring\VisitRecorder;
 use DomainException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -123,6 +124,8 @@ class GameScoringService
         if (! in_array($dto->playerId, [$context->player1Id, $context->player2Id], true)) {
             throw new DomainException('Gracz nie należy do tego meczu.');
         }
+
+        VisitRecorder::validateDto($dto, $context->startingScore);
 
         $existing = $this->gameVisitRepository->findByClientVisitId($dto->clientVisitId);
         if ($existing !== null) {

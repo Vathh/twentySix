@@ -11,6 +11,7 @@ use App\Repositories\QuickGame\QuickGameFfaSessionRepository;
 use App\Repositories\QuickGame\QuickGameFfaVisitRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 use App\Support\QuickGameFfa\QuickGameFfaStateBuilder;
+use App\Support\GameScoring\VisitRecorder;
 use App\Support\QuickGameLobbyPlayerOrder;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -116,6 +117,8 @@ class QuickGameFfaScoringService
 
             $this->assertCanSubmitVisit($session, $userId, $dto->playerId);
 
+            VisitRecorder::validateDto($dto, (int) $session->starting_score);
+
             $existing = $this->visitRepository->findByClientVisitId($dto->clientVisitId);
             if ($existing !== null) {
                 if ($existing->is_voided) {
@@ -125,12 +128,12 @@ class QuickGameFfaScoringService
                     throw new DomainException('Nieprawidłowa wizyta.');
                 }
                 $this->visitRepository->updateFromDto($existing, $dto);
-                if ($this->isVisitComplete($dto)) {
+                if (VisitRecorder::isVisitComplete($dto->bust, $dto->closedLeg, $dto->dartsInVisit)) {
                     $this->applyTurnAfterVisit($session, $dto, $n);
                 }
             } else {
                 $this->visitRepository->create($session, (int) $session->current_leg_number, $dto);
-                if ($this->isVisitComplete($dto)) {
+                if (VisitRecorder::isVisitComplete($dto->bust, $dto->closedLeg, $dto->dartsInVisit)) {
                     $this->applyTurnAfterVisit($session, $dto, $n);
                 }
             }
@@ -230,15 +233,6 @@ class QuickGameFfaScoringService
         $session->current_player_index = ((int) $session->current_player_index + 1) % $n;
     }
 
-    private function isVisitComplete(RecordFfaVisitDTO $dto): bool
-    {
-        if ($dto->bust || $dto->closedLeg) {
-            return true;
-        }
-
-        return $dto->dartsInVisit >= 3;
-    }
-
     private function advanceAfterLegClosed(
         \App\Models\QuickGame\QuickGameFfaSession $session,
         int $winnerPlayerId,
@@ -246,7 +240,7 @@ class QuickGameFfaScoringService
     ): void {
         $visits = $this->visitRepository->getActiveForSession($session);
         $playerIds = $session->player_order ?? [];
-        $legsWon = $this->countLegsWonFromVisits($visits, $playerIds);
+        $legsWon = VisitRecorder::countLegsWon($visits, array_map('intval', $playerIds));
 
         if (($legsWon[$winnerPlayerId] ?? 0) >= (int) $session->legs_to_win) {
             $this->finishMatch($session, $legsWon);
@@ -257,26 +251,6 @@ class QuickGameFfaScoringService
         $session->leg_opener_index = ((int) $session->leg_opener_index + 1) % $n;
         $session->current_player_index = (int) $session->leg_opener_index;
         $session->current_leg_number = (int) $session->current_leg_number + 1;
-    }
-
-    /**
-     * @param  array<int, int>  $playerIds
-     * @return array<int, int>
-     */
-    private function countLegsWonFromVisits($visits, array $playerIds): array
-    {
-        $legsWon = array_fill_keys($playerIds, 0);
-        foreach ($visits->groupBy('leg_number') as $legVisits) {
-            $winner = $legVisits
-                ->filter(fn ($v) => $v->closed_leg && ! $v->bust && (int) $v->remaining_after === 0)
-                ->sortByDesc('visit_number')
-                ->first();
-            if ($winner && isset($legsWon[$winner->player_id])) {
-                $legsWon[$winner->player_id]++;
-            }
-        }
-
-        return $legsWon;
     }
 
     /**
@@ -333,28 +307,14 @@ class QuickGameFfaScoringService
     private function recomputeIndicesFromVisits(\App\Models\QuickGame\QuickGameFfaSession $session): void
     {
         $playerIds = $session->player_order ?? [];
-        $n = count($playerIds);
         $legNumber = (int) $session->current_leg_number;
         $visits = $this->visitRepository->getActiveForLeg($session, $legNumber);
 
-        if ($visits->isEmpty()) {
-            $session->current_player_index = (int) $session->leg_opener_index;
-
-            return;
-        }
-
-        $last = $visits->sortByDesc('visit_number')->sortByDesc('id')->first();
-        $lastIdx = array_search((int) $last->player_id, array_map('intval', $playerIds), true);
-
-        if ($lastIdx === false) {
-            return;
-        }
-
-        if ($last->bust) {
-            $session->current_player_index = (int) $lastIdx;
-        } else {
-            $session->current_player_index = ((int) $lastIdx + 1) % $n;
-        }
+        $session->current_player_index = VisitRecorder::currentPlayerIndexFromVisits(
+            $visits,
+            array_map('intval', $playerIds),
+            (int) $session->leg_opener_index,
+        );
     }
 
     /**

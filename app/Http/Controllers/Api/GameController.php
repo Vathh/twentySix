@@ -50,6 +50,13 @@ class GameController
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Aktualizacja wyniku turniejowego (grupa / playoff).
+     *
+     * Tryby (patrz GameService::update):
+     * - mecz FINISHED + achievements → tylko zapis achievementów (mobile po scoring API);
+     * - mecz SCHEDULED → legacy bulk finish (testy / fallback; produkcja kończy mecz przez scoring API).
+     */
     public function update(GameResultRequest $request): JsonResponse
     {
         $dto = $request->toDTO();

@@ -27,7 +27,7 @@ final class ScoringStateContract
         $payload['format'] = 'h2h';
         $payload['revision'] = self::revisionForH2h($payload);
         $payload['turn'] = [
-            'currentPlayerIndex' => self::currentPlayerIndexFromVisits($visits, $playerIds),
+            'currentPlayerIndex' => VisitRecorder::currentPlayerIndexFromVisits($visits, $playerIds),
             'legOpenerIndex' => 0,
             'legNumber' => $legNumber,
         ];
@@ -78,40 +78,10 @@ final class ScoringStateContract
                 static fn (array $player): int => (int) ($player['playerId'] ?? 0),
                 $payload['players'] ?? [],
             ));
-            $payload['turn']['currentPlayerIndex'] = self::currentPlayerIndexFromVisits($visits, $playerIds);
+            $payload['turn']['currentPlayerIndex'] = VisitRecorder::currentPlayerIndexFromVisits($visits, $playerIds);
         }
 
         return $payload;
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $visits
-     * @param  array<int, int>  $playerIds
-     */
-    private static function currentPlayerIndexFromVisits(array $visits, array $playerIds): int
-    {
-        if ($visits === [] || $playerIds === []) {
-            return 0;
-        }
-
-        $n = count($playerIds);
-        $last = $visits[array_key_last($visits)];
-        $lastPid = (int) ($last['playerId'] ?? 0);
-        $lastIdx = array_search($lastPid, $playerIds, true);
-        if ($lastIdx === false) {
-            return 0;
-        }
-
-        $darts = (int) ($last['dartsInVisit'] ?? 3);
-        $bust = (bool) ($last['bust'] ?? false);
-        $closedLeg = (bool) ($last['closedLeg'] ?? false);
-        $complete = $bust || $closedLeg || $darts >= 3;
-
-        if (! $complete) {
-            return (int) $lastIdx;
-        }
-
-        return ((int) $lastIdx + 1) % $n;
     }
 
     /**

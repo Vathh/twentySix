@@ -49,6 +49,10 @@ readonly class GameScoringContext
         );
     }
 
+    /**
+     * Kontekst szczegółów meczu towarzyskiego na WWW (game_visits powiązane z quick_game_id).
+     * Nie używać w flow FFA lobby — quick online kończy się przez QuickGameFfaScoringService.
+     */
     public static function fromQuickGame(QuickGame $game): self
     {
         return new self(

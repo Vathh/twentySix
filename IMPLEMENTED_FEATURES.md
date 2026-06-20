@@ -62,10 +62,11 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Quick game: `one_device` / `each_own` | ✅ | Unified FFA N=2..8 + WS |
 | Quick game FFA do 8 | ✅ | `QuickGameFfaScoringService`, cap 8 |
 | Scoring API turniej | ✅ | `GameScoringService`, group/playoff |
+| Wspólny silnik wizyt | ✅ | `VisitRecorder`, `ScoringStateContract` |
 | Legacy H2H quick scoring | ❌ wycofane | API `/quick-games/{id}/scoring/*` usunięte; quick online tylko FFA z lobby |
 | Achievementy quick game online | ✅ | `POST /api/quick-game/update` (tylko `gameId` + achievements) |
 | Finalizacja turnieju po scoring API | ✅ | `GameService::finalizeTournamentGameFromScoring` po `closeLeg` (tabele, playoff, statystyki) |
-| Achievementy na zakończonym meczu | ✅ | `POST /api/game/update` — tryb achievements-only gdy gra `FINISHED` |
+| Achievementy na zakończonym meczu | ✅ | `POST /api/game/update` — tylko achievementy gdy gra `FINISHED`; bulk finish odrzucony |
 | Achievementy turniejowe | ✅ | `AchievementsService` |
 | Auto point scheme | ✅ | `PointSchemeService::findByPlayersAmount` |
 | WebSocket (Reverb) | ✅ | `GameScoringStateUpdated`, `QuickGameLobbyUpdated`, `channels.php` |
@@ -109,6 +110,7 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Awans / playoff | `tests/Feature/PlayoffAdvanceTest.php` |
 | Flow E2E (start → grupy → playoff) | `tests/Feature/TournamentFlowTest.php` |
 | Scoring API → finalizacja turnieju | `tests/Feature/TournamentGameScoringFinalizeTest.php` |
+| VisitRecorder (unit) | `tests/Unit/GameScoring/VisitRecorderTest.php` |
 | Quick game FFA finalize | `tests/Feature/QuickGameFfaScoringApiTest.php` |
 | Lobby MVP | `tests/Feature/QuickGameLobbyMvpTest.php` |
 | Achievementy po FFA | `tests/Feature/QuickGameApiTest.php` |

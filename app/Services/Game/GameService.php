@@ -65,10 +65,28 @@ class GameService
         $this->gameLockService->release($gameId, $type);
     }
 
+    /**
+     * Aktualizacja meczu turniejowego.
+     *
+     * 1. Mecz FINISHED + niepusta tablica achievements → tylko achievementy (mobile po closeLeg).
+     * 2. Mecz FINISHED bez achievements → odrzucone (wynik ustawia scoring API).
+     * 3. Mecz SCHEDULED → legacy bulk finish (testy; produkcja używa scoring API + finalizeTournamentGameFromScoring).
+     *
+     * Quick game: wyłącznie POST /api/quick-game/update (achievementy po FFA).
+     */
     public function update(UpdateGameDTO $dto): bool
     {
         if ($this->isFinishedGameAchievementsUpdate($dto)) {
             return $this->saveAchievementsForFinishedGame($dto);
+        }
+
+        if ($this->isGameAlreadyFinished($dto)) {
+            \Log::warning('Rejected game update: game already finished', [
+                'gameId' => $dto->gameResultDTO->gameId,
+                'type' => $dto->gameResultDTO->type->value,
+            ]);
+
+            return false;
         }
 
         if ($dto->gameResultDTO->type === GameType::PLAYOFF) {
@@ -362,6 +380,15 @@ class GameService
             return false;
         }
 
+        return match ($dto->gameResultDTO->type) {
+            GameType::GROUP => $this->gameRepository->find($dto->gameResultDTO->gameId)?->status === GameStatus::FINISHED,
+            GameType::PLAYOFF => $this->playoffGameRepository->find($dto->gameResultDTO->gameId)?->status === GameStatus::FINISHED,
+            default => false,
+        };
+    }
+
+    private function isGameAlreadyFinished(UpdateGameDTO $dto): bool
+    {
         return match ($dto->gameResultDTO->type) {
             GameType::GROUP => $this->gameRepository->find($dto->gameResultDTO->gameId)?->status === GameStatus::FINISHED,
             GameType::PLAYOFF => $this->playoffGameRepository->find($dto->gameResultDTO->gameId)?->status === GameStatus::FINISHED,

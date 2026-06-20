@@ -12,6 +12,7 @@ use App\Repositories\Game\GameLegRepository;
 use App\Repositories\Game\GameVisitRepository;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
+use App\Support\GameScoring\VisitRecorder;
 use App\Support\GameScoring\ScoringStateContract;
 
 class GameScoringStateBuilder
@@ -115,11 +116,7 @@ class GameScoringStateBuilder
             ? $gameVisits->where('game_leg_id', $openLeg->id)
             : collect();
 
-        $remaining = $context->startingScore;
-        if ($openLegVisits->isNotEmpty()) {
-            $last = $openLegVisits->sortByDesc('visit_number')->sortByDesc('id')->first();
-            $remaining = (int) $last->remaining_after;
-        }
+        $remaining = VisitRecorder::remainingFromLegVisits($openLegVisits, $context->startingScore);
 
         return [
             'playerId' => $playerId,

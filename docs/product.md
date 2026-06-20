@@ -288,7 +288,7 @@ Przeznaczenie: grupa znajomych przy tarczy (np. w klubie bez Wi‑Fi) albo szybk
 | Tryb urządzeń | **`one_device`** — jeden telefon wpisuje wszystkich | `one_device` lub `each_own` + sync |
 | Reguły FFA | ta sama rotacja openera i kolejność tur co online | j.w. |
 
-**Implementacja:** scoring wyłącznie w aplikacji (`GameScoringScreen`, lokalne reducery). Backend **nie uczestniczy** w treningu — endpoint `POST /quick-game/update` z pełną tablicą graczy (dawny „offline quick”) można usunąć w osobnym kroku.
+**Implementacja:** scoring wyłącznie w aplikacji (`GameScoringScreen`, lokalne reducery). Backend **nie uczestniczy** w treningu. Wyniki quick game online zapisuje `QuickGameFfaScoringService` → `quick_games`; achievementy opcjonalnie przez `POST /api/quick-game/update`.
 
 **Poza MVP treningu:** sync wielu telefonów bez konta, zapis opcjonalny, krykiet.
 
@@ -341,7 +341,7 @@ Wspólne dla **quick game online**, **treningu** i (tam gdzie dotyczy) **turniej
 | `dartsPerLeg[]` | Liczba lotek gracza w legu, który **wygrał** (checkout). | Tylko wygrane legi — pod „najlepszy leg” w osiągach. |
 | Osiągi 60+, 80+, 100+, 140+, 180 | Liczba wizyt w przedziałach punktowych w meczu. | Wszystkie wizyty gracza (`legByLegScores` + bieżący leg). |
 
-**Implementacja (skrót):** quick game FFA — `QuickGameFfaStateBuilder` liczy `legsAverages` dla każdego zakończonego lega z udziałem gracza; `dartsPerLeg` tylko gdy `legWinnerPlayerId === playerId`. Mobile: `applyFfaScoringState` → reducer `SYNC_FROM_SERVER`.
+**Implementacja (skrót):** quick game FFA — `QuickGameFfaStateBuilder` + wspólny `VisitRecorder` (backend); mobile: `applyGameScoringState` + `useGameScoring` → reducer `SYNC_FROM_SERVER`. Turniej H2H — ten sam kontrakt API (`format`, `turn`, `revision`, `meta`).
 
 ### Format gry
 

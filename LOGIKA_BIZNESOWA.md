@@ -80,6 +80,27 @@ Każda z nich ma **inny sposób uwierzytelnienia** i **inny cel** – nie miesza
 
 ---
 
+## Scoring rozgrywek (wspólny model)
+
+Jeden silnik gry (legi + wizyty + sync); kontekst to adapter, nie osobna aplikacja.
+
+| Kontekst | Mobile | Backend API | Zapis wyniku |
+|----------|--------|-------------|--------------|
+| **Trening** | `useGameScoring` bez transportu, lokalne reducery | brak | nie |
+| **Quick FFA** | `createFfaTransport` + private WS | `/api/quick-game/lobby/{id}/ffa/*` | `QuickGameFfaScoringService` → `quick_games` |
+| **Turniej tablet** | `createTournamentTransport` + public WS | `/api/group-games/{id}/scoring/*`, `/api/playoff-games/{id}/scoring/*` | `GameScoringService` → `games` / `playoff_games` + finalizacja turnieju |
+
+**Po meczu (achievementy):**
+
+- Turniej: mecz kończy **scoring API** (`closeLeg`); mobile wysyła achievementy przez `POST /api/game/update` (tylko gdy mecz już `FINISHED`).
+- Quick FFA: mecz kończy **FFA scoring**; achievementy przez `POST /api/quick-game/update` z `gameId`.
+
+**Wspólna logika wizyt (backend):** `VisitRecorder` — walidacja bust/remaining/checkout, kolejka tur, liczenie legów. Mobile: `helpers/gameScoring/` (`normalizeScoringState`, `applyGameScoringState`).
+
+Szczegóły refaktoru: [`docs/game-scoring-unification.md`](docs/game-scoring-unification.md).
+
+---
+
 ## Dane do testowego logowania (DemoDataSeeder)
 
 Po uruchomieniu **`php artisan migrate:fresh --seed`** (lub sam `DemoDataSeeder` przy już zmigrowanej bazie) w bazie są dane demo do **logowania na konto** (panel WWW / opcjonalnie Szybki mecz, jeśli logujesz się tym samym kontem):
@@ -112,4 +133,4 @@ Po uruchomieniu **`php artisan migrate:fresh --seed`** (lub sam `DemoDataSeeder`
 
 ---
 
-*Ostatnia aktualizacja: maj 2026*
+*Ostatnia aktualizacja: czerwiec 2026*

@@ -6,7 +6,7 @@ Ostatnia aktualizacja: 2026-06-06.
 ## Cele
 
 1. **Jeden mental model**: mecz = legi + wizyty + sync; kontekst (trening / quick FFA / turniej) to adapter, nie osobna aplikacja.
-2. **Jeden hook sync** na mobile: `useGameScoring` (nie `useMatchScoring`).
+2. **Jeden hook sync** na mobile: `useGameScoring`.
 3. **Jeden mapper stanu** zamiast `applyGameScoringState` + `applyFfaScoringState`.
 4. **Backend**: wspólny kształt odpowiedzi i wspólna logika wizyt — **bez** na siłę jednej tabeli `games` dla turnieju i lobby w pierwszej iteracji.
 
@@ -123,9 +123,9 @@ Pliki:
 
 ### Faza 9 — Cleanup legacy
 
-- `POST /game/update` — tylko achievementy? Osobny endpoint?
-- Usunięcie nieużywanego `GameScoringContext::fromQuickGame`.
-- Usunięcie re-exportów starych helperów.
+- `POST /api/game/update` — mecz `FINISHED`: tylko achievementy; bulk finish bez achievementów odrzucony. Mecz `SCHEDULED`: legacy bulk (testy). Quick: `POST /api/quick-game/update`.
+- `GameScoringContext::fromQuickGame` — **zostaje** (widok WWW meczu towarzyskiego); nie dotyczy FFA lobby.
+- Mobile: re-exporty `applyFfaScoringState` / `useQuickGameFfaScoring` — **usunięte** (faza 5).
 
 ### Faza 10 — Dokumentacja
 
@@ -169,23 +169,23 @@ Pliki:
 
 ## Status implementacji
 
-- [x] Faza 0 — baseline testów (fixture + `npm run test:match-scoring`)
+- [x] Faza 0 — baseline testów (fixture + `npm run test:game-scoring`)
 - [x] Faza 1 — `helpers/matchScoring/normalizeScoringState.js`, `computeStateRevision.js`
 - [x] Faza 2 — `helpers/matchScoring/applyMatchScoringState.js`, adaptery w starych plikach
 - [x] Faza 3 — transporty + `useGameScoringRealtime` z kanałem private (FFA)
 - [x] Faza 4 — `useMatchScoring` + cienkie wrappery `useGameScoring` / `useQuickGameFfaScoring`
 - [x] Faza 5 — `resolveMatchContext`, `inputPolicy`, `postMatch`, uproszczony `GameScoringScreen`; usunięte stare hooki
 - [x] Faza 6 — `ScoringStateContract` (backend): `format`, `turn`, `revision`, `meta` w obu builderach
-- [ ] Faza 7
+- [x] Faza 7 — `VisitRecorder`: wspólna logika wizyt (validate, complete, remaining, legs won, turn index); delegacja z `GameScoringService`, `QuickGameFfaScoringService`, builderów
 - [ ] Faza 8 (opcjonalna)
-- [ ] Faza 9
-- [ ] Faza 10
+- [x] Faza 9 — `POST /api/game/update`: guard na FINISHED; `fromQuickGame` udokumentowany; mobile bez legacy re-exportów
+- [x] Faza 10 — dokumentacja zaktualizowana
 
 ### Mobile (PR #1 — zrobione)
 
 ```
-helpers/matchScoring/
-  applyMatchScoringState.js
+helpers/gameScoring/
+  applyGameScoringState.js
   computeStateRevision.js
   normalizeScoringState.js
   inferCurrentPlayerIndex.js
@@ -195,28 +195,28 @@ helpers/matchScoring/
   __tests__/runTests.mjs
 ```
 
-Stare importy (`applyGameScoringState`, `applyFfaScoringState`) działają przez cienkie adaptery.
-Testy: `npm run test:match-scoring` w `twentysix-mobile`.
+Testy: `npm run test:game-scoring` w `twentysix-mobile`.
+
+### Backend (PR #6 — zrobione)
+
+```
+app/Support/GameScoring/VisitRecorder.php
+tests/Unit/GameScoring/VisitRecorderTest.php
+```
 
 ### Mobile (PR #2 — zrobione)
 
 ```
-helpers/matchScoring/transports/
+helpers/gameScoring/transports/
   createTournamentTransport.js
   createFfaTransport.js
-  createLocalTransport.js
 ```
 
-- `useQuickGameFfaScoring` używa transportu FFA + wspólnego `useGameScoringRealtime` (private WS).
 - `useGameScoringRealtime` obsługuje `channelType: 'public' | 'private'`.
 
-### Mobile (PR #3 — zrobione)
+### Mobile (PR #3+#4 — zrobione)
 
-- `hooks/useMatchScoring.js` — wspólny sync (revision, serializacja, poll/WS, visit API).
-- `useGameScoring` / `useQuickGameFfaScoring` — **usunięte**; ekran używa `useMatchScoring` bezpośrednio.
-
-### Mobile (PR #4 — zrobione)
-
-- `resolveMatchContext.js`, `inputPolicy.js`, `postMatch.js`
-- `GameScoringScreen` — jeden `useMatchScoring`, bez wrapperów i martwego legacy
-- Usunięto: `useGameScoring.js`, `useQuickGameFfaScoring.js`, `applyGameScoringState.js`, `applyFfaScoringState.js`
+- `hooks/useGameScoring.js` — wspólny sync (revision, serializacja, poll/WS, visit API).
+- `resolveGameContext.js`, `inputPolicy.js`, `postGame.js`
+- `GameScoringScreen` — jeden `useGameScoring`, bez wrapperów
+- Usunięto: `useQuickGameFfaScoring.js`, stare cienkie adaptery w `helpers/`
