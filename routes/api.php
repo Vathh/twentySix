@@ -74,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('quick-game/lobby')->group(function () {
         Route::post('/create', [QuickGameLobbyController::class, 'create']);
         Route::get('/invitations', [QuickGameLobbyController::class, 'myInvitations']);
+        Route::get('/active-match', [QuickGameFfaController::class, 'activeMatch']);
         Route::post('/invitations/{invitationId}/reject', [QuickGameLobbyController::class, 'rejectInvitation']);
         Route::get('/{lobbyId}', [QuickGameLobbyController::class, 'get']);
         Route::patch('/{lobbyId}', [QuickGameLobbyController::class, 'updateSettings']);
@@ -84,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{lobbyId}/invite', [QuickGameLobbyController::class, 'invite']);
         Route::post('/{lobbyId}/add-guest', [QuickGameLobbyController::class, 'addGuest']);
         Route::get('/{lobbyId}/ffa/state', [QuickGameFfaController::class, 'state']);
+        Route::post('/{lobbyId}/ffa/presence', [QuickGameFfaController::class, 'updatePresence']);
         Route::post('/{lobbyId}/ffa/visits', [QuickGameFfaController::class, 'recordVisit']);
         Route::post('/{lobbyId}/ffa/visits/undo', [QuickGameFfaController::class, 'undoVisit']);
     });

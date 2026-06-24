@@ -15,6 +15,10 @@ class PointSchemeSeeder extends Seeder
 {
     public function run(): void
     {
+        if (PointScheme::query()->exists()) {
+            return;
+        }
+
         $scheme4to8 = PointScheme::create([
             'name' => 'od 4 do 8 osób',
             'min_players' => 4,

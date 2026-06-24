@@ -27,7 +27,7 @@ use Illuminate\Support\Collection;
 
 /**
  * 3 ligi × 2 sezony × 2 turnieje.
- * Pełny cykl (32 graczy, grupy, playoff, finished) + turniej 4-osobowy w fazie grupowej tylko w pierwszej lidze / pierwszym sezonie.
+ * Pełny cykl (32 graczy, grupy, playoff, finished) + turniej 6-osobowy w fazie grupowej tylko w pierwszej lidze / pierwszym sezonie.
  */
 class DemoDataSeeder extends Seeder
 {
@@ -35,7 +35,7 @@ class DemoDataSeeder extends Seeder
 
     private const BIG_TOURNAMENT = 'Mistrzostwa 32 — pełny bracket (demo)';
 
-    private const SMALL_TOURNAMENT = 'Turniej 4-osobowy (faza grupowa)';
+    private const SMALL_TOURNAMENT = 'Turniej 6-osobowy (faza grupowa)';
 
     /** Marker pełnego seeda (3 ligi). */
     private const IDEMPOTENCY_LEAGUE_NAME = 'Białystok — Podlaska Liga Darta';
@@ -173,8 +173,9 @@ class DemoDataSeeder extends Seeder
             'date' => now()->addWeek(),
             'status' => TournamentStatus::CREATED,
         ]);
-        $fourIds = $players->take(4)->pluck('id')->all();
-        $tournamentService->tryCreateGroupGames($small->id, $fourIds, 2);
+        // MVP: min. 3 graczy na grupę + liczba grup = potęga 2 → 6 graczy / 2 grupy.
+        $sixIds = $players->take(6)->pluck('id')->all();
+        $tournamentService->tryCreateGroupGames($small->id, $sixIds, 2);
 
         $seasonB = $this->createSeason(
             $league,

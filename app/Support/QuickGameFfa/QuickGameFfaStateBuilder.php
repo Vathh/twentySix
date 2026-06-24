@@ -13,7 +13,7 @@ class QuickGameFfaStateBuilder
     /**
      * @return array<string, mixed>
      */
-    public function build(QuickGameFfaSession $session, Collection $activeVisits, ?int $currentUserId = null): array
+    public function build(QuickGameFfaSession $session, Collection $activeVisits, ?int $currentUserId = null, ?array $presence = null): array
     {
         $playerIds = $session->player_order ?? [];
         $players = Player::whereIn('id', $playerIds)->get()->keyBy('id');
@@ -119,6 +119,10 @@ class QuickGameFfaStateBuilder
             if ($myIndex !== null) {
                 $out['myPlayerIndex'] = $myIndex;
             }
+        }
+
+        if ($presence !== null) {
+            $out['presence'] = $presence;
         }
 
         return ScoringStateContract::enrichFfa($out);

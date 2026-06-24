@@ -12,7 +12,7 @@ class QuickGameLobbyPayload
      */
     public static function fromLobby(QuickGameLobby $lobby, ?int $currentUserId = null): array
     {
-        $lobby->loadMissing(['host.player', 'players.player']);
+        $lobby->loadMissing(['host.player', 'players.player', 'ffaSession']);
 
         $orderIds = is_array($lobby->player_order) ? $lobby->player_order : null;
         $lobbyPlayers = QuickGameLobbyPlayerOrder::sort($lobby->players, $orderIds);
@@ -40,15 +40,17 @@ class QuickGameLobbyPayload
             'gameType' => $lobby->game_type ?? '501',
             'scoringMode' => $lobby->scoring_mode ?? 'each_own',
             'players' => $players,
+            'matchInProgress' => $lobby->status === 'started'
+                && $lobby->ffaSession?->isInProgress() === true,
         ];
 
-        if ($lobby->status === 'started' && $lobby->ffa_session_id) {
+        if ($out['matchInProgress'] && $lobby->ffa_session_id) {
             $out['ffaSessionId'] = $lobby->ffa_session_id;
         }
 
         if ($currentUserId !== null) {
             $out['youAreHost'] = (int) $lobby->host_id === (int) $currentUserId;
-            if ($lobby->status === 'started') {
+            if ($lobby->status === 'started' && $out['matchInProgress']) {
                 $myIndex = self::resolveMyPlayerIndex($lobbyPlayers, $currentUserId);
                 if ($myIndex !== null) {
                     $out['myPlayerIndex'] = $myIndex;
