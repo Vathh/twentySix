@@ -24,11 +24,17 @@ final class ScoringStateContract
             $payload['players'] ?? [],
         ));
 
+        $legOpenerIndex = (int) ($payload['legOpenerIndex'] ?? 0);
+
         $payload['format'] = 'h2h';
         $payload['revision'] = self::revisionForH2h($payload);
         $payload['turn'] = [
-            'currentPlayerIndex' => VisitRecorder::currentPlayerIndexFromVisits($visits, $playerIds),
-            'legOpenerIndex' => 0,
+            'currentPlayerIndex' => VisitRecorder::currentPlayerIndexFromVisits(
+                $visits,
+                $playerIds,
+                $legOpenerIndex,
+            ),
+            'legOpenerIndex' => $legOpenerIndex,
             'legNumber' => $legNumber,
         ];
         $payload['meta'] = [

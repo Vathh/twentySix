@@ -7,6 +7,15 @@
             $gameUrl = route('games.live', ['type' => 'playoff', 'id' => $game->id]);
         }
     }
+
+    $showLegScores = $game->isFinished() || $game->status === \App\Enums\GameStatus::IN_PROGRESS;
+    $formatLegScore = static function (?int $score) use ($showLegScores): string {
+        if ($showLegScores) {
+            return (string) (int) ($score ?? 0);
+        }
+
+        return $score !== null ? (string) $score : '';
+    };
 @endphp
 @if($gameUrl)
 <a href="{{ $gameUrl }}" class="block bg-white/5 border border-white/10 rounded-xl p-3 backdrop-blur shadow-sm hover:border-light-green/50 transition cursor-pointer">
@@ -20,7 +29,7 @@
             {{ $game->player1?->name ?? '—' }}
         </span>
         <span class="ml-2">
-            {{ $game->player1Score ?? '' }}
+            {{ $formatLegScore($game->player1Score) }}
         </span>
     </div>
 
@@ -30,7 +39,7 @@
             {{ $game->player2?->name ?? '—' }}
         </span>
         <span class="ml-2">
-            {{ $game->player2Score ?? '' }}
+            {{ $formatLegScore($game->player2Score) }}
         </span>
     </div>
 

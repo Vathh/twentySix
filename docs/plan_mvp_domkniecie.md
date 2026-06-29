@@ -27,9 +27,11 @@ Ostatnia aktualizacja planu: czerwiec 2026.
 - [x] Fix pollingu `GET .../ffa/state` (`useGameScoring` — stabilny `loadState`)
 - [x] UX liczników: overlay „Czekaj na swoją kolejkę” / „Mecz został zakończony”
 - [x] Log Reverb: poprawny `authEndpoint` w debugu
-- [ ] Commit + push mobile (ten krok)
+- [x] Commit + push mobile (ten krok)
 
 ### Krok 2 — Scenariusze turniejowe (manualne)
+
+Szczegóły: [`scenariusze_manualne_turniej_mvp.md`](scenariusze_manualne_turniej_mvp.md).
 
 Patrz też: [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md).
 

@@ -60,7 +60,18 @@ class GameScoringStateBuilder
             ),
         ];
 
+        $playerIds = [$context->player1Id, $context->player2Id];
+        $legOpenerIndex = $openLeg
+            ? VisitRecorder::legOpenerIndexForLeg(
+                $allVisits,
+                $playerIds,
+                $openLeg->id,
+                (int) $openLeg->leg_number,
+            )
+            : 0;
+
         return ScoringStateContract::enrichH2h([
+            'legOpenerIndex' => $legOpenerIndex,
             'game' => [
                 'id' => $context->gameId,
                 'kind' => $context->kind->value,

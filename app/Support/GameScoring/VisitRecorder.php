@@ -152,6 +152,56 @@ final class VisitRecorder
     }
 
     /**
+     * Indeks gracza rozpoczynającego bieżący leg (rotacja od pierwszej wizyty meczu).
+     *
+     * @param  iterable<int, array<string, mixed>|object>  $allVisits
+     * @param  array<int, int>  $playerIds
+     */
+    public static function legOpenerIndexForLeg(
+        iterable $allVisits,
+        array $playerIds,
+        ?int $openLegId,
+        int $openLegNumber,
+    ): int {
+        if ($playerIds === [] || $openLegId === null) {
+            return 0;
+        }
+
+        $visitList = self::collectVisits($allVisits);
+        $openLegVisits = $visitList
+            ->where('legKey', $openLegId)
+            ->sortBy([
+                ['visitNumber', 'asc'],
+                ['id', 'asc'],
+            ]);
+
+        if ($openLegVisits->isNotEmpty()) {
+            $idx = array_search($openLegVisits->first()['playerId'], $playerIds, true);
+
+            return $idx !== false ? (int) $idx : 0;
+        }
+
+        $firstGameVisit = $visitList->sortBy([
+            ['legKey', 'asc'],
+            ['visitNumber', 'asc'],
+            ['id', 'asc'],
+        ])->first();
+
+        if ($firstGameVisit === null) {
+            return 0;
+        }
+
+        $matchOpenerIdx = array_search($firstGameVisit['playerId'], $playerIds, true);
+        if ($matchOpenerIdx === false) {
+            return 0;
+        }
+
+        $n = count($playerIds);
+
+        return ((int) $matchOpenerIdx + $openLegNumber - 1) % $n;
+    }
+
+    /**
      * @param  iterable<int, array<string, mixed>|object>  $legVisits
      */
     public static function remainingFromLegVisits(iterable $legVisits, int $startingScore): int

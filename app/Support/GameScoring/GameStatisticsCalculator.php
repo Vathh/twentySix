@@ -99,4 +99,94 @@ class GameStatisticsCalculator
 
         return round(($successes / $attempts) * 100, 1);
     }
+
+    /**
+     * Statystyki meczu gracza — te same metryki co zakładka „Statystyki” w mobile (product.md).
+     *
+     * @param  Collection<int, GameVisit>  $allVisits
+     * @param  Collection<int, \App\Models\Game\GameLeg>  $legs
+     * @param  Collection<int, \App\Models\Game\GameLegPlayerStat>  $legStats
+     * @return array{
+     *     matchAverage: ?float,
+     *     bestLegAverage: ?float,
+     *     currentLegAverage: ?float,
+     *     bestLegThrows: ?int,
+     *     plus60: int,
+     *     plus80: int,
+     *     plus100: int,
+     *     plus140: int,
+     *     max180: int,
+     * }
+     */
+    public static function playerMatchStats(
+        Collection $allVisits,
+        Collection $legs,
+        Collection $legStats,
+        int $playerId,
+        ?int $openLegId = null,
+    ): array {
+        $playerVisits = $allVisits->where('player_id', $playerId);
+        $scoredVisits = $playerVisits->where('bust', false);
+        /** @var Collection<int, int> $scores */
+        $scores = $scoredVisits->map(fn ($v) => (int) $v->score);
+
+        $playerLegStats = $legStats->where('player_id', $playerId);
+        $finishedLegs = $legs->whereNotNull('finished_at');
+
+        $legsAverages = $finishedLegs->map(function ($leg) use ($playerLegStats, $allVisits, $playerId) {
+            $stat = $playerLegStats->firstWhere('game_leg_id', $leg->id);
+            if ($stat?->leg_average !== null) {
+                return (float) $stat->leg_average;
+            }
+
+            return self::legAverage(
+                $allVisits->where('game_leg_id', $leg->id)->where('player_id', $playerId),
+            );
+        })->filter(fn ($v) => $v !== null);
+
+        $bestLegAverage = $legsAverages->isNotEmpty()
+            ? round((float) $legsAverages->max(), 2)
+            : null;
+
+        $dartsPerWonLeg = $finishedLegs
+            ->where('winner_id', $playerId)
+            ->map(function ($leg) use ($playerLegStats, $allVisits, $playerId) {
+                $stat = $playerLegStats->firstWhere('game_leg_id', $leg->id);
+                if ($stat?->darts_thrown !== null && $stat->darts_thrown > 0) {
+                    return (int) $stat->darts_thrown;
+                }
+
+                $darts = (int) $allVisits
+                    ->where('game_leg_id', $leg->id)
+                    ->where('player_id', $playerId)
+                    ->sum('darts_in_visit');
+
+                return $darts > 0 ? $darts : null;
+            })
+            ->filter();
+
+        $openLegVisits = $openLegId
+            ? $playerVisits->where('game_leg_id', $openLegId)
+            : collect();
+
+        return [
+            'matchAverage' => self::gameAverage($playerVisits),
+            'bestLegAverage' => $bestLegAverage,
+            'currentLegAverage' => $openLegId ? self::legAverage($openLegVisits) : null,
+            'bestLegThrows' => $dartsPerWonLeg->isNotEmpty() ? (int) $dartsPerWonLeg->min() : null,
+            'plus60' => self::countVisitScoresInRange($scores, 60, 80),
+            'plus80' => self::countVisitScoresInRange($scores, 80, 100),
+            'plus100' => self::countVisitScoresInRange($scores, 100, 140),
+            'plus140' => self::countVisitScoresInRange($scores, 140, 180),
+            'max180' => self::countVisitScoresInRange($scores, 180, 181),
+        ];
+    }
+
+    /**
+     * @param  Collection<int, int>  $scores
+     */
+    private static function countVisitScoresInRange(Collection $scores, int $min, int $maxExclusive): int
+    {
+        return $scores->filter(fn (int $score) => $score >= $min && $score < $maxExclusive)->count();
+    }
 }

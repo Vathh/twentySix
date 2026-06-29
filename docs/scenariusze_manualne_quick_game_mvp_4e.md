@@ -57,4 +57,4 @@
 ## F. Turniej (regresja po kroku 3)
 
 - Tablet: lock → scoring API → tabela grupy / playoff.
-- Patrz też: [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) — sekcja scenariuszy turniejowych.
+- Pełna checklista: [`scenariusze_manualne_turniej_mvp.md`](scenariusze_manualne_turniej_mvp.md).

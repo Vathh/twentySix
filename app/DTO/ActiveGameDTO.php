@@ -3,6 +3,7 @@
 namespace App\DTO;
 
 use App\Domain\Game\GroupGameDomain;
+use App\Domain\Game\PlayoffGameDomain;
 use App\Models\PlayoffGame\PlayoffGame;
 
 class ActiveGameDTO
@@ -47,13 +48,28 @@ class ActiveGameDTO
 
     /**
      * @param PlayoffGame $game
-     * @return ActiveGameDTO
+     * @return ActiveGameDTO|null
      */
-    public static function fromPlayoffGame(PlayoffGame $game): ActiveGameDTO
+    public static function fromPlayoffGame(PlayoffGame $game): ?ActiveGameDTO
     {
+        return self::fromPlayoffGameDomain(
+            PlayoffGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2']),
+        );
+    }
+
+    /**
+     * @param PlayoffGameDomain $game
+     * @return ActiveGameDTO|null null gdy brak obu graczy (slot TBD w drabince)
+     */
+    public static function fromPlayoffGameDomain(PlayoffGameDomain $game): ?ActiveGameDTO
+    {
+        if ($game->player1 === null || $game->player2 === null) {
+            return null;
+        }
+
         return new self(
             id: $game->id,
-            tournamentId: $game->tournament_id,
+            tournamentId: $game->tournamentId ?? $game->tournament?->id ?? 0,
             type: 'playoff',
             player1: [
                 'id' => $game->player1->id,

@@ -117,9 +117,27 @@ class GameDetailService
                 ->get()
             : collect();
 
+        $openLeg = $legs->first(fn ($leg) => $leg->isOpen());
+
         $players = [
-            $this->playerDetail($context->player1Id, $game->player1?->name ?? '—', $legStats, $achievements),
-            $this->playerDetail($context->player2Id, $game->player2?->name ?? '—', $legStats, $achievements),
+            $this->playerDetail(
+                $context->player1Id,
+                $game->player1?->name ?? '—',
+                $legStats,
+                $achievements,
+                $visits,
+                $legs,
+                $openLeg?->id,
+            ),
+            $this->playerDetail(
+                $context->player2Id,
+                $game->player2?->name ?? '—',
+                $legStats,
+                $achievements,
+                $visits,
+                $legs,
+                $openLeg?->id,
+            ),
         ];
 
         $legsDetail = $legs->map(function ($leg) use ($visits, $legStats) {
@@ -162,19 +180,29 @@ class GameDetailService
     /**
      * @return array<string, mixed>
      */
-    private function playerDetail(int $playerId, string $name, Collection $legStats, Collection $achievements): array
-    {
+    private function playerDetail(
+        int $playerId,
+        string $name,
+        Collection $legStats,
+        Collection $achievements,
+        Collection $visits,
+        Collection $legs,
+        ?int $openLegId,
+    ): array {
         $playerAchievements = $achievements->where('player_id', $playerId);
 
-        return [
-            'id' => $playerId,
-            'name' => $name,
-            'doublePercent' => GameStatisticsCalculator::gameDoublePercent($legStats, $playerId),
-            'max' => $playerAchievements->where('type', AchievementType::MAX)->count(),
-            'oneSeventy' => $playerAchievements->where('type', AchievementType::ONE_SEVENTY)->count(),
-            'hf' => $playerAchievements->where('type', AchievementType::HF)->values(),
-            'qf' => $playerAchievements->where('type', AchievementType::QF)->values(),
-        ];
+        return array_merge(
+            GameStatisticsCalculator::playerMatchStats($visits, $legs, $legStats, $playerId, $openLegId),
+            [
+                'id' => $playerId,
+                'name' => $name,
+                'doublePercent' => GameStatisticsCalculator::gameDoublePercent($legStats, $playerId),
+                'max' => $playerAchievements->where('type', AchievementType::MAX)->count(),
+                'oneSeventy' => $playerAchievements->where('type', AchievementType::ONE_SEVENTY)->count(),
+                'hf' => $playerAchievements->where('type', AchievementType::HF)->values(),
+                'qf' => $playerAchievements->where('type', AchievementType::QF)->values(),
+            ],
+        );
     }
 
     public static function kindFromRoute(string $type): GameKind

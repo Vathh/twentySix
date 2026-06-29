@@ -113,6 +113,49 @@ class VisitRecorderTest extends TestCase
         $this->assertSame(0, VisitRecorder::currentPlayerIndexFromVisits($bust, $playerIds));
     }
 
+    public function test_leg_opener_index_rotates_from_first_match_visit(): void
+    {
+        $playerIds = [10, 20];
+
+        $this->assertSame(0, VisitRecorder::legOpenerIndexForLeg([], $playerIds, 1, 1));
+
+        $leg1Visits = [
+            (object) [
+                'player_id' => 20,
+                'game_leg_id' => 1,
+                'visit_number' => 1,
+                'score' => 60,
+                'remaining_before' => 501,
+                'remaining_after' => 441,
+                'darts_in_visit' => 3,
+                'closed_leg' => false,
+                'bust' => false,
+                'id' => 1,
+            ],
+        ];
+
+        $this->assertSame(1, VisitRecorder::legOpenerIndexForLeg($leg1Visits, $playerIds, 1, 1));
+
+        $allVisits = [
+            ...$leg1Visits,
+            (object) [
+                'player_id' => 10,
+                'game_leg_id' => 2,
+                'visit_number' => 1,
+                'score' => 45,
+                'remaining_before' => 501,
+                'remaining_after' => 456,
+                'darts_in_visit' => 3,
+                'closed_leg' => false,
+                'bust' => false,
+                'id' => 2,
+            ],
+        ];
+
+        $this->assertSame(0, VisitRecorder::legOpenerIndexForLeg($allVisits, $playerIds, 2, 2));
+        $this->assertSame(1, VisitRecorder::legOpenerIndexForLeg($allVisits, $playerIds, 3, 3));
+    }
+
     public function test_remaining_from_leg_visits(): void
     {
         $visits = [

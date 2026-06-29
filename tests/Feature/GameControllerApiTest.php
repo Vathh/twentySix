@@ -124,7 +124,7 @@ class GameControllerApiTest extends TestCase
         ]);
     }
 
-    public function test_lock_fails_when_game_already_in_progress(): void
+    public function test_lock_succeeds_when_game_already_in_progress(): void
     {
         Sanctum::actingAs($this->user);
 
@@ -141,7 +141,8 @@ class GameControllerApiTest extends TestCase
             'type' => 'group',
         ]);
 
-        $response->assertStatus(409);
+        $response->assertStatus(200)
+            ->assertJson(['success' => true]);
     }
 
     public function test_user_can_release_group_game_lock_without_scoring(): void
@@ -338,8 +339,6 @@ class GameControllerApiTest extends TestCase
 
     public function test_user_can_get_active_games(): void
     {
-        $this->markTestSkipped('Test nie przechodzi - wymaga dalszej analizy filtrowania gier');
-        
         Sanctum::actingAs($this->user);
 
         $game1 = Game::create([
@@ -376,10 +375,45 @@ class GameControllerApiTest extends TestCase
 
         $games = $response->json();
         $gameIds = collect($games)->pluck('id')->toArray();
-        
+
         $this->assertContains($game1->id, $gameIds);
         $this->assertContains($game2->id, $gameIds);
         $this->assertNotContains($finishedGame->id, $gameIds);
+    }
+
+    public function test_user_can_get_active_playoff_games_after_group_stage(): void
+    {
+        Sanctum::actingAs($this->user);
+
+        $playoffGame = PlayoffGame::create([
+            'tournament_id' => $this->tournament->id,
+            'round' => GameStage::SEMI,
+            'slot' => PlayoffSlot::SEMI_1,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'winner_destination_slot' => WinnerDestinationSlot::FINAL_A,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        PlayoffGame::create([
+            'tournament_id' => $this->tournament->id,
+            'round' => GameStage::FINAL,
+            'slot' => PlayoffSlot::FINAL,
+            'player1_id' => null,
+            'player2_id' => null,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $response = $this->getJson("/api/game/active?tournamentId={$this->tournament->id}");
+
+        $response->assertStatus(200);
+
+        $games = $response->json();
+        $this->assertCount(1, $games);
+        $this->assertSame($playoffGame->id, $games[0]['id']);
+        $this->assertSame('playoff', $games[0]['type']);
+        $this->assertSame('SEMI', $games[0]['round']);
+        $this->assertSame('Półfinał', $games[0]['roundLabel']);
     }
 
     public function test_user_can_update_game_with_achievements(): void

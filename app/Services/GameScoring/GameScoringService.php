@@ -207,10 +207,13 @@ class GameScoringService
 
             $this->gameLegRepository->finishLeg($leg, $winnerId, $p1Points, $p2Points);
 
+            $game->player1_score = (int) ($game->player1_score ?? 0);
+            $game->player2_score = (int) ($game->player2_score ?? 0);
+
             if ($winnerId === $context->player1Id) {
-                $game->player1_score = (int) $game->player1_score + 1;
+                $game->player1_score++;
             } else {
-                $game->player2_score = (int) $game->player2_score + 1;
+                $game->player2_score++;
             }
 
             if ((int) $game->player1_score >= $context->legsToWin || (int) $game->player2_score >= $context->legsToWin) {

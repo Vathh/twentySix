@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\GameKind;
+use App\Enums\GameStatus;
 use App\Http\Requests\WebGameResultRequest;
 use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\GameScoring\GameDetailService;
@@ -66,10 +67,15 @@ class GameViewController extends Controller
             ->with('success', 'Wynik meczu został zapisany.');
     }
 
-    public function live(string $type, int $id): View
+    public function live(string $type, int $id): View|RedirectResponse
     {
         $kind = GameDetailService::kindFromRoute($type);
         $detail = $this->gameDetailService->build($kind, $id);
+
+        if ($detail['status'] === GameStatus::FINISHED->value) {
+            return redirect()->route('games.show', ['type' => $type, 'id' => $id]);
+        }
+
         [$context, $game] = $this->resolveScoringGame($kind, $id);
         $initialState = $this->gameScoringService->getState($context, $game);
 
@@ -83,6 +89,12 @@ class GameViewController extends Controller
     public function liveState(string $type, int $id): JsonResponse
     {
         $kind = GameDetailService::kindFromRoute($type);
+        $detail = $this->gameDetailService->build($kind, $id);
+
+        if ($detail['status'] === GameStatus::FINISHED->value) {
+            return response()->json(['message' => 'Mecz zakończony.'], 410);
+        }
+
         [$context, $game] = $this->resolveScoringGame($kind, $id);
 
         return response()->json($this->gameScoringService->getState($context, $game));

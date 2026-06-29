@@ -26,8 +26,10 @@ class GameLockService
     public function lock(int $gameId, GameType $type): void
     {
         $locked = match ($type) {
-            GameType::GROUP => $this->gameRepository->tryLockScheduled($gameId),
-            GameType::PLAYOFF => $this->playoffGameRepository->tryLockScheduled($gameId),
+            GameType::GROUP => $this->gameRepository->tryLockScheduled($gameId)
+                || $this->gameRepository->isInProgress($gameId),
+            GameType::PLAYOFF => $this->playoffGameRepository->tryLockScheduled($gameId)
+                || $this->playoffGameRepository->isInProgress($gameId),
             GameType::QUICK_MATCH => throw new DomainException('Użyj endpointu quick-game/inProgress.'),
         };
 

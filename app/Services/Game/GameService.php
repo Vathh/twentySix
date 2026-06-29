@@ -153,7 +153,11 @@ class GameService
             $playoffGames = $this->playoffGameRepository->getActive($tournamentId);
 
             return collect($games->map(fn($game) => ActiveGameDTO::fromGame($game)))
-                    ->merge($playoffGames->map(fn($game) => ActiveGameDTO::fromPlayoffGame($game)));
+                    ->merge(
+                        $playoffGames
+                            ->map(fn($game) => ActiveGameDTO::fromPlayoffGameDomain($game))
+                            ->filter(),
+                    );
         } catch (Throwable $e) {
             return collect();
         }

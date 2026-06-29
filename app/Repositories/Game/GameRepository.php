@@ -47,6 +47,14 @@ class GameRepository
             ->update(['status' => GameStatus::SCHEDULED]) === 1;
     }
 
+    public function isInProgress(int $gameId): bool
+    {
+        return Game::query()
+            ->where('id', $gameId)
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->exists();
+    }
+
     /**
      * @param int $tournamentId
      * @param int $groupNumber
@@ -69,7 +77,7 @@ class GameRepository
     {
         return Game::with(['tournament', 'player1', 'player2'])
                     ->where('tournament_id', $tournamentId)
-                    ->where('status', GameStatus::SCHEDULED)
+                    ->whereIn('status', [GameStatus::SCHEDULED, GameStatus::IN_PROGRESS])
                     ->get()
                     ->map(fn($game) => GroupGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2']));
     }
