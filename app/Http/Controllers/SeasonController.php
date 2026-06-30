@@ -69,6 +69,8 @@ class SeasonController extends Controller
 
     public function edit(Season $season)
     {
+        $this->authorize('update', $season);
+
         $season = SeasonDomain::fromEloquent($season);
 
         return view('seasons.edit', ['season' => $season]);
@@ -76,6 +78,8 @@ class SeasonController extends Controller
 
     public function update(Request $request, Season $season)
     {
+        $this->authorize('update', $season);
+
         //
     }
 

@@ -30,9 +30,7 @@
                         <li>
                             <a href="{{ route('players.show', $p) }}" class="block py-3 px-4 bg-lighter-bg rounded border border-border hover:border-light-green text-light-white hover:text-light-green transition">
                                 {{ $p->name }}
-                                @if($p->user_id)
-                                    <span class="text-light-gray text-sm">(zarejestrowany)</span>
-                                @endif
+                                <span class="text-light-gray text-sm">(zarejestrowany)</span>
                             </a>
                         </li>
                     @endforeach

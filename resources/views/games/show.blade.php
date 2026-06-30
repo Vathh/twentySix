@@ -40,7 +40,11 @@
             @if($status !== 'finished')
                 <p class="text-text-muted text-xs mt-2">
                     @if($status === 'in_progress')
-                        Mecz w trakcie — możesz wymusić wynik końcowy poniżej.
+                        @if($canCorrectResult ?? false)
+                            Mecz w trakcie — możesz wymusić wynik końcowy poniżej.
+                        @else
+                            Mecz w trakcie.
+                        @endif
                     @else
                         Mecz jeszcze nie rozegrany.
                     @endif

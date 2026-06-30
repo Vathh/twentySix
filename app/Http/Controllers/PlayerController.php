@@ -23,7 +23,7 @@ class PlayerController extends Controller
 
     public function search(Request $request): View
     {
-        $q = $request->query('q', '');
+        $q = trim((string) $request->query('q', ''));
         $players = collect();
 
         if ($q !== '') {

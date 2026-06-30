@@ -44,6 +44,8 @@ Patrz też: [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/
 
 ### Krok 3 — Web gość (weryfikacja)
 
+Szczegóły: [`scenariusze_manualne_web_gosc_krok3.md`](scenariusze_manualne_web_gosc_krok3.md).
+
 - [ ] Podgląd lig i turniejów **bez logowania**
 - [ ] Live pojedynczego meczu (`/games/{type}/{id}/live`)
 - [ ] Start turnieju + zaproszenia (web wysyłka, mobile akceptacja — regresja)
