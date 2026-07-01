@@ -122,6 +122,11 @@ class FriendshipService
     {
         return $this->invitationRepository->getSentInvitations($userId);
     }
+
+    public function findPendingInvitation(int $senderId, int $receiverId): ?FriendshipInvitationDomain
+    {
+        return $this->invitationRepository->findPending($senderId, $receiverId);
+    }
 }
 
 

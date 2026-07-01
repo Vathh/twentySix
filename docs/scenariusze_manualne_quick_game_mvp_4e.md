@@ -58,3 +58,36 @@
 
 - Tablet: lock → scoring API → tabela grupy / playoff.
 - Pełna checklista: [`scenariusze_manualne_turniej_mvp.md`](scenariusze_manualne_turniej_mvp.md).
+
+---
+
+## G. Presence — `each_own`, banner na ekranie meczu
+
+1. Rozpocznij mecz **2P each_own** (scenariusz A).
+2. Na telefonie gracza B: zminimalizuj aplikację na ~30 s (symulacja utraty połączenia) albo wyłącz Wi‑Fi na chwilę.
+3. Na telefonie gracza A: banner informuje o rozłączeniu B (status `disconnected` w `ffa.state` / presence).
+4. Przywróć połączenie B — status wraca do `connected`, banner znika.
+
+**Oczekiwane:** presence w stanie FFA i na kanale WS; bez fałszywego walkovera przy krótkim disconnect.
+
+---
+
+## H. Walkower 2P — gracz opuszcza mecz (`left`)
+
+1. Mecz **2P each_own** w trakcie (np. po pierwszej turze).
+2. Gracz B: wyjdź z ekranu scoringu przyciskiem opuszczenia / akcją wysyłającą `status: left` na `POST .../ffa/presence`.
+3. Gracz A: mecz kończy się na korzyść A (walkover); oba telefony widzą zakończenie.
+4. Po zapisie wyniku: brak aktywnego meczu w `GET /api/quick-game/active-match` dla B.
+
+**Oczekiwane:** tylko **2 graczy + each_own** — przy `left` natychmiastowy walkover; przy 3+ graczach inna logika (kontynuacja / forfeit po dwóch `left`).
+
+---
+
+## I. Powrót do trwającego meczu
+
+1. Rozpocznij mecz **2P each_own**, nie kończ go.
+2. Gracz A: wróć na ekran główny (`Home`) — banner **„Wróć do meczu”** (lub równoważny).
+3. Tap → ponowne wejście w ten sam lobby / stan FFA.
+4. Po scenariuszu H (walkover / koniec): banner **nie** pojawia się ponownie.
+
+**Oczekiwane:** źródło prawdy = `GET /api/quick-game/active-match`, nie stary wpis w AsyncStorage po `left`.

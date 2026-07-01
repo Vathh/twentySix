@@ -138,6 +138,20 @@ class FriendshipInvitationRepository
             ->map(fn($invitation) => FriendshipInvitationDomain::fromEloquent($invitation));
     }
 
+    public function findPending(int $senderId, int $receiverId): ?FriendshipInvitationDomain
+    {
+        $invitation = FriendshipInvitation::query()
+            ->where('sender_id', $senderId)
+            ->where('receiver_id', $receiverId)
+            ->where('status', 'pending')
+            ->with(['sender.player', 'receiver.player'])
+            ->first();
+
+        return $invitation
+            ? FriendshipInvitationDomain::fromEloquent($invitation)
+            : null;
+    }
+
     /**
      * Sprawdza czy istnieje zaproszenie między użytkownikami
      * @param int $userId1

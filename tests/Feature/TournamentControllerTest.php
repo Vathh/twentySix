@@ -14,11 +14,13 @@ use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\SeedsTournamentParticipants;
 use Tests\TestCase;
 
 class TournamentControllerTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTournamentParticipants;
 
     private User $adminUser;
     private User $regularUser;
@@ -28,6 +30,8 @@ class TournamentControllerTest extends TestCase
     private Player $player2;
     private Player $player3;
     private Player $player4;
+    private Player $player5;
+    private Player $player6;
 
     protected function setUp(): void
     {
@@ -70,6 +74,8 @@ class TournamentControllerTest extends TestCase
         // Utwórz gości (bez user_id)
         $this->player3 = Player::create(['name' => 'Player3', 'season_id' => $this->season->id, 'league_id' => $this->league->id]);
         $this->player4 = Player::create(['name' => 'Player4', 'season_id' => $this->season->id, 'league_id' => $this->league->id]);
+        $this->player5 = Player::create(['name' => 'Player5', 'season_id' => $this->season->id, 'league_id' => $this->league->id]);
+        $this->player6 = Player::create(['name' => 'Player6', 'season_id' => $this->season->id, 'league_id' => $this->league->id]);
 
         // Utwórz point scheme dla małych turniejów (2-8 graczy) potrzebny w testach
         $smallScheme = PointScheme::create([
@@ -160,10 +166,16 @@ class TournamentControllerTest extends TestCase
             'date' => '2024-06-01',
         ]);
 
-        $selectedPlayers = [$this->player1->id, $this->player2->id, $this->player3->id, $this->player4->id];
+        $this->addPlayersToTournamentPool($tournament, [
+            $this->player1,
+            $this->player2,
+            $this->player3,
+            $this->player4,
+            $this->player5,
+            $this->player6,
+        ], $this->adminUser);
 
         $response = $this->post("/tournaments/{$tournament->id}/run", [
-            'selectedPlayers' => json_encode($selectedPlayers),
             'groupsCount' => '2',
         ]);
 
@@ -190,10 +202,16 @@ class TournamentControllerTest extends TestCase
             'date' => '2024-06-01',
         ]);
 
-        $selectedPlayers = [$this->player1->id, $this->player2->id, $this->player3->id, $this->player4->id];
+        $this->addPlayersToTournamentPool($tournament, [
+            $this->player1,
+            $this->player2,
+            $this->player3,
+            $this->player4,
+            $this->player5,
+            $this->player6,
+        ], $this->adminUser);
 
         $response = $this->post("/tournaments/{$tournament->id}/run", [
-            'selectedPlayers' => json_encode($selectedPlayers),
             'groupsCount' => 2,
             'advancePerGroup' => 2,
             'tabletsCount' => 5,
@@ -216,17 +234,22 @@ class TournamentControllerTest extends TestCase
             'date' => '2024-06-01',
         ]);
 
-        $selectedPlayers = [$this->player1->id, $this->player2->id, $this->player3->id, $this->player4->id];
+        $this->addPlayersToTournamentPool($tournament, [
+            $this->player1,
+            $this->player2,
+            $this->player3,
+            $this->player4,
+            $this->player5,
+            $this->player6,
+        ], $this->adminUser);
 
         // Pierwszy start
         $this->post("/tournaments/{$tournament->id}/run", [
-            'selectedPlayers' => json_encode($selectedPlayers),
             'groupsCount' => '2',
         ]);
 
         // Drugi start - powinien się nie powieść
         $response = $this->post("/tournaments/{$tournament->id}/run", [
-            'selectedPlayers' => json_encode($selectedPlayers),
             'groupsCount' => '2',
         ]);
 
@@ -242,10 +265,11 @@ class TournamentControllerTest extends TestCase
             'date' => '2024-06-01',
         ]);
 
-        $response = $this->post("/tournaments/{$tournament->id}/run", [
-            'selectedPlayers' => json_encode([]),
-            'groupsCount' => '2',
-        ]);
+        $response = $this->from("/tournaments/{$tournament->id}/start")
+            ->post("/tournaments/{$tournament->id}/run", [
+                'selectedPlayers' => json_encode([]),
+                'groupsCount' => '2',
+            ]);
 
         $response->assertSessionHas('error');
     }
@@ -259,12 +283,17 @@ class TournamentControllerTest extends TestCase
             'date' => '2024-06-01',
         ]);
 
-        $selectedPlayers = [$this->player1->id, $this->player2->id, $this->player3->id, $this->player4->id];
+        $this->addPlayersToTournamentPool($tournament, [
+            $this->player1,
+            $this->player2,
+            $this->player3,
+            $this->player4,
+        ], $this->adminUser);
 
-        $response = $this->post("/tournaments/{$tournament->id}/run", [
-            'selectedPlayers' => json_encode($selectedPlayers),
-            'groupsCount' => 3,
-        ]);
+        $response = $this->from("/tournaments/{$tournament->id}/start")
+            ->post("/tournaments/{$tournament->id}/run", [
+                'groupsCount' => 3,
+            ]);
 
         $response->assertSessionHasErrors('groupsCount');
     }
@@ -278,12 +307,16 @@ class TournamentControllerTest extends TestCase
             'date' => '2024-06-01',
         ]);
 
-        $selectedPlayers = [$this->player1->id, $this->player2->id, $this->player3->id];
+        $this->addPlayersToTournamentPool($tournament, [
+            $this->player1,
+            $this->player2,
+            $this->player3,
+        ], $this->adminUser);
 
-        $response = $this->post("/tournaments/{$tournament->id}/run", [
-            'selectedPlayers' => json_encode($selectedPlayers),
-            'groupsCount' => 2,
-        ]);
+        $response = $this->from("/tournaments/{$tournament->id}/start")
+            ->post("/tournaments/{$tournament->id}/run", [
+                'groupsCount' => 2,
+            ]);
 
         $response->assertSessionHasErrors('selectedPlayers');
     }

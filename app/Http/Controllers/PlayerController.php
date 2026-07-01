@@ -51,13 +51,28 @@ class PlayerController extends Controller
         $tournamentStats = $this->playerStatsService->getStoredTournamentStats($player);
 
         $isFriend = false;
-        $canAddFriend = false;
+        $canInviteFriend = false;
+        $pendingSentInvitation = null;
+        $pendingReceivedInvitation = null;
 
         if (Auth::check()) {
             $viewerPlayer = Auth::user()->player;
             if ($viewerPlayer && $player->user_id) {
-                $isFriend = $this->friendshipService->areFriends(Auth::id(), $player->user_id);
-                $canAddFriend = ! $isFriend && $viewerPlayer->id !== $player->id;
+                $viewerUserId = (int) Auth::id();
+                $profileUserId = (int) $player->user_id;
+                $isFriend = $this->friendshipService->areFriends($viewerUserId, $profileUserId);
+                $pendingSentInvitation = $this->friendshipService->findPendingInvitation(
+                    $viewerUserId,
+                    $profileUserId,
+                );
+                $pendingReceivedInvitation = $this->friendshipService->findPendingInvitation(
+                    $profileUserId,
+                    $viewerUserId,
+                );
+                $canInviteFriend = ! $isFriend
+                    && $viewerPlayer->id !== $player->id
+                    && $pendingSentInvitation === null
+                    && $pendingReceivedInvitation === null;
             }
         }
 
@@ -68,7 +83,9 @@ class PlayerController extends Controller
             'quickStats' => $quickStats,
             'tournamentStats' => $tournamentStats,
             'isFriend' => $isFriend,
-            'canAddFriend' => $canAddFriend,
+            'canInviteFriend' => $canInviteFriend,
+            'pendingSentInvitation' => $pendingSentInvitation,
+            'pendingReceivedInvitation' => $pendingReceivedInvitation,
             'gameHistoryItems' => $historyFirstPage['items'],
             'gameHistoryHasMore' => $historyFirstPage['has_more'],
         ]);
@@ -96,10 +113,10 @@ class PlayerController extends Controller
         }
 
         try {
-            $this->friendshipService->addFriend(Auth::id(), $player->user_id);
+            $this->friendshipService->sendInvitation((int) Auth::id(), (int) $player->user_id);
 
-            return back()->with('success', 'Dodano do znajomych.');
-        } catch (\Throwable $e) {
+            return back()->with('success', 'Zaproszenie do znajomych zostało wysłane.');
+        } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
     }

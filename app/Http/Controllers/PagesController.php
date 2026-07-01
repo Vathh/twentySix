@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\League\League;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Response;
 
 class PagesController extends Controller
 {
@@ -13,14 +14,22 @@ class PagesController extends Controller
         return view('pages.home');
     }
 
-    public function showLoginPage(): Factory|View
+    public function showLoginPage(): Response
     {
-        return view('pages.login');
+        return $this->noCacheView('pages.login');
     }
 
-    public function showRegisterPage(): Factory|View
+    public function showRegisterPage(): Response
     {
-        return view('pages.register');
+        return $this->noCacheView('pages.register');
+    }
+
+    private function noCacheView(string $view): Response
+    {
+        return response()
+            ->view($view)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
     public function showTournamentsPage(): Factory|View
     {

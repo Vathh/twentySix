@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FriendInvitationController;
 use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\GameViewController;
 use App\Http\Controllers\PagesController;
@@ -40,6 +41,8 @@ Route::get('/players/search', [PlayerController::class, 'search'])->name('player
 Route::get('/players/{player}', [PlayerController::class, 'show'])->name('players.show');
 Route::get('/players/{player}/games', [PlayerController::class, 'gameHistory'])->name('players.games');
 Route::post('/players/{player}/add-friend', [PlayerController::class, 'addFriend'])->name('players.add-friend')->middleware('auth');
+Route::post('/friends/invitations/{invitation}/accept', [FriendInvitationController::class, 'accept'])->name('friends.invitations.accept')->middleware('auth');
+Route::post('/friends/invitations/{invitation}/reject', [FriendInvitationController::class, 'reject'])->name('friends.invitations.reject')->middleware('auth');
 
 Route::resource('leagues', LeagueController::class);
 Route::prefix('leagues/{league}')->group(function () {

@@ -52,13 +52,27 @@ document.addEventListener('alpine:init', () => {
                     @endif
                 </div>
                 @auth
-                    @if($canAddFriend)
+                    @if($canInviteFriend)
                         <form action="{{ route('players.add-friend', $player) }}" method="POST" class="inline">
                             @csrf
                             <button type="submit" class="btn btn-mini">Dodaj do znajomych</button>
                         </form>
                     @elseif($isFriend)
                         <span class="text-light-green font-semibold">Znajomy</span>
+                    @elseif($pendingSentInvitation)
+                        <span class="text-light-orange font-semibold">Zaproszenie wysłane</span>
+                    @elseif($pendingReceivedInvitation)
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-light-orange text-sm">Zaproszenie od tego gracza</span>
+                            <form action="{{ route('friends.invitations.accept', $pendingReceivedInvitation->id) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="btn btn-mini">Akceptuj</button>
+                            </form>
+                            <form action="{{ route('friends.invitations.reject', $pendingReceivedInvitation->id) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="btn btn-mini border border-light-orange text-light-orange bg-transparent hover:bg-light-orange/10">Odrzuć</button>
+                            </form>
+                        </div>
                     @endif
                 @endauth
             </div>

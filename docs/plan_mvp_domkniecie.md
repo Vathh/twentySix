@@ -3,7 +3,7 @@
 Źródło prawdy: [`product.md`](product.md) — sekcja „Kryterium MVP jest gotowe”.  
 Stan quick game: krok **4E** ✅ (scenariusze manualne A–F przeszły).
 
-Ostatnia aktualizacja planu: czerwiec 2026.
+Ostatnia aktualizacja planu: lipiec 2026.
 
 ---
 
@@ -13,10 +13,13 @@ Ostatnia aktualizacja planu: czerwiec 2026.
 |--------|--------|
 | Quick game FFA 2–8 (`one_device` + `each_own`) | ✅ |
 | Trening mobile (bez zapisu) | ✅ |
-| Presence FFA, walkower, powrót do meczu | ✅ (poza 4E — dopisać do scenariuszy) |
-| Turniej tablet + web | ✅ w kodzie — **wymaga scenariuszy manualnych** |
+| Presence FFA, walkower, powrót do meczu | ✅ |
+| Turniej tablet + web | ✅ (scenariusze manualne krok 2) |
+| Web gość + znajomi web | ✅ (krok 3) |
+| Testy auto (`php artisan test`) | ✅ (krok 4 — 172 passed, 14 skipped) |
+| Dokumentacja zamykająca | ✅ (krok 5) |
 | MySQL (dev) | ✅ |
-| Release / deploy prod | ❌ |
+| Release / deploy prod | ❌ (krok 6) |
 
 ---
 
@@ -29,7 +32,7 @@ Ostatnia aktualizacja planu: czerwiec 2026.
 - [x] Log Reverb: poprawny `authEndpoint` w debugu
 - [x] Commit + push mobile (ten krok)
 
-### Krok 2 — Scenariusze turniejowe (manualne)
+### Krok 2 — Scenariusze turniejowe (manualne) ✅
 
 Szczegóły: [`scenariusze_manualne_turniej_mvp.md`](scenariusze_manualne_turniej_mvp.md).
 
@@ -42,34 +45,35 @@ Patrz też: [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/
 
 **Kryterium done:** wszystkie 4 punkty przechodzą bez regresji na MySQL.
 
-### Krok 3 — Web gość (weryfikacja)
+### Krok 3 — Web gość (weryfikacja) ✅
 
 Szczegóły: [`scenariusze_manualne_web_gosc_krok3.md`](scenariusze_manualne_web_gosc_krok3.md).
 
-- [ ] Podgląd lig i turniejów **bez logowania**
-- [ ] Live pojedynczego meczu (`/games/{type}/{id}/live`)
-- [ ] Start turnieju + zaproszenia (web wysyłka, mobile akceptacja — regresja)
+- [x] Podgląd lig i turniejów **bez logowania**
+- [x] Live pojedynczego meczu (`/games/{type}/{id}/live`)
+- [x] Start turnieju + zaproszenia (web wysyłka, mobile akceptacja — regresja)
+- [x] Znajomi web: invite → accept (panel boczny)
 
 **Kryterium done:** gość może przeglądać publiczne dane; zalogowany organizator może skorygować wynik.
 
-### Krok 4 — Testy automatyczne + CI
+### Krok 4 — Testy automatyczne + CI ✅
 
 ```bash
 cd twentysix-backend
 php artisan test
 ```
 
-- [ ] Baza testowa `dartscore_test` (MySQL) skonfigurowana lokalnie i w CI
-- [ ] Wszystkie testy Feature/Unit zielone
-- [ ] Naprawa ewentualnych faili po MySQL
+- [x] Baza testowa `dartscore_test` (MySQL) skonfigurowana lokalnie
+- [x] Wszystkie testy Feature/Unit zielone (172 passed, 14 skipped)
+- [x] Naprawa faili turniejowych (pula uczestników, min. 3/grupa)
 
-### Krok 5 — Dokumentacja zamykająca
+### Krok 5 — Dokumentacja zamykająca ✅
 
-- [ ] Aktualizacja [`IMPLEMENTED_FEATURES.md`](../IMPLEMENTED_FEATURES.md) (backend)
-- [ ] Aktualizacja [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md)
-- [ ] Rozszerzenie [`scenariusze_manualne_quick_game_mvp_4e.md`](scenariusze_manualne_quick_game_mvp_4e.md) o presence / walkower / powrót do meczu
-- [ ] Opcjonalnie: osobny plik scenariuszy turniejowych (jak 4E)
-- [ ] README deploy: MySQL, `migrate --seed`, `reverb:start`, `serve --host=0.0.0.0`, IP w mobile `apiConfig.js`
+- [x] Aktualizacja [`IMPLEMENTED_FEATURES.md`](../IMPLEMENTED_FEATURES.md) (backend)
+- [x] Aktualizacja [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md)
+- [x] Rozszerzenie [`scenariusze_manualne_quick_game_mvp_4e.md`](scenariusze_manualne_quick_game_mvp_4e.md) o presence / walkower / powrót do meczu (G–I)
+- [x] Scenariusze turniejowe: [`scenariusze_manualne_turniej_mvp.md`](scenariusze_manualne_turniej_mvp.md)
+- [x] README deploy: [`README.md`](../README.md) — MySQL, `migrate --seed`, `reverb:start`, `serve --host=0.0.0.0`, IP w mobile `apiConfig.js`
 
 ### Krok 6 — Release candidate (MVP v1)
 
@@ -86,11 +90,12 @@ php artisan test
 Patrz [`product.md`](product.md) — sekcja „Poza MVP”:
 
 - Krykiet w lobby
-- Znajomi na webie
 - Konfigurowalna liczba legów (BO5+)
 - Live całego turnieju (WS) — MVP wymaga live **meczu**, nie całego eventu
 - Push do zaproszeń
 - Import danych ze starego SQLite
+
+> **Zrealizowane poza pierwotnym scope MVP:** znajomi na webie (invite → accept, panel boczny) — lipiec 2026.
 
 ---
 

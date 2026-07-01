@@ -41,7 +41,34 @@
                     <h2 class="text-lg font-bold text-light-green">Znajomi</h2>
                     <button type="button" @click="friendsOpen = false" class="text-light-white hover:text-light-orange transition p-1">✕</button>
                 </div>
-                <div class="flex-1 overflow-y-auto p-4">
+                <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                    @if($receivedFriendInvitations->isNotEmpty())
+                        <section>
+                            <h3 class="text-sm font-semibold text-light-orange mb-2">Zaproszenia do znajomych</h3>
+                            <ul class="space-y-2">
+                                @foreach($receivedFriendInvitations as $invitation)
+                                    <li class="p-3 rounded border border-border bg-lighter-bg/40">
+                                        <p class="text-light-white text-sm mb-2">
+                                            {{ $invitation->senderPlayer?->name ?? 'Gracz' }}
+                                        </p>
+                                        <div class="flex gap-2">
+                                            <form action="{{ route('friends.invitations.accept', $invitation->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="btn btn-mini text-xs py-1 px-2">Akceptuj</button>
+                                            </form>
+                                            <form action="{{ route('friends.invitations.reject', $invitation->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="text-xs py-1 px-2 rounded border border-light-orange text-light-orange hover:bg-light-orange/10">Odrzuć</button>
+                                            </form>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </section>
+                    @endif
+
+                    <section>
+                        <h3 class="text-sm font-semibold text-light-green mb-2">Twoi znajomi</h3>
                     @if($friends->isEmpty())
                         <p class="text-light-gray text-sm">Brak znajomych.</p>
                     @else
@@ -54,6 +81,26 @@
                                 </li>
                             @endforeach
                         </ul>
+                    @endif
+                    </section>
+
+                    @if($sentFriendInvitations->isNotEmpty())
+                        <section>
+                            <h3 class="text-sm font-semibold text-light-orange mb-2">Oczekujący</h3>
+                            <ul class="space-y-2">
+                                @foreach($sentFriendInvitations as $invitation)
+                                    <li>
+                                        @if($invitation->receiverPlayer)
+                                            <a href="{{ route('players.show', $invitation->receiverPlayer->id) }}" class="block py-2 px-3 rounded border border-border hover:border-light-orange text-light-white hover:text-light-orange transition text-sm">
+                                                {{ $invitation->receiverPlayer->name }}
+                                            </a>
+                                        @else
+                                            <span class="block py-2 px-3 rounded border border-border text-light-gray text-sm">Gracz</span>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </section>
                     @endif
                 </div>
             </div>

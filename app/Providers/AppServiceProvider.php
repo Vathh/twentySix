@@ -37,10 +37,17 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('layouts.app', function ($view) {
             $friends = collect();
+            $receivedFriendInvitations = collect();
+            $sentFriendInvitations = collect();
             if (Auth::check()) {
-                $friends = app(FriendshipService::class)->getFriends(Auth::id());
+                $friendshipService = app(FriendshipService::class);
+                $friends = $friendshipService->getFriends(Auth::id());
+                $receivedFriendInvitations = $friendshipService->getReceivedInvitations(Auth::id());
+                $sentFriendInvitations = $friendshipService->getSentInvitations(Auth::id());
             }
             $view->with('friends', $friends);
+            $view->with('receivedFriendInvitations', $receivedFriendInvitations);
+            $view->with('sentFriendInvitations', $sentFriendInvitations);
         });
 
         Blade::if('canCreateLeagues', function () {

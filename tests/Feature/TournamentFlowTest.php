@@ -24,11 +24,13 @@ use App\Services\Player\PlayerService;
 use App\Support\Tournament\PlayoffFirstRoundPairing;
 use App\Support\Tournament\TournamentGroupDistribution;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\SeedsTournamentParticipants;
 use Tests\TestCase;
 
 class TournamentFlowTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTournamentParticipants;
 
     private User $adminUser;
     private League $league;
@@ -37,6 +39,8 @@ class TournamentFlowTest extends TestCase
     private Player $player2;
     private Player $player3;
     private Player $player4;
+    private Player $player5;
+    private Player $player6;
 
     protected function setUp(): void
     {
@@ -79,6 +83,16 @@ class TournamentFlowTest extends TestCase
             'season_id' => $this->season->id,
             'league_id' => $this->league->id,
         ]);
+        $this->player5 = Player::create([
+            'name' => 'Player5',
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+        ]);
+        $this->player6 = Player::create([
+            'name' => 'Player6',
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+        ]);
 
         $smallScheme = PointScheme::create([
             'name' => 'od 2 do 8 osob',
@@ -87,6 +101,7 @@ class TournamentFlowTest extends TestCase
         ]);
 
         PointSchemeRule::insert([
+            ['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::GROUP->value, 'place' => 3, 'points' => 1],
             ['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::GROUP->value, 'place' => 2, 'points' => 2],
             ['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::GROUP->value, 'place' => 1, 'points' => 4],
             ['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::QUARTER->value, 'place' => null, 'points' => 6],
@@ -106,10 +121,16 @@ class TournamentFlowTest extends TestCase
             'date' => '2024-06-01',
         ]);
 
-        $playerIds = [$this->player1->id, $this->player2->id, $this->player3->id, $this->player4->id];
+        $this->addPlayersToTournamentPool($tournament, [
+            $this->player1,
+            $this->player2,
+            $this->player3,
+            $this->player4,
+            $this->player5,
+            $this->player6,
+        ], $this->adminUser);
 
         $response = $this->post("/tournaments/{$tournament->id}/run", [
-            'selectedPlayers' => json_encode($playerIds),
             'groupsCount' => 2,
             'advancePerGroup' => 2,
             'tabletsCount' => 3,
@@ -125,7 +146,7 @@ class TournamentFlowTest extends TestCase
         $this->assertSame(3, $tournament->tablets_count);
         $this->assertSame(3, LoginCode::where('tournament_id', $tournament->id)->count());
 
-        $expectedGroupSizes = TournamentGroupDistribution::groupSizes(4, 2);
+        $expectedGroupSizes = TournamentGroupDistribution::groupSizes(6, 2);
         $actualGroupSizes = GroupStanding::where('tournament_id', $tournament->id)
             ->selectRaw('group_number, count(*) as cnt')
             ->groupBy('group_number')
@@ -134,7 +155,7 @@ class TournamentFlowTest extends TestCase
             ->all();
 
         $this->assertSame($expectedGroupSizes, $actualGroupSizes);
-        $this->assertSame(2, Game::where('tournament_id', $tournament->id)->count());
+        $this->assertSame(6, Game::where('tournament_id', $tournament->id)->count());
 
         $gameService = app(GameService::class);
 

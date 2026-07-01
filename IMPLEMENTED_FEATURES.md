@@ -3,7 +3,7 @@
 Mapa zgodności kodu z [`docs/product.md`](docs/product.md).  
 **Legenda:** ✅ gotowe · ⚠️ częściowo · ❌ brak
 
-Ostatnia aktualizacja: czerwiec 2026.
+Ostatnia aktualizacja: lipiec 2026 (krok 5 — domknięcie docs).
 
 ---
 
@@ -11,11 +11,13 @@ Ostatnia aktualizacja: czerwiec 2026.
 
 | Obszar | Postęp | Najważniejsze luki |
 |--------|--------|-------------------|
-| **Web** | ~85% | — |
-| **API** | ~85% | Lock tabletu (mobile) |
-| **Mobile** | ~50% | Zob. [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) |
+| **Web** | ~95% | Live całego turnieju (WS) — poza MVP |
+| **API** | ~90% | — |
+| **Mobile** | ~90% | Zob. [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) |
 
 Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `product.md`.
+
+**Weryfikacja MVP (manual + auto):** kroki 2–4 planu [`docs/plan_mvp_domkniecie.md`](docs/plan_mvp_domkniecie.md) ✅ · `php artisan test` — 172 passed, 14 skipped (lipiec 2026).
 
 ---
 
@@ -31,11 +33,11 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Start: walidowany awans z grupy | ✅ | Kreator + `TournamentStartValidator` |
 | Start: liczba kodów tabletów (≠ liczba grup) | ✅ | `tabletsCount` w kreatorze, `LoginCodeService` |
 | Start: tylko zaakceptowani + goście | ✅ | `getTournamentStartPool`, walidacja przy `run` |
-| Publiczny podgląd lig/turniejów | ⚠️ | Widoki istnieją; weryfikacja gościa bez logowania — do sprawdzenia |
+| Publiczny podgląd lig/turniejów | ✅ | Gość bez logowania — krok 3: [`scenariusze_manualne_web_gosc_krok3.md`](docs/scenariusze_manualne_web_gosc_krok3.md) |
 | Korekta wyniku / walkower na webie | ✅ | `games/show` — formularz admina sezonu, `GameResultCorrectionService` |
 | Live podgląd meczu (WebSocket) | ✅ | `games/{type}/{id}/live`, `game-live.js`, Reverb `game.state` |
 | Live WebSocket na webie (turniej) | ❌ | Brak widoku live całego turnieju z WS |
-| Znajomi na webie | ⚠️ | UI częściowo; product: poza MVP na webie |
+| Znajomi na webie | ✅ | Profil gracza: invite → accept; panel boczny (przychodzące / znajomi / oczekujący); `FriendInvitationController` |
 
 ---
 
@@ -70,6 +72,8 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Achievementy turniejowe | ✅ | `AchievementsService` |
 | Auto point scheme | ✅ | `PointSchemeService::findByPlayersAmount` |
 | WebSocket (Reverb) | ✅ | `GameScoringStateUpdated`, `QuickGameLobbyUpdated`, `channels.php` |
+| FFA presence + walkower 2P | ✅ | `POST .../ffa/presence`, `GET .../active-match`, `QuickGameFfaPresenceService` |
+| Znajomi web (invite flow) | ✅ | `PlayerController`, `FriendInvitationController`, test `PlayerFriendInvitationWebTest` |
 
 ---
 
@@ -77,14 +81,15 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 
 | Wymaganie MVP | Status |
 |---------------|--------|
-| Tablet: kod + lista meczów + H2H | ⚠️ |
+| Tablet: kod + lista meczów + H2H | ✅ |
 | Tablet: grupy → mecze; playoff płaska lista | ✅ | `ActiveGameDTO.roundLabel`, mobile `GameList.jsx` |
-| Lock meczu `w trakcie` | ❌ |
+| Lock meczu `w trakcie` | ✅ | `lockTournamentGame`, `GameLockService` |
 | Quick game: tryby urządzeń (online FFA) | ✅ |
 | Quick game FFA 2–8 + rotacja legów | ✅ |
+| FFA presence, walkower, powrót do meczu | ✅ | `useGameScoring`, `Home.jsx` + `GET /active-match` |
 | Trening mobile (bez zapisu) | ✅ | `TrainingMatchSetup.jsx` |
-| Znajomi: invite + accept (mobile) | ⚠️ |
-| Marka twentySix w UI | ⚠️ |
+| Znajomi: invite + accept (mobile) | ✅ |
+| Marka twentySix w UI | ✅ |
 
 ---
 
@@ -96,10 +101,11 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 4. ~~**Tablet mobile:** lock meczu; playoff UI; scoring API + WS.~~ ✅ *(czerwiec 2026)*
 5. ~~**Quick game:** FFA do 8, rotacja openera, friends-only, multi-device 3+.~~ ✅ *(czerwiec 2026)*
 6. ~~**Trening mobile** (offline/local, bez zapisu).~~ ✅ *(czerwiec 2026)*
+7. ~~**Web gość + znajomi web + testy auto** (kroki 3–4 planu MVP).~~ ✅ *(lipiec 2026)*
 
 ---
 
-## Testy logiki turniejowej (backend)
+## Testy (backend)
 
 | Obszar | Pliki testów |
 |--------|----------------|
@@ -113,7 +119,11 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | VisitRecorder (unit) | `tests/Unit/GameScoring/VisitRecorderTest.php` |
 | Quick game FFA finalize | `tests/Feature/QuickGameFfaScoringApiTest.php` |
 | Lobby MVP | `tests/Feature/QuickGameLobbyMvpTest.php` |
+| FFA presence / walkover | `tests/Feature/QuickGameFfaPresenceApiTest.php` |
+| Znajomi web (invite → accept) | `tests/Feature/PlayerFriendInvitationWebTest.php` |
 | Achievementy po FFA | `tests/Feature/QuickGameApiTest.php` |
+
+Pełna suite: `php artisan test` — **172 passed, 14 skipped** (lipiec 2026). Pominięte: widoki wymagające Vite manifest, legacy bulk quick-game POST.
 
 ---
 
@@ -121,4 +131,6 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 
 - [`docs/product.md`](docs/product.md) — wizja i MVP
 - [`LOGIKA_BIZNESOWA.md`](LOGIKA_BIZNESOWA.md) — przepływy
-- Mobile: `../twentysix-mobile/IMPLEMENTED_FEATURES.md`
+- [`docs/plan_mvp_domkniecie.md`](docs/plan_mvp_domkniecie.md) — plan domknięcia v1
+- [`README.md`](README.md) — uruchomienie dev / deploy LAN
+- Mobile: [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md)
