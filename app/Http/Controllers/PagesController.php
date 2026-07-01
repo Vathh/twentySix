@@ -24,6 +24,11 @@ class PagesController extends Controller
         return $this->noCacheView('pages.register');
     }
 
+    public function showVerifyEmailNoticePage(): Response
+    {
+        return $this->noCacheView('pages.verify-email-sent');
+    }
+
     private function noCacheView(string $view): Response
     {
         return response()

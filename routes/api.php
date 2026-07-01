@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, 'tournamentLogin']); // kod turnieju – do sędziowania
 Route::post('/account/login', [AuthController::class, 'login']);   // email + hasło – konto gracza
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail'])
+    ->middleware('throttle:6,1');
 
 // Wynik quick game online finalizuje silnik FFA; ten endpoint tylko dla achievementów po meczu.
 

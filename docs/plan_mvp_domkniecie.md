@@ -77,11 +77,17 @@ php artisan test
 
 ### Krok 6 — Release candidate (MVP v1)
 
-- [ ] Hosting backendu + Reverb (prod/staging)
-- [ ] HTTPS / WSS jeśli poza LAN
-- [ ] Build mobile (Expo) wskazujący na prod API
-- [ ] Seed demo (`gracz1@test.pl` …) lub instrukcja dla testerów
-- [ ] Tag `v1.0.0-mvp` po akceptacji testerów
+Szczegółowy plan operacyjny: [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md).
+
+| Podkrok | Opis | Status |
+|---------|------|--------|
+| 6.0 | Commity + testy przed deploy | ✅ |
+| 6.1 | `.env.staging.example` + [`deploy_staging.md`](deploy_staging.md) | ✅ |
+| 6.2 | Hosting backend + Reverb (staging) | ⬜ |
+| 6.3 | HTTPS / WSS + SMTP | ⬜ |
+| 6.4 | Mobile build (`EXPO_PUBLIC_*`, EAS) — częściowo (config ✅, build ⬜) | 🔄 |
+| 6.5 | [`instrukcja_testerow_mvp_v1.md`](instrukcja_testerow_mvp_v1.md) | ✅ |
+| 6.6 | Tag `v1.0.0-mvp` po akceptacji | ⬜ |
 
 ---
 
@@ -125,4 +131,5 @@ flowchart TD
 | Quick game plan (zamknięty) | [`plan_quick_game_mvp_step4.md`](plan_quick_game_mvp_step4.md) |
 | Scenariusze quick game | [`scenariusze_manualne_quick_game_mvp_4e.md`](scenariusze_manualne_quick_game_mvp_4e.md) |
 | Produkt | [`product.md`](product.md) |
+| Release RC (krok 6) | [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md) |
 | Mobile mapa | [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) |

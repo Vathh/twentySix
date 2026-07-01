@@ -4,8 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Tournament\LoginCode;
 use App\Models\Users\User;
-use App\Rules\UniquePlayerNameForRegistered;
-use App\Services\Player\PlayerService;
+use App\Services\Auth\UserRegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,9 +14,8 @@ class AuthController
 {
 
     public function __construct(
-        private PlayerService $playerService
-    )
-    {
+        private UserRegistrationService $registrationService,
+    ) {
     }
 
     public function tournamentLogin(Request $request): JsonResponse
@@ -30,7 +28,7 @@ class AuthController
 
         if (!$loginCode) {
             return response()->json([
-                'message' => 'Nieprawidłowy kod logowania'
+                'message' => 'Nieprawidłowy kod logowania',
             ], 401);
         }
 
@@ -45,39 +43,34 @@ class AuthController
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:20',
-                new UniquePlayerNameForRegistered(),
-            ],
+            'name' => 'required|string|max:20',
             'email' => 'required|email|max:255|unique:users',
             'password' => 'required|string|min:8',
         ]);
 
-        $user = User::create([
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-            // can_create_leagues i role mają domyślne wartości z migracji (0 i 'user')
-        ]);
-
-        // Automatyczne utworzenie Player dla użytkownika
-        $this->playerService->create($validated['name'], $user->id);
-
-        // Utworzenie tokenu Sanctum
-        $token = $user->createToken('mobile-app')->plainTextToken;
-
-        // Odświeżenie użytkownika z relacją player
-        $user->load('player');
+        $user = $this->registrationService->register($validated);
 
         return response()->json([
-            'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'email' => $user->email,
-                'name' => $user->player->name ?? $validated['name'],
-            ],
+            'message' => 'Konto utworzone. Sprawdź email i kliknij link potwierdzający, aby się zalogować.',
+            'email' => $user->email,
         ], 201);
+    }
+
+    public function resendVerificationEmail(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+
+        if ($user !== null && ! $user->hasVerifiedEmail()) {
+            $user->sendEmailVerificationNotification();
+        }
+
+        return response()->json([
+            'message' => 'Jeśli konto istnieje i nie jest potwierdzone, wysłaliśmy link aktywacyjny.',
+        ]);
     }
 
     /**
@@ -99,6 +92,12 @@ class AuthController
             ], 401);
         }
 
+        if (! $user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Potwierdź adres email — sprawdź skrzynkę (link z rejestracji).',
+            ], 403);
+        }
+
         $token = $user->createToken('mobile-app')->plainTextToken;
         $user->load('player');
 
@@ -113,13 +112,3 @@ class AuthController
         ]);
     }
 }
-
-
-
-
-
-
-
-
-
-

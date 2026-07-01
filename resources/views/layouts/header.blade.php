@@ -26,6 +26,7 @@
             @endauth
 
             @guest
+                <a href='{{ route('pages.registerPanel') }}' class="nav-btn">Zarejestruj się</a>
                 <a href='{{ route('pages.loginPanel') }}' class="nav-btn">Zaloguj się</a>
             @endguest
 

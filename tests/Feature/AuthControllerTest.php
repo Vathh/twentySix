@@ -4,17 +4,23 @@ namespace Tests\Feature;
 
 use App\Models\Player\Player;
 use App\Models\Users\User;
+use App\Notifications\VerifyEmailNotification;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class AuthControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_register(): void
+    public function test_user_can_register_and_must_verify_email_before_login(): void
     {
+        Notification::fake();
+
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
@@ -22,11 +28,13 @@ class AuthControllerTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect('/');
+        $response->assertRedirect(route('verification.notice'));
         $response->assertSessionHas('success');
+        $response->assertSessionHas('registered_email', 'test@example.com');
 
         $this->assertDatabaseHas('users', [
             'email' => 'test@example.com',
+            'email_verified_at' => null,
         ]);
 
         $user = User::where('email', 'test@example.com')->first();
@@ -34,6 +42,29 @@ class AuthControllerTest extends TestCase
             'name' => 'Test User',
             'user_id' => $user->id,
         ]);
+
+        $this->assertFalse(Auth::check());
+        Notification::assertSentTo($user, VerifyEmailNotification::class);
+
+        $this->post('/login', [
+            'email' => 'test@example.com',
+            'password' => 'password123',
+        ])->assertSessionHasErrors('email');
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addHour(),
+            ['id' => $user->id, 'hash' => sha1($user->email)],
+        );
+
+        $this->get($verificationUrl)
+            ->assertRedirect(route('pages.loginPanel'))
+            ->assertSessionHas('success');
+
+        $this->post('/login', [
+            'email' => 'test@example.com',
+            'password' => 'password123',
+        ])->assertRedirect('/');
 
         $this->assertTrue(Auth::check());
     }
@@ -143,4 +174,3 @@ class AuthControllerTest extends TestCase
         $this->assertNotEquals($oldToken, session()->token());
     }
 }
-

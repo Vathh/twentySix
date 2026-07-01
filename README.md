@@ -89,6 +89,13 @@ npm start
 | Admin web | `demo-admin@twentysix.local` | `password` |
 | Gracze 1–8 | `gracz1@test.pl` … `gracz8@test.pl` | `password` |
 
+### Rejestracja i potwierdzenie email
+
+- Web: `/register` · Mobile: ekran **Utwórz konto** (z logowania).
+- Po rejestracji wysyłany jest link aktywacyjny — **logowanie działa dopiero po kliknięciu**.
+- Dev: domyślnie `MAIL_MAILER=log` — treść maila w `storage/logs/laravel.log`.
+- Prod/staging: ustaw SMTP w `.env` (`MAIL_MAILER=smtp`, `MAIL_HOST`, …) i poprawny `APP_URL` (link w mailu).
+
 Szczegóły turniejów demo: [`docs/scenariusze_manualne_turniej_mvp.md`](docs/scenariusze_manualne_turniej_mvp.md).
 
 ---
@@ -101,7 +108,7 @@ Baza testowa (np. `dartscore_test` w `.env` / `phpunit.xml`):
 php artisan test
 ```
 
-Stan docelowy MVP: **172 passed, 14 skipped** (lipiec 2026). Pominięte testy: widoki wymagające Vite manifest, legacy bulk POST wyniku quick game.
+Stan docelowy MVP: **176 passed, 14 skipped** (lipiec 2026). Pominięte testy: widoki wymagające Vite manifest, legacy bulk POST wyniku quick game.
 
 ---
 
@@ -109,6 +116,8 @@ Stan docelowy MVP: **172 passed, 14 skipped** (lipiec 2026). Pominięte testy: w
 
 | Obszar | Plik |
 |--------|------|
+| **Staging / prod** | [`docs/deploy_staging.md`](docs/deploy_staging.md) |
+| **Plan krok 6** | [`docs/plan_krok6_release_rc.md`](docs/plan_krok6_release_rc.md) |
 | Quick game FFA + presence | [`docs/scenariusze_manualne_quick_game_mvp_4e.md`](docs/scenariusze_manualne_quick_game_mvp_4e.md) |
 | Turniej tablet + web | [`docs/scenariusze_manualne_turniej_mvp.md`](docs/scenariusze_manualne_turniej_mvp.md) |
 | Web gość | [`docs/scenariusze_manualne_web_gosc_krok3.md`](docs/scenariusze_manualne_web_gosc_krok3.md) |

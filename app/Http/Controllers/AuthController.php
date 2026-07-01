@@ -2,57 +2,62 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Users\User;
-use App\Services\Player\PlayerService;
+use App\Services\Auth\UserRegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Models\Users\User;
 
 class AuthController extends Controller
 {
 
-    public function __construct(private PlayerService $playerService)
+    public function __construct(private UserRegistrationService $registrationService)
     {
     }
 
-    public function register (Request $request)
+    public function register(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:20',
-            'email' => 'required|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        $user = User::create($validated);
-
-        $this->playerService->create($validated['name'], $user->id);
-
-        Auth::login($user);
+        $user = $this->registrationService->register(
+            $request->all(),
+            requirePasswordConfirmation: true,
+        );
 
         return redirect()
-            ->route('pages.home')
-            ->with('success', 'Pomyślnie dodano użytkownika!');
+            ->route('verification.notice')
+            ->with('registered_email', $user->email)
+            ->with('success', 'Konto utworzone. Sprawdź email i kliknij link potwierdzający, aby się zalogować.');
     }
 
-    public function login (Request $request)
+    public function login(Request $request)
     {
         $validated = $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
-        if(Auth::attempt($validated)){
+        $user = User::where('email', $validated['email'])->first();
+
+        if ($user !== null
+            && Hash::check($validated['password'], $user->password)
+            && ! $user->hasVerifiedEmail()) {
+            throw ValidationException::withMessages([
+                'email' => 'Potwierdź adres email — sprawdź skrzynkę (link z rejestracji).',
+            ]);
+        }
+
+        if (Auth::attempt($validated)) {
             $request->session()->regenerate();
 
             return redirect()->route('pages.home');
         }
 
         throw ValidationException::withMessages([
-            'credentials' => __('validation.auth.failed')
+            'credentials' => __('validation.auth.failed'),
         ]);
     }
 
-    public function logout (Request $request)
+    public function logout(Request $request)
     {
         Auth::logout();
 
@@ -62,4 +67,3 @@ class AuthController extends Controller
         return redirect()->route('pages.loginPanel');
     }
 }
-

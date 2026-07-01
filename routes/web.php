@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\FriendInvitationController;
 use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\GameViewController;
@@ -32,6 +33,13 @@ Route::get('/games/{type}/{id}/live/state', [GameViewController::class, 'liveSta
 
 Route::get('/register', [PagesController::class, 'showRegisterPage'])->name('pages.registerPanel');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
+Route::get('/email/verify/sent', [PagesController::class, 'showVerifyEmailNoticePage'])->name('verification.notice');
+Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('verification.verify');
+Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+    ->middleware('throttle:6,1')
+    ->name('verification.send');
 
 Route::get('/login', [PagesController::class, 'showLoginPage'])->name('pages.loginPanel');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
