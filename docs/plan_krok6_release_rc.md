@@ -3,7 +3,9 @@
 Plan operacyjny domknięcia MVP poza lokalnym LAN.  
 Nadrzędny dokument: [`plan_mvp_domkniecie.md`](plan_mvp_domkniecie.md).
 
-Ostatnia aktualizacja: lipiec 2026.
+Ostatnia aktualizacja: lipiec 2026 (staging RC: sync Reverb OK, mobile 1.0.8).
+
+**Kontynuacja prac:** [`NEXT_STEPS.md`](NEXT_STEPS.md) ← lista zadań po przerwie.
 
 ---
 
