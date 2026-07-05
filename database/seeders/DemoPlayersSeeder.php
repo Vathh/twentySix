@@ -49,8 +49,15 @@ class DemoPlayersSeeder extends Seeder
         foreach (self::PLAYERS as $row) {
             $user = User::query()->firstOrCreate(
                 ['email' => $row['email']],
-                ['password' => self::PASSWORD],
+                [
+                    'password' => self::PASSWORD,
+                    'email_verified_at' => now(),
+                ],
             );
+
+            if ($user->email_verified_at === null) {
+                $user->forceFill(['email_verified_at' => now()])->save();
+            }
 
             Player::query()->firstOrCreate(
                 ['user_id' => $user->id],

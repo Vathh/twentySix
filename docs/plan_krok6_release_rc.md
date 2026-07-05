@@ -106,7 +106,7 @@ flowchart TD
 | # | Zadanie | Status |
 |---|---------|--------|
 | 6.5.1 | [`instrukcja_testerow_mvp_v1.md`](instrukcja_testerow_mvp_v1.md) | ✅ |
-| 6.5.2 | Konta `gracz1@test.pl` … na staging (seed) | ⬜ |
+| 6.5.2 | Testerzy: rejestracja własna + SMTP **albo** tymczasowo seed na staging | ⬜ |
 | 6.5.3 | Checklist regresji (quick / turniej / web gość) — skrót | ⬜ |
 
 **Kryterium done:** tester bez Twojej pomocy przechodzi 1 scenariusz quick + 1 web.

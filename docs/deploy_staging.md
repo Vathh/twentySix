@@ -29,6 +29,8 @@ php artisan key:generate
 # Edytuj .env: APP_URL, DB_*, REVERB_*, MAIL_*
 npm ci
 npm run build
+# Staging (szybki start z kontami demo): migrate --seed
+# Prod / testerzy sami się rejestrują: tylko migrate (patrz sekcja „Seed a produkcja” na końcu)
 php artisan migrate --seed --force
 php artisan config:cache
 php artisan route:cache
@@ -122,17 +124,28 @@ RestartSec=3
 WantedBy=multi-user.target
 ```
 
-Nginx **proxy WSS** (fragment w bloku `server` HTTPS):
+Proxy WebSocket **oraz** API broadcastu (fragment w bloku `server` HTTPS):
 
 ```nginx
-location /app {
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "Upgrade";
-    proxy_set_header Host $host;
-    proxy_pass http://127.0.0.1:8080;
-}
+    location /app {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400;
+        proxy_pass http://127.0.0.1:8080;
+    }
+
+    location /apps {
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://127.0.0.1:8080;
+    }
 ```
+
+> Reverb: WebSocket = `/app`, publikacja eventów z Laravel (PHP) = `/apps`. **Bez `/apps` telefony łączą się, ale nie dostają `lobby.updated`.**
 
 Dostosuj ścieżkę do konfiguracji Reverb w Laravel — domyślnie klient łączy się przez port/schemat z `REVERB_*`.
 
@@ -181,6 +194,18 @@ systemctl restart twentysix-reverb twentysix-queue
 
 ---
 
-## Mobile
+## 9. Seed a produkcja
 
-Build wskazujący na staging: patrz [`../twentysix-mobile/.env.example`](../twentysix-mobile/.env.example) i krok **6.4** w [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md).
+**Staging (teraz):** `migrate --seed` daje konta `gracz1@test.pl` … / hasło `password` — wygodne, gdy **SMTP jeszcze nie działa**.
+
+**Produkcja (docelowo):** **nigdy** `--seed` na żywej bazie użytkowników. Tylko:
+
+```bash
+php artisan migrate --force
+```
+
+Testerzy zakładają konto w aplikacji lub na webie → mail weryfikacyjny → logowanie. W `.env` musi być skonfigurowany **MAIL_***.
+
+Aktualny staging można kiedyś „oczyścić” (`migrate:fresh` **bez** `--seed`) po ustawieniu SMTP — wtedy wszyscy od zera przez rejestrację.
+
+---
