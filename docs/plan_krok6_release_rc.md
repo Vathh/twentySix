@@ -34,7 +34,7 @@ flowchart TD
 | 6.0.1 | Commit: rejestracja + weryfikacja email (backend) | ✅ |
 | 6.0.2 | Commit: ekran rejestracji + env API (mobile) | ✅ |
 | 6.0.3 | `php artisan test` — zielone (176 passed) | ✅ |
-| 6.0.4 | Push obu repo na remote | ⬜ |
+| 6.0.4 | Push obu repo na remote | ✅ |
 
 **Kryterium done:** `git status` czysty na `main`; testy OK.
 
@@ -60,12 +60,12 @@ flowchart TD
 
 | # | Zadanie | Kto | Status |
 |---|---------|-----|--------|
-| 6.2.1 | VPS / hosting (PHP 8.2+, MySQL 8) | Ty | ⬜ |
-| 6.2.2 | Klon repo, `composer install --no-dev`, `npm ci && npm run build` | Ty | ⬜ |
-| 6.2.3 | `.env` ze staging example, `php artisan key:generate` | Ty | ⬜ |
-| 6.2.4 | `migrate --seed` (konta demo) | Ty | ⬜ |
-| 6.2.5 | Procesy: **php-fpm**, **queue:work**, **reverb:start**, **schedule** | Ty | ⬜ |
-| 6.2.6 | Smoke test: login web, API mobile, live meczu WS | Ty | ⬜ |
+| 6.2.1 | VPS / hosting (PHP 8.2+, MySQL 8) | Ty | ✅ |
+| 6.2.2 | Klon repo, `composer install --no-dev`, `npm ci && npm run build` | Ty | ✅ |
+| 6.2.3 | `.env` ze staging example, `php artisan key:generate` | Ty | ✅ |
+| 6.2.4 | `migrate --seed` (konta demo) | Ty | ✅ |
+| 6.2.5 | Procesy: **php-fpm**, **queue:work**, **reverb:start**, **schedule** | Ty | ✅ |
+| 6.2.6 | Smoke test: login web, API mobile, live meczu WS | Ty | ✅ |
 
 **Kryterium done:** staging URL otwiera stronę główną; mobile w LAN/internecie łączy się z API.
 
@@ -77,10 +77,10 @@ flowchart TD
 
 | # | Zadanie | Status |
 |---|---------|--------|
-| 6.3.1 | Domena + certyfikat (Let's Encrypt) | ⬜ |
-| 6.3.2 | `APP_URL=https://…`, `REVERB_SCHEME=https`, proxy WSS | ⬜ |
-| 6.3.3 | Mobile: `EXPO_PUBLIC_API_URL=https://…/api`, `forceTLS` dla Reverb | ⬜ |
-| 6.3.4 | Mail SMTP prod (link weryfikacji rejestracji) | ⬜ |
+| 6.3.1 | Domena + certyfikat (Let's Encrypt) | ✅ |
+| 6.3.2 | `APP_URL=https://…`, `REVERB_SCHEME=https`, proxy WSS | ✅ |
+| 6.3.3 | Mobile: `EXPO_PUBLIC_API_URL=https://…/api`, `forceTLS` dla Reverb | ✅ |
+| 6.3.4 | Mail SMTP prod (link weryfikacji rejestracji) | ✅ (Resend, studiokam.pl) |
 
 **Kryterium done:** rejestracja → mail → link → login działa na staging HTTPS.
 
@@ -95,7 +95,7 @@ flowchart TD
 | 6.4.1 | `apiConfig.js` — `EXPO_PUBLIC_API_URL` (+ Reverb z env) | ✅ |
 | 6.4.2 | `.env.example` w mobile | ✅ |
 | 6.4.3 | `eas.json` — profil preview/staging (APK internal) | ✅ |
-| 6.4.4 | Build EAS / APK i rozesłanie testerom | ⬜ |
+| 6.4.4 | Build EAS / APK i rozesłanie testerom | ✅ (1.0.8 preview) |
 
 **Kryterium done:** zainstalowany build loguje się na staging bez edycji kodu.
 
@@ -108,7 +108,7 @@ flowchart TD
 | # | Zadanie | Status |
 |---|---------|--------|
 | 6.5.1 | [`instrukcja_testerow_mvp_v1.md`](instrukcja_testerow_mvp_v1.md) | ✅ |
-| 6.5.2 | Testerzy: rejestracja własna + SMTP **albo** tymczasowo seed na staging | ⬜ |
+| 6.5.2 | Testerzy: rejestracja własna + SMTP **albo** tymczasowo seed na staging | ✅ (oba: seed demo + rejestracja) |
 | 6.5.3 | Checklist regresji (quick / turniej / web gość) — skrót | ⬜ |
 
 **Kryterium done:** tester bez Twojej pomocy przechodzi 1 scenariusz quick + 1 web.

@@ -1,6 +1,6 @@
 # Następne kroki — twentySix MVP (po przerwie)
 
-**Dla nowego agenta:** zacznij tutaj. Ostatni stan: **lipiec 2026**, staging RC działa, quick game FFA + Reverb sync **OK** (Expo Go + APK 1.0.8).
+**Dla nowego agenta:** zacznij tutaj. Ostatni stan: **lipiec 2026**, staging RC działa, quick game FFA + Reverb sync **OK** (Expo Go + APK 1.0.8), **rejestracja + SMTP (Resend)** **OK**.
 
 Powiązane: [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md), [`post_mvp_poprawki.md`](post_mvp_poprawki.md), [`deploy_staging.md`](deploy_staging.md).
 
@@ -17,12 +17,13 @@ Powiązane: [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md), [`post_mvp_p
 | **Backend fix broadcast** | `config/broadcasting.php` — `REVERB_BROADCAST_*` / domyślnie `127.0.0.1:8080` |
 | **Mobile fix Pusher** | `helpers/getPusherConstructor.js` — lazy static `require`, unwrap exportu |
 | **Diagnostyka RC** | Panel „Diagnostyka sync” gdy `EXPO_PUBLIC_REVERB_DEBUG=true` |
+| **SMTP / rejestracja** | Resend, domena `studiokam.pl`, `noreply@studiokam.pl` — mail weryfikacyjny + login OK |
 
 **Staging (publiczne, bez haseł):**
 
 - API: `https://dartscore.studiokam.pl/api`
 - Reverb key (mobile + backend `.env`): `28e001f35df29406bc8a144a39a4ef4a`
-- Demo (staging seed): `gracz1@test.pl` … `gracz8@test.pl` / `password`
+- Demo (staging): **brak seeda** — testerzy rejestrują się sami (SMTP OK)
 - VPS SSH: `185.235.69.21`, app w `/var/www/twentysix-backend`, git jako `www-data`
 
 **Repo GitHub:**
@@ -36,10 +37,10 @@ Powiązane: [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md), [`post_mvp_p
 
 | # | Zadanie | Uwagi |
 |---|---------|--------|
-| 1 | **Zaktualizować** [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md) — odhaczyć 6.2–6.4, 6.2.6 | Dokumentacja zostaje w sync ze stanem |
-| 2 | **Smoke regresji** na staging | Quick 2P/3+ (one_device + each_own), krótki turniej tablet — skrót w [`instrukcja_testerow_mvp_v1.md`](instrukcja_testerow_mvp_v1.md) |
-| 3 | **SMTP na staging** | Rejestracja → mail weryfikacyjny → login (bez polegania na seed) |
-| 4 | **Decyzja o seedzie staging** | Zostawić demo konta **albo** `migrate:fresh` bez seed + tylko rejestracja |
+| 1 | ~~**Zaktualizować** [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md) — odhaczyć 6.2–6.4, 6.2.6~~ | ✅ lipiec 2026 |
+| 2 | ~~**Smoke regresji** na staging~~ | ✅ ręcznie (quick + turniej) |
+| 3 | ~~**SMTP na staging**~~ | ✅ Resend + rejestracja web/mobile |
+| 4 | ~~**Decyzja o seedzie staging**~~ | ✅ bez seeda — czysta baza, tylko rejestracja |
 | 5 | **Tag `v1.0.0-mvp`** | Backend + mobile, notatka release (co wchodzi, znane ograniczenia) |
 | 6 | **Ostatni EAS preview** po tagu | Jeśli były zmiany po 1.0.8 — jeden build „oficjalny” dla testerów |
 

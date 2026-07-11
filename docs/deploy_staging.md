@@ -29,9 +29,8 @@ php artisan key:generate
 # Edytuj .env: APP_URL, DB_*, REVERB_*, MAIL_*
 npm ci
 npm run build
-# Staging (szybki start z kontami demo): migrate --seed
-# Prod / testerzy sami się rejestrują: tylko migrate (patrz sekcja „Seed a produkcja” na końcu)
-php artisan migrate --seed --force
+# Staging / prod: tylko migrate (bez seed — testerzy rejestrują się sami, SMTP w .env)
+php artisan migrate --force
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
@@ -194,18 +193,22 @@ systemctl restart twentysix-reverb twentysix-queue
 
 ---
 
-## 9. Seed a produkcja
+## 9. Seed a staging / produkcja
 
-**Staging (teraz):** `migrate --seed` daje konta `gracz1@test.pl` … / hasło `password` — wygodne, gdy **SMTP jeszcze nie działa**.
-
-**Produkcja (docelowo):** **nigdy** `--seed` na żywej bazie użytkowników. Tylko:
+**Staging i produkcja:** **nigdy** `--seed`. Testerzy i użytkownicy **rejestrują się sami** (web lub mobile), weryfikacja email (wymaga **SMTP** w `.env`).
 
 ```bash
 php artisan migrate --force
 ```
 
-Testerzy zakładają konto w aplikacji lub na webie → mail weryfikacyjny → logowanie. W `.env` musi być skonfigurowany **MAIL_***.
+**Dev lokalny:** `migrate --seed` nadal OK — wygodne konta demo (`gracz1@test.pl` …) do szybkich testów na laptopie.
 
-Aktualny staging można kiedyś „oczyścić” (`migrate:fresh` **bez** `--seed`) po ustawieniu SMTP — wtedy wszyscy od zera przez rejestrację.
+**Wyczyszczenie stagingu** (usuwa wszystkie dane — użytkownicy, turnieje, mecze):
+
+```bash
+php artisan migrate:fresh --force
+```
+
+Po `migrate:fresh` baza jest pusta — wszyscy od zera przez rejestrację.
 
 ---

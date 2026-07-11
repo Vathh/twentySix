@@ -1,25 +1,27 @@
 # Instrukcja dla testerów — twentySix MVP v1
 
 Wersja: release candidate (`v1.0.0-mvp`).  
-Backend staging: *(URL uzupełni organizator)*.
+Backend staging: `https://dartscore.studiokam.pl`
 
 ---
 
-## Konta testowe (po `migrate --seed`)
+## Konto testowe
 
-| Email | Hasło | Rola |
-|-------|-------|------|
-| `demo-admin@twentysix.local` | `password` | Admin web (organizator) |
-| `gracz1@test.pl` … `gracz8@test.pl` | `password` | Gracze mobile / web |
+**Staging nie ma gotowych kont** — każdy tester **rejestruje się sam**:
 
-**Rejestracja nowego konta:** wymaga kliknięcia linku w emailu przed pierwszym logowaniem.
+1. Web: [https://dartscore.studiokam.pl/register](https://dartscore.studiokam.pl/register)  
+   albo mobile: ekran **Utwórz konto** (z logowania).
+2. Sprawdź email → kliknij link **Potwierdź email**.
+3. Zaloguj się w aplikacji lub na webie.
+
+**Dev lokalny** (organizator): po `migrate --seed` nadal są konta `gracz1@test.pl` … / `password` — tylko na laptopie, nie na stagingu.
 
 ---
 
 ## Aplikacja mobilna
 
 1. Zainstaluj build APK / Expo internal (link od organizatora).
-2. **Quick game online** wymaga konta — zaloguj się (`gracz1@test.pl` / `password`) lub zarejestruj się.
+2. **Quick game online** wymaga konta — **zarejestruj się** (patrz wyżej) albo zaloguj po weryfikacji email.
 3. **Turniej tabletowy** — kod z panelu organizatora (web → turniej w fazie grupowej).
 4. **Trening** — działa bez konta i bez internetu.
 
