@@ -41,8 +41,8 @@ Powiązane: [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md), [`post_mvp_p
 | 2 | ~~**Smoke regresji** na staging~~ | ✅ ręcznie (quick + turniej) |
 | 3 | ~~**SMTP na staging**~~ | ✅ Resend + rejestracja web/mobile |
 | 4 | ~~**Decyzja o seedzie staging**~~ | ✅ bez seeda — czysta baza, tylko rejestracja |
-| 5 | **Tag `v1.0.0-mvp`** | Backend + mobile, notatka release (co wchodzi, znane ograniczenia) |
-| 6 | **Ostatni EAS preview** po tagu | Jeśli były zmiany po 1.0.8 — jeden build „oficjalny” dla testerów |
+| 5 | ~~**Tag `v1.0.0-mvp`**~~ | ✅ backend `b1f3193`, mobile `9a39d28` |
+| 6 | **Ostatni EAS preview** po tagu | Pominięte — brak zmian mobile po 1.0.8 |
 
 ---
 
