@@ -118,7 +118,9 @@ class TournamentRepository
      */
     public function getGroupAdvances(int $tournamentId): array
     {
-        $groupAdvances = Tournament::where('id', $tournamentId)->value('group_advances');
+        $groupAdvances = Tournament::query()
+            ->findOrFail($tournamentId)
+            ->group_advances;
 
         if (! is_array($groupAdvances) || $groupAdvances === []) {
             throw new \RuntimeException('Turniej nie ma zapisanego rozkładu awansu z grup.');
@@ -150,7 +152,6 @@ class TournamentRepository
         return $tournament?->season?->league_id;
     }
 }
-
 
 
 

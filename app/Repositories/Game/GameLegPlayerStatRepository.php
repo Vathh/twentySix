@@ -29,7 +29,6 @@ class GameLegPlayerStatRepository
                 'highest_finish' => $dto->highestFinish,
                 'darts_thrown' => $dto->dartsThrown,
                 'checkout_dart' => $dto->checkoutDart,
-                'double_tracked' => $dto->doubleTracked,
                 'double_attempts' => $dto->doubleAttempts,
                 'double_successes' => $dto->doubleSuccesses,
             ]);

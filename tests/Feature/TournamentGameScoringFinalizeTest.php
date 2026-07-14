@@ -10,6 +10,7 @@ use App\Enums\TournamentStatus;
 use App\Enums\WinnerDestinationSlot;
 use App\Models\Game\Game;
 use App\Models\Game\GameLeg;
+use App\Models\Game\GameLegPlayerStat;
 use App\Models\GroupStanding\GroupStanding;
 use App\Models\League\League;
 use App\Models\Player\Player;
@@ -201,6 +202,14 @@ class TournamentGameScoringFinalizeTest extends TestCase
         $this->assertSame(GameStatus::IN_PROGRESS, $game->status);
         $this->assertSame(0, (int) $game->player1_score);
         $this->assertNull($game->winner_id);
+
+        $legStats = GameLegPlayerStat::where('game_leg_id', $legId)->get();
+        $this->assertCount(2, $legStats);
+        foreach ($legStats as $stat) {
+            $this->assertNull($stat->leg_average);
+            $this->assertNull($stat->double_attempts);
+            $this->assertNull($stat->double_successes);
+        }
     }
 
     public function test_playoff_scoring_close_second_leg_advances_winner(): void
