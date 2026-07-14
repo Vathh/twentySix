@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Tournament;
 
+use App\Support\Tournament\TournamentGroupAdvanceDistribution;
 use App\Support\Tournament\TournamentStartRules;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -28,26 +29,6 @@ class TournamentStartRulesTest extends TestCase
         ];
     }
 
-    public function test_allowed_advance_for_eight_groups(): void
-    {
-        $this->assertSame([1, 2, 4], TournamentStartRules::allowedAdvancePerGroup(8));
-    }
-
-    public function test_allowed_advance_for_sixty_four_groups_mvp_cap(): void
-    {
-        $this->assertSame([], TournamentStartRules::allowedAdvancePerGroup(64));
-    }
-
-    public function test_allowed_advance_for_thirty_two_groups(): void
-    {
-        $this->assertSame([1], TournamentStartRules::allowedAdvancePerGroup(32));
-    }
-
-    public function test_allowed_group_counts(): void
-    {
-        $this->assertSame([2, 4, 8, 16, 32, 64], TournamentStartRules::allowedGroupCounts());
-    }
-
     public function test_allowed_group_counts_for_eight_players(): void
     {
         $this->assertSame([2], TournamentStartRules::allowedGroupCountsForPlayers(8));
@@ -55,7 +36,12 @@ class TournamentStartRulesTest extends TestCase
 
     public function test_allowed_group_counts_for_twelve_players(): void
     {
-        $this->assertSame([2, 4], TournamentStartRules::allowedGroupCountsForPlayers(12));
+        $this->assertSame([2, 3, 4], TournamentStartRules::allowedGroupCountsForPlayers(12));
+    }
+
+    public function test_allowed_group_counts_for_thirty_seven_players_includes_seven_groups(): void
+    {
+        $this->assertContains(7, TournamentStartRules::allowedGroupCountsForPlayers(37));
     }
 
     public function test_allowed_group_counts_for_four_players_is_empty(): void
@@ -67,25 +53,24 @@ class TournamentStartRulesTest extends TestCase
     {
         $this->assertSame(4, TournamentStartRules::maxPlayersInLargestGroup(8, 2));
         $this->assertSame(4, TournamentStartRules::maxPlayersInLargestGroup(13, 4));
+        $this->assertSame(6, TournamentStartRules::maxPlayersInLargestGroup(37, 7));
     }
 
-    public function test_allowed_advance_for_players_filters_by_group_size(): void
+    public function test_allowed_bracket_sizes_for_thirty_seven_players_and_seven_groups(): void
     {
-        $this->assertSame([1, 2, 4], TournamentStartRules::allowedAdvancePerGroupForPlayers(8, 2));
-        $this->assertSame([1, 2], TournamentStartRules::allowedAdvancePerGroupForPlayers(12, 4));
+        $this->assertSame([8, 16, 32], TournamentStartRules::allowedPlayoffBracketSizes(37, 7));
     }
 
-    public function test_advances_by_group_count_for_players(): void
+    public function test_bracket_option_label(): void
     {
-        $map = TournamentStartRules::advancesByGroupCountForPlayers(8);
-
-        $this->assertSame([1, 2, 4], $map[2]);
+        $this->assertSame('1/8 finału — 16 graczy awansujących', TournamentStartRules::bracketOptionLabel(16));
     }
 
-    public function test_advances_by_group_count_includes_eight_groups(): void
+    public function test_start_config_preview_for_thirty_seven_players_seven_groups_sixteen_bracket(): void
     {
-        $map = TournamentStartRules::advancesByGroupCount();
+        $preview = TournamentStartRules::startConfigPreview(37);
 
-        $this->assertSame([1, 2, 4], $map[8]);
+        $this->assertSame([6, 6, 5, 5, 5, 5, 5], $preview[7][16]['groupSizes']);
+        $this->assertSame([3, 3, 2, 2, 2, 2, 2], $preview[7][16]['advances']);
     }
 }

@@ -4,17 +4,18 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Tournament\LoginCode;
 use App\Models\Users\User;
+use App\Services\Auth\MobileAppTokenService;
 use App\Services\Auth\UserRegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AuthController
 {
 
     public function __construct(
         private UserRegistrationService $registrationService,
+        private MobileAppTokenService $mobileAppTokenService,
     ) {
     }
 
@@ -98,17 +99,50 @@ class AuthController
             ], 403);
         }
 
-        $token = $user->createToken('mobile-app')->plainTextToken;
-        $user->load('player');
+        $payload = $this->mobileAppTokenService->issueForUser($user);
 
         return response()->json([
-            'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'email' => $user->email,
-                'name' => $user->player->name ?? null,
-                'playerId' => $user->player?->id,
-            ],
+            'token' => $payload['token'],
+            'user' => $payload['user'],
+        ]);
+    }
+
+    /**
+     * Wylogowanie — unieważnia bieżący token Bearer (mobile).
+     */
+    public function logout(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if ($user !== null) {
+            $this->mobileAppTokenService->revokeCurrent($user);
+        }
+
+        return response()->json([
+            'message' => 'Wylogowano.',
+        ]);
+    }
+
+    /**
+     * Odświeżenie sesji mobile — nowy token, ważność +TTL od teraz (sliding window).
+     */
+    public function refreshSession(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $current = $user->currentAccessToken();
+
+        if ($current === null) {
+            return response()->json(['message' => 'Brak tokena.'], 401);
+        }
+
+        try {
+            $payload = $this->mobileAppTokenService->refresh($user, $current);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 403);
+        }
+
+        return response()->json([
+            'token' => $payload['token'],
+            'user' => $payload['user'],
         ]);
     }
 }

@@ -95,7 +95,25 @@ Jeden silnik gry (legi + wizyty + sync); kontekst to adapter, nie osobna aplikac
 - Turniej: mecz kończy **scoring API** (`closeLeg`); mobile wysyła achievementy przez `POST /api/game/update` (tylko gdy mecz już `FINISHED`).
 - Quick FFA: mecz kończy **FFA scoring**; achievementy przez `POST /api/quick-game/update` z `gameId`.
 
+**Sesja mobile (konto gracza):**
+
+- Logowanie: `POST /api/account/login` → token Sanctum `mobile-app`, ważność **30 dni** (`config/mobile.php`, `MOBILE_TOKEN_TTL_DAYS`).
+- **Sliding window:** `POST /api/account/session/refresh` (Bearer) — rotacja tokena, nowy TTL od momentu użycia aplikacji.
+- Wylogowanie: `POST /api/account/logout` — revoke bieżącego tokena.
+- Aplikacja: „Zapamiętaj mnie” zapisuje token w SecureStore (nie hasło).
+
 **Wspólna logika wizyt (backend):** `VisitRecorder` — walidacja bust/remaining/checkout, kolejka tur, liczenie legów. Mobile: `helpers/gameScoring/` (`normalizeScoringState`, `applyGameScoringState`).
+
+### Tryb per-dart — synchronizacja online (mobile)
+
+Ustawienie **Każdy rzut osobno** zmienia tylko UI wpisywania. **Nie** synchronizuj po każdej pojedynczej lotce.
+
+Wysyłka do API (`recordVisit` / `closeLegWithWinner`) następuje wyłącznie gdy:
+- skończono **3 lotki** w wizycie;
+- **bust** (lotka 1–3);
+- **checkout** — koniec lega na lotce 1, 2 lub 3 (`closedLeg: true`, poprawne `dartsInVisit`).
+
+Lotki 1–2 w trwającej wizycie (bez bust/checkout) — stan tylko lokalnie, bez POST. Szczegóły implementacji: reguła `twentysix-engineering.mdc` w mobile.
 
 Szczegóły refaktoru: [`docs/game-scoring-unification.md`](docs/game-scoring-unification.md).
 

@@ -57,13 +57,17 @@ Powiązane: [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md), [`post_mvp_p
 
 ---
 
-## Priorytet 3 — poprawki jakości (post-MVP, z backlogu)
+## Priorytet 3 — poprawki jakości (post-MVP) ✅ lipiec 2026
 
-| # | Zadanie | Doc |
-|---|---------|-----|
-| 1 | Ikony: `@fortawesome` → `@expo/vector-icons` w całym mobile | [`post_mvp_poprawki.md`](post_mvp_poprawki.md) |
-| 2 | Drag kolejności graczy w lobby — `DraggableFlatList` jako główny scroll, nie w `ScrollView` | j.w. |
-| 3 | Usunąć / ukryć „Diagnostyka sync” w buildach produkcyjnych | opcjonalnie zostawić tylko w preview |
+Zrealizowane — szczegóły: [`post_mvp_poprawki.md`](post_mvp_poprawki.md).
+
+| # | Zadanie | Status |
+|---|---------|--------|
+| 1 | Ikony: `@fortawesome` → `@expo/vector-icons` | ✅ |
+| 2 | Drag kolejności graczy — `DraggableFlatList` jako główny scroll | ✅ |
+| 3 | Panel „Diagnostyka sync” tylko przy `EXPO_PUBLIC_REVERB_DEBUG` | ✅ |
+| 4 | Undo po zamknięciu lega (H2H + FFA, bez revertu tabel turniejowych) | ✅ backend + potwierdzenie w mobile |
+| 5 | Dokumentacja prod bez seeda | ✅ |
 
 ---
 
@@ -99,11 +103,19 @@ Uwaga: bugi bundlera (np. Pusher) czasem widać **tylko w APK**, nie w Expo Go.
 
 ---
 
-## Świadomie poza scope / później
+## Świadomie poza scope
 
 - Krykiet, komunikator, premium
-- Pełna regresja automatyczna mobile
+- **Automatyczna regresja mobile (E2E)** — **decyzja: nie wdrażamy**; testy manualne z [`instrukcja_testerow_mvp_v1.md`](instrukcja_testerow_mvp_v1.md) + `php artisan test` na backendzie
 - Nowy agent: reguły w `.cursor/rules/` + `CONVENTIONS.md` + `docs/product.md`
+
+### Automatyczna regresja mobile — dlaczego nie
+
+Chodziłoby o pakiet testów E2E (Maestro / Detox / Appium) odpalany w CI na buildzie APK — logowanie, lobby, scoring online, tablet turniejowy itd.
+
+**Decyzja (lipiec 2026):** temat **świadomie porzucony**. Mobile ma tylko wąski test reducera (`npm run test:game-scoring`). Krytyczne flow weryfikujemy **ręcznie** przed release; backend ma pełniejsze testy PHPUnit.
+
+**Nie planować** osobnego projektu E2E mobile w ramach twentySix MVP.
 
 ---
 

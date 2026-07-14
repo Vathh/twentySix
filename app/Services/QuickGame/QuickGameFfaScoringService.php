@@ -266,9 +266,14 @@ class QuickGameFfaScoringService
 
             $this->assertCanSubmitVisit($session, $userId, null);
 
-            $voided = $this->visitRepository->voidLastForLeg($session, (int) $session->current_leg_number);
+            $legNumber = $this->resolveLegNumberForUndo($session);
+            $voided = $this->visitRepository->voidLastForLeg($session, $legNumber);
             if ($voided === null) {
                 throw new DomainException('Brak wizyty do cofnięcia.');
+            }
+
+            if ($voided->closed_leg && (int) $session->current_leg_number > $legNumber) {
+                $session->current_leg_number = $legNumber;
             }
 
             $this->recomputeIndicesFromVisits($session);
@@ -450,6 +455,21 @@ class QuickGameFfaScoringService
             $playerIds,
             $leftIds,
         );
+    }
+
+    private function resolveLegNumberForUndo(\App\Models\QuickGame\QuickGameFfaSession $session): int
+    {
+        $legNumber = (int) $session->current_leg_number;
+
+        if ($this->visitRepository->getActiveForLeg($session, $legNumber)->isNotEmpty()) {
+            return $legNumber;
+        }
+
+        if ($legNumber > 1) {
+            return $legNumber - 1;
+        }
+
+        return $legNumber;
     }
 
     /**

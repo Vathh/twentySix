@@ -7,6 +7,7 @@ use App\Enums\TournamentStatus;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\GroupStanding\GroupStandingRepository;
 use App\Repositories\Tournament\TournamentRepository;
+use App\Support\Tournament\TournamentGroupAdvanceDistribution;
 use App\Support\Tournament\TournamentGroupDistribution;
 use App\Services\Tournament\LoginCodeService;
 use App\Services\PointScheme\PointSchemeService;
@@ -54,7 +55,7 @@ class TournamentService
         int $tournamentId,
         array $playerIds,
         int $groupsCount,
-        int $advancePerGroup = 2,
+        int $playoffBracketSize,
         ?int $tabletsCount = null,
     ): bool {
         $tabletsCount ??= $groupsCount;
@@ -62,11 +63,13 @@ class TournamentService
         $this->startValidator->validate(
             playerCount: count($playerIds),
             groupsCount: $groupsCount,
-            advancePerGroup: $advancePerGroup,
+            playoffBracketSize: $playoffBracketSize,
             tabletsCount: $tabletsCount,
         );
 
         $playersAmount = count($playerIds);
+        $groupSizes = TournamentGroupDistribution::groupSizes($playersAmount, $groupsCount);
+        $groupAdvances = TournamentGroupAdvanceDistribution::distribute($groupSizes, $playoffBracketSize);
 
         $groups = TournamentGroupDistribution::distribute($playerIds, $groupsCount);
 
@@ -95,14 +98,16 @@ class TournamentService
                 $groups,
                 $playersAmount,
                 $groupsCount,
-                $advancePerGroup,
+                $playoffBracketSize,
+                $groupAdvances,
                 $tabletsCount,
             ) {
                 if ($this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId)) {
                     $this->tournamentRepository->saveStartConfiguration(
                         $tournamentId,
                         $groupsCount,
-                        $advancePerGroup,
+                        $playoffBracketSize,
+                        $groupAdvances,
                         $tabletsCount,
                     );
                     $this->updatePointSchemeId($tournamentId, $playersAmount);

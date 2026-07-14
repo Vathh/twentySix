@@ -25,13 +25,15 @@ class Tournament extends Model
         'status',
         'point_scheme_id',
         'groups_count',
-        'advance_per_group',
+        'playoff_bracket_size',
+        'group_advances',
         'tablets_count',
     ];
 
     protected $casts = [
         'date' => 'date',
-        'status' => TournamentStatus::class
+        'status' => TournamentStatus::class,
+        'group_advances' => 'array',
     ];
 
     public function season(): BelongsTo

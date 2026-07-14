@@ -187,9 +187,9 @@ class GroupStandingService
 
     public function getLosersGroupStandings(int $tournamentId): Collection
     {
-        $advancePerGroup = $this->tournamentRepository->getAdvancePerGroup($tournamentId);
+        $advancesByGroup = $this->tournamentRepository->getGroupAdvancesByGroupNumber($tournamentId);
 
-        return $this->groupStandingRepository->getGroupLosers($tournamentId, $advancePerGroup);
+        return $this->groupStandingRepository->getGroupLosers($tournamentId, $advancesByGroup);
     }
 }
 

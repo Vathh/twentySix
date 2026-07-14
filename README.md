@@ -100,6 +100,26 @@ Szczegóły turniejów demo: [`docs/scenariusze_manualne_turniej_mvp.md`](docs/s
 
 ---
 
+## Staging i produkcja (deploy)
+
+**Nigdy** `migrate --seed` na stagingu ani produkcji — użytkownicy rejestrują się sami (web/mobile), weryfikacja email wymaga **SMTP** w `.env`.
+
+```bash
+php artisan migrate --force
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+
+Pełna checklista: [`docs/deploy_staging.md`](docs/deploy_staging.md) · poprawki post-MVP: [`docs/post_mvp_poprawki.md`](docs/post_mvp_poprawki.md).
+
+| Środowisko | Migracje | Seed demo |
+|------------|----------|-----------|
+| Dev lokalny | `migrate --seed` OK | `gracz1@test.pl` … |
+| Staging / prod | **`migrate --force` tylko** | **nie** |
+
+---
+
 ## Testy automatyczne
 
 Baza testowa (np. `dartscore_test` w `.env` / `phpunit.xml`):

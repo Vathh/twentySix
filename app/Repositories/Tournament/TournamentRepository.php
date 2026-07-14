@@ -90,35 +90,55 @@ class TournamentRepository
     public function saveStartConfiguration(
         int $tournamentId,
         int $groupsCount,
-        int $advancePerGroup,
+        int $playoffBracketSize,
+        array $groupAdvances,
         int $tabletsCount,
     ): void {
         Tournament::where('id', $tournamentId)->update([
             'groups_count' => $groupsCount,
-            'advance_per_group' => $advancePerGroup,
+            'playoff_bracket_size' => $playoffBracketSize,
+            'group_advances' => $groupAdvances,
             'tablets_count' => $tabletsCount,
         ]);
     }
 
-    /**
-     * Awans z grupy zapisany przy starcie turnieju. Dla starych rekordów bez configu: domyślnie 2.
-     */
-    public function getAdvancePerGroup(int $tournamentId): int
-    {
-        $advance = Tournament::where('id', $tournamentId)->value('advance_per_group');
-
-        return $advance !== null ? (int) $advance : 2;
-    }
-
     public function getBracketSize(int $tournamentId): int
     {
-        $tournament = Tournament::findOrFail($tournamentId);
+        $bracketSize = Tournament::where('id', $tournamentId)->value('playoff_bracket_size');
 
-        if ($tournament->groups_count !== null && $tournament->advance_per_group !== null) {
-            return $tournament->groups_count * $tournament->advance_per_group;
+        if ($bracketSize === null) {
+            throw new \RuntimeException('Turniej nie ma zapisanej konfiguracji drabinki playoff.');
         }
 
-        return 16;
+        return (int) $bracketSize;
+    }
+
+    /**
+     * @return list<int> liczba awansujących per grupa (indeks 0 = grupa 1)
+     */
+    public function getGroupAdvances(int $tournamentId): array
+    {
+        $groupAdvances = Tournament::where('id', $tournamentId)->value('group_advances');
+
+        if (! is_array($groupAdvances) || $groupAdvances === []) {
+            throw new \RuntimeException('Turniej nie ma zapisanego rozkładu awansu z grup.');
+        }
+
+        return array_values($groupAdvances);
+    }
+
+    /**
+     * @return array<int, int> group_number => advances_count
+     */
+    public function getGroupAdvancesByGroupNumber(int $tournamentId): array
+    {
+        $map = [];
+
+        foreach ($this->getGroupAdvances($tournamentId) as $index => $count) {
+            $map[$index + 1] = $count;
+        }
+
+        return $map;
     }
 
     /**

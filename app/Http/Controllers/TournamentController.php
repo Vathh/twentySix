@@ -223,7 +223,8 @@ class TournamentController extends Controller
             'addTab' => $addTab,
             'canManageParticipants' => $tournament->status === TournamentStatus::CREATED,
             'groupCountOptions' => $groupCountOptions,
-            'advancesByGroupCount' => TournamentStartRules::advancesByGroupCountForPlayers($participantCount),
+            'bracketOptionsByGroupCount' => TournamentStartRules::bracketOptionsByGroupCountForPlayers($participantCount),
+            'startConfigPreview' => TournamentStartRules::startConfigPreview($participantCount),
             'minPlayers' => TournamentStartRules::MIN_PLAYERS,
             'minPlayersPerGroup' => TournamentStartRules::MIN_PLAYERS_PER_GROUP,
             'defaultGroupsCount' => (int) old('groupsCount', $groupCountOptions[0] ?? 2),
@@ -370,7 +371,7 @@ class TournamentController extends Controller
 
         $validated = $request->validate([
             'groupsCount' => ['required', 'integer', 'min:2'],
-            'advancePerGroup' => ['sometimes', 'integer', 'min:1'],
+            'playoffBracketSize' => ['required', 'integer', 'min:4'],
             'tabletsCount' => ['sometimes', 'integer', 'min:1'],
         ]);
 
@@ -380,9 +381,7 @@ class TournamentController extends Controller
             ->all();
 
         $groupsCount = (int) $validated['groupsCount'];
-        $advancePerGroup = isset($validated['advancePerGroup'])
-            ? (int) $validated['advancePerGroup']
-            : 2;
+        $playoffBracketSize = (int) $validated['playoffBracketSize'];
         $tabletsCount = isset($validated['tabletsCount'])
             ? (int) $validated['tabletsCount']
             : $groupsCount;
@@ -396,7 +395,7 @@ class TournamentController extends Controller
                 $tournamentId,
                 $playerIds,
                 $groupsCount,
-                $advancePerGroup,
+                $playoffBracketSize,
                 $tabletsCount,
             )) {
                 return back()->with('error', 'Turniej już wystartował');

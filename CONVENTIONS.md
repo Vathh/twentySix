@@ -89,8 +89,8 @@ Wizyta należy do **lega** (`game_leg_id`), nie bezpośrednio do meczu.
 
 - Duble **nie** są w `game_visits`.
 - Na koniec meczu **nie** wysyłamy bulk tablicy `visits` — są już w bazie.
-- **Undo (v1):** tylko w **otwartym** legu; wizyta dostaje `is_voided = true`, backend przelicza stan i broadcast (Pusher).  
-  **TODO (później):** undo po zamknięciu lega (cofnięcie zamknięcia, korekta wyniku meczu).
+- **Undo (v1):** w **otwartym** legu wizyta dostaje `is_voided = true`; backend przelicza stan i broadcast (Pusher).
+- **Undo po zamknięciu lega (v1.1):** cofnięcie ostatniej wizyty **ostatniego** lega otwiera leg ponownie i cofa licznik legów w meczu (gdy mecz trwa). Po **zakończeniu meczu turniejowego** — użyj korekty wyniku na webie (cofanie nie cofa tabel/playoff).
 
 ### Tabela `game_leg_player_stats` (opcja B — cache per gracz per leg)
 

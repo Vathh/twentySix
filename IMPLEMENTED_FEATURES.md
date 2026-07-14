@@ -52,7 +52,7 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Round-robin w grupie | ✅ | `generateGamesForGroup` |
 | Tie-breakery grupowe | ✅ | `GroupStandingService` |
 | Auto start playoff | ✅ | `GameService::handlePlayoffStart` |
-| Awans z grupy (wybór admina) | ✅ | `advance_per_group` na turnieju, `PlayoffService` |
+| Awans z grupy (etap drabinki) | ✅ | `playoff_bracket_size`, `group_advances`, `PlayoffService` |
 | Bracket `groups × awans` (potęga 2) | ✅ | `PlayoffBracketFactory::create` (2–32) |
 | Playoff R1: bez par z tej samej grupy | ✅ | `PlayoffFirstRoundPairing` |
 | Statusy meczu + lock tabletu | ✅ | `GameLockService`, `POST /api/game/inProgress`, mobile `lockTournamentGame` |

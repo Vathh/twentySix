@@ -30,10 +30,10 @@ class PlayoffService
      */
     public function generateBracket(int $tournamentId): void
     {
-        $advancePerGroup = $this->tournamentRepository->getAdvancePerGroup($tournamentId);
+        $advancesByGroup = $this->tournamentRepository->getGroupAdvancesByGroupNumber($tournamentId);
 
         $advancingPlayers = $this->groupStandingRepository
-            ->getAdvancingPlayersWithGroups($tournamentId, $advancePerGroup)
+            ->getAdvancingPlayersWithGroups($tournamentId, $advancesByGroup)
             ->all();
 
         $bracketSize = $this->tournamentRepository->getBracketSize($tournamentId);

@@ -126,6 +126,16 @@ class GameLegRepository
         ]);
     }
 
+    public function reopenLeg(GameLeg $leg): void
+    {
+        $leg->update([
+            'winner_id' => null,
+            'player1_score' => 0,
+            'player2_score' => 0,
+            'finished_at' => null,
+        ]);
+    }
+
     public function deleteForContext(GameScoringContext $context): void
     {
         $query = GameLeg::query();

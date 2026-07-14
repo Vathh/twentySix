@@ -132,7 +132,7 @@ class TournamentFlowTest extends TestCase
 
         $response = $this->post("/tournaments/{$tournament->id}/run", [
             'groupsCount' => 2,
-            'advancePerGroup' => 2,
+            'playoffBracketSize' => 4,
             'tabletsCount' => 3,
         ]);
 
@@ -142,7 +142,8 @@ class TournamentFlowTest extends TestCase
         $tournament->refresh();
         $this->assertSame(TournamentStatus::GROUP, $tournament->status);
         $this->assertSame(2, $tournament->groups_count);
-        $this->assertSame(2, $tournament->advance_per_group);
+        $this->assertSame(4, $tournament->playoff_bracket_size);
+        $this->assertSame([2, 2], $tournament->group_advances);
         $this->assertSame(3, $tournament->tablets_count);
         $this->assertSame(3, LoginCode::where('tournament_id', $tournament->id)->count());
 

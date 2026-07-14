@@ -136,12 +136,15 @@ Bez spełnienia minimum start jest **zablokowany** (UI + walidacja API).
 
 ### Start turnieju (kreator na webie)
 
-1. **Liczba grup** — dowolna **potęga 2** (2, 4, 8, 16, 32, 64, …). Nie ma sztywnej listy ani górnego limitu poza rozsądkiem turnieju (np. liczba zawodników); walidacja API/UI akceptuje wyłącznie wartości `2^n`.
-2. **Awans z grupy** — wartości **walidowane**: `grupy × awans` musi być **potęgą 2** (pełna drabinka playoff, bez wolnych losów). Awans z grupy też musi być potęgą 2 (1, 2, 4, …). Np. 8 grup → awans 1, 2 lub 4 (nie 3); 64 grupy → awans 1 lub 2 (bo 64×4=256 — OK, ale 64×3 — odrzucone).
-   - **MVP:** maksymalnie **32 awansujących** do drabinki (`grupy × awans ≤ 32`). Większe turnieje (np. 64×2) — po MVP.
-3. **Liczba kodów na tablety**.
+1. **Liczba grup** — dowolna liczba całkowita od **2** do maksimum wynikającego ze składu (co najmniej **3 zawodników w każdej grupie**). Np. 37 graczy → dozwolone 2–12 grup (w tym 6, 7, …).
+2. **Etap drabinki** — wybór etapu, od którego zaczyna się faza pucharowa, z opisem liczby awansujących (np. „1/8 finału — 16 graczy awansujących”). Dozwolone tylko potęgi 2: 4, 8, 16, 32.
+   - **MVP:** maksymalnie **32 awansujących** do drabinki.
+   - Awansujących musi być **≥ liczba grup** (minimum 1 z każdej grupy) i **≤ liczba zawodników**.
+   - Miejsca awansujące rozkładane **proporcjonalnie** do wielkości grup; nadwyżka trafia do większych (wcześniejszych) grup. Przy starcie zapisywany jest rozkład per grupa (`group_advances`).
+3. **Liczba kodów na tablety** — pole niezależne od logiki grup/drabinki.
 4. Losowy podział puli zawodników do grup (reguła wielkości — patrz niżej).
 5. Round-robin w każdej grupie.
+6. **Podgląd w kreatorze:** dla wybranej liczby grup i etapu drabinki administrator widzi „Grupa N: X graczy → Y awansujących”.
 
 ### Podział zawodników do grup
 
@@ -395,7 +398,7 @@ Ten sam silnik liczenia i model wyniku w API (turniej + quick game 501).
 - Quick game z dowolnym zalogowanym
 - Publiczny podgląd pojedynczych meczów
 - Konfigurowalne formaty / tryby turniejów; **liczba legów do wygranej** (nie tylko BO3)
-- **Drabinka playoff > 32 awansujących** — w MVP limit `grupy × awans ≤ 32`. Rozszerzenie: refaktor slotów playoff na **generyczne** (`round` + `index` zamiast enumów `PlayoffSlot` / `WinnerDestinationSlot`), żeby skalować do 64+ awansujących bez eksplozji enumów. **Implementacja: opcja B** — zaplanować po domknięciu MVP turniejowego.
+- **Drabinka playoff > 32 awansujących** — w MVP limit `playoff_bracket_size ≤ 32`. Rozszerzenie: refaktor slotów playoff na **generyczne** (`round` + `index` zamiast enumów `PlayoffSlot` / `WinnerDestinationSlot`), żeby skalować do 64+ awansujących bez eksplozji enumów. **Implementacja: opcja B** — zaplanować po domknięciu MVP turniejowego.
 
 ## Czego nie robimy (na razie)
 
@@ -442,9 +445,9 @@ Poniższe **rozbieżności** wynikają z wcześniejszej pracy bez `product.md`. 
 | Temat | Produkt | Kod dziś (skrót) |
 | ----- | ------- | ---------------- |
 | Podział do grup | Zapełnianie od grupy 1, równe wielkości (np. 4×6 + 3×2) | ✅ `TournamentGroupDistribution` |
-| Awans z grupy | Wybór admina przy starcie | ✅ `advance_per_group`, `PlayoffService` |
+| Awans z grupy | Wybór etapu drabinki + rozkład per grupa | ✅ `playoff_bracket_size`, `group_advances`, `PlayoffService` |
 | Losowanie playoff | Bez par z tej samej grupy (runda 1) | ✅ `PlayoffFirstRoundPairing` |
-| Rozmiar drabinki | Zależny od `grupy × awans` | ✅ `PlayoffBracketFactory::create` (MVP do 32) |
+| Rozmiar drabinki | Wybór etapu (`playoff_bracket_size`) | ✅ `PlayoffBracketFactory::create` (MVP do 32) |
 | Zaproszenia turniejowe | Encja per turniej; web na stronie startu; akceptacja mobile | ❌ Bezpośrednie `relatedUsers` zamiast zaproszeń |
 | Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ (kody lobby usunięte; `joinById` wymaga zaproszenia) |
 | FFA 2–8 oba tryby urządzeń | `one_device` i `each_own` dla 2–8 graczy | ✅ unified FFA (`QuickGameFfaScoringService`, lobby `/ffa/*`, WS) |

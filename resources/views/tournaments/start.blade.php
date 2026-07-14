@@ -296,54 +296,63 @@
         {{-- Strefa 3: Start turnieju --}}
         @if($canManageParticipants)
             @php
-                $defaultAdvanceOptions = $advancesByGroupCount[$defaultGroupsCount] ?? [1, 2];
-                $defaultAdvancePerGroup = (int) old('advancePerGroup', $defaultAdvanceOptions[0] ?? 1);
+                $defaultBracketOptions = $bracketOptionsByGroupCount[$defaultGroupsCount] ?? [];
+                $defaultPlayoffBracketSize = (int) old(
+                    'playoffBracketSize',
+                    $defaultBracketOptions[0]['value'] ?? 4,
+                );
             @endphp
             <div
                 x-data="{
                     groupsCount: {{ $defaultGroupsCount }},
-                    advancePerGroup: {{ $defaultAdvancePerGroup }},
+                    playoffBracketSize: {{ $defaultPlayoffBracketSize }},
                     tabletsCount: {{ (int) old('tabletsCount', $defaultGroupsCount) }},
                     groupCountOptions: @json($groupCountOptions),
-                    advancesByGroupCount: @json($advancesByGroupCount),
+                    bracketOptionsByGroupCount: @json($bracketOptionsByGroupCount),
+                    startConfigPreview: @json($startConfigPreview),
                     minPlayers: {{ $minPlayers }},
                     minPlayersPerGroup: {{ $minPlayersPerGroup }},
                     participantCount: {{ $participantCount }},
-                    get allowedAdvances() {
-                        const opts = this.advancesByGroupCount[this.groupsCount]
-                            ?? this.advancesByGroupCount[String(this.groupsCount)]
+                    get bracketOptions() {
+                        const opts = this.bracketOptionsByGroupCount[this.groupsCount]
+                            ?? this.bracketOptionsByGroupCount[String(this.groupsCount)]
                             ?? [];
-                        return opts.length ? opts : [1];
+                        return opts.length ? opts : [{ value: 4, label: '1/2 finału — 4 graczy awansujących' }];
                     },
-                    get bracketSize() {
-                        return this.groupsCount * this.advancePerGroup;
+                    get preview() {
+                        const byGroup = this.startConfigPreview[this.groupsCount]
+                            ?? this.startConfigPreview[String(this.groupsCount)]
+                            ?? {};
+                        return byGroup[this.playoffBracketSize]
+                            ?? byGroup[String(this.playoffBracketSize)]
+                            ?? null;
                     },
                     syncGroupsCount() {
                         if (!this.groupCountOptions.includes(this.groupsCount)) {
                             this.groupsCount = this.groupCountOptions[0] ?? 2;
                         }
                     },
-                    syncAdvanceSelect() {
-                        const opts = this.allowedAdvances;
-                        const sel = this.$refs.advanceSelect;
+                    syncBracketSelect() {
+                        const opts = this.bracketOptions;
+                        const sel = this.$refs.bracketSelect;
                         if (!sel) {
                             return;
                         }
                         sel.innerHTML = opts
-                            .map(function (a) {
-                                return ['<option value=', a, '>', a, '</option>'].join('');
+                            .map(function (option) {
+                                return ['<option value=', option.value, '>', option.label, '</option>'].join('');
                             })
                             .join('');
-                        if (!opts.includes(Number(this.advancePerGroup))) {
-                            this.advancePerGroup = opts[0] ?? 1;
+                        if (!opts.some(function (option) { return Number(option.value) === Number(this.playoffBracketSize); }.bind(this))) {
+                            this.playoffBracketSize = opts[0]?.value ?? 4;
                         }
-                        sel.value = String(this.advancePerGroup);
+                        sel.value = String(this.playoffBracketSize);
                     },
                     onGroupsChange() {
-                        this.syncAdvanceSelect();
+                        this.syncBracketSelect();
                     }
                 }"
-                x-init="syncGroupsCount(); syncAdvanceSelect()"
+                x-init="syncGroupsCount(); syncBracketSelect()"
                 class="mb-8 bg-lighter-bg p-6 rounded-lg shadow"
             >
                 <h2 class="text-xl font-semibold text-light-orange mb-4">Start turnieju</h2>
@@ -374,18 +383,18 @@
                                 </p>
                             </div>
                             <div class="flex flex-col">
-                                <label for="advancePerGroup" class="text-light-green font-semibold mb-2">Awans z grupy</label>
-                                <select id="advancePerGroup"
-                                        x-ref="advanceSelect"
-                                        name="advancePerGroup"
+                                <label for="playoffBracketSize" class="text-light-green font-semibold mb-2">Etap drabinki</label>
+                                <select id="playoffBracketSize"
+                                        x-ref="bracketSelect"
+                                        name="playoffBracketSize"
                                         class="select-green"
-                                        x-model.number="advancePerGroup">
-                                    @foreach ($defaultAdvanceOptions as $advance)
-                                        <option value="{{ $advance }}" @selected($defaultAdvancePerGroup === $advance)>{{ $advance }}</option>
+                                        x-model.number="playoffBracketSize">
+                                    @foreach ($defaultBracketOptions as $option)
+                                        <option value="{{ $option['value'] }}" @selected($defaultPlayoffBracketSize === $option['value'])>{{ $option['label'] }}</option>
                                     @endforeach
                                 </select>
                                 <p class="text-light-white/70 text-xs mt-2">
-                                    Potęgi 2 zgodne z drabinką, max. rozmiar największej grupy
+                                    Od tego etapu zaczyna się faza pucharowa
                                 </p>
                             </div>
                             <div class="flex flex-col">
@@ -395,8 +404,25 @@
                             </div>
                         </div>
 
+                        <div class="w-full max-w-2xl rounded-lg border border-dark-bg bg-dark-bg/40 p-4"
+                             x-show="preview"
+                             x-cloak>
+                            <p class="text-light-green font-semibold text-sm mb-3">Podgląd podziału</p>
+                            <template x-for="(advanceCount, index) in (preview?.advances ?? [])" x-bind:key="index">
+                                <div class="flex flex-wrap items-baseline justify-between gap-2 py-1 text-sm text-light-white border-b border-dark-bg/60 last:border-0">
+                                    <span>
+                                        Grupa <span x-text="index + 1"></span>:
+                                        <span x-text="preview.groupSizes[index]"></span> graczy
+                                    </span>
+                                    <span class="text-light-orange">
+                                        → <span x-text="advanceCount"></span> awansujących
+                                    </span>
+                                </div>
+                            </template>
+                        </div>
+
                         <p class="text-light-orange text-sm">
-                            Drabinka playoff: <span x-text="bracketSize"></span> graczy (grupy × awans)
+                            Drabinka playoff: <span x-text="playoffBracketSize"></span> graczy awansujących
                         </p>
 
                         <button type="submit" class="btn btn-primary px-8 py-2"

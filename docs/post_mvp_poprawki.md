@@ -1,57 +1,45 @@
 # Poprawki po MVP / staging — lista techniczna
 
-Krótka lista rzeczy do zrobienia po domknięciu testów RC (nie blokuje testeraów na stagingu).
-
 Ostatnia aktualizacja: lipiec 2026.
 
 ---
 
-## Mobile — ikony
+## Mobile — ikony ✅
 
-**Problem:** `@fortawesome/react-native-fontawesome` w buildzie APK (EAS) bywa kapryśne; lobby quick game crashowało po utworzeniu — jedna z możliwych przyczyn (obok drag-listy).
-
-**Do zrobienia:** zamienić ikony w **całym** `twentysix-mobile` na `@expo/vector-icons` (np. `FontAwesome5`), które jest w bundlu Expo i stabilniejsze w release.
-
-**Pliki znane dziś (grep `FontAwesome`):**
-
-| Plik | Użycie |
-|------|--------|
-| `components/QuickGame/QuickGameLobby.jsx` | tymczasowo tekst zamiast ikon (fix crash staging) |
-| `components/Game/GameList.jsx` | `faSync` — odświeżanie listy meczów turniejowych |
-
-Po migracji można rozważyć usunięcie zależności `@fortawesome/*` z `package.json`, jeśli nigdzie indziej nie zostaną.
+**Zrobione:** `@fortawesome/*` zastąpione `@expo/vector-icons` (`GameList.jsx`). Zależności Font Awesome usunięte z `package.json`.
 
 ---
 
-## Mobile — kolejność graczy w lobby (drag)
+## Mobile — kolejność graczy w lobby (drag) ✅
 
-**Problem:** `DraggableFlatList` **wewnątrz** `ScrollView` — znany antywzorzec; na Androidzie w release często native crash (lobby quick game, lipiec 2026).
-
-**Tymczasowo:** zwykła lista + przycisk „Kolejność losowa”.
-
-**Do zrobienia:** przywrócić przeciąganie **bez** zagnieżdżania:
-
-- `DraggableFlatList` jako **główny** scroll ekranu lobby (host),
-- sekcje ustawień (typ gry, BO3, tryb liczenia, zaproszenia) w `ListHeaderComponent` / `ListFooterComponent`,
-- **nie** `ScrollView` + `DraggableFlatList` w środku.
-
-Powiązane: `components/QuickGame/QuickGameLobby.jsx`.
+**Zrobione:** `DraggableFlatList` jako główny scroll ekranu lobby (host, gdy są gracze). Ustawienia w `ListHeaderComponent`, akcje w `ListFooterComponent` — bez zagnieżdżania w `ScrollView`.
 
 ---
 
-## Backend / deploy — seed vs produkcja
+## Mobile — panel „Diagnostyka sync” ✅
 
-**Docelowo na produkcji:** **bez** `--seed` — testerzy i użytkownicy **rejestrują się sami** (web lub mobile), weryfikacja email (wymaga **SMTP** w `.env`).
+**Zrobione:** panel widoczny **tylko** gdy `EXPO_PUBLIC_REVERB_DEBUG=true|1` (profil `preview` w `eas.json`). Build `production` ma flagę `false`.
 
-| Środowisko | Migracje | Konta demo (`gracz1@test.pl` …) |
-|------------|----------|----------------------------------|
-| **Dev lokalny** | `migrate --seed` OK | Wygodne do szybkich testów |
-| **Staging (RC)** | `migrate --seed` **opcjonalnie** na start; potem można `migrate:fresh` bez seeda | Albo seed, albo prawdziwa rejestracja + SMTP |
-| **Produkcja** | **`php artisan migrate --force` tylko** | **Nie** — wyłącznie rejestracja użytkowników |
+---
 
-Seed (`DemoDataSeeder`, `DemoPlayersSeeder`) zostaje w repo **tylko na dev/staging**, nie jako model produkcyjny.
+## Backend / deploy — seed vs produkcja ✅
 
-**Do zrobienia przed prod:** działający SMTP, smoke: rejestracja → mail → link → login → quick game.
+**Udokumentowane:** [`README.md`](../README.md) (sekcja Staging i produkcja), [`deploy_staging.md`](deploy_staging.md).
+
+| Środowisko | Migracje | Konta demo |
+|------------|----------|------------|
+| Dev lokalny | `migrate --seed` OK | Wygodne do szybkich testów |
+| Staging / prod | **`migrate --force` tylko** | Rejestracja użytkowników + SMTP |
+
+---
+
+## Scoring — undo po zamknięciu lega ✅
+
+**Backend:** cofnięcie ostatniej wizyty **ostatniego** lega otwiera leg ponownie (H2H turniej/quick + FFA quick). Po zakończeniu meczu **turniejowego** — komunikat: użyj korekty na webie.
+
+**Mobile:** przed cofnięciem **zakończonego** lega (gdy bieżący leg jest pusty lub mecz przeszedł do kolejnego lega) — `Alert` z pytaniem „Cofnąć zakończony leg?” (`helpers/gameScoring/undoVisit.js`, `hooks/useGameScoring.js`). Zapobiega przypadkowemu kliknięciu cofania.
+
+Szczegóły backendu: [`CONVENTIONS.md`](../CONVENTIONS.md).
 
 ---
 
@@ -67,7 +55,7 @@ grep -A6 'location /app' /etc/nginx/sites-available/twentysix
 
 W `.env`: `BROADCAST_CONNECTION=reverb`, `REVERB_APP_KEY` = ten sam co w `eas.json` (`EXPO_PUBLIC_REVERB_APP_KEY`).
 
-Bez działającego Reverb lobby/mecz **nadaj działają przez polling HTTP** (wolniej), ale sync „na żywo” wymaga WSS.
+Bez działającego Reverb lobby/mecz **nadal działają przez polling HTTP** (wolniej), ale sync „na żywo” wymaga WSS.
 
 ---
 

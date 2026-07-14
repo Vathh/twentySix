@@ -177,6 +177,7 @@ class TournamentControllerTest extends TestCase
 
         $response = $this->post("/tournaments/{$tournament->id}/run", [
             'groupsCount' => '2',
+            'playoffBracketSize' => 4,
         ]);
 
         $response->assertRedirect("/tournaments/{$tournament->id}");
@@ -185,7 +186,8 @@ class TournamentControllerTest extends TestCase
         $tournament->refresh();
         $this->assertEquals(TournamentStatus::GROUP, $tournament->status);
         $this->assertSame(2, $tournament->groups_count);
-        $this->assertSame(2, $tournament->advance_per_group);
+        $this->assertSame(4, $tournament->playoff_bracket_size);
+        $this->assertSame([2, 2], $tournament->group_advances);
         $this->assertSame(2, $tournament->tablets_count);
         $this->assertDatabaseHas('games', [
             'tournament_id' => $tournament->id,
@@ -213,7 +215,7 @@ class TournamentControllerTest extends TestCase
 
         $response = $this->post("/tournaments/{$tournament->id}/run", [
             'groupsCount' => 2,
-            'advancePerGroup' => 2,
+            'playoffBracketSize' => 4,
             'tabletsCount' => 5,
         ]);
 
@@ -246,11 +248,13 @@ class TournamentControllerTest extends TestCase
         // Pierwszy start
         $this->post("/tournaments/{$tournament->id}/run", [
             'groupsCount' => '2',
+            'playoffBracketSize' => 4,
         ]);
 
         // Drugi start - powinien się nie powieść
         $response = $this->post("/tournaments/{$tournament->id}/run", [
             'groupsCount' => '2',
+            'playoffBracketSize' => 4,
         ]);
 
         $response->assertSessionHas('error');
@@ -269,12 +273,13 @@ class TournamentControllerTest extends TestCase
             ->post("/tournaments/{$tournament->id}/run", [
                 'selectedPlayers' => json_encode([]),
                 'groupsCount' => '2',
+                'playoffBracketSize' => 4,
             ]);
 
         $response->assertSessionHas('error');
     }
 
-    public function test_tournament_groups_count_must_be_power_of_two(): void
+    public function test_tournament_groups_count_must_fit_player_pool(): void
     {
         $this->actingAs($this->adminUser);
         $tournament = Tournament::create([
@@ -293,6 +298,7 @@ class TournamentControllerTest extends TestCase
         $response = $this->from("/tournaments/{$tournament->id}/start")
             ->post("/tournaments/{$tournament->id}/run", [
                 'groupsCount' => 3,
+                'playoffBracketSize' => 4,
             ]);
 
         $response->assertSessionHasErrors('groupsCount');
@@ -316,6 +322,7 @@ class TournamentControllerTest extends TestCase
         $response = $this->from("/tournaments/{$tournament->id}/start")
             ->post("/tournaments/{$tournament->id}/run", [
                 'groupsCount' => 2,
+                'playoffBracketSize' => 4,
             ]);
 
         $response->assertSessionHasErrors('selectedPlayers');
@@ -331,7 +338,8 @@ class TournamentControllerTest extends TestCase
             'date' => '2024-06-01',
             'status' => TournamentStatus::GROUP,
             'groups_count' => 2,
-            'advance_per_group' => 2,
+            'playoff_bracket_size' => 4,
+            'group_advances' => [2, 2],
             'tablets_count' => 2,
         ]);
 
@@ -358,7 +366,8 @@ class TournamentControllerTest extends TestCase
             'date' => '2024-06-01',
             'status' => TournamentStatus::GROUP,
             'groups_count' => 2,
-            'advance_per_group' => 2,
+            'playoff_bracket_size' => 4,
+            'group_advances' => [2, 2],
             'tablets_count' => 1,
         ]);
 
@@ -381,7 +390,8 @@ class TournamentControllerTest extends TestCase
             'date' => '2024-06-01',
             'status' => TournamentStatus::GROUP,
             'groups_count' => 2,
-            'advance_per_group' => 2,
+            'playoff_bracket_size' => 4,
+            'group_advances' => [2, 2],
             'tablets_count' => 1,
         ]);
 

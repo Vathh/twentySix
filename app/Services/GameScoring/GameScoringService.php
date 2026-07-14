@@ -157,18 +157,39 @@ class GameScoringService
         int $legId,
     ): array {
         $leg = $this->resolveLegForContext($context, $legId);
+        $this->assertIsLatestLeg($context, $leg);
 
-        if (! $leg->isOpen()) {
-            throw new DomainException('Cofanie wizyty po zamknięciu lega nie jest jeszcze obsługiwane.');
+        if (
+            ! $leg->isOpen()
+            && $game->status === GameStatus::FINISHED
+            && $context->tournamentId !== null
+            && $context->kind !== GameKind::QUICK
+        ) {
+            throw new DomainException('Cofanie wizyty po zakończeniu meczu turniejowego wymaga korekty wyniku na webie.');
         }
 
         return DB::transaction(function () use ($context, $game, $leg) {
+            $wasClosed = ! $leg->isOpen();
+            $legWinnerId = $wasClosed ? (int) $leg->winner_id : null;
+
             $voided = $this->gameVisitRepository->voidLastForLeg($leg->id);
             if ($voided === null) {
                 throw new DomainException('Brak wizyty do cofnięcia.');
             }
 
-            return $this->broadcastState($context, $game);
+            if ($wasClosed) {
+                $this->gameLegRepository->reopenLeg($leg->fresh());
+                $this->gameLegPlayerStatRepository->resetAfterLegReopen($leg->id);
+                $this->revertLegWinOnGame($game, $legWinnerId);
+
+                if ($game->status === GameStatus::FINISHED) {
+                    $game->status = GameStatus::IN_PROGRESS;
+                    $game->winner_id = null;
+                    $game->save();
+                }
+            }
+
+            return $this->broadcastState($context, $game->fresh(['player1', 'player2']));
         });
     }
 
@@ -253,6 +274,33 @@ class GameScoringService
             dartsThrown: $dto->dartsThrown ?? GameStatisticsCalculator::dartsThrown($playerLegVisits),
             checkoutDart: $dto->checkoutDart ?? GameStatisticsCalculator::checkoutDart($playerLegVisits),
         );
+    }
+
+    private function assertIsLatestLeg(GameScoringContext $context, GameLeg $leg): void
+    {
+        $latestLegNumber = (int) $this->gameLegRepository->getForContext($context)->max('leg_number');
+
+        if ((int) $leg->leg_number !== $latestLegNumber) {
+            throw new DomainException('Można cofnąć tylko ostatni leg meczu.');
+        }
+    }
+
+    private function revertLegWinOnGame(Game|PlayoffGame|QuickGame $game, ?int $legWinnerId): void
+    {
+        if ($legWinnerId === null) {
+            return;
+        }
+
+        $game->player1_score = (int) ($game->player1_score ?? 0);
+        $game->player2_score = (int) ($game->player2_score ?? 0);
+
+        if ((int) $game->player1_id === $legWinnerId && $game->player1_score > 0) {
+            $game->player1_score--;
+        } elseif ((int) $game->player2_id === $legWinnerId && $game->player2_score > 0) {
+            $game->player2_score--;
+        }
+
+        $game->save();
     }
 
     private function resolveLegForContext(GameScoringContext $context, int $legId): GameLeg

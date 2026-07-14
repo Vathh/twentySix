@@ -9,6 +9,7 @@ use App\Enums\PlayoffSlot;
 use App\Enums\TournamentStatus;
 use App\Enums\WinnerDestinationSlot;
 use App\Models\Game\Game;
+use App\Models\Game\GameLeg;
 use App\Models\GroupStanding\GroupStanding;
 use App\Models\League\League;
 use App\Models\Player\Player;
@@ -166,6 +167,40 @@ class TournamentGameScoringFinalizeTest extends TestCase
             'legs_won' => 0,
             'legs_lost' => 2,
         ]);
+    }
+
+    public function test_group_scoring_undo_reopens_closed_leg_while_match_in_progress(): void
+    {
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $this->closeScoringLeg(
+            'group-games',
+            $game->id,
+            $this->player1->id,
+            $this->player1->id,
+            $this->player2->id,
+        );
+
+        $game->refresh();
+        $this->assertSame(GameStatus::IN_PROGRESS, $game->status);
+        $this->assertSame(1, (int) $game->player1_score);
+
+        $legId = GameLeg::where('game_id', $game->id)->orderByDesc('leg_number')->value('id');
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits/undo")
+            ->assertOk()
+            ->assertJsonPath('currentLeg.open', true);
+
+        $game->refresh();
+        $this->assertSame(GameStatus::IN_PROGRESS, $game->status);
+        $this->assertSame(0, (int) $game->player1_score);
+        $this->assertNull($game->winner_id);
     }
 
     public function test_playoff_scoring_close_second_leg_advances_winner(): void

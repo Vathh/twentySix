@@ -35,6 +35,22 @@ class GameLegPlayerStatRepository
             ]);
     }
 
+    public function resetAfterLegReopen(int $gameLegId): void
+    {
+        GameLegPlayerStat::query()
+            ->where('game_leg_id', $gameLegId)
+            ->update([
+                'leg_average' => null,
+                'first_nine_average' => null,
+                'highest_visit' => null,
+                'highest_finish' => null,
+                'darts_thrown' => null,
+                'checkout_dart' => null,
+                'double_attempts' => null,
+                'double_successes' => null,
+            ]);
+    }
+
     /**
      * @return Collection<int, GameLegPlayerStat>
      */

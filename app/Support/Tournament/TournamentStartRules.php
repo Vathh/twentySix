@@ -11,19 +11,16 @@ final class TournamentStartRules
 
     public const MIN_GROUPS = 2;
 
-    /** MVP: maksymalna liczba awansujących do drabinki playoff (`grupy × awans`). */
+    /** MVP: maksymalna liczba awansujących do drabinki playoff. */
     public const MAX_BRACKET_SIZE = 32;
+
+    public const MIN_BRACKET_SIZE = 4;
 
     public const MIN_TABLETS = 1;
 
     public static function isPowerOfTwo(int $n): bool
     {
         return $n > 0 && ($n & ($n - 1)) === 0;
-    }
-
-    public static function bracketSize(int $groupsCount, int $advancePerGroup): int
-    {
-        return $groupsCount * $advancePerGroup;
     }
 
     /**
@@ -41,55 +38,6 @@ final class TournamentStartRules
     }
 
     /**
-     * Awans z grupy: reguły drabinki (potęgi 2, pełna drabinka ≤ MVP),
-     * ograniczone rozmiarem największej grupy przy danym składzie.
-     *
-     * @return list<int>
-     */
-    public static function allowedAdvancePerGroupForPlayers(int $playerCount, int $groupsCount): array
-    {
-        $maxInGroup = self::maxPlayersInLargestGroup($playerCount, $groupsCount);
-
-        if ($maxInGroup < 1) {
-            return [];
-        }
-
-        return array_values(array_filter(
-            self::allowedAdvancePerGroup($groupsCount),
-            static fn (int $advance) => $advance <= $maxInGroup,
-        ));
-    }
-
-    /**
-     * Dozwolone wartości awansu z grupy dla danej liczby grup (MVP, pełna drabinka ≤ 32).
-     * Bez składu — tylko reguły potęg 2; preferuj {@see allowedAdvancePerGroupForPlayers}.
-     *
-     * @return list<int>
-     */
-    public static function allowedAdvancePerGroup(int $groupsCount): array
-    {
-        if (! self::isPowerOfTwo($groupsCount) || $groupsCount < self::MIN_GROUPS) {
-            return [];
-        }
-
-        $allowed = [];
-
-        for ($advance = 1; $advance <= self::MAX_BRACKET_SIZE; $advance *= 2) {
-            $bracketSize = self::bracketSize($groupsCount, $advance);
-
-            if ($bracketSize > self::MAX_BRACKET_SIZE) {
-                break;
-            }
-
-            if (self::isPowerOfTwo($bracketSize)) {
-                $allowed[] = $advance;
-            }
-        }
-
-        return $allowed;
-    }
-
-    /**
      * Maksymalna liczba grup przy danym składzie (co najmniej MIN_PLAYERS_PER_GROUP na grupę).
      */
     public static function maxGroupsForPlayerCount(int $playerCount): int
@@ -98,7 +46,7 @@ final class TournamentStartRules
     }
 
     /**
-     * Potęgi 2 od MIN_GROUPS w górę, które mieszczą się w składzie (min. MIN_PLAYERS_PER_GROUP na grupę).
+     * Dowolna liczba grup od MIN_GROUPS w górę, która mieści się w składzie (min. MIN_PLAYERS_PER_GROUP na grupę).
      *
      * @return list<int>
      */
@@ -110,55 +58,120 @@ final class TournamentStartRules
             return [];
         }
 
-        return array_values(array_filter(
-            self::allowedGroupCounts($maxGroupsCap),
-            static fn (int $groupsCount) => $groupsCount <= $maxGroups
-                && $groupsCount <= $playerCount
-                && intdiv($playerCount, $groupsCount) >= self::MIN_PLAYERS_PER_GROUP,
-        ));
-    }
-
-    /**
-     * @return list<int>
-     */
-    public static function allowedGroupCounts(int $maxGroups = 64): array
-    {
         $options = [];
 
-        for ($groups = self::MIN_GROUPS; $groups <= $maxGroups; $groups *= 2) {
-            $options[] = $groups;
+        for ($groups = self::MIN_GROUPS; $groups <= $maxGroups; $groups++) {
+            if ($groups <= $playerCount && intdiv($playerCount, $groups) >= self::MIN_PLAYERS_PER_GROUP) {
+                $options[] = $groups;
+            }
         }
 
         return $options;
     }
 
     /**
-     * Mapa: liczba grup → dozwolone wartości awansu (tylko sensowne przy danym składzie).
+     * @return list<int>
+     */
+    public static function allowedPlayoffBracketSizes(int $playerCount, int $groupsCount): array
+    {
+        if ($groupsCount < self::MIN_GROUPS || $playerCount < self::MIN_PLAYERS) {
+            return [];
+        }
+
+        $groupSizes = TournamentGroupDistribution::groupSizes($playerCount, $groupsCount);
+        $allowed = [];
+
+        for ($bracketSize = self::MIN_BRACKET_SIZE; $bracketSize <= self::MAX_BRACKET_SIZE; $bracketSize *= 2) {
+            if ($bracketSize < $groupsCount || $bracketSize > $playerCount) {
+                continue;
+            }
+
+            try {
+                TournamentGroupAdvanceDistribution::distribute($groupSizes, $bracketSize);
+                $allowed[] = $bracketSize;
+            } catch (\InvalidArgumentException) {
+                continue;
+            }
+        }
+
+        return $allowed;
+    }
+
+    public static function bracketStageLabel(int $bracketSize): string
+    {
+        return match ($bracketSize) {
+            32 => '1/16 finału',
+            16 => '1/8 finału',
+            8 => '1/4 finału',
+            4 => '1/2 finału',
+            default => sprintf('%d graczy', $bracketSize),
+        };
+    }
+
+    public static function bracketOptionLabel(int $bracketSize): string
+    {
+        return sprintf(
+            '%s — %d graczy awansujących',
+            self::bracketStageLabel($bracketSize),
+            $bracketSize,
+        );
+    }
+
+    /**
+     * Mapa: liczba grup → dozwolone rozmiary drabinki (potęgi 2).
      *
      * @return array<int, list<int>>
      */
-    public static function advancesByGroupCountForPlayers(int $playerCount, int $maxGroupsCap = 64): array
+    public static function bracketSizesByGroupCountForPlayers(int $playerCount, int $maxGroupsCap = 64): array
     {
         $map = [];
 
         foreach (self::allowedGroupCountsForPlayers($playerCount, $maxGroupsCap) as $groupsCount) {
-            $map[$groupsCount] = self::allowedAdvancePerGroupForPlayers($playerCount, $groupsCount);
+            $map[$groupsCount] = self::allowedPlayoffBracketSizes($playerCount, $groupsCount);
         }
 
         return $map;
     }
 
     /**
-     * Mapa: liczba grup → dozwolone wartości awansu (do kreatora startu).
+     * Podgląd konfiguracji startu dla kreatora (grupy × drabinka → rozmiary grup i awans).
      *
-     * @return array<int, list<int>>
+     * @return array<int, array<int, array{groupSizes: list<int>, advances: list<int>}>>
      */
-    public static function advancesByGroupCount(int $maxGroups = 64): array
+    public static function startConfigPreview(int $playerCount, int $maxGroupsCap = 64): array
+    {
+        $preview = [];
+
+        foreach (self::allowedGroupCountsForPlayers($playerCount, $maxGroupsCap) as $groupsCount) {
+            $groupSizes = TournamentGroupDistribution::groupSizes($playerCount, $groupsCount);
+            $preview[$groupsCount] = [];
+
+            foreach (self::allowedPlayoffBracketSizes($playerCount, $groupsCount) as $bracketSize) {
+                $preview[$groupsCount][$bracketSize] = [
+                    'groupSizes' => $groupSizes,
+                    'advances' => TournamentGroupAdvanceDistribution::distribute($groupSizes, $bracketSize),
+                ];
+            }
+        }
+
+        return $preview;
+    }
+
+    /**
+     * @return array<int, list<array{value: int, label: string}>>
+     */
+    public static function bracketOptionsByGroupCountForPlayers(int $playerCount, int $maxGroupsCap = 64): array
     {
         $map = [];
 
-        foreach (self::allowedGroupCounts($maxGroups) as $groupsCount) {
-            $map[$groupsCount] = self::allowedAdvancePerGroup($groupsCount);
+        foreach (self::bracketSizesByGroupCountForPlayers($playerCount, $maxGroupsCap) as $groupsCount => $sizes) {
+            $map[$groupsCount] = array_map(
+                static fn (int $bracketSize): array => [
+                    'value' => $bracketSize,
+                    'label' => self::bracketOptionLabel($bracketSize),
+                ],
+                $sizes,
+            );
         }
 
         return $map;
