@@ -15,10 +15,16 @@ class ScoringStateContractTest extends TestCase
                 'kind' => 'group',
                 'status' => 'in_progress',
                 'tournamentId' => 3,
-                'legsToWin' => 2,
                 'player1LegsWon' => 0,
                 'player2LegsWon' => 0,
                 'startingScore' => 501,
+                'matchFormat' => [
+                    'startingScore' => 501,
+                    'legsToWinSet' => 2,
+                    'setsToWinMatch' => 1,
+                    'gameType' => 'x01',
+                    'outRule' => 'double_out',
+                ],
             ],
             'players' => [
                 ['playerId' => 1, 'name' => 'A'],
@@ -41,6 +47,8 @@ class ScoringStateContractTest extends TestCase
 
         $this->assertSame('h2h', $out['format']);
         $this->assertSame('tournament_group', $out['meta']['kind']);
+        $this->assertSame(2, $out['meta']['matchFormat']['legsToWinSet']);
+        $this->assertArrayNotHasKey('legsToWin', $out['meta']);
         $this->assertSame(1, $out['turn']['currentPlayerIndex']);
         $this->assertGreaterThan(0, $out['revision']);
     }
@@ -51,13 +59,20 @@ class ScoringStateContractTest extends TestCase
             'session' => [
                 'lobbyId' => 7,
                 'status' => 'in_progress',
-                'legsToWin' => 2,
+                'legsToWinSet' => 2,
                 'startingScore' => 501,
                 'currentLegNumber' => 1,
                 'legOpenerIndex' => 0,
                 'currentPlayerIndex' => 1,
                 'stateVersion' => 4,
                 'quickGameId' => null,
+                'matchFormat' => [
+                    'startingScore' => 501,
+                    'legsToWinSet' => 2,
+                    'setsToWinMatch' => 1,
+                    'gameType' => 'x01',
+                    'outRule' => 'double_out',
+                ],
             ],
             'players' => [
                 ['playerId' => 10, 'name' => 'Host'],
@@ -65,7 +80,16 @@ class ScoringStateContractTest extends TestCase
             ],
             'currentLeg' => ['legNumber' => 1, 'open' => true],
             'visits' => [],
-            'game' => ['status' => 'in_progress', 'legsToWin' => 2],
+            'game' => [
+                'status' => 'in_progress',
+                'matchFormat' => [
+                    'startingScore' => 501,
+                    'legsToWinSet' => 2,
+                    'setsToWinMatch' => 1,
+                    'gameType' => 'x01',
+                    'outRule' => 'double_out',
+                ],
+            ],
         ];
 
         $out = ScoringStateContract::enrichFfa($payload);
@@ -73,6 +97,8 @@ class ScoringStateContractTest extends TestCase
         $this->assertSame('ffa', $out['format']);
         $this->assertSame('quick_ffa', $out['meta']['kind']);
         $this->assertSame(7, $out['meta']['lobbyId']);
+        $this->assertSame(2, $out['meta']['matchFormat']['legsToWinSet']);
+        $this->assertArrayNotHasKey('legsToWin', $out['meta']);
         $this->assertSame(1, $out['turn']['currentPlayerIndex']);
         $this->assertGreaterThan(0, $out['revision']);
     }

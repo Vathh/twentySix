@@ -129,6 +129,46 @@ export function registerGameLiveViewer(Alpine) {
             return this.players[1] ?? null;
         },
 
+        get matchFormat() {
+            return this.state?.game?.matchFormat ?? null;
+        },
+
+        isSingleSetFormat() {
+            const sets = Number(this.matchFormat?.setsToWinMatch ?? 1);
+            return sets <= 1;
+        },
+
+        matchScore(player) {
+            if (!player) {
+                return 0;
+            }
+            if (this.isSingleSetFormat()) {
+                return player.legsWonInSet ?? player.legsWon ?? 0;
+            }
+
+            return player.setsWon ?? 0;
+        },
+
+        legsInSet(player) {
+            if (!player) {
+                return 0;
+            }
+
+            return player.legsWonInSet ?? player.legsWon ?? 0;
+        },
+
+        scoreToWinDisplay() {
+            if (this.isSingleSetFormat()) {
+                return Number(this.state?.game?.matchFormat?.legsToWinSet ?? 2);
+            }
+
+            return Number(this.state?.game?.matchFormat?.setsToWinMatch ?? 2);
+        },
+
+        scoreUnitDisplay() {
+            return this.isSingleSetFormat() ? 'legi' : 'sety';
+        },
+
         get visits() {
             return this.state?.visits ?? [];
         },

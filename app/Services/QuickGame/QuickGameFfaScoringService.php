@@ -14,6 +14,8 @@ use App\Repositories\QuickGame\QuickGameFfaVisitRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 use App\Support\QuickGameFfa\QuickGameFfaStateBuilder;
 use App\Support\QuickGameFfa\QuickGameFfaTurnRotation;
+use App\Support\GameScoring\MatchFormat;
+use App\Support\GameScoring\MatchFormatScoring;
 use App\Support\GameScoring\VisitRecorder;
 use App\Support\QuickGameLobbyPlayerOrder;
 use DomainException;
@@ -36,8 +38,7 @@ class QuickGameFfaScoringService
      */
     public function createSessionForLobby(
         QuickGameLobby $lobby,
-        int $legsToWin,
-        string $gameType,
+        MatchFormat $matchFormat,
         string $scoringMode,
         array $lobbyPlayerOrderIds,
     ): int {
@@ -61,17 +62,24 @@ class QuickGameFfaScoringService
             throw new DomainException('Sesja FFA dla tego lobby już istnieje.');
         }
 
+        $matchFormat->validate();
+        $emptyScores = array_fill_keys($playerIds, 0);
+
         $session = $this->sessionRepository->create([
             'lobby_id' => $lobby->id,
-            'legs_to_win' => max(1, min(15, $legsToWin)),
-            'game_type' => $gameType,
+            'legs_to_win_set' => $matchFormat->legsToWinSet,
+            'sets_to_win_match' => $matchFormat->setsToWinMatch,
+            'game_type' => $matchFormat->gameType,
             'scoring_mode' => $scoringMode,
-            'starting_score' => 501,
+            'starting_score' => $matchFormat->startingScore,
             'status' => \App\Models\QuickGame\QuickGameFfaSession::STATUS_IN_PROGRESS,
             'player_order' => $playerIds,
+            'legs_won_in_set' => $emptyScores,
+            'sets_won' => $emptyScores,
             'leg_opener_index' => 0,
             'current_player_index' => 0,
             'current_leg_number' => 1,
+            'current_set_number' => 1,
             'state_version' => 1,
             'started_at' => now(),
         ]);
@@ -154,14 +162,20 @@ class QuickGameFfaScoringService
                 throw new DomainException('Nieprawidłowy zwycięzca walkoweru.');
             }
 
-            $visits = $this->visitRepository->getActiveForSession($session);
-            $legsWon = VisitRecorder::countLegsWon($visits, $playerIds);
-            $legsWon[$winnerPlayerId] = max(
-                (int) ($legsWon[$winnerPlayerId] ?? 0),
-                (int) $session->legs_to_win,
+            $format = MatchFormat::fromRecord($session);
+            $legsWonInSet = $session->legs_won_in_set ?? [];
+            $setsWon = $session->sets_won ?? [];
+            foreach ($playerIds as $pid) {
+                $legsWonInSet[$pid] ??= 0;
+                $setsWon[$pid] ??= 0;
+            }
+            $legsWonInSet[$winnerPlayerId] = max(
+                (int) ($legsWonInSet[$winnerPlayerId] ?? 0),
+                $format->legsToWinSet,
             );
+            $setsWon[$winnerPlayerId] = $format->setsToWinMatch;
 
-            $this->finishMatch($session, $legsWon);
+            $this->finishMatch($session, MatchFormatScoring::legsWonForDisplay($format, $legsWonInSet, $setsWon), $format);
             $this->sessionRepository->incrementVersion($session);
             $this->sessionRepository->save($session);
 
@@ -272,8 +286,30 @@ class QuickGameFfaScoringService
                 throw new DomainException('Brak wizyty do cofnięcia.');
             }
 
-            if ($voided->closed_leg && (int) $session->current_leg_number > $legNumber) {
-                $session->current_leg_number = $legNumber;
+            if ($voided->closed_leg) {
+                $format = MatchFormat::fromRecord($session);
+                $playerIds = array_map('intval', $session->player_order ?? []);
+                $legsWonInSet = $session->legs_won_in_set ?? [];
+                $setsWon = $session->sets_won ?? [];
+                foreach ($playerIds as $pid) {
+                    $legsWonInSet[$pid] ??= 0;
+                    $setsWon[$pid] ??= 0;
+                }
+
+                $reverted = MatchFormatScoring::revertLegWinOnFfa(
+                    $format,
+                    (int) $voided->player_id,
+                    $legsWonInSet,
+                    $setsWon,
+                    (int) ($session->current_set_number ?? 1),
+                );
+                $session->legs_won_in_set = $reverted['legsWonInSet'];
+                $session->sets_won = $reverted['setsWon'];
+                $session->current_set_number = $reverted['currentSetNumber'];
+
+                if ((int) $session->current_leg_number > $legNumber) {
+                    $session->current_leg_number = $legNumber;
+                }
             }
 
             $this->recomputeIndicesFromVisits($session);
@@ -360,11 +396,32 @@ class QuickGameFfaScoringService
         array $playerIds,
         array $leftIds,
     ): void {
-        $visits = $this->visitRepository->getActiveForSession($session);
-        $legsWon = VisitRecorder::countLegsWon($visits, $playerIds);
+        $format = MatchFormat::fromRecord($session);
+        $legsWonInSet = $session->legs_won_in_set ?? [];
+        $setsWon = $session->sets_won ?? [];
+        foreach ($playerIds as $pid) {
+            $legsWonInSet[$pid] ??= 0;
+            $setsWon[$pid] ??= 0;
+        }
 
-        if (($legsWon[$winnerPlayerId] ?? 0) >= (int) $session->legs_to_win) {
-            $this->finishMatch($session, $legsWon);
+        $result = MatchFormatScoring::applyLegWinToFfa(
+            $format,
+            $winnerPlayerId,
+            $legsWonInSet,
+            $setsWon,
+            (int) ($session->current_set_number ?? 1),
+        );
+
+        $session->legs_won_in_set = $result['legsWonInSet'];
+        $session->sets_won = $result['setsWon'];
+        $session->current_set_number = $result['currentSetNumber'];
+
+        if ($result['finished']) {
+            $this->finishMatch(
+                $session,
+                MatchFormatScoring::legsWonForDisplay($format, $result['legsWonInSet'], $result['setsWon']),
+                $format,
+            );
 
             return;
         }
@@ -381,8 +438,11 @@ class QuickGameFfaScoringService
     /**
      * @param  array<int, int>  $legsWon
      */
-    private function finishMatch(\App\Models\QuickGame\QuickGameFfaSession $session, array $legsWon): void
-    {
+    private function finishMatch(
+        \App\Models\QuickGame\QuickGameFfaSession $session,
+        array $legsWon,
+        MatchFormat $format,
+    ): void {
         $playerIds = $session->player_order ?? [];
         $visits = $this->visitRepository->getActiveForSession($session);
 
@@ -416,13 +476,15 @@ class QuickGameFfaScoringService
         $p1 = $playerIds[0] ?? null;
         $p2 = $playerIds[1] ?? null;
 
-        \App\Models\QuickGame\QuickGame::where('id', $quickGameId)->update([
-            'player1_score' => (int) ($legsWon[$p1] ?? 0),
-            'player2_score' => (int) ($legsWon[$p2] ?? 0),
-            'winner_id' => $winnerId,
-            'status' => \App\Enums\GameStatus::FINISHED,
-            'legs_count' => $session->legs_to_win,
-        ]);
+        \App\Models\QuickGame\QuickGame::where('id', $quickGameId)->update(array_merge(
+            [
+                'player1_score' => (int) ($legsWon[$p1] ?? 0),
+                'player2_score' => (int) ($legsWon[$p2] ?? 0),
+                'winner_id' => $winnerId,
+                'status' => \App\Enums\GameStatus::FINISHED,
+            ],
+            $format->toDatabaseColumns(),
+        ));
 
         $session->status = \App\Models\QuickGame\QuickGameFfaSession::STATUS_FINISHED;
         $session->quick_game_id = $quickGameId;

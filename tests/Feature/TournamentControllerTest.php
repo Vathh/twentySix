@@ -403,5 +403,76 @@ class TournamentControllerTest extends TestCase
         $response->assertDontSee('Kody logowania na tablety');
         $response->assertDontSee('GUES78');
     }
+
+    public function test_run_tournament_saves_match_formats_and_snapshots_group_games(): void
+    {
+        $this->actingAs($this->adminUser);
+        $tournament = Tournament::create([
+            'name' => 'Format Test',
+            'season_id' => $this->season->id,
+            'date' => '2024-06-01',
+        ]);
+
+        $this->addPlayersToTournamentPool($tournament, [
+            $this->player1,
+            $this->player2,
+            $this->player3,
+            $this->player4,
+            $this->player5,
+            $this->player6,
+        ], $this->adminUser);
+
+        $response = $this->post("/tournaments/{$tournament->id}/run", [
+            'groupsCount' => 2,
+            'playoffBracketSize' => 4,
+            'matchFormats' => [
+                'GROUP' => [
+                    'startingScore' => 301,
+                    'legsToWinSet' => 3,
+                    'setsToWinMatch' => 1,
+                ],
+                'SEMI' => [
+                    'startingScore' => 501,
+                    'legsToWinSet' => 5,
+                    'setsToWinMatch' => 2,
+                ],
+                'THIRD' => [
+                    'startingScore' => 501,
+                    'legsToWinSet' => 2,
+                    'setsToWinMatch' => 1,
+                ],
+                'FINAL' => [
+                    'startingScore' => 501,
+                    'legsToWinSet' => 7,
+                    'setsToWinMatch' => 1,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect("/tournaments/{$tournament->id}");
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('tournament_match_formats', [
+            'tournament_id' => $tournament->id,
+            'stage' => 'GROUP',
+            'starting_score' => 301,
+            'legs_to_win_set' => 3,
+        ]);
+
+        $this->assertDatabaseHas('games', [
+            'tournament_id' => $tournament->id,
+            'starting_score' => 301,
+            'legs_to_win_set' => 3,
+            'sets_to_win_match' => 1,
+        ]);
+
+        $this->assertSame(
+            6,
+            \App\Models\Game\Game::where('tournament_id', $tournament->id)
+                ->where('starting_score', 301)
+                ->where('legs_to_win_set', 3)
+                ->count(),
+        );
+    }
 }
 

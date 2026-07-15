@@ -58,8 +58,8 @@ class PlayoffAdvanceTest extends TestCase
                 'games_played' => 1,
                 'games_won' => ($index % 2) === 0 ? 1 : 0,
                 'games_lost' => ($index % 2) === 0 ? 0 : 1,
-                'legs_won' => 2,
-                'legs_lost' => 0,
+                'match_units_won' => 2,
+                'match_units_lost' => 0,
                 'points' => ($index % 2) === 0 ? 1 : 0,
             ]);
         }
@@ -123,8 +123,8 @@ class PlayoffAdvanceTest extends TestCase
                 'games_played' => 1,
                 'games_won' => ($index % 2) === 0 ? 1 : 0,
                 'games_lost' => ($index % 2) === 0 ? 0 : 1,
-                'legs_won' => 2,
-                'legs_lost' => 0,
+                'match_units_won' => 2,
+                'match_units_lost' => 0,
                 'points' => ($index % 2) === 0 ? 1 : 0,
             ]);
         }

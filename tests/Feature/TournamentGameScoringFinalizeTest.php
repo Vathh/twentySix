@@ -156,8 +156,8 @@ class TournamentGameScoringFinalizeTest extends TestCase
             'player_id' => $this->player1->id,
             'games_played' => 1,
             'games_won' => 1,
-            'legs_won' => 2,
-            'legs_lost' => 0,
+            'match_units_won' => 2,
+            'match_units_lost' => 0,
             'points' => 1,
         ]);
         $this->assertDatabaseHas('group_standings', [
@@ -165,8 +165,8 @@ class TournamentGameScoringFinalizeTest extends TestCase
             'player_id' => $this->player2->id,
             'games_played' => 1,
             'games_lost' => 1,
-            'legs_won' => 0,
-            'legs_lost' => 2,
+            'match_units_won' => 0,
+            'match_units_lost' => 2,
         ]);
     }
 

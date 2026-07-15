@@ -1,8 +1,7 @@
-# Design: Quick game FFA sync (krok 4C2)
+# Design: Quick game FFA sync
 
 **Status:** zaimplementowane (unified FFA N=2..8)  
-**Źródło prawdy produktu:** [`product.md`](product.md)  
-**Powiązany plan:** [`plan_quick_game_mvp_step4.md`](plan_quick_game_mvp_step4.md)
+**Źródło prawdy produktu:** [`product.md`](product.md)
 
 ---
 

@@ -55,6 +55,9 @@
             <span class="text-text-muted font-normal mx-2">vs</span>
             <span x-text="player2?.name">{{ $liveP2['name'] ?? $player2->name }}</span>
         </h1>
+        @if(!empty($formatLabel))
+            <p class="text-center text-text-muted text-sm mb-4">{{ $formatLabel }}</p>
+        @endif
 
         {{-- Zakładki --}}
         <div class="flex gap-1 mb-4 border-b border-border">
@@ -82,18 +85,21 @@
             <div class="grid grid-cols-3 items-center gap-4 mb-6 text-center">
                 <div>
                     <p class="text-sm text-text-muted mb-1" x-text="player1?.name">{{ $liveP1['name'] ?? $player1->name }}</p>
-                    <p class="text-4xl font-bold text-light-green" x-text="player1?.legsWon ?? 0">{{ $liveP1['legsWon'] ?? $player1Score }}</p>
+                    <p class="text-4xl font-bold text-light-green" x-text="matchScore(player1)">{{ $liveP1['legsWon'] ?? $player1Score }}</p>
                 </div>
                 <div>
-                    <p class="text-xs text-light-orange uppercase tracking-wide mb-1">Legi</p>
+                    <p class="text-xs text-light-orange uppercase tracking-wide mb-1" x-text="scoreUnitDisplay()">{{ ($usesSetScore ?? false) ? 'Sety' : 'Legi' }}</p>
                     <p class="text-lg text-text-muted" x-text="currentLegLabel">{{ $liveLegLabel }}</p>
+                    <template x-if="!isSingleSetFormat()">
+                        <p class="text-xs text-text-muted" x-text="`${legsInSet(player1)}:${legsInSet(player2)} legi w secie`"></p>
+                    </template>
                     <p class="text-xs text-text-muted mt-1">
-                        do <span x-text="state?.game?.legsToWin ?? 2">{{ $legsToWin ?? 2 }}</span> wygranych
+                        do <span x-text="scoreToWinDisplay()">{{ $scoreToWin ?? 2 }}</span> wygranych (<span x-text="scoreUnitDisplay()">{{ $scoreUnit ?? 'legi' }}</span>)
                     </p>
                 </div>
                 <div>
                     <p class="text-sm text-text-muted mb-1" x-text="player2?.name">{{ $liveP2['name'] ?? $player2->name }}</p>
-                    <p class="text-4xl font-bold text-light-green" x-text="player2?.legsWon ?? 0">{{ $liveP2['legsWon'] ?? $player2Score }}</p>
+                    <p class="text-4xl font-bold text-light-green" x-text="matchScore(player2)">{{ $liveP2['legsWon'] ?? $player2Score }}</p>
                 </div>
             </div>
 

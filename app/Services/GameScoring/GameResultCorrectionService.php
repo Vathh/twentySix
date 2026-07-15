@@ -21,6 +21,7 @@ use App\Services\PlayoffGame\PlayoffService;
 use App\Services\Player\PlayerStatsService;
 use App\Services\Tournament\TournamentResultService;
 use App\Support\GameScoring\GameLegScoreValidator;
+use App\Support\GameScoring\MatchFormat;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -56,15 +57,16 @@ class GameResultCorrectionService
 
     public function applyWalkoverFromWeb(GameKind $kind, int $gameId, int $winnerPlayerId): void
     {
-        [$player1Id] = match ($kind) {
-            GameKind::GROUP => $this->resolveGroupPlayerIds($gameId),
-            GameKind::PLAYOFF => $this->resolvePlayoffPlayerIds($gameId),
+        [$player1Id, $format] = match ($kind) {
+            GameKind::GROUP => $this->resolveGroupContext($gameId),
+            GameKind::PLAYOFF => $this->resolvePlayoffContext($gameId),
             GameKind::QUICK => throw new DomainException('Walkower na webie dotyczy tylko meczów turniejowych.'),
         };
 
         [$player1Score, $player2Score] = GameLegScoreValidator::walkoverScores(
             $winnerPlayerId,
             $player1Id,
+            $format,
         );
 
         $this->applyFromWeb($kind, $gameId, $player1Score, $player2Score);
@@ -79,11 +81,14 @@ class GameResultCorrectionService
             throw new DomainException('Mecz nie ma przypisanych graczy.');
         }
 
+        $format = MatchFormat::fromRecord($gameModel);
+
         $winnerId = GameLegScoreValidator::validateAndResolveWinner(
             $game->player1->id,
             $game->player2->id,
             $player1Score,
             $player2Score,
+            $format,
         );
 
         $dto = new UpdateGameDTO(
@@ -128,11 +133,15 @@ class GameResultCorrectionService
             throw new DomainException('Mecz playoff nie ma przypisanych graczy.');
         }
 
+        $gameModel = \App\Models\PlayoffGame\PlayoffGame::findOrFail($gameId);
+        $format = MatchFormat::fromRecord($gameModel);
+
         $winnerId = GameLegScoreValidator::validateAndResolveWinner(
             $game->player1Id,
             $game->player2Id,
             $player1Score,
             $player2Score,
+            $format,
         );
 
         $dto = new GameResultDTO(
@@ -182,31 +191,33 @@ class GameResultCorrectionService
     }
 
     /**
-     * @return array{0: int, 1: int}
+     * @return array{0: int, 1: MatchFormat}
      */
-    private function resolveGroupPlayerIds(int $gameId): array
+    private function resolveGroupContext(int $gameId): array
     {
         $game = $this->gameRepository->find($gameId);
+        $gameModel = Game::findOrFail($gameId);
 
         if ($game->player1 === null || $game->player2 === null) {
             throw new DomainException('Mecz nie ma przypisanych graczy.');
         }
 
-        return [$game->player1->id, $game->player2->id];
+        return [$game->player1->id, MatchFormat::fromRecord($gameModel)];
     }
 
     /**
-     * @return array{0: int, 1: int}
+     * @return array{0: int, 1: MatchFormat}
      */
-    private function resolvePlayoffPlayerIds(int $gameId): array
+    private function resolvePlayoffContext(int $gameId): array
     {
         $game = $this->playoffGameRepository->find($gameId);
+        $gameModel = \App\Models\PlayoffGame\PlayoffGame::findOrFail($gameId);
 
         if ($game->player1Id === null || $game->player2Id === null) {
             throw new DomainException('Mecz playoff nie ma przypisanych graczy.');
         }
 
-        return [$game->player1Id, $game->player2Id];
+        return [$game->player1Id, MatchFormat::fromRecord($gameModel)];
     }
 
     private function resetDownstreamPlayoffAndPodium(

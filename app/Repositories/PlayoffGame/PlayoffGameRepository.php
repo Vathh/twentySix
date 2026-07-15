@@ -8,6 +8,7 @@ use App\Enums\GameStatus;
 use App\Enums\PlayerSlot;
 use App\Enums\PlayoffSlot;
 use App\Models\PlayoffGame\PlayoffGame;
+use App\Support\GameScoring\MatchFormat;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -15,19 +16,21 @@ class PlayoffGameRepository
 {
     /**
      * @param Collection<PlayoffGameDomain> $games
-     * @return void
+     * @param  array<string, MatchFormat>  $formatsByStage
      */
-    public function createMany(Collection $games): void
+    public function createMany(Collection $games, array $formatsByStage = []): void
     {
         foreach ($games as $game) {
-            PlayoffGame::create([
+            $format = $formatsByStage[$game->round->value] ?? MatchFormat::default();
+
+            PlayoffGame::create(array_merge([
                 'tournament_id' => $game->tournamentId,
                 'round' => $game->round,
                 'slot' => $game->slot,
                 'player1_id' => $game->player1Id ?: null,
                 'player2_id' => $game->player2Id ?: null,
                 'winner_destination_slot' => $game->winnerDestinationSlot ?: null,
-            ]);
+            ], $format->toDatabaseColumns()));
         }
     }
 
@@ -38,8 +41,11 @@ class PlayoffGameRepository
             ->update([
                 'player1_score' => $dto->player1Score,
                 'player2_score' => $dto->player2Score,
+                'player1_legs_in_set' => 0,
+                'player2_legs_in_set' => 0,
+                'current_set_number' => 1,
                 'winner_id' => $dto->winnerId,
-                'status' => GameStatus::FINISHED
+                'status' => GameStatus::FINISHED,
             ]);
     }
 

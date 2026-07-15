@@ -17,6 +17,7 @@ use App\Repositories\Game\GameVisitRepository;
 use App\Services\Game\GameService;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
+use App\Support\GameScoring\MatchFormatScoring;
 use App\Support\GameScoring\VisitRecorder;
 use DomainException;
 use Illuminate\Database\Eloquent\Model;
@@ -125,7 +126,7 @@ class GameScoringService
             throw new DomainException('Gracz nie należy do tego meczu.');
         }
 
-        VisitRecorder::validateDto($dto, $context->startingScore);
+        VisitRecorder::validateDto($dto, $context->startingScore());
 
         $existing = $this->gameVisitRepository->findByClientVisitId($dto->clientVisitId);
         if ($existing !== null) {
@@ -180,7 +181,7 @@ class GameScoringService
             if ($wasClosed) {
                 $this->gameLegRepository->reopenLeg($leg->fresh());
                 $this->gameLegPlayerStatRepository->resetAfterLegReopen($leg->id);
-                $this->revertLegWinOnGame($game, $legWinnerId);
+                $this->revertLegWinOnGame($game, $legWinnerId, $context);
 
                 if ($game->status === GameStatus::FINISHED) {
                     $game->status = GameStatus::IN_PROGRESS;
@@ -231,16 +232,15 @@ class GameScoringService
             $game->player1_score = (int) ($game->player1_score ?? 0);
             $game->player2_score = (int) ($game->player2_score ?? 0);
 
-            if ($winnerId === $context->player1Id) {
-                $game->player1_score++;
-            } else {
-                $game->player2_score++;
-            }
+            $matchFinished = MatchFormatScoring::applyLegWinToH2hGame(
+                $game,
+                $context->matchFormat,
+                $winnerId,
+                $context->player1Id,
+                $context->player2Id,
+            );
 
-            if ((int) $game->player1_score >= $context->legsToWin || (int) $game->player2_score >= $context->legsToWin) {
-                $game->winner_id = (int) $game->player1_score >= $context->legsToWin
-                    ? $context->player1Id
-                    : $context->player2Id;
+            if ($matchFinished) {
                 $game->status = GameStatus::FINISHED;
             }
 
@@ -285,21 +285,15 @@ class GameScoringService
         }
     }
 
-    private function revertLegWinOnGame(Game|PlayoffGame|QuickGame $game, ?int $legWinnerId): void
+    private function revertLegWinOnGame(Game|PlayoffGame|QuickGame $game, ?int $legWinnerId, GameScoringContext $context): void
     {
-        if ($legWinnerId === null) {
-            return;
-        }
-
-        $game->player1_score = (int) ($game->player1_score ?? 0);
-        $game->player2_score = (int) ($game->player2_score ?? 0);
-
-        if ((int) $game->player1_id === $legWinnerId && $game->player1_score > 0) {
-            $game->player1_score--;
-        } elseif ((int) $game->player2_id === $legWinnerId && $game->player2_score > 0) {
-            $game->player2_score--;
-        }
-
+        MatchFormatScoring::revertLegWinOnH2hGame(
+            $game,
+            $context->matchFormat,
+            $legWinnerId,
+            $context->player1Id,
+            $context->player2Id,
+        );
         $game->save();
     }
 

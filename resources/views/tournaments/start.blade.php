@@ -295,13 +295,6 @@
 
         {{-- Strefa 3: Start turnieju --}}
         @if($canManageParticipants)
-            @php
-                $defaultBracketOptions = $bracketOptionsByGroupCount[$defaultGroupsCount] ?? [];
-                $defaultPlayoffBracketSize = (int) old(
-                    'playoffBracketSize',
-                    $defaultBracketOptions[0]['value'] ?? 4,
-                );
-            @endphp
             <div
                 x-data="{
                     groupsCount: {{ $defaultGroupsCount }},
@@ -310,6 +303,11 @@
                     groupCountOptions: @json($groupCountOptions),
                     bracketOptionsByGroupCount: @json($bracketOptionsByGroupCount),
                     startConfigPreview: @json($startConfigPreview),
+                    matchFormatStagesByBracket: @json($matchFormatStagesByBracket),
+                    startingScoreOptions: @json($startingScoreOptions),
+                    defaultMatchFormat: @json($defaultMatchFormat),
+                    oldMatchFormats: @json($oldMatchFormats),
+                    matchFormats: {},
                     minPlayers: {{ $minPlayers }},
                     minPlayersPerGroup: {{ $minPlayersPerGroup }},
                     participantCount: {{ $participantCount }},
@@ -326,6 +324,23 @@
                         return byGroup[this.playoffBracketSize]
                             ?? byGroup[String(this.playoffBracketSize)]
                             ?? null;
+                    },
+                    get activeFormatStages() {
+                        return this.matchFormatStagesByBracket[this.playoffBracketSize]
+                            ?? this.matchFormatStagesByBracket[String(this.playoffBracketSize)]
+                            ?? [];
+                    },
+                    syncMatchFormats() {
+                        const stages = this.activeFormatStages;
+                        const next = {};
+                        for (const stage of stages) {
+                            next[stage.value] = {
+                                ...this.defaultMatchFormat,
+                                ...(this.oldMatchFormats[stage.value] ?? {}),
+                                ...(this.matchFormats[stage.value] ?? {}),
+                            };
+                        }
+                        this.matchFormats = next;
                     },
                     syncGroupsCount() {
                         if (!this.groupCountOptions.includes(this.groupsCount)) {
@@ -350,9 +365,13 @@
                     },
                     onGroupsChange() {
                         this.syncBracketSelect();
+                        this.syncMatchFormats();
+                    },
+                    onBracketChange() {
+                        this.syncMatchFormats();
                     }
                 }"
-                x-init="syncGroupsCount(); syncBracketSelect()"
+                x-init="syncGroupsCount(); syncBracketSelect(); syncMatchFormats()"
                 class="mb-8 bg-lighter-bg p-6 rounded-lg shadow"
             >
                 <h2 class="text-xl font-semibold text-light-orange mb-4">Start turnieju</h2>
@@ -388,7 +407,8 @@
                                         x-ref="bracketSelect"
                                         name="playoffBracketSize"
                                         class="select-green"
-                                        x-model.number="playoffBracketSize">
+                                        x-model.number="playoffBracketSize"
+                                        x-on:change="onBracketChange()">
                                     @foreach ($defaultBracketOptions as $option)
                                         <option value="{{ $option['value'] }}" @selected($defaultPlayoffBracketSize === $option['value'])>{{ $option['label'] }}</option>
                                     @endforeach
@@ -424,6 +444,61 @@
                         <p class="text-light-orange text-sm">
                             Drabinka playoff: <span x-text="playoffBracketSize"></span> graczy awansujących
                         </p>
+
+                        <div class="w-full max-w-3xl rounded-lg border border-dark-bg bg-dark-bg/40 p-4"
+                             x-show="activeFormatStages.length"
+                             x-cloak>
+                            <p class="text-light-green font-semibold text-sm mb-1">Format gry per etap</p>
+                            <p class="text-light-white/70 text-xs mb-4">
+                                Domyślnie 501 · 1 set · 2 legi. Tablet odczyta format z meczu — bez konfiguracji przy starcie gry.
+                            </p>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-light-white">
+                                    <thead class="text-light-green">
+                                        <tr class="border-b border-dark-bg">
+                                            <th class="text-left py-2 pr-3 font-semibold">Etap</th>
+                                            <th class="text-left py-2 px-2 font-semibold">Punkty</th>
+                                            <th class="text-left py-2 px-2 font-semibold">Legi / set</th>
+                                            <th class="text-left py-2 pl-2 font-semibold">Sety / mecz</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="stage in activeFormatStages" x-bind:key="stage.value">
+                                            <tr class="border-b border-dark-bg/60 last:border-0">
+                                                <td class="py-2 pr-3 whitespace-nowrap" x-text="stage.label"></td>
+                                                <td class="py-2 px-2">
+                                                    <select class="select-green w-full min-w-[5rem]"
+                                                            x-bind:name="'matchFormats[' + stage.value + '][startingScore]'"
+                                                            x-model.number="matchFormats[stage.value].startingScore">
+                                                        <template x-for="score in startingScoreOptions" x-bind:key="score">
+                                                            <option x-bind:value="score" x-text="score"></option>
+                                                        </template>
+                                                    </select>
+                                                </td>
+                                                <td class="py-2 px-2">
+                                                    <select class="select-green w-full min-w-[4rem]"
+                                                            x-bind:name="'matchFormats[' + stage.value + '][legsToWinSet]'"
+                                                            x-model.number="matchFormats[stage.value].legsToWinSet">
+                                                        <template x-for="n in 15" x-bind:key="n">
+                                                            <option x-bind:value="n" x-text="n"></option>
+                                                        </template>
+                                                    </select>
+                                                </td>
+                                                <td class="py-2 pl-2">
+                                                    <select class="select-green w-full min-w-[4rem]"
+                                                            x-bind:name="'matchFormats[' + stage.value + '][setsToWinMatch]'"
+                                                            x-model.number="matchFormats[stage.value].setsToWinMatch">
+                                                        <template x-for="n in 5" x-bind:key="n">
+                                                            <option x-bind:value="n" x-text="n"></option>
+                                                        </template>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
                         <button type="submit" class="btn btn-primary px-8 py-2"
                                 x-bind:disabled="participantCount < minPlayers">

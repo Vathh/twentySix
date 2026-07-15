@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Services\QuickGame\QuickGameLobbyService;
+use App\Support\GameScoring\MatchFormat;
+use App\Support\GameScoring\MatchFormatRequestParser;
 use App\Support\QuickGameLobbyPayload;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -69,22 +71,20 @@ class QuickGameLobbyController
     public function updateSettings(Request $request, string $lobbyId): JsonResponse
     {
         $userId = $request->user()->id;
-        $legsCount = $request->input('legsCount');
-        $gameType = $request->input('gameType');
         $scoringMode = $request->input('scoringMode');
         try {
+            $matchFormat = MatchFormatRequestParser::fromInput($request->all());
             $lobby = $this->lobbyService->updateSettings(
                 (int) $lobbyId,
                 $userId,
-                $legsCount !== null ? (int) $legsCount : null,
-                $gameType !== null && in_array($gameType, ['501', 'cricket'], true) ? $gameType : null
+                $matchFormat,
             );
             if ($scoringMode !== null && in_array($scoringMode, ['one_device', 'each_own'], true)) {
                 $lobby = $this->lobbyService->updateScoringMode((int) $lobbyId, $userId, $scoringMode);
             }
 
             return response()->json(QuickGameLobbyPayload::fromLobby($lobby, $userId));
-        } catch (\RuntimeException $e) {
+        } catch (\RuntimeException|\DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }
     }
@@ -92,19 +92,21 @@ class QuickGameLobbyController
     public function start(Request $request, string $lobbyId): JsonResponse
     {
         $userId = $request->user()->id;
-        $legsCount = $request->input('legsCount');
-        $gameType = $request->input('gameType');
         $scoringMode = $request->input('scoringMode');
         $playerOrderIds = $request->input('playerOrder');
         if (! is_array($playerOrderIds)) {
             $playerOrderIds = null;
         }
         try {
+            $lobbyEntity = $this->lobbyService->get((int) $lobbyId);
+            $matchFormat = MatchFormatRequestParser::fromInput(
+                $request->all(),
+                MatchFormat::fromRecord($lobbyEntity),
+            );
             $lobby = $this->lobbyService->startGame(
                 (int) $lobbyId,
                 $userId,
-                $legsCount !== null ? (int) $legsCount : null,
-                $gameType !== null && in_array($gameType, ['501', 'cricket'], true) ? $gameType : null,
+                $matchFormat,
                 $scoringMode !== null && in_array($scoringMode, ['one_device', 'each_own'], true) ? $scoringMode : null,
                 $playerOrderIds
             );

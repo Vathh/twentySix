@@ -1,122 +1,97 @@
-# Następne kroki — twentySix MVP (po przerwie)
+# Następne kroki — twentySix
 
-**Dla nowego agenta:** zacznij tutaj. Ostatni stan: **lipiec 2026**, staging RC działa, quick game FFA + Reverb sync **OK** (Expo Go + APK 1.0.8), **rejestracja + SMTP (Resend)** **OK**.
+**Dla nowego agenta:** zacznij od [`product.md`](product.md) (wizja) i tego pliku. Indeks: [`README.md`](README.md).
 
-Powiązane: [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md), [`post_mvp_poprawki.md`](post_mvp_poprawki.md), [`deploy_staging.md`](deploy_staging.md).
+**Stan:** lipiec 2026 — MVP v1 otagowane (`v1.0.0-mvp`). Tu pracujemy nad **dalszym rozwojem** aplikacji (backend + mobile).
 
 ---
 
-## Co już działa (nie trzeba od nowa)
+## Podział odpowiedzialności
 
-| Obszar | Stan |
-|--------|------|
-| **Staging VPS** | `https://dartscore.studiokam.pl`, PHP/nginx/MySQL/Reverb/queue |
-| **Reverb sync** | Laravel → `127.0.0.1:8080`, telefony → WSS `:443` przez nginx `/app` |
-| **Mobile APK** | EAS `preview`, wersja **1.0.8** — lobby live sync + mecz quick game |
-| **Mobile dev** | `twentysix-mobile/.env` (staging, gitignored) + `npm start` + Expo Go |
-| **Backend fix broadcast** | `config/broadcasting.php` — `REVERB_BROADCAST_*` / domyślnie `127.0.0.1:8080` |
-| **Mobile fix Pusher** | `helpers/getPusherConstructor.js` — lazy static `require`, unwrap exportu |
-| **Diagnostyka RC** | Panel „Diagnostyka sync” gdy `EXPO_PUBLIC_REVERB_DEBUG=true` |
-| **SMTP / rejestracja** | Resend, domena `studiokam.pl`, `noreply@studiokam.pl` — mail weryfikacyjny + login OK |
+| Obszar | Kto |
+|--------|-----|
+| **Kod, testy lokalne, dokumentacja produktowa** | Agent / dev w Cursorze |
+| **Deploy na VPS, migracje na serwerze, build EAS/APK** | **Właściciel projektu** — sam, gdy uzna za potrzebne, albo **na wyraźną prośbę** |
 
-**Staging (publiczne, bez haseł):**
+**Agent nie proponuje ani nie planuje** deployu staging/prod ani nowego EAS, chyba że użytkownik o to poprosi. Runbook na wypadek prośby: [`deploy_staging.md`](deploy_staging.md).
+
+---
+
+## MVP v1 — domknięte ✅
+
+| Element | Stan |
+|---------|------|
+| Tag git | `v1.0.0-mvp` — backend `b1f3193`, mobile `9a39d28` |
+| Staging (ostatni znany) | `https://dartscore.studiokam.pl` |
+| Testy auto backend | `php artisan test` |
+| E2E mobile w CI | **Nie wdrażamy** |
+
+Mapa funkcji: [`../IMPLEMENTED_FEATURES.md`](../IMPLEMENTED_FEATURES.md).
+
+---
+
+## Domyślny workflow agenta
+
+1. Czytaj [`product.md`](product.md) przed większymi zmianami.
+2. Implementuj w `twentysix-backend` / `twentysix-mobile`.
+3. Weryfikuj lokalnie: `php artisan test` (backend), `npm run test:game-scoring` (mobile), Expo Go / dev server.
+4. Aktualizuj docs tylko gdy zmiana produktowa lub konwencja tego wymaga.
+5. **Nie** commituj / pushuj / deployuj bez prośby użytkownika.
+
+---
+
+## Dev lokalny (mobile)
+
+1. `twentysix-mobile/.env` — URL API (patrz `.env.example`)
+2. `npm start` → Expo Go
+
+Bugi bundlera (np. Pusher) czasem widać **tylko w APK** — wtedy właściciel robi EAS preview we własnym tempie.
+
+---
+
+## Referencja — staging (informacyjnie)
+
+Gdy użytkownik sam wdraża lub poprosi agenta:
 
 - API: `https://dartscore.studiokam.pl/api`
-- Reverb key (mobile + backend `.env`): `28e001f35df29406bc8a144a39a4ef4a`
-- Demo (staging): **brak seeda** — testerzy rejestrują się sami (SMTP OK)
-- VPS SSH: `185.235.69.21`, app w `/var/www/twentysix-backend`, git jako `www-data`
-
-**Repo GitHub:**
-
-- Backend: `https://github.com/Vathh/twentySix.git`
-- Mobile: `https://github.com/Vathh/twentySix-MobileApp.git`
+- Runbook: [`deploy_staging.md`](deploy_staging.md)
+- Scenariusze regresji: [`instrukcja_testerow_mvp_v1.md`](instrukcja_testerow_mvp_v1.md), checklisty w [`README.md`](README.md)
 
 ---
 
-## Priorytet 1 — domknięcie kroku 6 (RC → tag MVP)
+## Backlog (udokumentowane, nie w toku)
 
-| # | Zadanie | Uwagi |
-|---|---------|--------|
-| 1 | ~~**Zaktualizować** [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md) — odhaczyć 6.2–6.4, 6.2.6~~ | ✅ lipiec 2026 |
-| 2 | ~~**Smoke regresji** na staging~~ | ✅ ręcznie (quick + turniej) |
-| 3 | ~~**SMTP na staging**~~ | ✅ Resend + rejestracja web/mobile |
-| 4 | ~~**Decyzja o seedzie staging**~~ | ✅ bez seeda — czysta baza, tylko rejestracja |
-| 5 | ~~**Tag `v1.0.0-mvp`**~~ | ✅ backend `b1f3193`, mobile `9a39d28` |
-| 6 | **Ostatni EAS preview** po tagu | Pominięte — brak zmian mobile po 1.0.8 |
+| Temat | Plan |
+|-------|------|
+| Push — zaproszenia (znajomi / turniej / quick game) | [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md) |
+| **Format gry — Faza 5** (później) | [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) §6 |
 
----
+### Format gry — Faza 5 (szczegóły backlogu)
 
-## Priorytet 2 — przed produkcją (nie blokuje RC)
+1. **Presety formatów w lidze** — domyślne formaty per etap dla nowych turniejów w danej lidze (kreator wczytuje, admin może nadpisać).
+2. **Chipy BO5 / BO7** w lobby i treningu — szybkie skróty UI (`legsToWinSet: 3` / `4` przy 1 secie), bez nowej logiki scoringu.
+3. **Cricket** — osobny `gameType` z własnym silnikiem (poza X01; osobny większy feature).
 
-| # | Zadanie | Plik / doc |
-|---|---------|------------|
-| 1 | **Prod deploy bez `--seed`** | [`post_mvp_poprawki.md`](post_mvp_poprawki.md) |
-| 2 | **SMTP prod** | `.env.staging.example` → MAIL_* |
-| 3 | **Wyłączyć panel debug w prod mobile** | `EXPO_PUBLIC_REVERB_DEBUG` tylko w `eas.json` → `preview`, nie `production` |
-| 4 | **Serwer: `git pull` + `config:cache`** | Upewnić się, że `broadcasting.php` i nginx `/app` + `/apps` są na VPS |
+## Niedawno domknięte
+
+| Temat | Stan |
+|-------|------|
+| Konfigurowalny format gry — fazy 1–4 (MatchFormat, quick/trening/turniej, walkower) | ✅ lipiec 2026 — [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) |
 
 ---
 
-## Priorytet 3 — poprawki jakości (post-MVP) ✅ lipiec 2026
+## Tech debt (po cleanup lipiec 2026)
 
-Zrealizowane — szczegóły: [`post_mvp_poprawki.md`](post_mvp_poprawki.md).
+Zamknięte: legacy `quick-game/create|active|inProgress`, alias `meta.legsToWin`, `group_standings.match_units_*`, modularizacja `GameScoringScreen` (`offlineVisitFlow` / `onlineVisitFlow` / modale / presence heartbeat).
 
-| # | Zadanie | Status |
-|---|---------|--------|
-| 1 | Ikony: `@fortawesome` → `@expo/vector-icons` | ✅ |
-| 2 | Drag kolejności graczy — `DraggableFlatList` jako główny scroll | ✅ |
-| 3 | Panel „Diagnostyka sync” tylko przy `EXPO_PUBLIC_REVERB_DEBUG` | ✅ |
-| 4 | Undo po zamknięciu lega (H2H + FFA, bez revertu tabel turniejowych) | ✅ backend + potwierdzenie w mobile |
-| 5 | Dokumentacja prod bez seeda | ✅ |
+Pozostaje poza formatem gry:
 
----
-
-## Workflow dev mobile (żeby nie robić EAS przy każdej linii)
-
-1. `twentysix-mobile/.env` — staging URL (patrz `.env.example`)
-2. `npm start` → Expo Go (ta sama Wi‑Fi)
-3. Po OK lokalnie → **`eas build --profile preview`** (weryfikacja release/Hermes)
-
-Uwaga: bugi bundlera (np. Pusher) czasem widać **tylko w APK**, nie w Expo Go.
-
----
-
-## Kluczowe pliki Reverb (mobile)
-
-| Plik | Rola |
-|------|------|
-| `helpers/getPusherConstructor.js` | Lazy load Pusher, unwrap exportu Hermes |
-| `helpers/createReverbPusher.js` | Konfiguracja + authorizer `/broadcasting/auth` |
-| `hooks/useQuickGameLobbyRealtime.js` | Lobby WS |
-| `hooks/useGameScoringRealtime.js` | Mecz WS |
-| `components/ReverbDebugPanel.jsx` | Panel diagnostyki |
-| `eas.json` → `preview.env` | Zmienne builda staging |
-
-## Kluczowe pliki Reverb (backend)
-
-| Plik | Rola |
-|------|------|
-| `config/broadcasting.php` | PHP → `127.0.0.1:8080` |
-| `app/Events/QuickGameLobbyUpdated.php` | Event `lobby.updated` |
-| `routes/channels.php` | Autoryzacja kanału lobby |
-| `docs/deploy_staging.md` | nginx `/app` + `/apps`, systemd reverb |
-
----
-
-## Świadomie poza scope
-
+- Deploy VPS, `migrate` na serwerze, EAS build (chyba że użytkownik poprosi)
 - Krykiet, komunikator, premium
-- **Automatyczna regresja mobile (E2E)** — **decyzja: nie wdrażamy**; testy manualne z [`instrukcja_testerow_mvp_v1.md`](instrukcja_testerow_mvp_v1.md) + `php artisan test` na backendzie
-- Nowy agent: reguły w `.cursor/rules/` + `CONVENTIONS.md` + `docs/product.md`
+- E2E mobile (Maestro/Detox)
 
-### Automatyczna regresja mobile — dlaczego nie
-
-Chodziłoby o pakiet testów E2E (Maestro / Detox / Appium) odpalany w CI na buildzie APK — logowanie, lobby, scoring online, tablet turniejowy itd.
-
-**Decyzja (lipiec 2026):** temat **świadomie porzucony**. Mobile ma tylko wąski test reducera (`npm run test:game-scoring`). Krytyczne flow weryfikujemy **ręcznie** przed release; backend ma pełniejsze testy PHPUnit.
-
-**Nie planować** osobnego projektu E2E mobile w ramach twentySix MVP.
+Reguły: `.cursor/rules/` + [`product.md`](product.md).
 
 ---
 
-*Po kolejnej większej zmianie zaktualizuj sekcję „Co już działa” i priorytety w tym pliku.*
+*Po większej zmianie produktowej zaktualizuj [`product.md`](product.md) i ewentualnie [`../IMPLEMENTED_FEATURES.md`](../IMPLEMENTED_FEATURES.md). Ten plik — tylko gdy zmienia się sposób pracy lub priorytety rozwoju.*

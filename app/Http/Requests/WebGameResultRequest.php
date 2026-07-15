@@ -24,8 +24,8 @@ class WebGameResultRequest extends FormRequest
         }
 
         return [
-            'player1_score' => 'required|integer|min:0|max:2',
-            'player2_score' => 'required|integer|min:0|max:2',
+            'player1_score' => 'required|integer|min:0|max:15',
+            'player2_score' => 'required|integer|min:0|max:15',
         ];
     }
 
@@ -35,8 +35,8 @@ class WebGameResultRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'player1_score.required' => 'Podaj wynik pierwszego gracza w legach.',
-            'player2_score.required' => 'Podaj wynik drugiego gracza w legach.',
+            'player1_score.required' => 'Podaj wynik pierwszego gracza.',
+            'player2_score.required' => 'Podaj wynik drugiego gracza.',
             'winner_id.required' => 'Wybierz zwycięzcę walkovera.',
         ];
     }

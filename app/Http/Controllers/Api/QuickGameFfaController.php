@@ -67,8 +67,8 @@ class QuickGameFfaController
         $validated = $request->validate([
             'playerId' => 'required|integer|exists:players,id',
             'score' => 'required|integer|min:0|max:180',
-            'remainingBefore' => 'required|integer|min:0|max:501',
-            'remainingAfter' => 'required|integer|min:0|max:501',
+            'remainingBefore' => 'required|integer|min:0|max:1001',
+            'remainingAfter' => 'required|integer|min:0|max:1001',
             'dartsInVisit' => 'required|integer|min:1|max:3',
             'closedLeg' => 'boolean',
             'bust' => 'boolean',

@@ -14,7 +14,9 @@ class QuickGameLobby extends Model
     protected $fillable = [
         'host_id',
         'status',
-        'legs_count',
+        'starting_score',
+        'legs_to_win_set',
+        'sets_to_win_match',
         'game_type',
         'scoring_mode',
         'quick_game_id',

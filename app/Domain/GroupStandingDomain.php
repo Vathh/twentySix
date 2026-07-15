@@ -7,20 +7,6 @@ use App\Models\GroupStanding\GroupStanding;
 
 class GroupStandingDomain
 {
-    /**
-     * @param int $id
-     * @param TournamentDomain|null $tournament
-     * @param int $groupNumber
-     * @param PlayerDomain|null $player
-     * @param int $gamesPlayed
-     * @param int $gamesWon
-     * @param int $gamesLost
-     * @param int $legsWon
-     * @param int $legsLost
-     * @param int $points
-     * @param int $legsDifference
-     * @param int $place
-     */
     public function __construct(
         public readonly int $id,
         public readonly ?TournamentDomain $tournament,
@@ -29,20 +15,14 @@ class GroupStandingDomain
         public readonly int $gamesPlayed,
         public readonly int $gamesWon,
         public readonly int $gamesLost,
-        public readonly int $legsWon,
-        public readonly int $legsLost,
+        public readonly int $matchUnitsWon,
+        public readonly int $matchUnitsLost,
         public readonly int $points,
-        public readonly int $legsDifference,
-        public readonly int $place
-    )
-    {
+        public readonly int $matchUnitsDifference,
+        public readonly int $place,
+    ) {
     }
 
-    /**
-     * @param GroupStanding $groupStanding
-     * @param array $with
-     * @return GroupStandingDomain
-     */
     public static function fromEloquent(GroupStanding $groupStanding, array $with = []): GroupStandingDomain
     {
         $groupStanding->loadMissing(array_intersect($with, ['tournament', 'player']));
@@ -59,18 +39,14 @@ class GroupStandingDomain
             gamesPlayed: $groupStanding->games_played,
             gamesWon: $groupStanding->games_won,
             gamesLost: $groupStanding->games_lost,
-            legsWon: $groupStanding->legs_won,
-            legsLost: $groupStanding->legs_lost,
+            matchUnitsWon: $groupStanding->match_units_won,
+            matchUnitsLost: $groupStanding->match_units_lost,
             points: $groupStanding->points,
-            legsDifference: $groupStanding->legs_difference,
-            place: $groupStanding->place
+            matchUnitsDifference: $groupStanding->match_units_difference,
+            place: $groupStanding->place,
         );
     }
 
-    /**
-     * @param int $place
-     * @return self
-     */
     public function withPlace(int $place): self
     {
         return new self(
@@ -81,12 +57,11 @@ class GroupStandingDomain
             gamesPlayed: $this->gamesPlayed,
             gamesWon: $this->gamesWon,
             gamesLost: $this->gamesLost,
-            legsWon: $this->legsWon,
-            legsLost: $this->legsLost,
+            matchUnitsWon: $this->matchUnitsWon,
+            matchUnitsLost: $this->matchUnitsLost,
             points: $this->points,
-            legsDifference: $this->legsDifference,
-            place: $place
+            matchUnitsDifference: $this->matchUnitsDifference,
+            place: $place,
         );
     }
 }
-

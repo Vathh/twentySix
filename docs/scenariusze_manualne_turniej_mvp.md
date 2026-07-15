@@ -1,6 +1,6 @@
-# Scenariusze manualne — Turniej MVP (krok 2)
+# Scenariusze manualne — Turniej MVP
 
-Źródło: [`product.md`](product.md), [`plan_mvp_domkniecie.md`](plan_mvp_domkniecie.md).
+Źródło: [`product.md`](product.md). Regresja: [`instrukcja_testerow_mvp_v1.md`](instrukcja_testerow_mvp_v1.md).
 
 Powiązane: quick game — [`scenariusze_manualne_quick_game_mvp_4e.md`](scenariusze_manualne_quick_game_mvp_4e.md).
 
@@ -53,13 +53,13 @@ Kody widoczne po zalogowaniu jako admin:
 2. Otwórz turniej **Turniej 6-osobowy (faza grupowa)** i skopiuj jeden kod tabletu.
 3. Mobile: **Turniej** → wpisz kod → lista meczów.
 4. Wybierz **Grupa 1** lub **Grupa 2** → mecz ze statusem oczekujący (lock).
-5. Rozegraj mecz **BO3** (501, double out) na tablecie — jedno urządzenie, H2H.
+5. Rozegraj mecz na tablecie w formacie z kreatora turnieju (domyślnie **501 · do 2 legów**, double out) — jedno urządzenie, H2H.
 6. Po zakończeniu mecz znika z listy tabletu.
 7. Web: zakładka **Grupy** → sprawdź macierz wyników i kolumny W / L / Legi / Pkt / Miejsce.
 
 **Oczekiwane:**
 
-- Mecz w bazie: `games.status = finished`, poprawne legi (np. 2:0 lub 2:1).
+- Mecz w bazie: `games.status = finished`, wynik zgodny z formatem (np. 2:0 / 2:1 legów przy 1 secie).
 - Tabela grupy zaktualizowana (punkty, miejsce).
 - Drugi tablet z tym samym kodem **nie** może zablokować tego samego meczu (już `in_progress` / `finished`).
 
@@ -123,7 +123,7 @@ Kody widoczne po zalogowaniu jako admin:
 - Tabela grupy / drabinka playoff **przelicza się automatycznie**.
 - Jeśli to był ostatni mecz grupowy — turniej przechodzi w playoff (jak przy normalnym zakończeniu).
 
-**Uwaga:** przy pełnym walkowerze 2:0 w BO3 — zgodnie z [`product.md`](product.md).
+**Uwaga:** walkower = pełny wynik w jednostce formatu meczu (przy 1 secie / do 2 legów: **2:0**; przy multi-set — w setach). Patrz [`product.md`](product.md).
 
 ---
 
@@ -145,7 +145,7 @@ Kody widoczne po zalogowaniu jako admin:
 | 3b | Achievementy | | ☐ | |
 | 4 | Korekta / walkower | | ☐ | |
 
-Po zaznaczeniu wszystkich pól → krok 2 uznany za zamknięty → [`plan_mvp_domkniecie.md`](plan_mvp_domkniecie.md) krok 3.
+Powiązane: web gość — [`scenariusze_manualne_web_gosc_krok3.md`](scenariusze_manualne_web_gosc_krok3.md).
 
 ---
 

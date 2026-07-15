@@ -17,14 +17,14 @@ class GroupStanding extends Model
         'games_played',
         'games_won',
         'games_lost',
-        'legs_won',
-        'legs_lost',
+        'match_units_won',
+        'match_units_lost',
         'points',
         'place',
     ];
 
     protected $casts = [
-        'status' => GameStatus::class
+        'status' => GameStatus::class,
     ];
 
     public function tournament(): BelongsTo
@@ -37,5 +37,3 @@ class GroupStanding extends Model
         return $this->belongsTo(Player::class);
     }
 }
-
-

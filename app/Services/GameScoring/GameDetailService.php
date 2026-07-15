@@ -159,7 +159,12 @@ class GameDetailService
             'backUrl' => $backUrl,
             'tournamentId' => $tournamentId,
             'groupNumber' => $game instanceof Game ? (int) $game->group_number : null,
-            'legsToWin' => $context->legsToWin,
+            'matchFormat' => $context->matchFormat->toArray(),
+            'formatLabel' => $context->matchFormat->formatLabel(),
+            'scoreUnit' => $context->matchFormat->scoreUnit(),
+            'scoreToWin' => $context->matchFormat->scoreToWin(),
+            'walkoverScoreLine' => $context->matchFormat->walkoverScoreLine(),
+            'usesSetScore' => $context->matchFormat->usesSetScore(),
             'canCorrectResult' => $this->gameAuthorizationService->canCorrectTournamentGame(
                 $tournamentId,
                 $context->kind,

@@ -68,16 +68,16 @@ class GroupStandingService
         $this->groupStandingRepository->updateDetails(
             playerId: $dto->player1Id,
             hasWon: $dto->player1Id === $dto->winnerId,
-            legsWon: $dto->player1Score,
-            legsLost: $dto->player2Score,
+            matchUnitsWon: $dto->player1Score,
+            matchUnitsLost: $dto->player2Score,
             tournamentId: $dto->tournamentId,
         );
 
         $this->groupStandingRepository->updateDetails(
             playerId: $dto->player2Id,
             hasWon: $dto->player2Id === $dto->winnerId,
-            legsWon: $dto->player2Score,
-            legsLost: $dto->player1Score,
+            matchUnitsWon: $dto->player2Score,
+            matchUnitsLost: $dto->player1Score,
             tournamentId: $dto->tournamentId,
         );
     }
@@ -90,12 +90,12 @@ class GroupStandingService
     public function sortStandings(Collection $groupStandings, Collection $finishedGames): Collection
     {
         $sortedStandings = $groupStandings->sortByDesc(function ($standing) {
-                                                return [$standing->points, $standing->legsDifference];
+                                                return [$standing->points, $standing->matchUnitsDifference];
                                             })->values()
                                             ->map(fn ($standing, $index) => $standing->withPlace($index + 1));
 
         $sortedStandingsGroupedByPointsAndLegsDifference = $sortedStandings->groupBy(function ($standing) {
-            return $standing->points . '-' . $standing->legsDifference;
+            return $standing->points . '-' . $standing->matchUnitsDifference;
         });
 
         $result = collect();

@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('group_standings', function (Blueprint $table) {
@@ -23,11 +20,12 @@ return new class extends Migration
             $table->unsignedInteger('games_played')->default(0);
             $table->unsignedInteger('games_won')->default(0);
             $table->unsignedInteger('games_lost')->default(0);
-            $table->unsignedInteger('legs_won')->default(0);
-            $table->unsignedInteger('legs_lost')->default(0);
+            /** Jednostki wyniku meczu (legi przy 1 secie / sety przy multi-set). */
+            $table->integer('match_units_won')->default(0);
+            $table->integer('match_units_lost')->default(0);
             $table->integer('points')->default(0);
 
-            $table->integer('legs_difference')->virtualAs('legs_won - legs_lost');
+            $table->integer('match_units_difference')->virtualAs('match_units_won - match_units_lost');
 
             $table->timestamps();
 
@@ -35,9 +33,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('group_standings');

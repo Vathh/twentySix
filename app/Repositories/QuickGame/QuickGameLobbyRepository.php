@@ -7,15 +7,16 @@ use App\Models\QuickGame\QuickGameLobbyPlayer;
 use App\Models\QuickGame\QuickGameLobbyInvitation;
 use Illuminate\Support\Facades\DB;
 
+use App\Support\GameScoring\MatchFormat;
+
 class QuickGameLobbyRepository
 {
     public function create(int $hostUserId): QuickGameLobby
     {
-        return QuickGameLobby::create([
-            'host_id' => $hostUserId,
-            'status' => 'waiting',
-            'legs_count' => 2,
-        ]);
+        return QuickGameLobby::create(array_merge(
+            ['host_id' => $hostUserId, 'status' => 'waiting'],
+            MatchFormat::default()->toDatabaseColumns(),
+        ));
     }
 
     public function find(int $lobbyId): QuickGameLobby
@@ -61,8 +62,11 @@ class QuickGameLobbyRepository
             ->update(['is_ready' => $isReady]);
     }
 
-    public function updateSettings(int $lobbyId, int $hostUserId, ?int $legsCount = null, ?string $gameType = null): QuickGameLobby
-    {
+    public function updateSettings(
+        int $lobbyId,
+        int $hostUserId,
+        ?MatchFormat $matchFormat = null,
+    ): QuickGameLobby {
         $lobby = $this->find($lobbyId);
         if ($lobby->host_id !== $hostUserId) {
             throw new \RuntimeException('Tylko host może zmieniać ustawienia lobby');
@@ -70,17 +74,14 @@ class QuickGameLobbyRepository
         if ($lobby->status !== 'waiting') {
             throw new \RuntimeException('Nie można zmieniać ustawień po rozpoczęciu meczu');
         }
-        $updates = [];
-        if ($legsCount !== null && $legsCount >= 1 && $legsCount <= 15) {
-            $updates['legs_count'] = $legsCount;
+        if ($matchFormat !== null) {
+            $matchFormat->validate();
+            DB::table('quick_game_lobbies')->where('id', $lobbyId)->update(array_merge(
+                $matchFormat->toDatabaseColumns(),
+                ['updated_at' => now()],
+            ));
         }
-        if ($gameType !== null && in_array($gameType, ['501', 'cricket'], true)) {
-            $updates['game_type'] = $gameType;
-        }
-        if (!empty($updates)) {
-            $updates['updated_at'] = now();
-            DB::table('quick_game_lobbies')->where('id', $lobbyId)->update($updates);
-        }
+
         return $this->find($lobbyId);
     }
 
@@ -103,20 +104,18 @@ class QuickGameLobbyRepository
         return $this->find($lobbyId);
     }
 
-    public function startGame(int $lobbyId, ?int $legsCount = null, ?string $gameType = null, ?string $scoringMode = null): QuickGameLobby
+    public function startGame(int $lobbyId, ?MatchFormat $matchFormat = null, ?string $scoringMode = null): QuickGameLobby
     {
-        $this->find($lobbyId); // ensure lobby exists
+        $this->find($lobbyId);
         $now = now();
         $updates = [
             'status' => 'started',
             'started_at' => $now,
             'updated_at' => $now,
         ];
-        if ($legsCount !== null && $legsCount >= 1 && $legsCount <= 15) {
-            $updates['legs_count'] = $legsCount;
-        }
-        if ($gameType !== null && in_array($gameType, ['501', 'cricket'], true)) {
-            $updates['game_type'] = $gameType;
+        if ($matchFormat !== null) {
+            $matchFormat->validate();
+            $updates = array_merge($updates, $matchFormat->toDatabaseColumns());
         }
         if ($scoringMode !== null && in_array($scoringMode, ['one_device', 'each_own'], true)) {
             $updates['scoring_mode'] = $scoringMode;
@@ -124,6 +123,7 @@ class QuickGameLobbyRepository
         DB::table('quick_game_lobbies')
             ->where('id', $lobbyId)
             ->update($updates);
+
         return $this->find($lobbyId);
     }
 

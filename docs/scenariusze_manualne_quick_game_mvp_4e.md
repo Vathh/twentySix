@@ -1,6 +1,6 @@
-# Scenariusze manualne — Quick game MVP (krok 4E)
+# Scenariusze manualne — Quick game MVP
 
-Źródło: [`product.md`](product.md), [`plan_quick_game_mvp_step4.md`](plan_quick_game_mvp_step4.md).
+Źródło: [`product.md`](product.md). Regresja: [`instrukcja_testerow_mvp_v1.md`](instrukcja_testerow_mvp_v1.md).
 
 ---
 
@@ -9,9 +9,9 @@
 1. Dwóch znajomych loguje się na mobile.
 2. Host: **Quick game online** → utwórz lobby → zaproś znajomego.
 3. Znajomy: Zaproszenia → dołącz → **Gotowy**.
-4. Host: tryb **Każdy na swoim** → **Rozpocznij** (BO3 = 2 legi).
+4. Host: format gry (domyślnie **501 · do 2 legów**) → tryb **Każdy na swoim** → **Rozpocznij**.
 5. Obaj widzą ten sam stan (FFA sync); każdy wpisuje tylko w swojej turze.
-6. Dokończ mecz do 2 legów — w bazie: `quick_game_ffa_sessions`, `quick_games`, `quick_game_results`.
+6. Dokończ mecz zgodnie z formatem — w bazie: `quick_game_ffa_sessions`, `quick_games`, `quick_game_results`.
 7. Opcjonalnie: achievement (np. 180) trafia przez `POST /api/quick-game/update` z `gameId`.
 
 **Oczekiwane:** brak rozjazdu tur; koniec meczu na obu telefonach jednocześnie.
@@ -30,10 +30,18 @@
 ## C. Trening — offline (bez internetu)
 
 1. Wyłącz Wi‑Fi / dane na telefonie (lub tryb samolotowy).
-2. **Trening** → 4 graczy, imiona lokalne → **Rozpocznij**.
-3. Bull modal → rozegraj BO3 na jednym telefonie.
+2. **Trening** → 4 graczy, imiona lokalne, format (np. 501 · do 2 legów) → **Rozpocznij**.
+3. Bull modal → rozegraj mecz na jednym telefonie.
 4. Po meczu: komunikat „Wynik nie został zapisany”.
 5. Włącz internet — brak nowego rekordu w `quick_games`.
+
+---
+
+## C2. Trening — format wielosetowy (opcjonalnie)
+
+1. **Trening** → format np. **501 · 2 sety · 2 legi/set**.
+2. Wygranie lega zwiększa licznik w secie; po 2 legach w secie — +1 set, reset legów.
+3. Mecz kończy się po 2 wygranych setach; wynik nie jest zapisywany.
 
 ---
 

@@ -191,7 +191,7 @@ class QuickGameFfaPresenceApiTest extends TestCase
         Sanctum::actingAs($this->host);
         $this->postJson("/api/quick-game/lobby/{$lobbyId}/ready")->assertOk();
         $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
-            'legsCount' => 2,
+            'matchFormat' => ['legsToWinSet' => 2, 'setsToWinMatch' => 1, 'startingScore' => 501],
             'gameType' => '501',
             'scoringMode' => 'each_own',
         ])->assertOk();
@@ -282,7 +282,7 @@ class QuickGameFfaPresenceApiTest extends TestCase
         Sanctum::actingAs($this->host);
         $this->postJson("/api/quick-game/lobby/{$lobbyId}/ready")->assertOk();
         $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
-            'legsCount' => 2,
+            'matchFormat' => ['legsToWinSet' => 2, 'setsToWinMatch' => 1, 'startingScore' => 501],
             'gameType' => '501',
             'scoringMode' => 'each_own',
         ])->assertOk();
@@ -321,7 +321,7 @@ class QuickGameFfaPresenceApiTest extends TestCase
         $this->postJson("/api/quick-game/lobby/{$lobbyId}/ready")->assertOk();
 
         $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
-            'legsCount' => 2,
+            'matchFormat' => ['legsToWinSet' => 2, 'setsToWinMatch' => 1, 'startingScore' => 501],
             'gameType' => '501',
             'scoringMode' => 'each_own',
         ])->assertOk();

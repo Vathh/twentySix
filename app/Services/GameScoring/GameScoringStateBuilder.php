@@ -36,8 +36,9 @@ class GameScoringStateBuilder
 
         $openLeg = $legs->first(fn (GameLeg $leg) => $leg->isOpen());
 
-        $player1LegsWon = (int) ($game->player1_score ?? 0);
-        $player2LegsWon = (int) ($game->player2_score ?? 0);
+        $player1MatchScore = (int) ($game->player1_score ?? 0);
+        $player2MatchScore = (int) ($game->player2_score ?? 0);
+        $isSingleSet = $context->matchFormat->isSingleSet();
 
         $players = [
             $this->buildPlayerState(
@@ -47,7 +48,8 @@ class GameScoringStateBuilder
                 $allVisits,
                 $allLegStats,
                 $context,
-                $player1LegsWon,
+                $isSingleSet ? $player1MatchScore : (int) ($game->player1_legs_in_set ?? 0),
+                $isSingleSet ? 0 : $player1MatchScore,
             ),
             $this->buildPlayerState(
                 $context->player2Id,
@@ -56,7 +58,8 @@ class GameScoringStateBuilder
                 $allVisits,
                 $allLegStats,
                 $context,
-                $player2LegsWon,
+                $isSingleSet ? $player2MatchScore : (int) ($game->player2_legs_in_set ?? 0),
+                $isSingleSet ? 0 : $player2MatchScore,
             ),
         ];
 
@@ -77,10 +80,15 @@ class GameScoringStateBuilder
                 'kind' => $context->kind->value,
                 'status' => $game->status instanceof GameStatus ? $game->status->value : $game->status,
                 'tournamentId' => $context->tournamentId,
-                'legsToWin' => $context->legsToWin,
-                'player1LegsWon' => $player1LegsWon,
-                'player2LegsWon' => $player2LegsWon,
-                'startingScore' => $context->startingScore,
+                'startingScore' => $context->startingScore(),
+                'player1LegsWon' => $isSingleSet ? $player1MatchScore : (int) ($game->player1_legs_in_set ?? 0),
+                'player2LegsWon' => $isSingleSet ? $player2MatchScore : (int) ($game->player2_legs_in_set ?? 0),
+                'player1SetsWon' => $isSingleSet ? 0 : $player1MatchScore,
+                'player2SetsWon' => $isSingleSet ? 0 : $player2MatchScore,
+                'player1LegsInSet' => (int) ($game->player1_legs_in_set ?? 0),
+                'player2LegsInSet' => (int) ($game->player2_legs_in_set ?? 0),
+                'currentSetNumber' => (int) ($game->current_set_number ?? 1),
+                'matchFormat' => $context->matchFormat->toArray(),
             ],
             'players' => $players,
             'currentLeg' => $openLeg ? [
@@ -120,19 +128,22 @@ class GameScoringStateBuilder
         $allVisits,
         $allLegStats,
         GameScoringContext $context,
-        int $legsWon,
+        int $legsWonInSet,
+        int $setsWon,
     ): array {
         $gameVisits = $allVisits->where('player_id', $playerId);
         $openLegVisits = $openLeg
             ? $gameVisits->where('game_leg_id', $openLeg->id)
             : collect();
 
-        $remaining = VisitRecorder::remainingFromLegVisits($openLegVisits, $context->startingScore);
+        $remaining = VisitRecorder::remainingFromLegVisits($openLegVisits, $context->startingScore());
 
         return [
             'playerId' => $playerId,
             'name' => $name,
-            'legsWon' => $legsWon,
+            'legsWon' => $context->matchFormat->isSingleSet() ? $legsWonInSet : $setsWon,
+            'legsWonInSet' => $legsWonInSet,
+            'setsWon' => $setsWon,
             'remaining' => $remaining,
             'legAverage' => GameStatisticsCalculator::legAverage($openLegVisits),
             'gameAverage' => GameStatisticsCalculator::gameAverage($gameVisits),

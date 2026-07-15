@@ -1,6 +1,6 @@
 # Wdrożenie staging — twentySix MVP
 
-Plan nadrzędny: [`plan_krok6_release_rc.md`](plan_krok6_release_rc.md).
+Runbook operacyjny. Aktywne zadania deploy: [`NEXT_STEPS.md`](NEXT_STEPS.md). Indeks docs: [`README.md`](README.md).
 
 Założenia: Ubuntu 22.04+ (lub inny Linux), nginx, PHP 8.2+, MySQL 8, Node 20+ (tylko do buildu assetów).
 
@@ -210,5 +210,21 @@ php artisan migrate:fresh --force
 ```
 
 Po `migrate:fresh` baza jest pusta — wszyscy od zera przez rejestrację.
+
+---
+
+## 10. Weryfikacja Reverb po deploy
+
+Po aktualizacji sprawdź (SSH):
+
+```bash
+systemctl status twentysix-reverb --no-pager
+ss -tlnp | grep 8080
+grep -A6 'location /app' /etc/nginx/sites-available/twentysix
+```
+
+W `.env`: `BROADCAST_CONNECTION=reverb`, `REVERB_APP_KEY` = ten sam co w mobile (`EXPO_PUBLIC_REVERB_APP_KEY` w `eas.json`).
+
+Bez działającego Reverb lobby/mecz **nadal działają przez polling HTTP** (wolniej); sync „na żywo” wymaga WSS.
 
 ---

@@ -75,19 +75,6 @@ class ApiTestScript
         ]);
     }
 
-    public function createQuickGame(int $player1Id, int $player2Id): array
-    {
-        return $this->post('/api/quick-game/create', [
-            'player1Id' => $player1Id,
-            'player2Id' => $player2Id,
-        ]);
-    }
-
-    public function getActiveQuickGames(): array
-    {
-        return $this->get('/api/quick-game/active');
-    }
-
     private function get(string $endpoint): array
     {
         $ch = curl_init($this->baseUrl . $endpoint);

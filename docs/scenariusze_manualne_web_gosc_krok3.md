@@ -1,6 +1,6 @@
-# Scenariusze manualne — Web gość (krok 3)
+# Scenariusze manualne — Web gość
 
-Źródło: [`product.md`](product.md), [`plan_mvp_domkniecie.md`](plan_mvp_domkniecie.md).
+Źródło: [`product.md`](product.md). Regresja: [`instrukcja_testerow_mvp_v1.md`](instrukcja_testerow_mvp_v1.md).
 
 Powiązane: turniej tablet — [`scenariusze_manualne_turniej_mvp.md`](scenariusze_manualne_turniej_mvp.md).
 
@@ -152,4 +152,4 @@ W **zwykłym oknie** (zalogowany `demo-admin@twentysix.local`).
 
 **Krok 3 uznany za zamknięty**, gdy wszystkie wiersze A1–A8 i B1–B2 są OK (B3 opcjonalnie).
 
-Następny krok: [`plan_mvp_domkniecie.md`](plan_mvp_domkniecie.md) → **Krok 4** (`php artisan test`).
+Powiązane: [`scenariusze_manualne_turniej_mvp.md`](scenariusze_manualne_turniej_mvp.md) · testy auto: `php artisan test`.

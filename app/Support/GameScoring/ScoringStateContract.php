@@ -4,7 +4,7 @@ namespace App\Support\GameScoring;
 
 /**
  * Wspólny kontrakt pól odpowiedzi scoringu (turniej H2H + quick FFA).
- * Pola additive — istniejące `game`, `session`, `players` pozostają bez zmian.
+ * Format meczu: wyłącznie `meta.matchFormat` (oraz `game|session.matchFormat` od builderów).
  */
 final class ScoringStateContract
 {
@@ -25,6 +25,7 @@ final class ScoringStateContract
         ));
 
         $legOpenerIndex = (int) ($payload['legOpenerIndex'] ?? 0);
+        $matchFormat = $game['matchFormat'] ?? MatchFormat::default()->toArray();
 
         $payload['format'] = 'h2h';
         $payload['revision'] = self::revisionForH2h($payload);
@@ -39,8 +40,9 @@ final class ScoringStateContract
         ];
         $payload['meta'] = [
             'kind' => self::h2hKind((string) ($game['kind'] ?? 'group')),
-            'legsToWin' => (int) ($game['legsToWin'] ?? 2),
-            'startingScore' => (int) ($game['startingScore'] ?? 501),
+            'matchFormat' => $matchFormat,
+            'startingScore' => (int) ($matchFormat['startingScore'] ?? $game['startingScore'] ?? 501),
+            'currentSetNumber' => (int) ($game['currentSetNumber'] ?? 1),
             'gameId' => isset($game['id']) ? (int) $game['id'] : null,
             'lobbyId' => null,
             'tournamentId' => isset($game['tournamentId']) ? (int) $game['tournamentId'] : null,
@@ -60,6 +62,7 @@ final class ScoringStateContract
         $session = $payload['session'] ?? [];
         $game = $payload['game'] ?? [];
         $visits = $payload['visits'] ?? [];
+        $matchFormat = $session['matchFormat'] ?? $game['matchFormat'] ?? MatchFormat::default()->toArray();
 
         $payload['format'] = 'ffa';
         $payload['revision'] = self::revisionForFfa($payload);
@@ -70,8 +73,9 @@ final class ScoringStateContract
         ];
         $payload['meta'] = [
             'kind' => 'quick_ffa',
-            'legsToWin' => (int) ($session['legsToWin'] ?? $game['legsToWin'] ?? 2),
-            'startingScore' => (int) ($session['startingScore'] ?? 501),
+            'matchFormat' => $matchFormat,
+            'startingScore' => (int) ($matchFormat['startingScore'] ?? $session['startingScore'] ?? 501),
+            'currentSetNumber' => (int) ($session['currentSetNumber'] ?? 1),
             'gameId' => isset($game['id']) ? (int) $game['id'] : null,
             'lobbyId' => isset($session['lobbyId']) ? (int) $session['lobbyId'] : null,
             'tournamentId' => null,
@@ -121,6 +125,7 @@ final class ScoringStateContract
         $session = $payload['session'] ?? [];
         $visits = $payload['visits'] ?? [];
         $game = $payload['game'] ?? [];
+        $matchFormat = $session['matchFormat'] ?? $game['matchFormat'] ?? [];
 
         $rev = (int) ($session['stateVersion'] ?? 0) * 1_000_000;
         $rev += count($visits) * 1_000;
@@ -136,7 +141,8 @@ final class ScoringStateContract
             $maxLegsWon = max($maxLegsWon, (int) ($player['legsWon'] ?? 0));
         }
         $rev += $maxLegsWon * 10_000;
-        $rev += (int) ($session['legsToWin'] ?? $game['legsToWin'] ?? 0);
+        $rev += (int) ($matchFormat['legsToWinSet'] ?? $session['legsToWinSet'] ?? 0);
+        $rev += (int) ($matchFormat['setsToWinMatch'] ?? $session['setsToWinMatch'] ?? 0) * 100;
 
         if (self::ffaStatus($session, $game) === 'finished') {
             $rev += 999_999_999;

@@ -9,6 +9,7 @@ use App\Enums\PlayoffSlot;
 use App\Factories\PlayoffBracketFactory;
 use App\Repositories\GroupStanding\GroupStandingRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
+use App\Repositories\Tournament\TournamentMatchFormatRepository;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Support\Tournament\PlayoffFirstRoundPairing;
 
@@ -20,6 +21,7 @@ class PlayoffService
         private PlayoffGameRepository $gameRepository,
         private GroupStandingRepository $groupStandingRepository,
         private TournamentRepository $tournamentRepository,
+        private TournamentMatchFormatRepository $matchFormatRepository,
     )
     {
     }
@@ -42,7 +44,11 @@ class PlayoffService
 
         $playoffGames = $this->bracketFactory->create($tournamentId, $bracketSize, $firstRoundPairs);
 
-        $this->gameRepository->createMany($playoffGames);
+        $formatsByStage = $this->matchFormatRepository->getForTournament($tournamentId)
+            ->mapWithKeys(fn ($row) => [$row->stage => $row->toMatchFormat()])
+            ->all();
+
+        $this->gameRepository->createMany($playoffGames, $formatsByStage);
     }
 
     public function update(GameResultDTO $dto, PlayoffGameDomain $gameToUpdate): void

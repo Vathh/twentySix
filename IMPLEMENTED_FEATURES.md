@@ -3,7 +3,7 @@
 Mapa zgodności kodu z [`docs/product.md`](docs/product.md).  
 **Legenda:** ✅ gotowe · ⚠️ częściowo · ❌ brak
 
-Ostatnia aktualizacja: lipiec 2026 (krok 5 — domknięcie docs).
+Ostatnia aktualizacja: lipiec 2026 — **MVP v1 otagowane** (`v1.0.0-mvp`).
 
 ---
 
@@ -12,12 +12,12 @@ Ostatnia aktualizacja: lipiec 2026 (krok 5 — domknięcie docs).
 | Obszar | Postęp | Najważniejsze luki |
 |--------|--------|-------------------|
 | **Web** | ~95% | Live całego turnieju (WS) — poza MVP |
-| **API** | ~90% | — |
+| **API** | ~95% | — |
 | **Mobile** | ~90% | Zob. [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) |
 
-Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `product.md`.
+Szczegóły wymagań: [`docs/product.md`](docs/product.md). Aktywne zadania: [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md).
 
-**Weryfikacja MVP (manual + auto):** kroki 2–4 planu [`docs/plan_mvp_domkniecie.md`](docs/plan_mvp_domkniecie.md) ✅ · `php artisan test` — 172 passed, 14 skipped (lipiec 2026).
+**Weryfikacja MVP:** scenariusze manualne w [`docs/README.md`](docs/README.md) ✅ · `php artisan test` — 172 passed, 14 skipped (lipiec 2026).
 
 ---
 
@@ -28,12 +28,12 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Twórca ligi = organizator | ✅ | `LeagueRepository`, `LeagueController`, `LeaguePolicy` |
 | Współadmin per liga (pełne prawa) | ✅ | `/leagues/{id}/admins/*`, `LeaguePolicy` |
 | Turniej: goście (nazwa) | ✅ | `SeasonController`, `PlayerRepository` |
-| Turniej: zaproszenia (wyszukiwarka + akceptacja) | ⚠️ | Strona startu: wysyłka, masowy invite ze składu; mobile: akceptacja/wycofanie |
+| Turniej: zaproszenia (wyszukiwarka + akceptacja) | ✅ | Strona startu: wysyłka, masowy invite ze składu (`relatedUsers`); mobile: accept/reject/withdraw |
 | Start turnieju: liczba grup | ✅ | `start.blade.php` — potęgi 2 (2…64), `TournamentStartRules` |
 | Start: walidowany awans z grupy | ✅ | Kreator + `TournamentStartValidator` |
 | Start: liczba kodów tabletów (≠ liczba grup) | ✅ | `tabletsCount` w kreatorze, `LoginCodeService` |
 | Start: tylko zaakceptowani + goście | ✅ | `getTournamentStartPool`, walidacja przy `run` |
-| Publiczny podgląd lig/turniejów | ✅ | Gość bez logowania — krok 3: [`scenariusze_manualne_web_gosc_krok3.md`](docs/scenariusze_manualne_web_gosc_krok3.md) |
+| Publiczny podgląd lig/turniejów | ✅ | Gość bez logowania — [`scenariusze_manualne_web_gosc_krok3.md`](docs/scenariusze_manualne_web_gosc_krok3.md) |
 | Korekta wyniku / walkower na webie | ✅ | `games/show` — formularz admina sezonu, `GameResultCorrectionService` |
 | Live podgląd meczu (WebSocket) | ✅ | `games/{type}/{id}/live`, `game-live.js`, Reverb `game.state` |
 | Live WebSocket na webie (turniej) | ❌ | Brak widoku live całego turnieju z WS |
@@ -66,6 +66,7 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 | Scoring API turniej | ✅ | `GameScoringService`, group/playoff |
 | Wspólny silnik wizyt | ✅ | `VisitRecorder`, `ScoringStateContract` |
 | Legacy H2H quick scoring | ❌ wycofane | API `/quick-games/{id}/scoring/*` usunięte; quick online tylko FFA z lobby |
+| Legacy `quick-game/create|active|inProgress` | ❌ wycofane | Usunięte (lipiec 2026); wynik FFA + `POST /api/quick-game/update` (achievementy) |
 | Achievementy quick game online | ✅ | `POST /api/quick-game/update` (tylko `gameId` + achievements) |
 | Finalizacja turnieju po scoring API | ✅ | `GameService::finalizeTournamentGameFromScoring` po `closeLeg` (tabele, playoff, statystyki) |
 | Achievementy na zakończonym meczu | ✅ | `POST /api/game/update` — tylko achievementy gdy gra `FINISHED`; bulk finish odrzucony |
@@ -93,15 +94,18 @@ Szczegóły znanych rozbieżności: sekcja „Uwagi dla implementacji” w `prod
 
 ---
 
-## Priorytetowe zadania do MVP (sugerowana kolejność)
+## MVP v1 — zamknięte (lipiec 2026)
 
-1. ~~**Turniej — logika:** podział grup, awans z grupy, bracket dynamiczny, playoff R1 bez par z grupy, min. 4 graczy.~~ ✅ *(czerwiec 2026)*
-2. ~~**Zaproszenia turniejowe:** API + web (wysyłka) + mobile (akceptacja).~~ ✅ *(czerwiec 2026)*
-3. ~~**Web:** edycja wyniku / walkower; live podgląd meczu~~ ✅ *(czerwiec 2026)*.
-4. ~~**Tablet mobile:** lock meczu; playoff UI; scoring API + WS.~~ ✅ *(czerwiec 2026)*
-5. ~~**Quick game:** FFA do 8, rotacja openera, friends-only, multi-device 3+.~~ ✅ *(czerwiec 2026)*
-6. ~~**Trening mobile** (offline/local, bez zapisu).~~ ✅ *(czerwiec 2026)*
-7. ~~**Web gość + znajomi web + testy auto** (kroki 3–4 planu MVP).~~ ✅ *(lipiec 2026)*
+Wszystkie punkty poniżej ✅. Kolejne prace: [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md).
+
+1. ~~Turniej — logika (grupy, awans, bracket, min. 4 graczy)~~
+2. ~~Zaproszenia turniejowe — API + web + mobile~~
+3. ~~Web — korekta / walkower, live meczu~~
+4. ~~Tablet mobile — lock, playoff, scoring API + WS~~
+5. ~~Quick game FFA 2–8, oba tryby urządzeń~~
+6. ~~Trening mobile (offline, bez zapisu)~~
+7. ~~Web gość, znajomi web, testy auto~~
+8. ~~Release RC + tag `v1.0.0-mvp`~~
 
 ---
 
@@ -130,7 +134,8 @@ Pełna suite: `php artisan test` — **172 passed, 14 skipped** (lipiec 2026). P
 ## Powiązane dokumenty
 
 - [`docs/product.md`](docs/product.md) — wizja i MVP
+- [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md) — aktywne zadania
+- [`docs/README.md`](docs/README.md) — indeks dokumentacji
 - [`LOGIKA_BIZNESOWA.md`](LOGIKA_BIZNESOWA.md) — przepływy
-- [`docs/plan_mvp_domkniecie.md`](docs/plan_mvp_domkniecie.md) — plan domknięcia v1
-- [`README.md`](README.md) — uruchomienie dev / deploy LAN
+- [`README.md`](README.md) — uruchomienie dev / deploy
 - Mobile: [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md)

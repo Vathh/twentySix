@@ -13,7 +13,7 @@
                 @endforeach
                 <th class="px-2 py-2 text-center">W</th>
                 <th class="px-2 py-2 text-center">L</th>
-                <th class="px-2 py-2 text-center">Legi</th>
+                <th class="px-2 py-2 text-center">Wynik</th>
                 <th class="px-2 py-2 text-center">Pkt</th>
                 <th class="px-2 py-2 text-center">Miejsce</th>
             </tr>
@@ -80,7 +80,7 @@
 
                     <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->gamesWon }}</td>
                     <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->gamesLost }}</td>
-                    <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->legsDifference }}</td>
+                    <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->matchUnitsDifference }}</td>
                     <td class="px-2 py-2 text-center">{{ $groupStandings[$number][$rowPlayer->id]->points }}</td>
                     <td class="px-2 py-2 text-center font-semibold text-light-green">{{ $groupStandings[$number][$rowPlayer->id]->place }}</td>
                 </tr>

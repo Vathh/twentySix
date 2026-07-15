@@ -2,11 +2,14 @@
 
 namespace App\Services\Tournament;
 
+use App\Enums\GameStage;
 use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\GroupStanding\GroupStandingRepository;
+use App\Repositories\Tournament\TournamentMatchFormatRepository;
 use App\Repositories\Tournament\TournamentRepository;
+use App\Support\GameScoring\MatchFormat;
 use App\Support\Tournament\TournamentGroupAdvanceDistribution;
 use App\Support\Tournament\TournamentGroupDistribution;
 use App\Services\Tournament\LoginCodeService;
@@ -27,6 +30,7 @@ class TournamentService
         private LoginCodeService          $loginCodeService,
         private PointSchemeService        $pointSchemeService,
         private TournamentStartValidator  $startValidator,
+        private TournamentMatchFormatRepository $matchFormatRepository,
     )
     {
     }
@@ -57,6 +61,7 @@ class TournamentService
         int $groupsCount,
         int $playoffBracketSize,
         ?int $tabletsCount = null,
+        array $formatsByStage = [],
     ): bool {
         $tabletsCount ??= $groupsCount;
 
@@ -65,6 +70,16 @@ class TournamentService
             groupsCount: $groupsCount,
             playoffBracketSize: $playoffBracketSize,
             tabletsCount: $tabletsCount,
+        );
+
+        if ($formatsByStage === []) {
+            $formatsByStage = \App\Support\Tournament\TournamentMatchFormatRequestParser::defaultsForBracketSize(
+                $playoffBracketSize,
+            );
+        }
+
+        $groupFormat = MatchFormat::fromArray(
+            $formatsByStage[GameStage::GROUP->value] ?? MatchFormat::default()->toArray(),
         );
 
         $playersAmount = count($playerIds);
@@ -77,7 +92,7 @@ class TournamentService
 
         foreach ($groups as $groupIndex => $group) {
             foreach ($this->generateGamesForGroup($group) as $game) {
-                $gamesToInsert[] = [
+                $gamesToInsert[] = array_merge([
                     'tournament_id' => $tournamentId,
                     'player1_id' => $game['player1_id'],
                     'player2_id' => $game['player2_id'],
@@ -86,8 +101,8 @@ class TournamentService
                     'group_number' => $groupIndex + 1,
                     'status' => GameStatus::SCHEDULED,
                     'created_at' => now(),
-                    'updated_at' => now()
-                ];
+                    'updated_at' => now(),
+                ], $groupFormat->toDatabaseColumns());
             }
         }
 
@@ -101,8 +116,10 @@ class TournamentService
                 $playoffBracketSize,
                 $groupAdvances,
                 $tabletsCount,
+                $formatsByStage,
             ) {
                 if ($this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId)) {
+                    $this->matchFormatRepository->saveForTournament($tournamentId, $formatsByStage);
                     $this->tournamentRepository->saveStartConfiguration(
                         $tournamentId,
                         $groupsCount,

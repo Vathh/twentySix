@@ -3,7 +3,7 @@
 namespace App\Support;
 
 use App\Models\QuickGame\QuickGameLobby;
-use App\Services\QuickGame\QuickGameLobbyService;
+use App\Support\GameScoring\MatchFormat;
 
 class QuickGameLobbyPayload
 {
@@ -32,12 +32,14 @@ class QuickGameLobbyPayload
             ];
         })->values()->all();
 
+        $format = MatchFormat::fromRecord($lobby);
+
         $out = [
             'id' => $lobby->id,
             'hostId' => $lobby->host_id,
             'status' => $lobby->status,
-            'legsCount' => $lobby->legs_count ?? QuickGameLobbyService::DEFAULT_LEGS_TO_WIN,
-            'gameType' => $lobby->game_type ?? '501',
+            'matchFormat' => $format->toArray(),
+            'gameType' => MatchFormat::normalizeGameType($lobby->game_type ?? 'x01'),
             'scoringMode' => $lobby->scoring_mode ?? 'each_own',
             'players' => $players,
             'matchInProgress' => $lobby->status === 'started'

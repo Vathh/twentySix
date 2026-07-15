@@ -2,10 +2,12 @@
 
 namespace App\Support\QuickGameFfa;
 
-use App\Support\GameScoring\VisitRecorder;
 use App\Models\Player\Player;
 use App\Models\QuickGame\QuickGameFfaSession;
+use App\Support\GameScoring\MatchFormat;
+use App\Support\GameScoring\MatchFormatScoring;
 use App\Support\GameScoring\ScoringStateContract;
+use App\Support\GameScoring\VisitRecorder;
 use Illuminate\Support\Collection;
 
 class QuickGameFfaStateBuilder
@@ -17,7 +19,13 @@ class QuickGameFfaStateBuilder
     {
         $playerIds = $session->player_order ?? [];
         $players = Player::whereIn('id', $playerIds)->get()->keyBy('id');
+        $format = MatchFormat::fromRecord($session);
+        $legsWonInSet = $session->legs_won_in_set ?? [];
+        $setsWon = $session->sets_won ?? [];
         $legsWon = VisitRecorder::countLegsWon($activeVisits, $playerIds);
+        if (! $format->isSingleSet()) {
+            $legsWon = MatchFormatScoring::legsWonForDisplay($format, $legsWonInSet, $setsWon);
+        }
         $currentLegVisits = $activeVisits->where('leg_number', $session->current_leg_number);
         $allLegGroups = $activeVisits->groupBy('leg_number');
 
@@ -60,7 +68,13 @@ class QuickGameFfaStateBuilder
                 'playerId' => (int) $playerId,
                 'name' => $player?->name ?? 'Gracz',
                 'orderIndex' => $orderIndex,
-                'legsWon' => $legsWon[$playerId] ?? 0,
+                'legsWon' => $format->isSingleSet()
+                    ? ($legsWon[$playerId] ?? 0)
+                    : (int) ($setsWon[$playerId] ?? 0),
+                'legsWonInSet' => $format->isSingleSet()
+                    ? ($legsWon[$playerId] ?? 0)
+                    : (int) ($legsWonInSet[$playerId] ?? 0),
+                'setsWon' => (int) ($setsWon[$playerId] ?? ($format->isSingleSet() ? 0 : ($legsWon[$playerId] ?? 0))),
                 'remaining' => $remaining,
                 'legAverage' => $this->legAverage($legVisits),
                 'gameAverage' => $this->gameAverage($activeVisits, (int) $playerId, $session->starting_score),
@@ -77,11 +91,14 @@ class QuickGameFfaStateBuilder
                 'id' => $session->id,
                 'lobbyId' => $session->lobby_id,
                 'status' => $session->status,
-                'legsToWin' => (int) $session->legs_to_win,
+                'legsToWinSet' => $format->legsToWinSet,
+                'setsToWinMatch' => $format->setsToWinMatch,
+                'matchFormat' => $format->toArray(),
                 'gameType' => $session->game_type,
                 'scoringMode' => $session->scoring_mode,
                 'startingScore' => (int) $session->starting_score,
                 'currentLegNumber' => (int) $session->current_leg_number,
+                'currentSetNumber' => (int) ($session->current_set_number ?? 1),
                 'legOpenerIndex' => (int) $session->leg_opener_index,
                 'currentPlayerIndex' => (int) $session->current_player_index,
                 'stateVersion' => (int) $session->state_version,
@@ -106,7 +123,7 @@ class QuickGameFfaStateBuilder
             ])->values()->all(),
             'game' => [
                 'status' => $session->status === QuickGameFfaSession::STATUS_FINISHED ? 'finished' : 'in_progress',
-                'legsToWin' => (int) $session->legs_to_win,
+                'matchFormat' => $format->toArray(),
             ],
         ];
 

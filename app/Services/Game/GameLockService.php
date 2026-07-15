@@ -30,7 +30,7 @@ class GameLockService
                 || $this->gameRepository->isInProgress($gameId),
             GameType::PLAYOFF => $this->playoffGameRepository->tryLockScheduled($gameId)
                 || $this->playoffGameRepository->isInProgress($gameId),
-            GameType::QUICK_MATCH => throw new DomainException('Użyj endpointu quick-game/inProgress.'),
+            GameType::QUICK_MATCH => throw new DomainException('Quick game blokuje się przez sesję FFA lobby, nie przez lock turniejowy.'),
         };
 
         if (! $locked) {
@@ -47,7 +47,7 @@ class GameLockService
             GameType::PLAYOFF => GameScoringContext::fromPlayoffGame(
                 PlayoffGame::query()->findOrFail($gameId),
             ),
-            GameType::QUICK_MATCH => throw new DomainException('Użyj endpointu quick-game.'),
+            GameType::QUICK_MATCH => throw new DomainException('Quick game zwalnia się z sesją FFA, nie przez release turniejowy.'),
         };
 
         if (! $this->canRelease($context)) {

@@ -26,8 +26,11 @@ class GameRepository
             ->update([
                 'player1_score' => $dto->player1Score,
                 'player2_score' => $dto->player2Score,
+                'player1_legs_in_set' => 0,
+                'player2_legs_in_set' => 0,
+                'current_set_number' => 1,
                 'winner_id' => $dto->winnerId,
-                'status' => GameStatus::FINISHED
+                'status' => GameStatus::FINISHED,
             ]);
     }
 

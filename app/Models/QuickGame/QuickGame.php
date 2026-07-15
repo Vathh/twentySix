@@ -17,7 +17,10 @@ class QuickGame extends Model
         'player2_score',
         'winner_id',
         'status',
-        'legs_count',
+        'starting_score',
+        'legs_to_win_set',
+        'sets_to_win_match',
+        'game_type',
     ];
 
     protected $casts = [

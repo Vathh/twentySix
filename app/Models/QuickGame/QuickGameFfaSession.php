@@ -14,15 +14,19 @@ class QuickGameFfaSession extends Model
 
     protected $fillable = [
         'lobby_id',
-        'legs_to_win',
+        'legs_to_win_set',
+        'sets_to_win_match',
         'game_type',
         'scoring_mode',
         'starting_score',
         'status',
         'player_order',
+        'legs_won_in_set',
+        'sets_won',
         'leg_opener_index',
         'current_player_index',
         'current_leg_number',
+        'current_set_number',
         'state_version',
         'quick_game_id',
         'started_at',
@@ -31,6 +35,8 @@ class QuickGameFfaSession extends Model
 
     protected $casts = [
         'player_order' => 'array',
+        'legs_won_in_set' => 'array',
+        'sets_won' => 'array',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];

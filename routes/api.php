@@ -65,9 +65,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('quick-game')->group(function () {
-        Route::post('/create', [QuickGameController::class, 'create']);
-        Route::get('/active', [QuickGameController::class, 'getActive']);
-        Route::post('/inProgress', [QuickGameController::class, 'setStatusInProgress']);
         Route::post('/update', [QuickGameController::class, 'update']);
     });
 

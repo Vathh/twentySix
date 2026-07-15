@@ -22,8 +22,8 @@ class GroupStandingRepository
                     'games_played' => 0,
                     'games_won' => 0,
                     'games_lost' => 0,
-                    'legs_won' => 0,
-                    'legs_lost' => 0,
+                    'match_units_won' => 0,
+                    'match_units_lost' => 0,
                     'points' => 0,
                     'place' => 0,
                     'created_at' => now(),
@@ -70,13 +70,13 @@ class GroupStandingRepository
                 'games_played' => 0,
                 'games_won' => 0,
                 'games_lost' => 0,
-                'legs_won' => 0,
-                'legs_lost' => 0,
+                'match_units_won' => 0,
+                'match_units_lost' => 0,
                 'points' => 0,
             ]);
     }
 
-    public function updateDetails(int $playerId, bool $hasWon, int $legsWon, int $legsLost, int $tournamentId): void
+    public function updateDetails(int $playerId, bool $hasWon, int $matchUnitsWon, int $matchUnitsLost, int $tournamentId): void
     {
         GroupStanding::where('player_id', $playerId)
             ->where('tournament_id', $tournamentId)
@@ -84,8 +84,8 @@ class GroupStandingRepository
                 'games_played' => DB::raw('games_played + 1'),
                 'games_won' => $hasWon ? DB::raw('games_won + 1') : DB::raw('games_won'),
                 'games_lost' => !$hasWon ? DB::raw('games_lost + 1') : DB::raw('games_lost'),
-                'legs_won' => DB::raw("legs_won + $legsWon"),
-                'legs_lost' => DB::raw("legs_lost + $legsLost"),
+                'match_units_won' => DB::raw("match_units_won + $matchUnitsWon"),
+                'match_units_lost' => DB::raw("match_units_lost + $matchUnitsLost"),
                 'points' => $hasWon ? DB::raw('points + 1') : DB::raw('points'),
             ]);
     }

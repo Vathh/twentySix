@@ -16,9 +16,16 @@ class Game extends Model
         'player2_id',
         'player1_score',
         'player2_score',
+        'player1_legs_in_set',
+        'player2_legs_in_set',
+        'current_set_number',
         'winner_id',
         'group_number',
-        'status'
+        'status',
+        'starting_score',
+        'legs_to_win_set',
+        'sets_to_win_match',
+        'game_type',
     ];
 
     protected $casts = [

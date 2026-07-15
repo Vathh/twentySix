@@ -2,7 +2,7 @@
 
 > **Nazwa produktu:** **twentySix** (wszędzie — UI, sklepy, dokumentacja, kod).  
 > **Logo / ikona:** znak **26** (żart graczy: 1, 20 i 5) — wyłącznie warstwa wizualna, nie nazwa produktu. Szczegóły: [Marka produktu](#marka-produktu).  
-> Foldery repozytoriów: **`twentysix-backend`**, **`twentysix-mobile`** (instrukcja rename: [`RENAME_FOLDERS.md`](RENAME_FOLDERS.md)).
+> Foldery repozytoriów: **`twentysix-backend`**, **`twentysix-mobile`**.
 
 System do organizacji i prowadzenia lig oraz meczów bezpośrednich darterskich: aplikacja webowa do śledzenia i zarządzania ligami wraz z API, aplikacja mobilna do sędziowania meczów. (Porównanie: chess.com, ale dla darta.)
 
@@ -10,10 +10,9 @@ System do organizacji i prowadzenia lig oraz meczów bezpośrednich darterskich:
 
 **`product.md` jest źródłem prawdy** dla wszystkich decyzji produktowych i implementacyjnych.
 
-Część kodu twentySix (web/API i mobile) powstała **przed** pracą z Cursorem i bez tego dokumentu — stąd **rozbieżności** między kodem a opisem produktu. To **nie zmienia wymagań**: kod, który odbiega od `product.md`, należy **doprowadzić do zgodności** z dokumentem (refaktoryzacja / uzupełnienie), a nie odwrotnie.
+Część kodu powstała przed `product.md` — historyczne rozbieżności zostały **domknięte w MVP v1** (lipiec 2026). Nowe funkcje muszą być zgodne z tym dokumentem.
 
-Szczegółowa lista znanych rozbieżności: [Uwagi dla implementacji](#uwagi-dla-implementacji-stan-kodu-vs-produkt).  
-Mapa postępu MVP: [`IMPLEMENTED_FEATURES.md`](../IMPLEMENTED_FEATURES.md) (backend), [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) (mobile).
+**Status MVP v1:** tag `v1.0.0-mvp`; mapa kod ↔ wymagania: [`IMPLEMENTED_FEATURES.md`](../IMPLEMENTED_FEATURES.md) (backend), [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) (mobile). Aktywne zadania: [`NEXT_STEPS.md`](NEXT_STEPS.md).
 
 ## Dla kogo
 
@@ -41,10 +40,10 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 ### Zarejestrowany
 
 - Wszystko, co gość na webie.
-- Znajomi (zaproszenie + akceptacja — **MVP: mobile**).
+- Znajomi (zaproszenie + akceptacja — **mobile**; podstawowy invite/accept także na **webie** od lipca 2026).
 - Własne statystyki i historia (turnieje + quick game online).
 - **Mobile:** lobby quick game online, akceptacja zaproszeń (turniej, lobby, znajomi), tablet turniejowy, **mecz treningowy** (lokalny, bez zapisu).
-- Docelowo: znajomi i komunikator na webie, odznaczenia, link live quick game.
+- Docelowo: komunikator na webie, odznaczenia, link live quick game, push do zaproszeń.
 
 ### Premium (docelowo)
 
@@ -74,7 +73,7 @@ Zaproszenia (web) + akceptacja (mobile) + goście → **start** możliwy **bez p
 
 ### Rozgrywka poza turniejem
 
-Quick game: FFA (każdy gra sam), max **8** graczy, 501 BO3, wybór **jedno urządzenie** vs **każdy na własnym** (patrz niżej). Start lobby możliwy bez pełnej akceptacji — grają tylko **zaakceptowani**.
+Quick game: FFA (każdy gra sam), max **8** graczy, format konfigurowalny (domyślnie 501 / 1 set / 2 legi), wybór **jedno urządzenie** vs **każdy na własnym** (patrz niżej). Start lobby możliwy bez pełnej akceptacji — grają tylko **zaakceptowani**.
 
 ## Tryby meczów (podsumowanie)
 
@@ -104,7 +103,7 @@ Wybór → API → `w trakcie` (lock); inne tablety nie widzą meczu; race → b
 | ---------------------- | ------------------------------------------------------------------- | ---------------------- |
 | Gość (web)             | Podgląd lig/turniejów                                               | + pojedyncze mecze     |
 | Gość (mobile)          | Trening (bez konta), turniej kodem tabletu                          | bez zmian              |
-| Użytkownik             | Quick game, turnieje, znajomi (zaproszenia/akceptacja **mobile**)   | + komunikator, web     |
+| Użytkownik             | Quick game, turnieje, znajomi (akceptacja **mobile**; invite/accept także **web**) | + komunikator, push |
 | **Organizator**        | **Twórca ligi = organizator**; uprawnienia w lidze                  | premium                |
 | **Współadministrator** | Pełne prawa, cała liga (MVP)                                        | granularne uprawnienia |
 | Sędzia (tablet)        | Kod turnieju, wybór meczu                                           | —                      |
@@ -179,7 +178,7 @@ Logika zgodna z `GroupStandingService` w backendzie (`sortStandings` → `compar
 ### Walkower i korekta wyniku
 
 - Admin na webie wchodzi w mecz i wpisuje **poprawny wynik** (nie osobny flow „cofnij”).
-- **Walkower:** wynik **do zera** — przy BO3 = **2:0** w legach (zwycięzca : przegrany).
+- **Walkower:** wynik **do zera** — przy domyślnym formacie (1 set, 2 legi) = **2:0** w legach; przy wielu setach = wynik w **setach** (np. 2:0), zgodnie z `legsToWinSet` / `setsToWinMatch` meczu.
 - Po zapisie: **automatyczne przeliczenie** dalszych rund playoff i tabel.
 
 ### Achievementy
@@ -198,8 +197,6 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - Lista **nie wpisuje** nikogo automatycznie do turnieju — służy do **szybkiego masowego wysyłania zaproszeń** (zaznaczenie wielu osób → wyślij zaproszenia).
 - Na stronie startu turnieju skład do masowego invite = **suma `league.relatedUsers` + `season.relatedUsers` bez duplikatów** (jak dziś `getRelatedPlayers`, ale tylko użytkownicy z kontem — bez gości).
 - Zarządzanie składem (dodawanie/usuwanie osób z listy ligi/sezonu) pozostaje na dotychczasowych ekranach `relatedUsers`.
-
-#### Strona startu turnieju (web) — jeden ekran
 
 #### Strona startu turnieju (web) — układ B
 
@@ -237,8 +234,8 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 
 #### Mobile — ekran zaproszeń
 
-- **Jeden ekran** z zakładkami: **Turniej** | **Pojedynek** (quick game / lobby).
-- MVP: gracz sam wchodzi w ekran i odświeża listę (pull). **Push** — docelowo.
+- **Jeden ekran** z zakładkami: **Turniej** | **Pojedynek** (quick game / lobby) | **Znajomi**.
+- MVP: gracz sam wchodzi w ekran i odświeża listę (pull). **Push** — plan implementacji: [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md).
 
 ## Liga i punktacja (MVP)
 
@@ -249,8 +246,9 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 
 ### Znajomi (MVP)
 
-- Zaproszenie + akceptacja — **wyłącznie mobile** (wysyłka i akceptacja).
-- Docelowo: także **web** (przy komunikatorze).
+- **Mobile:** zaproszenie + akceptacja (główny flow akceptacji zaproszeń turniejowych i lobby).
+- **Web (od lipca 2026):** invite → accept na profilu gracza i w panelu bocznym — **bez** komunikatora.
+- **Docelowo:** pełny komunikator, push powiadomień o zaproszeniach — plan push: [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md).
 
 ### Quick game online (MVP)
 
@@ -261,15 +259,15 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - **Brak kodów lobby** w quick game — kody 6-znakowe dotyczą **tylko turniejów** (logowanie tabletu / sędziowanie). Quick game nie generuje ani nie udostępnia kodu do dołączenia.
 - Tylko **znajomi**; max **8** zawodników.
 - **FFA** — każdy gra sam (1v1, 1v1v1v1…; nie drużyny 2v2).
-- Format: **501 double out, BO3** (do **2 wygranych legów**).
-- **Zwycięzca meczu:** zawodnik, który **pierwszy wygra 2 legi** (niezależnie od liczby uczestników — 2, 3, 4…).
+- Format konfigurowalny — patrz sekcja **Format gry** (domyślnie **501 · 1 set · 2 legi**).
+- **Zwycięzca meczu:** zawodnik, który **pierwszy** osiągnie wymaganą liczbę **setów** (przy 1 secie = legów do wygranej meczu).
 - **Kolejność zawodników** ustawiana w lobby (np. A, B, C, D).
 - **Kolejność rzutów w legu:** zaczynający leg → następny w kolejce → … (cyklicznie).
 - **Kto zaczyna kolejny leg:** zawsze **następny zawodnik po tym, który zaczynał poprzedni leg** — **niezależnie od tego, kto wygrał leg**.
   - Leg 1 zaczyna **A** → kolejność rzutów: **A → B → C → D** (i dalej cyklicznie do końca lega).
   - Leg 2 zaczyna **B** (następny po A) → kolejność: **B → C → D → A** — nawet jeśli leg 1 wygrał np. B lub D.
   - Leg 3 zaczyna **C** (następny po B) → kolejność: **C → D → A → B** — nawet jeśli leg 2 wygrał np. D.
-  - Leg 4 (jeśli potrzebny przy BO3) zaczyna **D** → kolejność: **D → A → B → C**.
+  - Leg 4 (jeśli potrzebny) zaczyna **D** → kolejność: **D → A → B → C**.
 - Start bez pełnej akceptacji — grają tylko **zaakceptowani** zaproszeni.
 - **Minimum 2** zaakceptowanych zawodników do startu.
 - Wyniki w statystykach gracza (zapis w bazie po zakończeniu meczu FFA).
@@ -287,7 +285,7 @@ Przeznaczenie: grupa znajomych przy tarczy (np. w klubie bez Wi‑Fi) albo szybk
 | Internet | nie wymagany | wymagany (sync) |
 | Zapis wyniku | **nie** — dane znikają po zamknięciu meczu | tak (`quick_games`, statystyki) |
 | Gracze | 2–8, **imiona wpisane lokalnie** (bez kont) | 2–8, tylko **znajomi** z kont |
-| Format | 501 double out, BO3 (pierwszy do 2 legów) | j.w. |
+| Format | Konfigurowalny (host); domyślnie 501 / 1 set / 2 legi | j.w. |
 | Tryb urządzeń | **`one_device`** — jeden telefon wpisuje wszystkich | `one_device` lub `each_own` + sync |
 | Reguły FFA | ta sama rotacja openera i kolejność tur co online | j.w. |
 
@@ -309,7 +307,7 @@ Quick game **2–8 graczy** obsługuje **oba** tryby wybrane w lobby:
 - **Na miejscu:** 5 znajomych w klubie → lobby 5 osób, tryb **jedno urządzenie**, host wpisuje rzuty wszystkich na jednym tablecie.
 - **Zdalnie:** tych samych 5 znajomych, każdy w domu → lobby 5 osób, tryb **każdy na swoim**, ten sam widok meczu na każdym telefonie, synchronizacja tur i rotacji openera lega.
 
-Te same reguły FFA (kolejność z lobby, rotacja openera, BO3, wynik w statystykach) obowiązują w **obu** trybach. Różni się tylko **kto wpisuje punkty** i **mechanizm synchronizacji** (brak sync między telefonami vs API/WS).
+Te same reguły FFA (kolejność z lobby, rotacja openera, format meczu, wynik w statystykach) obowiązują w **obu** trybach. Różni się tylko **kto wpisuje punkty** i **mechanizm synchronizacji** (brak sync między telefonami vs API/WS).
 
 ### Quick game — tryb urządzeń (wybór w lobby)
 
@@ -325,10 +323,58 @@ Już istniejący wybór w lobby mobilnym:
 
 ### Quick game (docelowo)
 
-- Dowolny zalogowany w lobby; **krykiet** i inne formaty.
-- Konfigurowalna liczba legów do wygranej (nie tylko BO3).
+- Dowolny zalogowany w lobby; **krykiet** i inne formaty gry (`gameType`).
 
-## Reguły meczu (MVP)
+## Format gry (konfigurowalny)
+
+**Reguła checkoutu MVP:** double out (bez zmiany).
+
+**Kontrakt `MatchFormat`** (backend + mobile):
+
+| Pole | Znaczenie | Domyślnie |
+| ---- | --------- | --------- |
+| `startingScore` | Punkty startowe lega (X01) | **501** |
+| `legsToWinSet` | Legi do wygrania **seta** („pierwszy do N”) | **2** |
+| `setsToWinMatch` | Sety do wygrania **meczu** | **1** |
+| `gameType` | `x01` (501/301…) | `x01` |
+| `outRule` | `double_out` | `double_out` |
+
+**Preset domyślny:** 501 · 1 set · 2 legi (= dotychczasowe BO3).
+
+**Punkty startowe (picker):** 101, 201, 301, 401, 501, 601, 701, 801, 901, 1001.
+
+**Zwycięzca meczu:** pierwszy gracz z `setsWon >= setsToWinMatch`. Przy `setsToWinMatch === 1` w UI można pokazać skrót „501 · do N legów”.
+
+### Turniej
+
+- Admin ustawia format **przy starcie turnieju** (web), **osobno per etap** (`GROUP`, `SIXTEEN`, …, `SEMI`, **`THIRD`**, `FINAL`).
+- Zapis w `tournament_match_formats`; przy tworzeniu każdego meczu **snapshot** na rekordzie `games` / `playoff_games`.
+- **Tablet nie konfiguruje formatu** — po locku meczu scoring API zwraca `meta.matchFormat` z rekordu meczu.
+- Edycja formatu turnieju **po starcie** — zabroniona (mecze mają snapshot).
+
+### Quick game online + trening (mobile)
+
+- Host wybiera **sety**, **legi/set**, **punkty** przed startem (quick: w lobby; trening: ekran konfiguracji).
+- **Ostatnio używane ustawienia** — osobno w AsyncStorage: trening vs quick game (nie przenoszą się między trybami). Pierwsze uruchomienie → preset domyślny.
+- Backend quick game zapisuje format w lobby / sesji FFA (sync online).
+
+### Walkower / korekta (web)
+
+- **`setsToWinMatch === 1`:** wynik w legach (np. 2:0 przy „do 2 legów”).
+- **`setsToWinMatch > 1`:** wynik w setach (np. 2:0); szczegóły legów w secie opcjonalnie w UI korekty.
+
+Plan implementacji (fazy 1–4 ✅): [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md). Faza 5 (presety ligi, chipy BO5/BO7, cricket) — opcjonalnie.
+
+### Format gry — podsumowanie kontekstów
+
+| Kontekst            | Gra                 | Format |
+| ------------------- | ------------------- | ------ |
+| Turniej (tablet)    | 501 head-to-head    | Z rekordu meczu (admin ustawił przy starcie turnieju) |
+| Quick game online   | 501 multi FFA       | Host w lobby; sync w sesji FFA |
+| Trening (mobile)    | 501 multi FFA       | Host lokalnie; **bez zapisu** w bazie |
+| Krykiet             | —                   | poza MVP |
+
+Ten sam silnik liczenia (leg → set → mecz) i kontrakt API (`meta.matchFormat`, `setsWon`, `legsWonInSet`).
 
 ### Statystyki w trakcie meczu (mobile — licznik i zakładka „Statystyki”)
 
@@ -346,20 +392,9 @@ Wspólne dla **quick game online**, **treningu** i (tam gdzie dotyczy) **turniej
 
 **Implementacja (skrót):** quick game FFA — `QuickGameFfaStateBuilder` + wspólny `VisitRecorder` (backend); mobile: `applyGameScoringState` + `useGameScoring` → reducer `SYNC_FROM_SERVER`. Turniej H2H — ten sam kontrakt API (`format`, `turn`, `revision`, `meta`).
 
-### Format gry
+## Reguły meczu (MVP)
 
-| Kontekst            | Gra                 | Format MVP          |
-| ------------------- | ------------------- | ------------------- |
-| Turniej (tablet)    | 501 head-to-head    | 501 double out, BO3 (do 2 legów) |
-| Quick game online   | 501 multi FFA       | 501 double out, BO3 (pierwszy do 2 legów) |
-| Trening (mobile)    | 501 multi FFA       | 501 double out, BO3; **bez zapisu**       |
-| Krykiet             | —                   | poza MVP            |
-
-Ten sam silnik liczenia i model wyniku w API (turniej + quick game 501).
-
-## Zakres systemu
-
-- **Web (twentySix):** ligi/turnieje, start turnieju, zaproszenia do turnieju (wysyłka), korekta wyników, live, publiczny podgląd. Znajomi — poza MVP na webie.
+- **Web (twentySix):** ligi/turnieje, start turnieju, zaproszenia do turnieju (wysyłka), korekta wyników, live, publiczny podgląd, **znajomi** (invite/accept — bez komunikatora).
 - **API:** walidacja grup×awans, podział do grup, statusy meczów, quick game (oba tryby urządzeń), zaproszenia, achievementy, point schemes.
 - **Mobile:** tablet, quick game online, **trening (lokalny)**, znajomi (MVP), akceptacja zaproszeń (turniej, lobby, znajomi).
 
@@ -368,9 +403,9 @@ Ten sam silnik liczenia i model wyniku w API (turniej + quick game 501).
 ### Web
 
 - Twórca ligi = organizator; współadmin per liga
-- Turniej: zaproszenia, goście, start (grupy + walidowany awans + kody)
+- Turniej: zaproszenia (`tournament_invitations`), goście, start (grupy + walidowany awans + kody)
 - Start z podzbiorem zaakceptowanych zawodników
-- Korekta wyniku / walkower (np. 2:0 przy BO3); live WebSocket
+- Korekta wyniku / walkower (zgodnie z formatem meczu); live WebSocket
 
 ### API
 
@@ -385,26 +420,29 @@ Ten sam silnik liczenia i model wyniku w API (turniej + quick game 501).
 
 - Znajomi (zaproszenie + akceptacja)
 - Akceptacja turniej + lobby
-- Quick game online: FFA **2–8**, **oba tryby urządzeń** (`one_device` + `each_own`), 501 BO3
-- **Trening:** FFA 2–8, `one_device`, 501 BO3, bez konta i bez zapisu (działa offline)
+- Quick game online: FFA **2–8**, **oba tryby urządzeń** (`one_device` + `each_own`), format konfigurowalny (domyślnie 501/1/2)
+- **Trening:** FFA 2–8, `one_device`, format konfigurowalny, bez konta i bez zapisu (działa offline)
 - Tablet turniejowy
 - Ekran startowy: **Quick game online** vs **Trening**
+
+### Web (dodatkowo poza pierwotnym scope v1)
+
+- Znajomi na webie (invite → accept) — **zrealizowane lipiec 2026**
 
 ## Poza MVP (świadomie później)
 
 - Krykiet
-- Znajomi na webie, komunikator, odznaczenia, stream, premium
+- Komunikator, odznaczenia, stream, premium
+- **Push** do zaproszeń — plan: [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md)
 - Granularne uprawnienia współadmina
 - Quick game z dowolnym zalogowanym
 - Publiczny podgląd pojedynczych meczów
-- Konfigurowalne formaty / tryby turniejów; **liczba legów do wygranej** (nie tylko BO3)
 - **Drabinka playoff > 32 awansujących** — w MVP limit `playoff_bracket_size ≤ 32`. Rozszerzenie: refaktor slotów playoff na **generyczne** (`round` + `index` zamiast enumów `PlayoffSlot` / `WinnerDestinationSlot`), żeby skalować do 64+ awansujących bez eksplozji enumów. **Implementacja: opcja B** — zaplanować po domknięciu MVP turniejowego.
 
 ## Czego nie robimy (na razie)
 
 - Krykiet w MVP
 - Tryby drużynowe 2v2 w quick game
-- Znajomi na webie (MVP)
 - Wolne losy w drabince
 - Równoległe wpisywanie rzutów w multi-device (tylko kolejno)
 
@@ -414,8 +452,8 @@ Ten sam silnik liczenia i model wyniku w API (turniej + quick game 501).
 2. Start turnieju/quick game bez pełnej akceptacji; gra tylko zaakceptowani (+ goście w turnieju).
 3. Turniej min. 4 zawodników (łącznie z gośćmi); grupy, tie-breakery, round-robin; playoff bez bye; losowanie rundy 1 bez par z jednej grupy.
 4. Tablet + live web; achievementy; auto start playoff.
-5. Quick game min. 2; do 8 graczy FFA; pierwszy do 2 legów; rotacja startu legów (następny po openerze poprzedniego lega, bez względu na zwycięzcę); oba tryby urządzeń; statystyki.
-6. Walkower/korekta na webie (2:0) → auto przeliczenie; point scheme z liczby graczy.
+5. Quick game min. 2; do 8 graczy FFA; format konfigurowalny (domyślnie do 2 legów w 1 secie); rotacja startu legów; oba tryby urządzeń; statystyki.
+6. Walkower/korekta na webie (zgodnie z formatem meczu) → auto przeliczenie; point scheme z liczby graczy.
 7. Offline/solo bez zapisu; gość ogląda ligi/turnieje.
 
 ## Marka produktu
@@ -438,17 +476,17 @@ Ten sam silnik liczenia i model wyniku w API (turniej + quick game 501).
 
 *Brak otwartych pytań produktowych — decyzje z czerwca 2026 zapisane w sekcji „Zaproszenia do turnieju”.*
 
-## Uwagi dla implementacji (stan kodu vs produkt)
+## Zgodność kodu z produktem (lipiec 2026)
 
-Poniższe **rozbieżności** wynikają z wcześniejszej pracy bez `product.md`. **Cel:** doprowadzić kod do zgodności z dokumentem:
+Historyczne rozbieżności z czasów przed `product.md` — **domknięte w MVP v1**. Tabela referencyjna (nie lista TODO):
 
-| Temat | Produkt | Kod dziś (skrót) |
-| ----- | ------- | ---------------- |
-| Podział do grup | Zapełnianie od grupy 1, równe wielkości (np. 4×6 + 3×2) | ✅ `TournamentGroupDistribution` |
-| Awans z grupy | Wybór etapu drabinki + rozkład per grupa | ✅ `playoff_bracket_size`, `group_advances`, `PlayoffService` |
+| Temat | Wymaganie produktu | Kod |
+| ----- | ------------------ | --- |
+| Podział do grup | Zapełnianie od grupy 1, równe wielkości | ✅ `TournamentGroupDistribution` |
+| Awans z grupy | Etap drabinki + rozkład per grupa | ✅ `playoff_bracket_size`, `group_advances`, `PlayoffService` |
 | Losowanie playoff | Bez par z tej samej grupy (runda 1) | ✅ `PlayoffFirstRoundPairing` |
-| Rozmiar drabinki | Wybór etapu (`playoff_bracket_size`) | ✅ `PlayoffBracketFactory::create` (MVP do 32) |
-| Zaproszenia turniejowe | Encja per turniej; web na stronie startu; akceptacja mobile | ❌ Bezpośrednie `relatedUsers` zamiast zaproszeń |
-| Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ (kody lobby usunięte; `joinById` wymaga zaproszenia) |
-| FFA 2–8 oba tryby urządzeń | `one_device` i `each_own` dla 2–8 graczy | ✅ unified FFA (`QuickGameFfaScoringService`, lobby `/ffa/*`, WS) |
-| Rotacja openera lega | opener+1 po legu | ✅ mobile (4B) |
+| Rozmiar drabinki | Wybór etapu (`playoff_bracket_size`, max 32) | ✅ `PlayoffBracketFactory::create` |
+| Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile; `relatedUsers` = tylko masowy invite | ✅ `TournamentInvitation`, API, `InvitationsScreen` |
+| Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ |
+| FFA 2–8 oba tryby urządzeń | `one_device` i `each_own` | ✅ unified FFA |
+| Rotacja openera lega | `(opener + 1) % N` | ✅ |

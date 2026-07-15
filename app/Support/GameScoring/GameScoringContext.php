@@ -16,8 +16,7 @@ readonly class GameScoringContext
         public int $player1Id,
         public int $player2Id,
         public ?int $tournamentId,
-        public int $legsToWin,
-        public int $startingScore = 501,
+        public MatchFormat $matchFormat,
     ) {
     }
 
@@ -29,7 +28,7 @@ readonly class GameScoringContext
             player1Id: (int) $game->player1_id,
             player2Id: (int) $game->player2_id,
             tournamentId: (int) $game->tournament_id,
-            legsToWin: 2,
+            matchFormat: MatchFormat::fromRecord($game),
         );
     }
 
@@ -45,7 +44,7 @@ readonly class GameScoringContext
             player1Id: (int) $game->player1_id,
             player2Id: (int) $game->player2_id,
             tournamentId: (int) $game->tournament_id,
-            legsToWin: 2,
+            matchFormat: MatchFormat::fromRecord($game),
         );
     }
 
@@ -61,8 +60,13 @@ readonly class GameScoringContext
             player1Id: (int) $game->player1_id,
             player2Id: (int) $game->player2_id,
             tournamentId: null,
-            legsToWin: max(1, (int) ($game->legs_count ?? 2)),
+            matchFormat: MatchFormat::fromRecord($game),
         );
+    }
+
+    public function startingScore(): int
+    {
+        return $this->matchFormat->startingScore;
     }
 
     public function broadcastChannelName(): string

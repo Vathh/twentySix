@@ -8,11 +8,11 @@ use App\Repositories\Friends\FriendshipRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameLobbyRepository;
 
+use App\Support\GameScoring\MatchFormat;
+
 class QuickGameLobbyService
 {
     public const MAX_LOBBY_PLAYERS = 8;
-
-    public const DEFAULT_LEGS_TO_WIN = 2;
 
     public function __construct(
         private QuickGameLobbyRepository $lobbyRepository,
@@ -217,8 +217,7 @@ class QuickGameLobbyService
     public function startGame(
         int $lobbyId,
         int $hostUserId,
-        ?int $legsCount = null,
-        ?string $gameType = null,
+        ?MatchFormat $matchFormatOverride = null,
         ?string $scoringMode = null,
         ?array $playerOrderIds = null
     ): QuickGameLobby {
@@ -236,6 +235,8 @@ class QuickGameLobbyService
         if ($playersCount < 2) {
             throw new \RuntimeException('Musi być co najmniej 2 graczy');
         }
+
+        $matchFormat = $matchFormatOverride ?? MatchFormat::fromRecord($lobby);
 
         $mode = $scoringMode ?? $lobby->scoring_mode ?? 'each_own';
 
@@ -256,9 +257,6 @@ class QuickGameLobbyService
             }
         }
 
-        $legs = $legsCount ?? $lobby->legs_count ?? self::DEFAULT_LEGS_TO_WIN;
-        $game = $gameType ?? $lobby->game_type ?? '501';
-
         $players = $lobby->players->values();
         $defaultOrderIds = $players->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
         $finalOrderIds = $defaultOrderIds;
@@ -270,12 +268,11 @@ class QuickGameLobbyService
             $finalOrderIds = array_values(array_merge($requestedFiltered, $missing));
         }
 
-        $lobby = $this->lobbyRepository->startGame($lobbyId, $legs, $game, $mode);
+        $lobby = $this->lobbyRepository->startGame($lobbyId, $matchFormat, $mode);
 
         $ffaSessionId = $this->ffaScoringService->createSessionForLobby(
             $lobby,
-            $legs,
-            $game,
+            $matchFormat,
             $mode,
             $finalOrderIds,
         );
@@ -287,9 +284,9 @@ class QuickGameLobbyService
         return $lobby;
     }
 
-    public function updateSettings(int $lobbyId, int $hostUserId, ?int $legsCount = null, ?string $gameType = null): QuickGameLobby
+    public function updateSettings(int $lobbyId, int $hostUserId, ?MatchFormat $matchFormat = null): QuickGameLobby
     {
-        $lobby = $this->lobbyRepository->updateSettings($lobbyId, $hostUserId, $legsCount, $gameType);
+        $lobby = $this->lobbyRepository->updateSettings($lobbyId, $hostUserId, $matchFormat);
         $this->broadcastLobbyUpdated($lobby);
 
         return $lobby;

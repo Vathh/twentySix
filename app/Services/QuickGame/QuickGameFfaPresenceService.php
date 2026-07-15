@@ -9,6 +9,7 @@ use App\Models\QuickGame\QuickGameLobby;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameFfaPresenceRepository;
 use App\Repositories\QuickGame\QuickGameFfaSessionRepository;
+use App\Support\GameScoring\MatchFormat;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 
@@ -260,7 +261,7 @@ class QuickGameFfaPresenceService
 
         return [
             'lobbyId' => $lobby->id,
-            'legsCount' => (int) $session->legs_to_win,
+            'matchFormat' => MatchFormat::fromRecord($session)->toArray(),
             'gameType' => $session->game_type,
             'scoringMode' => $session->scoring_mode,
             'isHost' => (int) $lobby->host_id === $userId,

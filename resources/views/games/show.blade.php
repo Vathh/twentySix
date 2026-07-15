@@ -31,7 +31,8 @@
         </h1>
 
         <div class="bg-lighter-bg rounded-lg p-6 mb-8 border border-border text-center">
-            <p class="text-text-muted text-sm mb-2">Wynik meczu (legi)</p>
+            <p class="text-text-muted text-sm mb-1">{{ $formatLabel ?? '501 · do 2 legów' }}</p>
+            <p class="text-text-muted text-sm mb-2">Wynik meczu ({{ $scoreUnit ?? 'legi' }})</p>
             <p class="text-4xl font-bold text-text-primary">
                 <span class="{{ (int)$winnerId === (int)$player1->id ? 'text-light-green' : 'text-text-primary' }}">{{ $player1Score }}</span>
                 <span class="text-text-muted mx-3">:</span>
@@ -56,7 +57,9 @@
             <div class="bg-darker-bg rounded-lg p-6 mb-8 border border-light-orange/40">
                 <h2 class="text-lg font-semibold text-light-orange mb-1">Korekta wyniku / walkower</h2>
                 <p class="text-text-muted text-sm mb-4">
-                    BO{{ ($legsToWin ?? 2) * 2 - 1 }} — wpisz wynik w legach (np. 2:0, 2:1). Po zapisie tabele i drabinka przeliczą się automatycznie.
+                    Format: {{ $formatLabel ?? '501 · do 2 legów' }}.
+                    Wpisz wynik w {{ $scoreUnit ?? 'legach' }} (do {{ $scoreToWin ?? 2 }}).
+                    Po zapisie tabele i drabinka przeliczą się automatycznie.
                 </p>
 
                 <form method="POST" action="{{ route('games.result.update', ['type' => $kind, 'id' => $gameId]) }}" class="space-y-4">
@@ -68,7 +71,7 @@
                                 type="number"
                                 name="player1_score"
                                 min="0"
-                                max="{{ $legsToWin ?? 2 }}"
+                                max="{{ $scoreToWin ?? 2 }}"
                                 value="{{ old('player1_score', $player1Score) }}"
                                 class="mt-1 w-full rounded border border-border bg-dark-bg px-3 py-2 text-light-white"
                                 required
@@ -80,7 +83,7 @@
                                 type="number"
                                 name="player2_score"
                                 min="0"
-                                max="{{ $legsToWin ?? 2 }}"
+                                max="{{ $scoreToWin ?? 2 }}"
                                 value="{{ old('player2_score', $player2Score) }}"
                                 class="mt-1 w-full rounded border border-border bg-dark-bg px-3 py-2 text-light-white"
                                 required
@@ -94,14 +97,14 @@
                 </form>
 
                 <div class="mt-6 pt-4 border-t border-border">
-                    <p class="text-sm text-text-muted mb-3">Walkover (2:0 w legach):</p>
+                    <p class="text-sm text-text-muted mb-3">Walkover ({{ $walkoverScoreLine ?? '2:0 legi' }}):</p>
                     <div class="flex flex-wrap gap-2">
                         <form method="POST" action="{{ route('games.result.update', ['type' => $kind, 'id' => $gameId]) }}">
                             @csrf
                             <input type="hidden" name="walkover" value="1">
                             <input type="hidden" name="winner_id" value="{{ $player1->id }}">
                             <button type="submit"
-                                    onclick="return confirm('Ustawić walkover 2:0 dla {{ $player1->name }}?')"
+                                    onclick="return confirm('Ustawić walkover {{ $walkoverScoreLine ?? '2:0' }} dla {{ $player1->name }}?')"
                                     class="px-3 py-2 rounded border border-light-orange text-light-orange text-sm hover:bg-light-orange/10 transition">
                                 Walkover → {{ $player1->name }}
                             </button>
@@ -111,7 +114,7 @@
                             <input type="hidden" name="walkover" value="1">
                             <input type="hidden" name="winner_id" value="{{ $player2->id }}">
                             <button type="submit"
-                                    onclick="return confirm('Ustawić walkover 2:0 dla {{ $player2->name }}?')"
+                                    onclick="return confirm('Ustawić walkover {{ $walkoverScoreLine ?? '2:0' }} dla {{ $player2->name }}?')"
                                     class="px-3 py-2 rounded border border-light-orange text-light-orange text-sm hover:bg-light-orange/10 transition">
                                 Walkover → {{ $player2->name }}
                             </button>

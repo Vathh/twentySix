@@ -48,12 +48,12 @@ class QuickGameLobbyMvpTest extends TestCase
         $this->postJson('/api/friends/add', ['friendId' => $this->friend->id])->assertCreated();
     }
 
-    public function test_new_lobby_defaults_to_bo3_two_legs(): void
+    public function test_new_lobby_defaults_to_match_format(): void
     {
         $response = $this->postJson('/api/quick-game/lobby/create');
 
         $response->assertOk()
-            ->assertJsonPath('legsCount', 2);
+            ->assertJsonPath('matchFormat.legsToWinSet', 2);
     }
 
     public function test_invite_non_friend_is_rejected(): void
@@ -97,7 +97,7 @@ class QuickGameLobbyMvpTest extends TestCase
         ])->assertOk();
 
         $start = $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
-            'legsCount' => 2,
+            'matchFormat' => ['legsToWinSet' => 2, 'setsToWinMatch' => 1, 'startingScore' => 501],
             'gameType' => '501',
             'scoringMode' => 'each_own',
         ]);
@@ -106,7 +106,7 @@ class QuickGameLobbyMvpTest extends TestCase
             ->assertJsonPath('message', 'Gracze tymczasowi wymagają trybu „na jednym urządzeniu”');
 
         $startOk = $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
-            'legsCount' => 2,
+            'matchFormat' => ['legsToWinSet' => 2, 'setsToWinMatch' => 1, 'startingScore' => 501],
             'gameType' => '501',
             'scoringMode' => 'one_device',
         ]);
@@ -139,7 +139,7 @@ class QuickGameLobbyMvpTest extends TestCase
             ->assertJsonPath('message', 'W lobby może być maksymalnie 8 graczy');
     }
 
-    public function test_start_two_player_lobby_uses_bo3_legs_count(): void
+    public function test_start_two_player_lobby_uses_default_match_format(): void
     {
         $lobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
 
@@ -155,13 +155,13 @@ class QuickGameLobbyMvpTest extends TestCase
         $this->postJson("/api/quick-game/lobby/{$lobbyId}/ready")->assertOk();
 
         $start = $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
-            'legsCount' => 2,
+            'matchFormat' => ['legsToWinSet' => 2, 'setsToWinMatch' => 1, 'startingScore' => 501],
             'gameType' => '501',
             'scoringMode' => 'each_own',
         ]);
 
         $start->assertOk()
-            ->assertJsonPath('legsCount', 2)
+            ->assertJsonPath('matchFormat.legsToWinSet', 2)
             ->assertJsonPath('status', 'started');
 
         $ffaSessionId = $start->json('ffaSessionId');
@@ -169,7 +169,7 @@ class QuickGameLobbyMvpTest extends TestCase
 
         $session = \App\Models\QuickGame\QuickGameFfaSession::find($ffaSessionId);
         $this->assertNotNull($session);
-        $this->assertSame(2, (int) $session->legs_to_win);
+        $this->assertSame(2, (int) $session->legs_to_win_set);
         $this->assertCount(2, $session->player_order);
     }
 

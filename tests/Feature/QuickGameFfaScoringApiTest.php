@@ -48,14 +48,14 @@ class QuickGameFfaScoringApiTest extends TestCase
 
         $this->assertDatabaseHas('quick_game_ffa_sessions', [
             'lobby_id' => $lobbyId,
-            'legs_to_win' => 2,
+            'legs_to_win_set' => 2,
             'status' => QuickGameFfaSession::STATUS_IN_PROGRESS,
         ]);
 
         $this->getJson("/api/quick-game/lobby/{$lobbyId}/ffa/state")
             ->assertOk()
             ->assertJsonPath('session.lobbyId', $lobbyId)
-            ->assertJsonPath('session.legsToWin', 2)
+            ->assertJsonPath('session.legsToWinSet', 2)
             ->assertJsonCount(2, 'players');
     }
 
@@ -106,7 +106,7 @@ class QuickGameFfaScoringApiTest extends TestCase
         Sanctum::actingAs($this->host);
         $this->postJson("/api/quick-game/lobby/{$lobbyId}/ready")->assertOk();
         $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
-            'legsCount' => 1,
+            'matchFormat' => ['legsToWinSet' => 1, 'setsToWinMatch' => 1, 'startingScore' => 501],
             'gameType' => '501',
             'scoringMode' => 'each_own',
         ])->assertOk();
@@ -168,7 +168,7 @@ class QuickGameFfaScoringApiTest extends TestCase
         $this->postJson("/api/quick-game/lobby/{$lobbyId}/ready")->assertOk();
 
         $start = $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
-            'legsCount' => 2,
+            'matchFormat' => ['legsToWinSet' => 2, 'setsToWinMatch' => 1, 'startingScore' => 501],
             'gameType' => '501',
             'scoringMode' => 'each_own',
         ]);

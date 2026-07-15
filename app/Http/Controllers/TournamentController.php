@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Domain\SeasonDomain;
 use App\Domain\Tournament\TournamentDomain;
+use App\Enums\GameStage;
 use App\Enums\TournamentInvitationStatus;
 use App\Enums\TournamentStatus;
 use App\Models\Season\Season;
@@ -16,6 +17,8 @@ use App\Services\Tournament\TournamentInvitationService;
 use App\Services\Tournament\TournamentService;
 use App\Services\User\UserService;
 use App\Support\Tournament\TournamentStartRules;
+use App\Support\GameScoring\MatchFormat;
+use App\Support\Tournament\TournamentMatchFormatRequestParser;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -211,6 +214,24 @@ class TournamentController extends Controller
 
         $participantCount = $participants->count();
         $groupCountOptions = TournamentStartRules::allowedGroupCountsForPlayers($participantCount);
+        $bracketOptionsByGroupCount = TournamentStartRules::bracketOptionsByGroupCountForPlayers($participantCount);
+        $defaultGroupsCount = (int) old('groupsCount', $groupCountOptions[0] ?? 2);
+        $defaultBracketOptions = $bracketOptionsByGroupCount[$defaultGroupsCount] ?? [];
+        $defaultPlayoffBracketSize = (int) old(
+            'playoffBracketSize',
+            $defaultBracketOptions[0]['value'] ?? 4,
+        );
+
+        $matchFormatStagesByBracket = [];
+        foreach ([2, 4, 8, 16, 32] as $bracketSize) {
+            $matchFormatStagesByBracket[$bracketSize] = array_map(
+                static fn (GameStage $stage): array => [
+                    'value' => $stage->value,
+                    'label' => $stage->label(),
+                ],
+                GameStage::forPlayoffBracketSize($bracketSize),
+            );
+        }
 
         return view('tournaments.start', [
             'tournament' => $tournament,
@@ -223,11 +244,16 @@ class TournamentController extends Controller
             'addTab' => $addTab,
             'canManageParticipants' => $tournament->status === TournamentStatus::CREATED,
             'groupCountOptions' => $groupCountOptions,
-            'bracketOptionsByGroupCount' => TournamentStartRules::bracketOptionsByGroupCountForPlayers($participantCount),
+            'bracketOptionsByGroupCount' => $bracketOptionsByGroupCount,
             'startConfigPreview' => TournamentStartRules::startConfigPreview($participantCount),
             'minPlayers' => TournamentStartRules::MIN_PLAYERS,
             'minPlayersPerGroup' => TournamentStartRules::MIN_PLAYERS_PER_GROUP,
-            'defaultGroupsCount' => (int) old('groupsCount', $groupCountOptions[0] ?? 2),
+            'defaultGroupsCount' => $defaultGroupsCount,
+            'defaultPlayoffBracketSize' => $defaultPlayoffBracketSize,
+            'startingScoreOptions' => MatchFormat::ALLOWED_STARTING_SCORES,
+            'defaultMatchFormat' => MatchFormat::default()->toArray(),
+            'matchFormatStagesByBracket' => $matchFormatStagesByBracket,
+            'oldMatchFormats' => old('matchFormats', []),
         ]);
     }
 
@@ -386,6 +412,15 @@ class TournamentController extends Controller
             ? (int) $validated['tabletsCount']
             : $groupsCount;
 
+        try {
+            $formatsByStage = TournamentMatchFormatRequestParser::fromRunInput(
+                $request->all(),
+                $playoffBracketSize,
+            );
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        }
+
         if ($playerIds === []) {
             return back()->with('error', 'Brak uczestników turnieju — dodaj zaakceptowanych zawodników lub gości');
         }
@@ -397,6 +432,7 @@ class TournamentController extends Controller
                 $groupsCount,
                 $playoffBracketSize,
                 $tabletsCount,
+                $formatsByStage,
             )) {
                 return back()->with('error', 'Turniej już wystartował');
             }

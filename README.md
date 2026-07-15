@@ -4,7 +4,8 @@
 
 - **Wizja produktu i MVP:** [`docs/product.md`](docs/product.md)
 - **Stan implementacji vs MVP:** [`IMPLEMENTED_FEATURES.md`](IMPLEMENTED_FEATURES.md)
-- **Plan domknięcia v1:** [`docs/plan_mvp_domkniecie.md`](docs/plan_mvp_domkniecie.md)
+- **Co robić dalej:** [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md)
+- **Indeks dokumentacji:** [`docs/README.md`](docs/README.md)
 - **Logika biznesowa (web + mobile):** [`LOGIKA_BIZNESOWA.md`](LOGIKA_BIZNESOWA.md)
 
 ## Repozytoria
@@ -13,8 +14,6 @@
 | ----- | ------ | ----- |
 | Web + API | `twentysix-backend` (ten projekt) | Laravel |
 | Mobile | `twentysix-mobile` | React Native / Expo |
-
-> Jeśli foldery nadal nazywają się `DartScore` / `Suwalska-Liga-Darta-MobileApp`, zob. [`docs/RENAME_FOLDERS.md`](docs/RENAME_FOLDERS.md).
 
 ---
 
@@ -111,7 +110,7 @@ php artisan route:cache
 php artisan view:cache
 ```
 
-Pełna checklista: [`docs/deploy_staging.md`](docs/deploy_staging.md) · poprawki post-MVP: [`docs/post_mvp_poprawki.md`](docs/post_mvp_poprawki.md).
+Pełna checklista deploy (gdy potrzebna): [`docs/deploy_staging.md`](docs/deploy_staging.md). Rozwój aplikacji: [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md).
 
 | Środowisko | Migracje | Seed demo |
 |------------|----------|-----------|
@@ -136,8 +135,9 @@ Stan docelowy MVP: **176 passed, 14 skipped** (lipiec 2026). Pominięte testy: w
 
 | Obszar | Plik |
 |--------|------|
+| **Indeks docs** | [`docs/README.md`](docs/README.md) |
 | **Staging / prod** | [`docs/deploy_staging.md`](docs/deploy_staging.md) |
-| **Plan krok 6** | [`docs/plan_krok6_release_rc.md`](docs/plan_krok6_release_rc.md) |
+| **Następne kroki** | [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md) |
 | Quick game FFA + presence | [`docs/scenariusze_manualne_quick_game_mvp_4e.md`](docs/scenariusze_manualne_quick_game_mvp_4e.md) |
 | Turniej tablet + web | [`docs/scenariusze_manualne_turniej_mvp.md`](docs/scenariusze_manualne_turniej_mvp.md) |
 | Web gość | [`docs/scenariusze_manualne_web_gosc_krok3.md`](docs/scenariusze_manualne_web_gosc_krok3.md) |
