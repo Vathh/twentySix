@@ -5,6 +5,7 @@ namespace App\Services\QuickGame;
 use App\DTO\QuickGame\PlayerResultDTO;
 use App\DTO\QuickGameFfa\RecordFfaVisitDTO;
 use App\Events\QuickGameFfaStateUpdated;
+use App\Models\Player\Player;
 use App\Models\QuickGame\QuickGameFfaPresence;
 use App\Models\QuickGame\QuickGameLobby;
 use App\Repositories\Player\PlayerRepository;
@@ -583,12 +584,44 @@ class QuickGameFfaScoringService
             return;
         }
 
+        // Na jednym urządzeniu host wpisuje wszystkich — heartbeat innych nie ma znaczenia.
+        if ($session->scoring_mode === 'one_device') {
+            return;
+        }
+
         $playerIds = array_map('intval', $session->player_order ?? []);
+        $trackableIds = $this->heartbeatTrackedPlayerIds($playerIds);
+        if ($trackableIds === []) {
+            return;
+        }
+
         $this->presenceRepository->markStaleAsDisconnected(
             $session,
-            $playerIds,
+            $trackableIds,
             QuickGameFfaPresenceService::HEARTBEAT_TIMEOUT_SECONDS,
         );
+    }
+
+    /**
+     * ID graczy śledzonych heartbeatem (bez gości lokalnych bez konta).
+     *
+     * @param  array<int, int>  $playerIds
+     * @return array<int, int>
+     */
+    private function heartbeatTrackedPlayerIds(array $playerIds): array
+    {
+        if ($playerIds === []) {
+            return [];
+        }
+
+        $guestIds = Player::query()
+            ->whereIn('id', $playerIds)
+            ->whereNull('user_id')
+            ->pluck('id')
+            ->map(static fn ($id) => (int) $id)
+            ->all();
+
+        return array_values(array_diff($playerIds, $guestIds));
     }
 
     /**
@@ -602,10 +635,16 @@ class QuickGameFfaScoringService
 
         foreach ($playerIds as $playerId) {
             $record = $records->get($playerId);
+            $player = $record?->player;
+            $isGuestWithoutAccount = $player !== null && $player->user_id === null;
+            $status = $record?->status ?? QuickGameFfaPresence::STATUS_CONNECTED;
+            if ($isGuestWithoutAccount && $status === QuickGameFfaPresence::STATUS_DISCONNECTED) {
+                $status = QuickGameFfaPresence::STATUS_CONNECTED;
+            }
             $payload[] = [
                 'playerId' => $playerId,
-                'name' => $record?->player?->name ?? 'Gracz',
-                'status' => $record?->status ?? QuickGameFfaPresence::STATUS_CONNECTED,
+                'name' => $player?->name ?? 'Gracz',
+                'status' => $status,
             ];
         }
 

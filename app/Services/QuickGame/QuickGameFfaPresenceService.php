@@ -103,10 +103,15 @@ class QuickGameFfaPresenceService
             return;
         }
 
+        // Na jednym urządzeniu host wpisuje wszystkich — heartbeat innych nie ma znaczenia.
+        if ($session->scoring_mode === 'one_device') {
+            return;
+        }
+
         $playerIds = array_map('intval', $session->player_order ?? []);
         $this->presenceRepository->markStaleAsDisconnected(
             $session,
-            $playerIds,
+            $this->heartbeatTrackedPlayerIds($playerIds),
             self::HEARTBEAT_TIMEOUT_SECONDS,
         );
     }
@@ -122,10 +127,17 @@ class QuickGameFfaPresenceService
 
         foreach ($playerIds as $playerId) {
             $record = $records->get($playerId);
+            $player = $record?->player;
+            $isGuestWithoutAccount = $player !== null && $player->user_id === null;
+            $status = $record?->status ?? QuickGameFfaPresence::STATUS_CONNECTED;
+            // Goście lokalni nie łączą się z apką — zawsze traktuj jako connected.
+            if ($isGuestWithoutAccount && $status === QuickGameFfaPresence::STATUS_DISCONNECTED) {
+                $status = QuickGameFfaPresence::STATUS_CONNECTED;
+            }
             $payload[] = [
                 'playerId' => $playerId,
-                'name' => $record?->player?->name ?? 'Gracz',
-                'status' => $record?->status ?? QuickGameFfaPresence::STATUS_CONNECTED,
+                'name' => $player?->name ?? 'Gracz',
+                'status' => $status,
             ];
         }
 
@@ -218,6 +230,28 @@ class QuickGameFfaPresenceService
         return $session->scoring_mode === 'each_own'
             && count($playerIds) === 2
             && $session->isInProgress();
+    }
+
+    /**
+     * ID graczy śledzonych heartbeatem (bez gości lokalnych bez konta).
+     *
+     * @param  array<int, int>  $playerIds
+     * @return array<int, int>
+     */
+    private function heartbeatTrackedPlayerIds(array $playerIds): array
+    {
+        if ($playerIds === []) {
+            return [];
+        }
+
+        $guestIds = Player::query()
+            ->whereIn('id', $playerIds)
+            ->whereNull('user_id')
+            ->pluck('id')
+            ->map(static fn ($id) => (int) $id)
+            ->all();
+
+        return array_values(array_diff($playerIds, $guestIds));
     }
 
     private function resolveForfeitWinnerId(QuickGameFfaSession $session, int $leavingPlayerId): int
