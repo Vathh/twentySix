@@ -47,9 +47,25 @@ class TournamentService
     public function create(
         ?int    $seasonId,
         string  $name,
-        ?string $date = null
+        ?string $date = null,
+        ?int    $createdByUserId = null,
     ): int {
-        return $this->tournamentRepository->create($seasonId, $name, $date);
+        return $this->tournamentRepository->create($seasonId, $name, $date, $createdByUserId);
+    }
+
+    public function addAdmin(int $tournamentId, int $userId): void
+    {
+        $this->tournamentRepository->addAdmin($tournamentId, $userId);
+    }
+
+    public function removeAdmin(int $tournamentId, int $userId): void
+    {
+        $this->tournamentRepository->removeAdmin($tournamentId, $userId);
+    }
+
+    public function getAdmins(int $tournamentId): Collection
+    {
+        return $this->tournamentRepository->getAdmins($tournamentId);
     }
 
     /**
@@ -139,7 +155,12 @@ class TournamentService
                 return false;
             });
         } catch (Throwable $e) {
-            throw new RuntimeException('Nie udało się stworzyć grup', 0, $e);
+            $detail = $e->getMessage();
+            throw new RuntimeException(
+                'Nie udało się stworzyć grup'.($detail !== '' ? ': '.$detail : ''),
+                0,
+                $e,
+            );
         }
     }
 

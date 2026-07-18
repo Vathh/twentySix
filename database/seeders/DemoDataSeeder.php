@@ -154,6 +154,7 @@ class DemoDataSeeder extends Seeder
             'date' => now()->addWeeks(3),
             'status' => TournamentStatus::CREATED,
         ]);
+        $big->admins()->sync($seasonA->admins->pluck('id')->all());
         $ok = $tournamentService->tryCreateGroupGames($big->id, $players->pluck('id')->all(), 8);
         if (! $ok) {
             throw new \RuntimeException('Nie udało się utworzyć faz grupowych turnieju 32-osobowego.');
@@ -173,6 +174,7 @@ class DemoDataSeeder extends Seeder
             'date' => now()->addWeek(),
             'status' => TournamentStatus::CREATED,
         ]);
+        $small->admins()->sync($seasonA->admins->pluck('id')->all());
         // MVP: min. 3 graczy na grupę + liczba grup = potęga 2 → 6 graczy / 2 grupy.
         $sixIds = $players->take(6)->pluck('id')->all();
         $tournamentService->tryCreateGroupGames($small->id, $sixIds, 2);
@@ -264,12 +266,18 @@ class DemoDataSeeder extends Seeder
 
     private function createPlannedTournament(Season $season, string $name, Carbon $date): Tournament
     {
-        return Tournament::create([
+        $tournament = Tournament::create([
             'season_id' => $season->id,
             'name' => $name,
             'date' => $date,
             'status' => TournamentStatus::CREATED,
         ]);
+        $adminIds = $season->admins->pluck('id');
+        if ($adminIds->isNotEmpty()) {
+            $tournament->admins()->sync($adminIds->all());
+        }
+
+        return $tournament;
     }
 
     /**

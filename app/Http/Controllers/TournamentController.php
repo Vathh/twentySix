@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Domain\SeasonDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameStage;
 use App\Enums\TournamentInvitationStatus;
@@ -10,6 +9,7 @@ use App\Enums\TournamentStatus;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Queries\GetTournamentData;
+use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\Player\PlayerService;
 use App\Services\Tournament\LoginCodeService;
 use App\Services\Tournament\TournamentGuestParticipantService;
@@ -19,12 +19,14 @@ use App\Services\User\UserService;
 use App\Support\Tournament\TournamentStartRules;
 use App\Support\GameScoring\MatchFormat;
 use App\Support\Tournament\TournamentMatchFormatRequestParser;
+use DomainException;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class TournamentController extends Controller
 {
@@ -37,6 +39,7 @@ class TournamentController extends Controller
         private UserService $userService,
         private GetTournamentData $getTournamentGroupResults,
         private LoginCodeService $loginCodeService,
+        private GameAuthorizationService $gameAuthorizationService,
     ) {
     }
 
@@ -79,6 +82,7 @@ class TournamentController extends Controller
             $seasonId !== null ? (int) $seasonId : null,
             $validated['tournamentName'],
             $validated['date'],
+            Auth::id(),
         );
 
         if ($seasonId !== null) {
@@ -97,7 +101,7 @@ class TournamentController extends Controller
         $viewModel = $this->getTournamentGroupResults->get($tournament->id);
         $season = $viewModel->season();
         $tournamentDomain = $viewModel->tournament();
-        $canManageTournament = $this->canManageTournament($season);
+        $canManageTournament = $this->gameAuthorizationService->canManageTournament($tournament);
 
         $loginCodes = ($canManageTournament && $tournamentDomain->isStarted())
             ? $this->loginCodeService->getCodesForTournament($tournament->id)
@@ -111,6 +115,7 @@ class TournamentController extends Controller
             'games' => $viewModel->games(),
             'playoffGames' => $viewModel->playoffGames(),
             'groupNumbers' => $viewModel->groupNumbers(),
+            'groupPlayoffHighlights' => $viewModel->groupPlayoffHighlights(),
             'achievements' => $viewModel->achievements(),
             'results' => $viewModel->results(),
             'tab' => \request()->get('tab', 'results'),
@@ -245,6 +250,7 @@ class TournamentController extends Controller
             'canManageParticipants' => $tournament->status === TournamentStatus::CREATED,
             'groupCountOptions' => $groupCountOptions,
             'bracketOptionsByGroupCount' => $bracketOptionsByGroupCount,
+            'defaultBracketOptions' => $defaultBracketOptions,
             'startConfigPreview' => TournamentStartRules::startConfigPreview($participantCount),
             'minPlayers' => TournamentStartRules::MIN_PLAYERS,
             'minPlayersPerGroup' => TournamentStartRules::MIN_PLAYERS_PER_GROUP,
@@ -438,37 +444,73 @@ class TournamentController extends Controller
             }
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
         }
 
         return redirect()->route('tournaments.show', ['tournament' => $tournamentId])
             ->with('success', 'Turniej wystartował!');
     }
 
-    private function canManageTournament(?SeasonDomain $season): bool
+    public function admins(Request $request, int $tournamentId): Factory|View
     {
-        $user = Auth::user();
+        $tournament = $this->loadAndAuthorize($tournamentId);
+        $admins = $this->tournamentService->getAdmins($tournamentId);
+        $searchUsers = collect();
+        $search = $request->input('search');
 
-        if ($user === null) {
-            return false;
+        if ($search !== null && trim($search) !== '') {
+            $excludeIds = $admins->pluck('id');
+            $searchUsers = $this->userService->searchForTournamentInvitations($search, $excludeIds);
         }
 
-        if ($season !== null) {
-            return in_array($user->id, array_column($season->admins, 'id'), true);
+        return view('tournaments.admins', [
+            'tournament' => $tournament,
+            'admins' => $admins,
+            'searchUsers' => $searchUsers,
+            'search' => $search,
+        ]);
+    }
+
+    public function addAdmin(Request $request, int $tournamentId): RedirectResponse
+    {
+        $this->loadAndAuthorize($tournamentId);
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $this->tournamentService->addAdmin($tournamentId, (int) $validated['user_id']);
+
+        return redirect()
+            ->route('tournaments.admins', $tournamentId)
+            ->with('success', 'Uprawnienie administratora nadano pomyślnie');
+    }
+
+    public function removeAdmin(Request $request, int $tournamentId): RedirectResponse
+    {
+        $this->loadAndAuthorize($tournamentId);
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        try {
+            $this->tournamentService->removeAdmin($tournamentId, (int) $validated['user_id']);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        return (bool) $user->can_create_leagues;
+        return redirect()
+            ->route('tournaments.admins', $tournamentId)
+            ->with('success', 'Uprawnienie administratora usunięto pomyślnie');
     }
 
     public function loadAndAuthorize(int $tournamentId, array $additionalRelations = []): TournamentDomain
     {
-        $allRelations = array_merge($additionalRelations, ['season']);
+        $allRelations = array_merge($additionalRelations, ['season', 'admins']);
         $tournament = Tournament::with($allRelations)->findOrFail($tournamentId);
-
-        if ($tournament->season !== null) {
-            $this->authorize('update', $tournament->season);
-        } else {
-            abort_unless(Auth::user()?->can_create_leagues, 403);
-        }
+        $this->gameAuthorizationService->authorizeManageTournament($tournament);
 
         return TournamentDomain::fromEloquent($tournament, $allRelations);
     }

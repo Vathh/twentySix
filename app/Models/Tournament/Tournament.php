@@ -11,8 +11,10 @@ use App\Models\PointScheme\PointScheme;
 use App\Models\Season\Season;
 use App\Models\Tournament\TournamentGuestParticipant;
 use App\Models\Tournament\TournamentInvitation;
+use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -79,6 +81,11 @@ class Tournament extends Model
     public function guestParticipants(): HasMany
     {
         return $this->hasMany(TournamentGuestParticipant::class);
+    }
+
+    public function admins(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'tournament_user_admin', 'tournament_id', 'user_id');
     }
 }
 

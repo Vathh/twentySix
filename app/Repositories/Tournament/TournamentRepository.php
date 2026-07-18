@@ -5,6 +5,7 @@ namespace App\Repositories\Tournament;
 use App\Domain\Tournament\PointSchemeDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\TournamentStatus;
+use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use Illuminate\Support\Collection;
 use Throwable;
@@ -25,7 +26,8 @@ class TournamentRepository
     public function create(
         ?int    $seasonId,
         string  $name,
-        ?string $date
+        ?string $date,
+        ?int    $createdByUserId = null,
     ): int {
         $tournament = Tournament::create([
             'season_id' => $seasonId,
@@ -33,7 +35,53 @@ class TournamentRepository
             'date' => $date,
         ]);
 
+        if ($createdByUserId !== null) {
+            $tournament->admins()->attach($createdByUserId);
+        }
+
+        if ($seasonId !== null) {
+            $seasonAdminIds = Season::query()
+                ->with('admins')
+                ->findOrFail($seasonId)
+                ->admins
+                ->pluck('id');
+            if ($seasonAdminIds->isNotEmpty()) {
+                $tournament->admins()->syncWithoutDetaching($seasonAdminIds->all());
+            }
+        }
+
         return (int) $tournament->id;
+    }
+
+    public function addAdmin(int $tournamentId, int $userId): void
+    {
+        Tournament::findOrFail($tournamentId)->admins()->syncWithoutDetaching([$userId]);
+    }
+
+    public function removeAdmin(int $tournamentId, int $userId): void
+    {
+        $tournament = Tournament::withCount('admins')->findOrFail($tournamentId);
+        if ((int) $tournament->admins_count <= 1) {
+            throw new \DomainException('Turniej musi mieć co najmniej jednego administratora.');
+        }
+        $tournament->admins()->detach($userId);
+    }
+
+    /**
+     * @return Collection<int, array{id: int, name: string}>
+     */
+    public function getAdmins(int $tournamentId): Collection
+    {
+        return Tournament::findOrFail($tournamentId)
+            ->admins()
+            ->with('player')
+            ->get()
+            ->map(fn ($user) => [
+                'id' => $user->id,
+                'name' => $user->player?->name ?? $user->email,
+            ])
+            ->sortBy('name')
+            ->values();
     }
 
     /**

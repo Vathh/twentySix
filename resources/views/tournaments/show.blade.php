@@ -6,11 +6,7 @@
 
     <div class="flex min-h-screen bg-dark-bg text-light-white">
 
-        @if($season)
-            @seasonAdmin($season)
-                @include('tournaments.partials.admin-sidebar')
-            @endseasonAdmin
-        @elseif(auth()->check() && auth()->user()->can_create_leagues)
+        @if($canManageTournament)
             @include('tournaments.partials.admin-sidebar')
         @endif
 
@@ -75,7 +71,8 @@
                         @include('tournaments.tabs.groups', ['groupNumbers' => $groupNumbers,
                                                             'players' => $players,
                                                             'games' => $games,
-                                                            'groupStandings' => $groupStandings])
+                                                            'groupStandings' => $groupStandings,
+                                                            'groupPlayoffHighlights' => $groupPlayoffHighlights])
                     @elseif($tab === 'results')
                         @include('tournaments.tabs.results')
                     @elseif($tab === 'achievements')

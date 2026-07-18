@@ -2,8 +2,23 @@
     Grupy
 </h2>
 @foreach($groupNumbers as $number)
+    @php
+        $highlight = $groupPlayoffHighlights[$number] ?? null;
+        $groupComplete = (bool) ($highlight['complete'] ?? false);
+        $advanceCount = (int) ($highlight['advanceCount'] ?? 0);
+        $advancingIds = $highlight['advancingPlayerIds'] ?? [];
+    @endphp
     <div class="overflow-x-auto rounded-lg p-4  bg-darker-bg border-border mt-10">
-        <p class="text-center mb-3">Grupa {{ $number }}</p>
+        <p class="text-center mb-1">Grupa {{ $number }}</p>
+        @if($groupComplete && $advanceCount > 0)
+            <p class="text-center text-xs text-text-muted mb-3">
+                Awans do playoff: {{ $advanceCount }}
+                {{ $advanceCount === 1 ? 'miejsce' : 'miejsca' }}
+                <span class="text-light-green">· wyróżnione wiersze</span>
+            </p>
+        @else
+            <div class="mb-3"></div>
+        @endif
         <table class="border-collapse text-sm text-text-primary min-w-full">
             <thead>
             <tr class="bg-dark-bg text-text-muted hover:bg-thead-hover transition">
@@ -21,14 +36,26 @@
 
             <tbody class="divide-y divide-border">
             @foreach($players[$number] as $rowPlayer)
-                <tr class="hover:bg-row-hover transition">
+                @php
+                    $advances = $groupComplete
+                        && in_array((int) $rowPlayer->id, array_map('intval', $advancingIds), true);
+                @endphp
+                <tr class="transition {{ $advances
+                    ? 'bg-light-green/15 hover:bg-light-green/25 border-l-2 border-l-light-green'
+                    : 'hover:bg-row-hover' }}">
                     <td class="px-3 py-2 font-medium text-text-primary whitespace-nowrap">
                         {{ $rowPlayer->name }}
+                        @if($advances)
+                            <span
+                                class="ml-2 inline-block align-middle text-[10px] uppercase tracking-wide font-semibold text-light-green border border-light-green/40 rounded px-1.5 py-0.5"
+                                title="Awans do playoff"
+                            >Playoff</span>
+                        @endif
                     </td>
 
                     @foreach($players[$number] as $columnPlayer)
                         @if($rowPlayer->id === $columnPlayer->id)
-                            <td class="px-2 py-2 text-center bg-dark-bg text-text-muted">
+                            <td class="px-2 py-2 text-center {{ $advances ? 'bg-light-green/10' : 'bg-dark-bg' }} text-text-muted">
                                 X
                             </td>
                         @else
@@ -71,7 +98,7 @@
                                     </td>
                                 @endif
                             @else
-                                <td class="px-2 py-2 text-center bg-dark-bg text-text-muted">
+                                <td class="px-2 py-2 text-center {{ $advances ? 'bg-light-green/10' : 'bg-dark-bg' }} text-text-muted">
                                     -
                                 </td>
                             @endif

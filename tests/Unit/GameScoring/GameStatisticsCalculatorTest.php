@@ -53,4 +53,31 @@ class GameStatisticsCalculatorTest extends TestCase
         $this->assertSame(9, $stats['bestLegThrows']);
         $this->assertNotNull($stats['matchAverage']);
     }
+
+    public function test_first_nine_average_equals_leg_average_when_fewer_than_nine_darts(): void
+    {
+        $visits = collect([
+            (object) ['score' => 60, 'bust' => false, 'darts_in_visit' => 3],
+            (object) ['score' => 45, 'bust' => false, 'darts_in_visit' => 3],
+        ]);
+
+        $legAverage = GameStatisticsCalculator::legAverage($visits);
+        $firstNine = GameStatisticsCalculator::firstNineAverage($visits);
+
+        $this->assertSame(52.5, $legAverage);
+        $this->assertSame($legAverage, $firstNine);
+    }
+
+    public function test_first_nine_average_uses_first_three_visits_when_nine_darts_thrown(): void
+    {
+        $visits = collect([
+            (object) ['score' => 60, 'bust' => false, 'darts_in_visit' => 3],
+            (object) ['score' => 60, 'bust' => false, 'darts_in_visit' => 3],
+            (object) ['score' => 60, 'bust' => false, 'darts_in_visit' => 3],
+            (object) ['score' => 100, 'bust' => false, 'darts_in_visit' => 3],
+        ]);
+
+        $this->assertSame(60.0, GameStatisticsCalculator::firstNineAverage($visits));
+        $this->assertSame(70.0, GameStatisticsCalculator::legAverage($visits));
+    }
 }

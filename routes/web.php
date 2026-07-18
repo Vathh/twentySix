@@ -84,6 +84,9 @@ Route::prefix('seasons/{season}')->group(function () {
 
 Route::resource('tournaments', TournamentController::class);
 Route::prefix('tournaments/{tournament}')->group(function () {
+   Route::get('/admins', [TournamentController::class, 'admins'])->name('tournaments.admins');
+   Route::post('/admins/add', [TournamentController::class, 'addAdmin'])->name('tournaments.admins.add');
+   Route::delete('/admins/remove', [TournamentController::class, 'removeAdmin'])->name('tournaments.admins.remove');
    Route::get('/start', [TournamentController::class, 'start'])->name('tournaments.start');
    Route::post('/run', [TournamentController::class, 'runTournament'])->name('tournaments.run');
    Route::post('/invitations/send', [TournamentController::class, 'sendInvitation'])->name('tournaments.invitations.send');

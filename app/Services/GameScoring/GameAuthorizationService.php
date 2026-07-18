@@ -3,7 +3,6 @@
 namespace App\Services\GameScoring;
 
 use App\Enums\GameKind;
-use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,13 +14,33 @@ class GameAuthorizationService
             return false;
         }
 
-        $tournament = Tournament::with('season.admins')->find($tournamentId);
+        $tournament = Tournament::query()->find($tournamentId);
 
-        if ($tournament?->season === null) {
+        return $this->canManageTournament($tournament);
+    }
+
+    /**
+     * Admin turnieju (pivot) albo — dla turnieju w sezonie — admin sezonu.
+     * Nie używamy can_create_leagues: to tylko prawo tworzenia lig/turniejów.
+     */
+    public function canManageTournament(?Tournament $tournament): bool
+    {
+        if ($tournament === null || ! Auth::check()) {
             return false;
         }
 
-        return $this->userCanManageSeason($tournament->season);
+        $tournament->loadMissing(['admins', 'season.admins']);
+        $userId = Auth::id();
+
+        if ($tournament->admins->contains('id', $userId)) {
+            return true;
+        }
+
+        if ($tournament->season !== null) {
+            return $tournament->season->admins->contains('id', $userId);
+        }
+
+        return false;
     }
 
     public function authorizeTournamentGame(?int $tournamentId, GameKind $kind): void
@@ -31,8 +50,10 @@ class GameAuthorizationService
         }
     }
 
-    private function userCanManageSeason(Season $season): bool
+    public function authorizeManageTournament(Tournament $tournament): void
     {
-        return $season->admins->contains('id', Auth::id());
+        if (! $this->canManageTournament($tournament)) {
+            abort(403, 'Brak uprawnień do zarządzania tym turniejem.');
+        }
     }
 }

@@ -104,6 +104,69 @@ class TournamentDataViewModel
     }
 
     /**
+     * Podświetlenie awansu do playoff w tabelach grup (gdy grupa domknięta).
+     *
+     * @return array<int, array{complete: bool, advanceCount: int, advancingPlayerIds: list<int>}>
+     */
+    public function groupPlayoffHighlights(): array
+    {
+        $advancesList = $this->tournament->group_advances;
+        if (! is_array($advancesList) || $advancesList === []) {
+            return [];
+        }
+
+        $gamesByGroup = $this->games();
+        $standingsByGroup = $this->groupStandings();
+        $result = [];
+
+        foreach ($this->groupNumbers() as $groupNumber) {
+            $advanceCount = (int) ($advancesList[$groupNumber - 1] ?? $advancesList[(string) ($groupNumber - 1)] ?? 0);
+            $complete = $this->isGroupFinished($gamesByGroup[$groupNumber] ?? []);
+            $advancingPlayerIds = [];
+
+            if ($complete && $advanceCount > 0) {
+                foreach ($standingsByGroup[$groupNumber] ?? [] as $playerId => $standing) {
+                    if ($standing->place > 0 && $standing->place <= $advanceCount) {
+                        $advancingPlayerIds[] = (int) $playerId;
+                    }
+                }
+            }
+
+            $result[(int) $groupNumber] = [
+                'complete' => $complete,
+                'advanceCount' => $advanceCount,
+                'advancingPlayerIds' => $advancingPlayerIds,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array<int, array<int, GroupGameDomain>>  $pairMatrix
+     */
+    private function isGroupFinished(array $pairMatrix): bool
+    {
+        $seen = [];
+        $hasGames = false;
+
+        foreach ($pairMatrix as $opponents) {
+            foreach ($opponents as $game) {
+                if (isset($seen[$game->id])) {
+                    continue;
+                }
+                $seen[$game->id] = true;
+                $hasGames = true;
+                if (! $game->isFinished()) {
+                    return false;
+                }
+            }
+        }
+
+        return $hasGames;
+    }
+
+    /**
      * @return \App\Domain\Tournament\TournamentDomain
      */
     public function tournament(): TournamentDomain

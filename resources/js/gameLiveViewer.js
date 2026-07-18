@@ -27,20 +27,43 @@ export function registerGameLiveViewer(Alpine) {
         connection: 'connecting',
         pollTimer: null,
         pusher: null,
+        redirecting: false,
 
         init() {
             this.connectWebSocket(config);
             this.pollTimer = setInterval(() => this.fetchState(), 30000);
+            this.$watch(
+                () => this.state?.game?.status,
+                (status) => {
+                    if (status === 'finished') {
+                        this.redirectToShow();
+                    }
+                },
+            );
+            if (this.isFinished) {
+                this.redirectToShow();
+            }
         },
 
         destroy() {
             if (this.pollTimer) {
                 clearInterval(this.pollTimer);
+                this.pollTimer = null;
             }
             if (this.pusher) {
                 this.pusher.unsubscribe(config.channel);
                 this.pusher.disconnect();
+                this.pusher = null;
             }
+        },
+
+        redirectToShow() {
+            if (this.redirecting || !config.showUrl) {
+                return;
+            }
+            this.redirecting = true;
+            this.destroy();
+            window.location.assign(config.showUrl);
         },
 
         connectWebSocket(cfg) {
@@ -101,6 +124,10 @@ export function registerGameLiveViewer(Alpine) {
                 const res = await fetch(config.stateUrl, {
                     headers: { Accept: 'application/json' },
                 });
+                if (res.status === 410) {
+                    this.redirectToShow();
+                    return;
+                }
                 if (res.ok) {
                     this.state = await res.json();
                 }

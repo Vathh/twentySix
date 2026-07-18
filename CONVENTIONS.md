@@ -101,7 +101,7 @@ Unikalność: `(game_leg_id, player_id)`. Uzupełniane przy **zamknięciu lega**
 | `game_leg_id` | FK |
 | `player_id` | FK |
 | `leg_average` | Średnia w legu (3 lotki) |
-| `first_nine_average` | Średnia z **pierwszych trzech wizyt** w legu |
+| `first_nine_average` | Średnia z **pierwszych trzech wizyt** w legu; gdy gracz rzucił &lt; 9 lotek — równa `leg_average` |
 | `highest_visit` | Najwyższe podejście (max `score` wizyt w legu) |
 | `highest_finish` | Najwyższy checkout (finish) w legu |
 | `darts_thrown` | Łączna liczba lotek w legu |

@@ -154,7 +154,9 @@ class DemoGameScoringFactory
         $firstThree = array_slice($visits, 0, 3);
         $fnDarts = array_sum(array_column($firstThree, 'darts'));
         $fnPts = array_sum(array_column($firstThree, 'score'));
-        $fnAvg = count($firstThree) >= 3 && $fnDarts > 0 ? round(($fnPts / $fnDarts) * 3, 2) : null;
+        $fnAvg = $darts < 9
+            ? $legAvg
+            : (count($firstThree) >= 3 && $fnDarts > 0 ? round(($fnPts / $fnDarts) * 3, 2) : $legAvg);
         $maxVisit = $visits === [] ? null : max(array_column($visits, 'score'));
         $checkout = null;
         $checkoutDart = null;

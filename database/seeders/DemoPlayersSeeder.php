@@ -51,13 +51,12 @@ class DemoPlayersSeeder extends Seeder
                 ['email' => $row['email']],
                 [
                     'password' => self::PASSWORD,
-                    'email_verified_at' => now(),
                 ],
             );
 
-            if ($user->email_verified_at === null) {
-                $user->forceFill(['email_verified_at' => now()])->save();
-            }
+            // email_verified_at nie jest w User::$fillable — firstOrCreate by go pominął.
+            // Demo konta zawsze traktujemy jako zweryfikowane.
+            $user->forceFill(['email_verified_at' => $user->email_verified_at ?? now()])->save();
 
             Player::query()->firstOrCreate(
                 ['user_id' => $user->id],

@@ -22,13 +22,21 @@ class GameStatisticsCalculator
     }
 
     /**
+     * Średnia z pierwszych trzech wizyt (9 lotek).
+     * Gdy gracz nie zdążył rzucić 9 lotek (np. przeciwnik skończył lega wcześniej),
+     * zwracamy średnią z całego lega — ta sama wartość co legAverage.
+     *
      * @param  Collection<int, GameVisit>  $legVisits
      */
     public static function firstNineAverage(Collection $legVisits): ?float
     {
+        if (self::dartsThrown($legVisits) < 9) {
+            return self::legAverage($legVisits);
+        }
+
         $firstThree = $legVisits->where('bust', false)->take(3);
         if ($firstThree->count() < 3) {
-            return null;
+            return self::legAverage($legVisits);
         }
         $darts = $firstThree->sum('darts_in_visit');
         if ($darts <= 0) {

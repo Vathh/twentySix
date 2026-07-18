@@ -295,82 +295,29 @@
 
         {{-- Strefa 3: Start turnieju --}}
         @if($canManageParticipants)
+            {{-- JSON poza atrybutem HTML — @json w x-data="..." psuje parser (cudzysłowy). --}}
+            @php
+                $tournamentStartConfig = [
+                    'groupsCount' => $defaultGroupsCount,
+                    'playoffBracketSize' => $defaultPlayoffBracketSize,
+                    'tabletsCount' => (int) old('tabletsCount', $defaultGroupsCount),
+                    'groupCountOptions' => $groupCountOptions,
+                    'bracketOptionsByGroupCount' => $bracketOptionsByGroupCount,
+                    'startConfigPreview' => $startConfigPreview,
+                    'matchFormatStagesByBracket' => $matchFormatStagesByBracket,
+                    'startingScoreOptions' => $startingScoreOptions,
+                    'defaultMatchFormat' => $defaultMatchFormat,
+                    'oldMatchFormats' => $oldMatchFormats,
+                    'minPlayers' => $minPlayers,
+                    'minPlayersPerGroup' => $minPlayersPerGroup,
+                    'participantCount' => $participantCount,
+                ];
+            @endphp
+            <script type="application/json" id="tournament-start-config">
+                @json($tournamentStartConfig)
+            </script>
             <div
-                x-data="{
-                    groupsCount: {{ $defaultGroupsCount }},
-                    playoffBracketSize: {{ $defaultPlayoffBracketSize }},
-                    tabletsCount: {{ (int) old('tabletsCount', $defaultGroupsCount) }},
-                    groupCountOptions: @json($groupCountOptions),
-                    bracketOptionsByGroupCount: @json($bracketOptionsByGroupCount),
-                    startConfigPreview: @json($startConfigPreview),
-                    matchFormatStagesByBracket: @json($matchFormatStagesByBracket),
-                    startingScoreOptions: @json($startingScoreOptions),
-                    defaultMatchFormat: @json($defaultMatchFormat),
-                    oldMatchFormats: @json($oldMatchFormats),
-                    matchFormats: {},
-                    minPlayers: {{ $minPlayers }},
-                    minPlayersPerGroup: {{ $minPlayersPerGroup }},
-                    participantCount: {{ $participantCount }},
-                    get bracketOptions() {
-                        const opts = this.bracketOptionsByGroupCount[this.groupsCount]
-                            ?? this.bracketOptionsByGroupCount[String(this.groupsCount)]
-                            ?? [];
-                        return opts.length ? opts : [{ value: 4, label: '1/2 finału — 4 graczy awansujących' }];
-                    },
-                    get preview() {
-                        const byGroup = this.startConfigPreview[this.groupsCount]
-                            ?? this.startConfigPreview[String(this.groupsCount)]
-                            ?? {};
-                        return byGroup[this.playoffBracketSize]
-                            ?? byGroup[String(this.playoffBracketSize)]
-                            ?? null;
-                    },
-                    get activeFormatStages() {
-                        return this.matchFormatStagesByBracket[this.playoffBracketSize]
-                            ?? this.matchFormatStagesByBracket[String(this.playoffBracketSize)]
-                            ?? [];
-                    },
-                    syncMatchFormats() {
-                        const stages = this.activeFormatStages;
-                        const next = {};
-                        for (const stage of stages) {
-                            next[stage.value] = {
-                                ...this.defaultMatchFormat,
-                                ...(this.oldMatchFormats[stage.value] ?? {}),
-                                ...(this.matchFormats[stage.value] ?? {}),
-                            };
-                        }
-                        this.matchFormats = next;
-                    },
-                    syncGroupsCount() {
-                        if (!this.groupCountOptions.includes(this.groupsCount)) {
-                            this.groupsCount = this.groupCountOptions[0] ?? 2;
-                        }
-                    },
-                    syncBracketSelect() {
-                        const opts = this.bracketOptions;
-                        const sel = this.$refs.bracketSelect;
-                        if (!sel) {
-                            return;
-                        }
-                        sel.innerHTML = opts
-                            .map(function (option) {
-                                return ['<option value=', option.value, '>', option.label, '</option>'].join('');
-                            })
-                            .join('');
-                        if (!opts.some(function (option) { return Number(option.value) === Number(this.playoffBracketSize); }.bind(this))) {
-                            this.playoffBracketSize = opts[0]?.value ?? 4;
-                        }
-                        sel.value = String(this.playoffBracketSize);
-                    },
-                    onGroupsChange() {
-                        this.syncBracketSelect();
-                        this.syncMatchFormats();
-                    },
-                    onBracketChange() {
-                        this.syncMatchFormats();
-                    }
-                }"
+                x-data="tournamentStartForm()"
                 x-init="syncGroupsCount(); syncBracketSelect(); syncMatchFormats()"
                 class="mb-8 bg-lighter-bg p-6 rounded-lg shadow"
             >
@@ -402,8 +349,8 @@
                                 </p>
                             </div>
                             <div class="flex flex-col">
-                                <label for="playoffBracketSize" class="text-light-green font-semibold mb-2">Etap drabinki</label>
-                                <select id="playoffBracketSize"
+                                <label for="playoffBracketSizeSelect" class="text-light-green font-semibold mb-2">Etap drabinki</label>
+                                <select id="playoffBracketSizeSelect"
                                         x-ref="bracketSelect"
                                         name="playoffBracketSize"
                                         class="select-green"
@@ -442,7 +389,7 @@
                         </div>
 
                         <p class="text-light-orange text-sm">
-                            Drabinka playoff: <span x-text="playoffBracketSize"></span> graczy awansujących
+                            Drabinka playoff: <span x-text="$data.playoffBracketSize"></span> graczy awansujących
                         </p>
 
                         <div class="w-full max-w-3xl rounded-lg border border-dark-bg bg-dark-bg/40 p-4"
@@ -458,8 +405,8 @@
                                         <tr class="border-b border-dark-bg">
                                             <th class="text-left py-2 pr-3 font-semibold">Etap</th>
                                             <th class="text-left py-2 px-2 font-semibold">Punkty</th>
-                                            <th class="text-left py-2 px-2 font-semibold">Legi / set</th>
-                                            <th class="text-left py-2 pl-2 font-semibold">Sety / mecz</th>
+                                            <th class="text-left py-2 px-2 font-semibold">Legi / set (pierwszy do)</th>
+                                            <th class="text-left py-2 pl-2 font-semibold">Sety / mecz (pierwszy do)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -522,4 +469,90 @@
     <style>
         [x-cloak] { display: none !important; }
     </style>
+    <script>
+        function tournamentStartForm() {
+            const el = document.getElementById('tournament-start-config');
+            const config = el ? JSON.parse(el.textContent) : {};
+
+            return {
+                groupsCount: config.groupsCount ?? 2,
+                playoffBracketSize: config.playoffBracketSize ?? 4,
+                tabletsCount: config.tabletsCount ?? 2,
+                groupCountOptions: config.groupCountOptions ?? [],
+                bracketOptionsByGroupCount: config.bracketOptionsByGroupCount ?? {},
+                startConfigPreview: config.startConfigPreview ?? {},
+                matchFormatStagesByBracket: config.matchFormatStagesByBracket ?? {},
+                startingScoreOptions: config.startingScoreOptions ?? [],
+                defaultMatchFormat: config.defaultMatchFormat ?? {},
+                oldMatchFormats: config.oldMatchFormats ?? {},
+                matchFormats: {},
+                minPlayers: config.minPlayers ?? 4,
+                minPlayersPerGroup: config.minPlayersPerGroup ?? 3,
+                participantCount: config.participantCount ?? 0,
+                get bracketOptions() {
+                    const opts = this.bracketOptionsByGroupCount[this.groupsCount]
+                        ?? this.bracketOptionsByGroupCount[String(this.groupsCount)]
+                        ?? [];
+                    return opts.length
+                        ? opts
+                        : [{ value: 4, label: '1/2 finału — 4 graczy awansujących' }];
+                },
+                get preview() {
+                    const byGroup = this.startConfigPreview[this.groupsCount]
+                        ?? this.startConfigPreview[String(this.groupsCount)]
+                        ?? {};
+                    return byGroup[this.playoffBracketSize]
+                        ?? byGroup[String(this.playoffBracketSize)]
+                        ?? null;
+                },
+                get activeFormatStages() {
+                    return this.matchFormatStagesByBracket[this.playoffBracketSize]
+                        ?? this.matchFormatStagesByBracket[String(this.playoffBracketSize)]
+                        ?? [];
+                },
+                syncMatchFormats() {
+                    const stages = this.activeFormatStages;
+                    const next = {};
+                    for (const stage of stages) {
+                        next[stage.value] = {
+                            ...this.defaultMatchFormat,
+                            ...(this.oldMatchFormats[stage.value] ?? {}),
+                            ...(this.matchFormats[stage.value] ?? {}),
+                        };
+                    }
+                    this.matchFormats = next;
+                },
+                syncGroupsCount() {
+                    if (!this.groupCountOptions.includes(this.groupsCount)) {
+                        this.groupsCount = this.groupCountOptions[0] ?? 2;
+                    }
+                },
+                syncBracketSelect() {
+                    const opts = this.bracketOptions;
+                    const sel = this.$refs.bracketSelect;
+                    if (!sel) {
+                        return;
+                    }
+                    sel.replaceChildren();
+                    for (const option of opts) {
+                        const elOpt = document.createElement('option');
+                        elOpt.value = String(option.value);
+                        elOpt.textContent = option.label;
+                        sel.appendChild(elOpt);
+                    }
+                    if (!opts.some((option) => Number(option.value) === Number(this.playoffBracketSize))) {
+                        this.playoffBracketSize = opts[0]?.value ?? 4;
+                    }
+                    sel.value = String(this.playoffBracketSize);
+                },
+                onGroupsChange() {
+                    this.syncBracketSelect();
+                    this.syncMatchFormats();
+                },
+                onBracketChange() {
+                    this.syncMatchFormats();
+                },
+            };
+        }
+    </script>
 @endsection
