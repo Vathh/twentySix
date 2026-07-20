@@ -138,15 +138,9 @@ class GameStatisticsCalculator
         /** @var Collection<int, int> $scores */
         $scores = $scoredVisits->map(fn ($v) => (int) $v->score);
 
-        $playerLegStats = $legStats->where('player_id', $playerId);
         $finishedLegs = $legs->whereNotNull('finished_at');
 
-        $legsAverages = $finishedLegs->map(function ($leg) use ($playerLegStats, $allVisits, $playerId) {
-            $stat = $playerLegStats->firstWhere('game_leg_id', $leg->id);
-            if ($stat?->leg_average !== null) {
-                return (float) $stat->leg_average;
-            }
-
+        $legsAverages = $finishedLegs->map(function ($leg) use ($allVisits, $playerId) {
             return self::legAverage(
                 $allVisits->where('game_leg_id', $leg->id)->where('player_id', $playerId),
             );
@@ -158,12 +152,7 @@ class GameStatisticsCalculator
 
         $dartsPerWonLeg = $finishedLegs
             ->where('winner_id', $playerId)
-            ->map(function ($leg) use ($playerLegStats, $allVisits, $playerId) {
-                $stat = $playerLegStats->firstWhere('game_leg_id', $leg->id);
-                if ($stat?->darts_thrown !== null && $stat->darts_thrown > 0) {
-                    return (int) $stat->darts_thrown;
-                }
-
+            ->map(function ($leg) use ($allVisits, $playerId) {
                 $darts = (int) $allVisits
                     ->where('game_leg_id', $leg->id)
                     ->where('player_id', $playerId)

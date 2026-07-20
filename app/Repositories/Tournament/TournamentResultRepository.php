@@ -30,10 +30,10 @@ class TournamentResultRepository
     }
 
     public function upsertForPlayer(
-        int $seasonId,
+        ?int $seasonId,
         int $tournamentId,
         int $playerId,
-        int $points,
+        ?int $points,
         ?int $place,
         GameStage $stage,
     ): void {

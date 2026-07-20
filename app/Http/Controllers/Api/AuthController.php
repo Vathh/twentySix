@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\TournamentStatus;
 use App\Models\Tournament\LoginCode;
 use App\Models\Users\User;
 use App\Services\Auth\MobileAppTokenService;
@@ -25,11 +26,20 @@ class AuthController
            'code' => 'required|string',
         ]);
 
-        $loginCode = LoginCode::where('code', $validated['code'])->first();
+        $loginCode = LoginCode::query()
+            ->with('tournament')
+            ->where('code', $validated['code'])
+            ->first();
 
-        if (!$loginCode) {
+        if (! $loginCode || $loginCode->tournament === null) {
             return response()->json([
                 'message' => 'Nieprawidłowy kod logowania',
+            ], 401);
+        }
+
+        if ($loginCode->tournament->status === TournamentStatus::FINISHED) {
+            return response()->json([
+                'message' => 'Turniej zakończony — kody sędziowania są już nieważne.',
             ], 401);
         }
 

@@ -33,6 +33,21 @@ class LoginCodeRepository
 
         LoginCode::insert($codesToInsert);
     }
+
+    public function revokeForTournament(int $tournamentId): void
+    {
+        $codes = LoginCode::query()
+            ->where('tournament_id', $tournamentId)
+            ->get();
+
+        foreach ($codes as $code) {
+            $code->tokens()->delete();
+        }
+
+        LoginCode::query()
+            ->where('tournament_id', $tournamentId)
+            ->delete();
+    }
 }
 
 

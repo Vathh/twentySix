@@ -33,6 +33,11 @@ class LoginCodeService
     {
         return $this->loginCodeRepository->findCodesByTournamentId($tournamentId);
     }
+
+    public function revokeForTournament(int $tournamentId): void
+    {
+        $this->loginCodeRepository->revokeForTournament($tournamentId);
+    }
 }
 
 

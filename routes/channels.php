@@ -72,6 +72,10 @@ Broadcast::channel('playoff-game.{playoffGameId}', function () {
     return true;
 });
 
+Broadcast::channel('tournament.{tournamentId}', function () {
+    return true;
+});
+
 Broadcast::channel('quick-game.{quickGameId}', function () {
     return true;
 });

@@ -74,7 +74,9 @@
                                                             'groupStandings' => $groupStandings,
                                                             'groupPlayoffHighlights' => $groupPlayoffHighlights])
                     @elseif($tab === 'results')
-                        @include('tournaments.tabs.results')
+                        @include('tournaments.tabs.results', [
+                            'showPointsColumn' => $tournament->tracksLeaguePoints(),
+                        ])
                     @elseif($tab === 'achievements')
                         @include('tournaments.tabs.achievements', ['achievements' => $achievements])
                     @endif

@@ -5,6 +5,8 @@
             $gameUrl = route('games.show', ['type' => 'playoff', 'id' => $game->id]);
         } elseif ($game->status === \App\Enums\GameStatus::IN_PROGRESS) {
             $gameUrl = route('games.live', ['type' => 'playoff', 'id' => $game->id]);
+        } elseif ($game->status === \App\Enums\GameStatus::SCHEDULED && $game->player1 !== null && $game->player2 !== null) {
+            $gameUrl = route('games.show', ['type' => 'playoff', 'id' => $game->id]);
         }
     }
 

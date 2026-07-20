@@ -103,7 +103,7 @@ class TournamentController extends Controller
         $tournamentDomain = $viewModel->tournament();
         $canManageTournament = $this->gameAuthorizationService->canManageTournament($tournament);
 
-        $loginCodes = ($canManageTournament && $tournamentDomain->isStarted())
+        $loginCodes = ($canManageTournament && $tournamentDomain->showsTabletLoginCodes())
             ? $this->loginCodeService->getCodesForTournament($tournament->id)
             : collect();
 

@@ -13,6 +13,7 @@ use App\Repositories\Game\GameLegPlayerStatRepository;
 use App\Repositories\Game\GameLegRepository;
 use App\Repositories\Game\GameVisitRepository;
 use App\Support\GameScoring\GameScoringContext;
+use App\Support\GameScoring\GameLegsSetGrouper;
 use App\Support\GameScoring\GameStatisticsCalculator;
 use DomainException;
 use Illuminate\Support\Collection;
@@ -142,7 +143,17 @@ class GameDetailService
 
         $legsDetail = $legs->map(function ($leg) use ($visits, $legStats) {
             $legVisits = $visits->where('game_leg_id', $leg->id);
-            $stats = $legStats->where('game_leg_id', $leg->id);
+            $stats = $legStats->where('game_leg_id', $leg->id)->map(function ($stat) use ($legVisits) {
+                $playerVisits = $legVisits->where('player_id', $stat->player_id);
+
+                $stat->leg_average = GameStatisticsCalculator::legAverage($playerVisits);
+                $stat->first_nine_average = GameStatisticsCalculator::firstNineAverage($playerVisits);
+                $stat->highest_visit = GameStatisticsCalculator::highestVisit($playerVisits);
+                $stat->highest_finish = GameStatisticsCalculator::highestFinish($playerVisits);
+                $stat->darts_thrown = GameStatisticsCalculator::dartsThrown($playerVisits);
+
+                return $stat;
+            });
 
             return [
                 'leg' => $leg,
@@ -150,6 +161,13 @@ class GameDetailService
                 'playerStats' => $stats,
             ];
         });
+
+        $legsBySet = GameLegsSetGrouper::group(
+            $legsDetail,
+            $context->matchFormat,
+            $context->player1Id,
+            $context->player2Id,
+        );
 
         return [
             'kind' => $context->kind->value,
@@ -177,6 +195,7 @@ class GameDetailService
             'winnerId' => $game->winner_id,
             'players' => $players,
             'legsDetail' => $legsDetail,
+            'legsBySet' => $legsBySet,
             'broadcastChannel' => $context->broadcastChannelName(),
             'isLive' => $game->status === GameStatus::IN_PROGRESS,
         ];

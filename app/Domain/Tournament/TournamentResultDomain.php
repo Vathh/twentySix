@@ -28,7 +28,7 @@ class TournamentResultDomain
         public readonly ?int $tournamentId,
         public readonly ?PlayerDomain $player,
         public readonly ?int $playerId,
-        public readonly int $points,
+        public readonly ?int $points,
         public readonly ?int $place,
         public readonly ?GameStage $eliminationStage,
     )

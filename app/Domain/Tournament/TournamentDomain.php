@@ -144,9 +144,19 @@ class TournamentDomain
         return $this->status !==  TournamentStatus::CREATED;
     }
 
+    public function showsTabletLoginCodes(): bool
+    {
+        return in_array($this->status, [TournamentStatus::GROUP, TournamentStatus::PLAYOFF], true);
+    }
+
     public function hasPlayoffBracket(): bool
     {
         return in_array($this->status, [TournamentStatus::PLAYOFF, TournamentStatus::FINISHED]);
+    }
+
+    public function tracksLeaguePoints(): bool
+    {
+        return $this->season !== null && $this->pointScheme !== null;
     }
 }
 

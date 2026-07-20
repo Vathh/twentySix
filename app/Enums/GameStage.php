@@ -52,4 +52,19 @@ enum GameStage: string
 
         return $stages;
     }
+
+    /**
+     * Rundy playoff z wspólnym miejscem ex aequo (od najbliższej półfinałów do najwcześniejszej).
+     *
+     * @return list<self>
+     */
+    public static function sharedPlacementStages(int $bracketSize): array
+    {
+        $early = array_values(array_filter(
+            self::forPlayoffBracketSize($bracketSize),
+            fn (self $stage) => ! in_array($stage, [self::GROUP, self::SEMI, self::THIRD, self::FINAL], true),
+        ));
+
+        return array_reverse($early);
+    }
 }

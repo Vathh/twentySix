@@ -171,7 +171,7 @@ class TournamentDataViewModel
      */
     public function tournament(): TournamentDomain
     {
-        return TournamentDomain::fromEloquent($this->tournament);
+        return TournamentDomain::fromEloquent($this->tournament, ['pointScheme', 'season']);
     }
 
     /**
@@ -230,21 +230,18 @@ class TournamentDataViewModel
     public function results(): Collection
     {
         $resultDomains = $this->tournament
-                                ->results
-                                ->map(fn($result) => TournamentResultDomain::fromEloquent($result, ['player']))
-                                ->sortByDesc('points');
+            ->results
+            ->map(fn ($result) => TournamentResultDomain::fromEloquent($result, ['player']));
 
-        $array = [];
-
-        foreach ($resultDomains as $result)
-        {
-            $array[$result->player->id]['player'] = $result->player;
-            $array[$result->player->id]['place'] = $result->place;
-            $array[$result->player->id]['points'] = $result->points;
-            $array[$result->player->id]['stage'] = $result->eliminationStage;
-        }
-
-        return collect($array);
+        return $resultDomains
+            ->sortBy(fn ($result) => $result->place ?? PHP_INT_MAX)
+            ->values()
+            ->map(fn ($result) => [
+                'player' => $result->player,
+                'place' => $result->place,
+                'points' => $result->points,
+                'stage' => $result->eliminationStage,
+            ]);
     }
 }
 

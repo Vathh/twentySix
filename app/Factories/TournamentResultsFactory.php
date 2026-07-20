@@ -30,6 +30,25 @@ class TournamentResultsFactory
                 });
     }
 
+    /**
+     * @param Collection<GroupStandingDomain> $groupStandings
+     * @return Collection<TournamentResultDomain>
+     */
+    public function createManyForGroupWithoutPoints(Collection $groupStandings, TournamentDomain $tournament): Collection
+    {
+        return $groupStandings->map(fn ($standing) => new TournamentResultDomain(
+            season: null,
+            seasonId: null,
+            tournament: null,
+            tournamentId: $standing->tournament->id,
+            player: null,
+            playerId: $standing->player->id,
+            points: null,
+            place: $standing->place,
+            eliminationStage: GameStage::GROUP,
+        ));
+    }
+
     private function createForGroup(GroupStandingDomain $standing, int $seasonId, int $points): TournamentResultDomain
     {
         return new TournamentResultDomain(
@@ -54,7 +73,7 @@ class TournamentResultsFactory
      * @param GameStage $stage
      * @return TournamentResultDomain
      */
-    public function createForPlayoff(int       $seasonId,
+    public function createForPlayoff(?int      $seasonId,
                                      int       $tournamentId,
                                      int       $playerId,
                                      ?int      $points,

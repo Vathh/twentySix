@@ -13,7 +13,7 @@
         @if($groupComplete && $advanceCount > 0)
             <p class="text-center text-xs text-text-muted mb-3">
                 Awans do playoff: {{ $advanceCount }}
-                {{ $advanceCount === 1 ? 'miejsce' : 'miejsca' }}
+                {{ $advanceCount === 1 ? 'pozycja' : 'pozycje' }}
                 <span class="text-light-green">· wyróżnione wiersze</span>
             </p>
         @else
@@ -30,7 +30,7 @@
                 <th class="px-2 py-2 text-center">L</th>
                 <th class="px-2 py-2 text-center">Wynik</th>
                 <th class="px-2 py-2 text-center">Pkt</th>
-                <th class="px-2 py-2 text-center">Miejsce</th>
+                <th class="px-2 py-2 text-center">Pozycja</th>
             </tr>
             </thead>
 
@@ -98,8 +98,13 @@
                                     </td>
                                 @endif
                             @else
-                                <td class="px-2 py-2 text-center {{ $advances ? 'bg-light-green/10' : 'bg-dark-bg' }} text-text-muted">
-                                    -
+                                @php($cellGame = $games[$number][$rowPlayer->id][$columnPlayer->id])
+                                <td class="px-2 py-2 text-center {{ $advances ? 'bg-light-green/10' : 'bg-dark-bg' }}">
+                                    <a href="{{ route('games.show', ['type' => 'group', 'id' => $cellGame->id]) }}"
+                                       class="text-text-muted hover:text-light-orange hover:underline"
+                                       title="Ustaw wynik / walkover">
+                                        —
+                                    </a>
                                 </td>
                             @endif
                         @endif

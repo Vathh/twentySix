@@ -200,12 +200,24 @@ export function registerGameLiveViewer(Alpine) {
             return this.state?.visits ?? [];
         },
 
+        get currentSetNumber() {
+            return Number(this.state?.game?.currentSetNumber ?? 1);
+        },
+
         get currentLegLabel() {
             const leg = this.state?.currentLeg;
             if (!leg) {
                 return 'Brak otwartego lega';
             }
-            return `Leg ${leg.legNumber}`;
+            if (this.isSingleSetFormat()) {
+                return `Leg ${leg.legNumber}`;
+            }
+
+            return `Set ${this.currentSetNumber} · Leg ${leg.legNumber}`;
+        },
+
+        get currentSetLegsLabel() {
+            return `${this.legsInSet(this.player1)}:${this.legsInSet(this.player2)}`;
         },
 
         visitsForPlayer(playerId) {

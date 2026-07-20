@@ -25,6 +25,7 @@ use App\Services\League\LeagueStatsService;
 use App\Services\Player\PlayerStatsService;
 use App\Services\PlayoffGame\PlayoffService;
 use App\Services\QuickGame\QuickGameService;
+use App\Services\Tournament\TournamentFinishService;
 use App\Services\Tournament\TournamentResultService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -42,6 +43,7 @@ class GameService
         private PlayoffService       $playoffService,
         private TournamentRepository $tournamentRepository,
         private TournamentResultService  $tournamentResultService,
+        private TournamentFinishService $tournamentFinishService,
         private GameLegService      $gameLegService,
         private PlayerStatsService   $playerStatsService,
         private LeagueStatsService   $leagueStatsService,
@@ -236,8 +238,6 @@ class GameService
                                                             $gameToUpdate->tournamentId,
                                                             GameStage::THIRD,
                                                             3);
-
-                    $this->tournamentRepository->finishTournament($gameToUpdate->tournamentId);
                 } else if ($gameToUpdate->round === GameStage::FINAL)
                 {
                     $this->handleTournamentResultCreating($dto->gameResultDTO->winnerId,
@@ -246,10 +246,13 @@ class GameService
                                                             $gameToUpdate->tournamentId,
                                                             GameStage::FINAL,
                                                             1);
-                    $this->tournamentRepository->finishTournament($gameToUpdate->tournamentId);
                 }
 
                 $this->playoffService->update($dto->gameResultDTO, $gameToUpdate);
+
+                if (in_array($gameToUpdate->round, [GameStage::FINAL, GameStage::THIRD], true)) {
+                    $this->tournamentFinishService->tryFinish($gameToUpdate->tournamentId);
+                }
 
                 $this->achievementsService->createMany($dto->achievementsDTOs);
 
@@ -308,6 +311,12 @@ class GameService
 
             return true;
         } catch (Throwable $e) {
+            \Log::error('Group game update failed', [
+                'gameId' => $dto->gameResultDTO->gameId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return false;
         }
     }
@@ -345,7 +354,6 @@ class GameService
                     GameStage::THIRD,
                     3,
                 );
-                $this->tournamentRepository->finishTournament($gameToUpdate->tournamentId);
             } elseif ($gameToUpdate->round === GameStage::FINAL) {
                 $this->handleTournamentResultCreating(
                     $dto->winnerId,
@@ -355,11 +363,14 @@ class GameService
                     GameStage::FINAL,
                     1,
                 );
-                $this->tournamentRepository->finishTournament($gameToUpdate->tournamentId);
             }
 
             $this->playoffService->applyWinnerAdvancement($dto, $gameToUpdate);
             $this->recalculatePlayerAndLeagueStats($dto);
+
+            if (in_array($gameToUpdate->round, [GameStage::FINAL, GameStage::THIRD], true)) {
+                $this->tournamentFinishService->tryFinish($gameToUpdate->tournamentId);
+            }
         });
     }
 

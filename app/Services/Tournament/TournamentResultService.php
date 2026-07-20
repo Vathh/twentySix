@@ -2,9 +2,9 @@
 
 namespace App\Services\Tournament;
 
+use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameStage;
 use App\Factories\TournamentResultsFactory;
-use App\Repositories\PointScheme\PointSchemeRepository;
 use App\Repositories\PointScheme\PointSchemeRuleRepository;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Repositories\Tournament\TournamentResultRepository;
@@ -20,6 +20,7 @@ class TournamentResultService
         private TournamentRepository       $tournamentRepository,
         private TournamentResultRepository $resultRepository,
         private PointSchemeRuleRepository  $pointSchemeRuleRepository,
+        private TournamentOverallPlaceService $overallPlaceService,
     )
     {
     }
@@ -30,13 +31,20 @@ class TournamentResultService
      */
     public function createForGroupLosers(int $tournamentId): void
     {
+        $tournament = $this->tournamentRepository->findWithSeasonAndPointSchemeRules($tournamentId);
         $standings = $this->groupStandingService->getLosersGroupStandings($tournamentId);
 
-        $tournament = $this->tournamentRepository->findWithSeasonAndPointSchemeRules($tournamentId);
+        if ($standings->isEmpty()) {
+            return;
+        }
 
-        $results = $this->factory->createManyForGroup($standings, $tournament);
+        $results = $this->tracksLeaguePoints($tournament)
+            ? $this->factory->createManyForGroup($standings, $tournament)
+            : $this->factory->createManyForGroupWithoutPoints($standings, $tournament);
 
         $this->resultRepository->createMany($results->toArray());
+
+        $this->overallPlaceService->recalculateOverallPlaces($tournamentId);
     }
 
     /**
@@ -50,24 +58,31 @@ class TournamentResultService
     {
         $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
 
-        if ($tournament->pointScheme === null) {
-            throw new \RuntimeException("Tournament {$tournamentId} does not have a point scheme assigned");
+        if ($this->tracksLeaguePoints($tournament)) {
+            $rule = $this->pointSchemeRuleRepository->find($tournament->pointScheme->id, $stage, $place);
+
+            $result = $this->factory->createForPlayoff(
+                $tournament->season->id,
+                $tournament->id,
+                $playerId,
+                $rule->points,
+                $rule->place,
+                $stage,
+            );
+        } else {
+            $result = $this->factory->createForPlayoff(
+                null,
+                $tournament->id,
+                $playerId,
+                null,
+                $place,
+                $stage,
+            );
         }
-
-        if ($tournament->season === null) {
-            throw new \RuntimeException("Tournament {$tournamentId} does not have a season assigned");
-        }
-
-        $rule = $this->pointSchemeRuleRepository->find($tournament->pointScheme->id, $stage, $place);
-
-        $result = $this->factory->createForPlayoff($tournament->season->id,
-                                                    $tournament->id,
-                                                    $playerId,
-                                                    $rule->points,
-                                                    $rule->place,
-                                                    $stage);
 
         $this->resultRepository->create($result);
+
+        $this->overallPlaceService->recalculateOverallPlaces($tournamentId);
     }
 
     /**
@@ -106,35 +121,37 @@ class TournamentResultService
     {
         $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
 
-        if ($tournament->pointScheme === null) {
-            throw new \RuntimeException("Tournament {$tournamentId} does not have a point scheme assigned");
-        }
+        if ($this->tracksLeaguePoints($tournament)) {
+            $rule = $this->pointSchemeRuleRepository->find($tournament->pointScheme->id, $stage, $place);
 
-        if ($tournament->season === null) {
-            throw new \RuntimeException("Tournament {$tournamentId} does not have a season assigned");
-        }
+            $this->resultRepository->upsertForPlayer(
+                seasonId: $tournament->season->id,
+                tournamentId: $tournamentId,
+                playerId: $playerId,
+                points: $rule->points,
+                place: $rule->place,
+                stage: $stage,
+            );
 
-        $rule = $this->pointSchemeRuleRepository->find($tournament->pointScheme->id, $stage, $place);
+            $this->overallPlaceService->recalculateOverallPlaces($tournamentId);
+
+            return;
+        }
 
         $this->resultRepository->upsertForPlayer(
-            seasonId: $tournament->season->id,
+            seasonId: null,
             tournamentId: $tournamentId,
             playerId: $playerId,
-            points: $rule->points,
-            place: $rule->place,
+            points: null,
+            place: $place,
             stage: $stage,
         );
+
+        $this->overallPlaceService->recalculateOverallPlaces($tournamentId);
+    }
+
+    private function tracksLeaguePoints(TournamentDomain $tournament): bool
+    {
+        return $tournament->season !== null && $tournament->pointScheme !== null;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

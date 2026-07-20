@@ -7,9 +7,18 @@
         $liveP1 = $initialState['players'][0] ?? [];
         $liveP2 = $initialState['players'][1] ?? [];
         $liveLeg = $initialState['currentLeg'] ?? null;
+        $liveMatchFormat = $initialState['game']['matchFormat'] ?? [];
+        $liveIsMultiSet = (int) ($liveMatchFormat['setsToWinMatch'] ?? 1) > 1;
+        $liveSetNumber = (int) ($initialState['game']['currentSetNumber'] ?? 1);
+        $liveLegNumber = $liveLeg['legNumber'] ?? null;
         $liveLegLabel = $liveLeg
-            ? 'Leg '.($liveLeg['legNumber'] ?? '?')
+            ? ($liveIsMultiSet
+                ? 'Set '.$liveSetNumber.' · Leg '.$liveLegNumber
+                : 'Leg '.$liveLegNumber)
             : 'Brak otwartego lega';
+        $liveLegsInSetLabel = ((int) ($liveP1['legsWonInSet'] ?? $liveP1['legsWon'] ?? 0))
+            .':'
+            .((int) ($liveP2['legsWonInSet'] ?? $liveP2['legsWon'] ?? 0));
     @endphp
     <div
         class="container mx-auto py-6 max-w-3xl"
@@ -89,9 +98,13 @@
                     <p class="text-4xl font-bold text-light-green" x-text="matchScore(player1)">{{ $liveP1['legsWon'] ?? $player1Score }}</p>
                 </div>
                 <div>
-                    <p class="text-lg text-text-muted font-medium" x-text="currentLegLabel">{{ $liveLegLabel }}</p>
+                    <p class="text-base sm:text-lg text-light-orange font-semibold" x-text="currentLegLabel">{{ $liveLegLabel }}</p>
                     <template x-if="!isSingleSetFormat()">
-                        <p class="text-xs text-text-muted mt-1" x-text="`${legsInSet(player1)}:${legsInSet(player2)} legi w secie`"></p>
+                        <div class="mt-2">
+                            <p class="text-xs uppercase tracking-wide text-light-orange/80 font-semibold">Bieżący set</p>
+                            <p class="text-2xl sm:text-3xl font-bold text-light-white tabular-nums leading-tight"
+                               x-text="currentSetLegsLabel">{{ $liveLegsInSetLabel }}</p>
+                        </div>
                     </template>
                 </div>
                 <div>

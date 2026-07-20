@@ -138,6 +138,38 @@ class GameScoringStateBuilder
 
         $remaining = VisitRecorder::remainingFromLegVisits($openLegVisits, $context->startingScore());
 
+        $finishedLegs = $allVisits
+            ->groupBy('game_leg_id')
+            ->filter(function ($legVisits, $legId) use ($openLeg) {
+                return $openLeg === null || (int) $legId !== (int) $openLeg->id;
+            });
+
+        $legByLegScores = [];
+        $legsAverages = [];
+        $dartsPerLeg = [];
+
+        foreach ($finishedLegs as $legAllVisits) {
+            $playerLegVisits = $legAllVisits->where('player_id', $playerId);
+            if ($playerLegVisits->isEmpty()) {
+                continue;
+            }
+
+            $scored = $playerLegVisits->where('bust', false);
+            $legByLegScores[] = $scored->pluck('score')->values()->all();
+            $avg = GameStatisticsCalculator::legAverage($playerLegVisits);
+            if ($avg !== null) {
+                $legsAverages[] = $avg;
+            }
+
+            $closed = $playerLegVisits->contains(fn ($v) => (bool) $v->closed_leg);
+            if ($closed) {
+                $darts = GameStatisticsCalculator::dartsThrown($playerLegVisits);
+                if ($darts > 0) {
+                    $dartsPerLeg[] = $darts;
+                }
+            }
+        }
+
         return [
             'playerId' => $playerId,
             'name' => $name,
@@ -149,6 +181,9 @@ class GameScoringStateBuilder
             'gameAverage' => GameStatisticsCalculator::gameAverage($gameVisits),
             'firstNineAverage' => GameStatisticsCalculator::firstNineAverage($openLegVisits),
             'doublePercent' => GameStatisticsCalculator::gameDoublePercent($allLegStats, $playerId),
+            'legByLegScores' => $legByLegScores,
+            'legsAverages' => $legsAverages,
+            'dartsPerLeg' => $dartsPerLeg,
         ];
     }
 }

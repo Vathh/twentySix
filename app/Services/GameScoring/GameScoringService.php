@@ -262,17 +262,19 @@ class GameScoringService
 
     private function mergeStatsWithVisits(CloseLegPlayerStatsDTO $dto, $playerLegVisits): CloseLegPlayerStatsDTO
     {
+        // Średnie / lotki / finish — zawsze z wizyt w DB (source of truth).
+        // Client może mieć stale currentLegAverage sprzed checkoutu (np. 180 zamiast 167).
         return new CloseLegPlayerStatsDTO(
             playerId: $dto->playerId,
             doubleTracked: $dto->doubleTracked,
             doubleAttempts: $dto->doubleAttempts,
             doubleSuccesses: $dto->doubleSuccesses,
-            legAverage: $dto->legAverage ?? GameStatisticsCalculator::legAverage($playerLegVisits),
-            firstNineAverage: $dto->firstNineAverage ?? GameStatisticsCalculator::firstNineAverage($playerLegVisits),
-            highestVisit: $dto->highestVisit ?? GameStatisticsCalculator::highestVisit($playerLegVisits),
-            highestFinish: $dto->highestFinish ?? GameStatisticsCalculator::highestFinish($playerLegVisits),
-            dartsThrown: $dto->dartsThrown ?? GameStatisticsCalculator::dartsThrown($playerLegVisits),
-            checkoutDart: $dto->checkoutDart ?? GameStatisticsCalculator::checkoutDart($playerLegVisits),
+            legAverage: GameStatisticsCalculator::legAverage($playerLegVisits),
+            firstNineAverage: GameStatisticsCalculator::firstNineAverage($playerLegVisits),
+            highestVisit: GameStatisticsCalculator::highestVisit($playerLegVisits),
+            highestFinish: GameStatisticsCalculator::highestFinish($playerLegVisits),
+            dartsThrown: GameStatisticsCalculator::dartsThrown($playerLegVisits),
+            checkoutDart: GameStatisticsCalculator::checkoutDart($playerLegVisits) ?? $dto->checkoutDart,
         );
     }
 
