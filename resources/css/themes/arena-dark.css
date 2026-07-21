@@ -1,0 +1,54 @@
+/*
+ | twentySix — wariant A: Arena Dark
+ |
+ | Aby przetestować inny wariant: podmień import w app.css
+ | (np. @import './themes/purple-night.css').
+ |
+ | Wspólna paleta z twentysix-mobile/theme/palettes/arenaDark.js
+ */
+
+@theme {
+    /* Tła */
+    --color-bg-deep: #0c0c0f;
+    --color-bg: #141418;
+    --color-bg-elevated: #1c1c22;
+    --color-bg-elevated-hover: #25252d;
+
+    /* Akcent CTA */
+    --color-accent: #f59e0b;
+    --color-accent-hover: #d97706;
+    --color-accent-muted: rgba(245, 158, 11, 0.12);
+
+    /* Sukces / live */
+    --color-success: #22c55e;
+    --color-success-bright: #4ade80;
+    --color-success-muted: rgba(34, 197, 94, 0.15);
+    --color-on-success: #052e16;
+
+    /* Danger / warning */
+    --color-danger: #ef4444;
+    --color-danger-muted: #3f1515;
+    --color-danger-text: #fecaca;
+    --color-warning: #fbbf24;
+    --color-warning-muted: rgba(251, 191, 36, 0.12);
+
+    /* Info (neutralny akcent) */
+    --color-info: #38bdf8;
+    --color-info-muted: rgba(56, 189, 248, 0.12);
+
+    /* Tekst */
+    --color-text: #f4f4f5;
+    --color-text-secondary: #d4d4d8;
+    --color-text-muted: #a1a1aa;
+    --color-text-disabled: #71717a;
+    --color-on-accent: #0c0c0f;
+
+    /* Obramowania / tabele */
+    --color-border: #2e2e38;
+    --color-border-subtle: rgba(255, 255, 255, 0.06);
+    --color-thead: #0c0c0f;
+    --color-row-hover: #25252d;
+
+    /* Nakładki */
+    --color-overlay: rgba(12, 12, 15, 0.72);
+}

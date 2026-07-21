@@ -20,13 +20,13 @@
     };
 @endphp
 @if($gameUrl)
-<a href="{{ $gameUrl }}" class="block bg-white/5 border border-white/10 rounded-xl p-3 backdrop-blur shadow-sm hover:border-light-green/50 transition cursor-pointer">
+<a href="{{ $gameUrl }}" class="block card-glass p-3 hover:border-success/50 transition cursor-pointer">
 @else
-<div class="bg-white/5 border border-white/10 rounded-xl p-3 backdrop-blur shadow-sm">
+<div class="card-glass p-3">
 @endif
 
     <div class="flex justify-between items-center mb-1
-        {{ $game->winnerId === $game->player1Id ? 'text-light-green font-semibold' : '' }}">
+        {{ $game->winnerId === $game->player1Id ? 'text-accent font-semibold' : '' }}">
         <span class="truncate">
             {{ $game->player1?->name ?? '—' }}
         </span>
@@ -36,7 +36,7 @@
     </div>
 
     <div class="flex justify-between items-center
-        {{ $game->winnerId === $game->player2Id ? 'text-light-green font-semibold' : '' }}">
+        {{ $game->winnerId === $game->player2Id ? 'text-accent font-semibold' : '' }}">
         <span class="truncate">
             {{ $game->player2?->name ?? '—' }}
         </span>

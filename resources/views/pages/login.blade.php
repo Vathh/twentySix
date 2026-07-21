@@ -3,37 +3,38 @@
 @section('title', 'Logowanie')
 
 @section('content')
-    <div class="flex items-center justify-center w-full min-h-[70vh]">
-        <div class="container flex justify-center items-center flex-grow flex-1">
-            <div class="inline-flex flex-col justify-center items-center bg-lighter-bg rounded-2xl p-20 ">
-                <form class="" action="{{ route('login') }}" method="POST">
-                    @csrf
-                    <div class="flex flex-col items-center">
-                        <h1 class="text-center text-light-green mb-10 text-2xl">Zaloguj się</h1>
+    <div class="flex items-center justify-center w-full min-h-[70vh] px-4">
+        <div class="auth-card">
+            <form action="{{ route('login') }}" method="POST">
+                @csrf
+                <div class="flex flex-col items-stretch">
+                    <h1 class="page-title text-center">Zaloguj się</h1>
 
-                        <label class="mb-3 text-xl text-light-orange" for="login"><b>Email</b></label>
-                        <input class="mb-5 input-orange"
-                               type="email"
-                               placeholder="Wprowadź email"
-                               name="email"
-                               value="{{ old('email') }}"
-                               required>
+                    <label class="form-label text-accent" for="login">Email</label>
+                    <input class="mb-5 input-field"
+                           type="email"
+                           placeholder="Wprowadź email"
+                           name="email"
+                           value="{{ old('email') }}"
+                           required>
 
-                        <label class="mb-3 text-xl text-light-orange" for="password"><b>Hasło</b></label>
-                        <input class="mb-5 input-orange"
-                               type="password"
-                               placeholder="Wprowadź hasło"
-                               name="password" id="password"
-                               required>
+                    <label class="form-label text-accent" for="password">Hasło</label>
+                    <input class="mb-5 input-field"
+                           type="password"
+                           placeholder="Wprowadź hasło"
+                           name="password"
+                           id="password"
+                           required>
 
-                        <button class="btn btn-primary mt-3" type="submit" name="loginBtn">Zaloguj</button>
+                    <button class="btn btn-primary mt-3" type="submit" name="loginBtn">Zaloguj</button>
 
-                        <x-errors/>
-                    </div>
-                </form>
-                <p class="text-light-orange mt-7">Nie masz jeszcze konta? <a href="{{ route('pages.registerPanel') }}" class="font-bold">Zarejestruj się</a></p>
-            </div>
+                    <x-errors/>
+                </div>
+            </form>
+            <p class="text-accent mt-7 text-center">
+                Nie masz jeszcze konta?
+                <a href="{{ route('pages.registerPanel') }}" class="font-bold hover:underline">Zarejestruj się</a>
+            </p>
         </div>
     </div>
 @endsection
-

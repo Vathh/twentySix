@@ -7,7 +7,7 @@
     @vite('resources/css/app.css')
     @vite('resources/js/app.js')
 </head>
-<body class="bg-dark-bg flex flex-col min-h-screen text-light-text" x-data="{ friendsOpen: false }">
+<body class="app-shell flex flex-col min-h-screen text-text" x-data="{ friendsOpen: false }">
 
     @include('components.notifications')
 
@@ -19,14 +19,12 @@
         </main>
 
         @auth
-            {{-- Przycisk otwierający panel znajomych --}}
             <button type="button"
                     @click="friendsOpen = true"
-                    class="fixed right-4 top-24 z-30 px-3 py-2 rounded border border-light-green text-light-green hover:bg-light-green/10 transition text-sm font-semibold">
+                    class="friends-fab">
                 Znajomi ({{ $friends->count() }})
             </button>
 
-            {{-- Panel boczny znajomych (wysuwany z prawej) --}}
             <div x-show="friendsOpen"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 translate-x-full"
@@ -34,21 +32,24 @@
                  x-transition:leave="transition ease-in duration-150"
                  x-transition:leave-start="opacity-100 translate-x-0"
                  x-transition:leave-end="opacity-0 translate-x-full"
-                 class="fixed right-0 top-0 bottom-0 w-72 max-w-[85vw] bg-darker-bg border-l border-border z-40 flex flex-col shadow-xl"
+                 class="friends-panel"
                  x-cloak
                  style="display: none;">
-                <div class="p-4 border-b border-border flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-light-green">Znajomi</h2>
-                    <button type="button" @click="friendsOpen = false" class="text-light-white hover:text-light-orange transition p-1">✕</button>
+                <div class="friends-panel-header">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <span class="brand-mark !w-8 !h-8 text-xs" aria-hidden="true">26</span>
+                        <h2 class="text-lg font-bold text-text truncate">Znajomi</h2>
+                    </div>
+                    <button type="button" @click="friendsOpen = false" class="text-text-muted hover:text-accent transition p-1 text-lg leading-none" aria-label="Zamknij">✕</button>
                 </div>
                 <div class="flex-1 overflow-y-auto p-4 space-y-6">
                     @if($receivedFriendInvitations->isNotEmpty())
                         <section>
-                            <h3 class="text-sm font-semibold text-light-orange mb-2">Zaproszenia do znajomych</h3>
+                            <h3 class="text-sm font-semibold text-accent mb-2">Zaproszenia</h3>
                             <ul class="space-y-2">
                                 @foreach($receivedFriendInvitations as $invitation)
-                                    <li class="p-3 rounded border border-border bg-lighter-bg/40">
-                                        <p class="text-light-white text-sm mb-2">
+                                    <li class="p-3 rounded-lg border border-border bg-bg-elevated/50">
+                                        <p class="text-text-secondary text-sm mb-2">
                                             {{ $invitation->senderPlayer?->name ?? 'Gracz' }}
                                         </p>
                                         <div class="flex gap-2">
@@ -58,7 +59,7 @@
                                             </form>
                                             <form action="{{ route('friends.invitations.reject', $invitation->id) }}" method="POST">
                                                 @csrf
-                                                <button type="submit" class="text-xs py-1 px-2 rounded border border-light-orange text-light-orange hover:bg-light-orange/10">Odrzuć</button>
+                                                <button type="submit" class="text-xs py-1 px-2 rounded-md border border-accent text-accent hover:bg-accent/10 transition">Odrzuć</button>
                                             </form>
                                         </div>
                                     </li>
@@ -68,14 +69,18 @@
                     @endif
 
                     <section>
-                        <h3 class="text-sm font-semibold text-light-green mb-2">Twoi znajomi</h3>
+                        <h3 class="text-sm font-semibold text-accent mb-2">Twoi znajomi</h3>
                     @if($friends->isEmpty())
-                        <p class="text-light-gray text-sm">Brak znajomych.</p>
+                        <x-empty-state
+                            class="!py-8"
+                            title="Brak znajomych"
+                            description="Dodaj graczy z profilu lub wyszukiwarki."
+                        />
                     @else
                         <ul class="space-y-2">
                             @foreach($friends as $friend)
                                 <li>
-                                    <a href="{{ route('players.show', $friend->friendPlayer->id) }}" class="block py-2 px-3 rounded border border-border hover:border-light-green text-light-white hover:text-light-green transition text-sm">
+                                    <a href="{{ route('players.show', $friend->friendPlayer->id) }}" class="friends-link">
                                         {{ $friend->friendPlayer->name }}
                                     </a>
                                 </li>
@@ -86,16 +91,16 @@
 
                     @if($sentFriendInvitations->isNotEmpty())
                         <section>
-                            <h3 class="text-sm font-semibold text-light-orange mb-2">Oczekujący</h3>
+                            <h3 class="text-sm font-semibold text-accent mb-2">Oczekujący</h3>
                             <ul class="space-y-2">
                                 @foreach($sentFriendInvitations as $invitation)
                                     <li>
                                         @if($invitation->receiverPlayer)
-                                            <a href="{{ route('players.show', $invitation->receiverPlayer->id) }}" class="block py-2 px-3 rounded border border-border hover:border-light-orange text-light-white hover:text-light-orange transition text-sm">
+                                            <a href="{{ route('players.show', $invitation->receiverPlayer->id) }}" class="friends-link">
                                                 {{ $invitation->receiverPlayer->name }}
                                             </a>
                                         @else
-                                            <span class="block py-2 px-3 rounded border border-border text-light-gray text-sm">Gracz</span>
+                                            <span class="friends-link text-text-muted pointer-events-none">Gracz</span>
                                         @endif
                                     </li>
                                 @endforeach
@@ -105,7 +110,6 @@
                 </div>
             </div>
 
-            {{-- Tło po kliknięciu poza panelem --}}
             <div x-show="friendsOpen"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0"
@@ -114,7 +118,7 @@
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
                  @click="friendsOpen = false"
-                 class="fixed inset-0 bg-black/50 z-30"
+                 class="overlay"
                  x-cloak
                  style="display: none;"></div>
         @endauth

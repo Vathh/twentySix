@@ -4,22 +4,22 @@
 
 @section('content')
 
-    <div class="flex justify-center items-center min-h-[70vh]">
-        <form class="bg-lighter-bg rounded-2xl p-20 "
+    <div class="flex justify-center items-center min-h-[70vh] px-4">
+        <form class="form-card"
               action="{{ route('tournaments.store') }}{{ $seasonId ? '?seasonId='.$seasonId : '' }}"
               method="POST">
             @csrf
-            <div class="flex flex-col items-center">
-                <h1 class="text-center text-light-green mb-4 text-2xl">Tworzenie nowego turnieju</h1>
+            <div class="flex flex-col items-stretch">
+                <h1 class="page-title text-center">Tworzenie nowego turnieju</h1>
 
                 @if($seasonId)
-                    <p class="text-center text-[#a8a8a8] text-sm mb-8">Turniej zostanie dodany do wybranego sezonu.</p>
+                    <p class="card-description text-center mb-6">Turniej zostanie dodany do wybranego sezonu.</p>
                 @else
-                    <p class="text-center text-[#a8a8a8] text-sm mb-8">Turniej jednorazowy — bez powiązania z ligą i sezonem.</p>
+                    <p class="card-description text-center mb-6">Turniej jednorazowy — bez powiązania z ligą i sezonem.</p>
                 @endif
 
-                <label class="mb-3 text-xl text-light-orange" for="tournamentName"><b>Nazwa turnieju</b></label>
-                <input class="mb-5 input-orange"
+                <label class="form-label text-accent" for="tournamentName">Nazwa turnieju</label>
+                <input class="mb-5 input-field"
                        id="tournamentName"
                        type="text"
                        placeholder="Wprowadź nazwę turnieju"
@@ -27,20 +27,20 @@
                        value="{{ old('tournamentName') }}"
                        required>
 
-                <label class="mb-3 text-xl text-light-orange" for="date"><b>Data wydarzenia</b></label>
-                <input class="mb-5 input-orange"
+                <label class="form-label text-accent" for="date">Data wydarzenia</label>
+                <input class="mb-5 input-field"
                        id="date"
                        type="date"
                        name="date"
                        value="{{ old('date') }}"
                        required>
 
-                <button class="btn btn-primary mt-8" type="submit">Stwórz turniej</button>
+                <button class="btn btn-primary mt-2" type="submit">Stwórz turniej</button>
 
                 @if($seasonId)
-                    <a href="{{ route('seasons.show', ['season' => $seasonId]) }}" class="btn btn-primary mt-5">Powrót do sezonu</a>
+                    <a href="{{ route('seasons.show', ['season' => $seasonId]) }}" class="btn btn-secondary mt-4 text-center">Powrót do sezonu</a>
                 @else
-                    <a href="{{ route('tournaments.index') }}" class="btn btn-primary mt-5">Powrót do turniejów</a>
+                    <a href="{{ route('tournaments.index') }}" class="btn btn-secondary mt-4 text-center">Powrót do turniejów</a>
                 @endif
 
                 <x-errors/>

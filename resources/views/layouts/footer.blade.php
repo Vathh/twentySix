@@ -1,3 +1,3 @@
-<footer class="bg-dark-bg text-light-white py-4 text-center border-t border-gray-700">
-    &copy; {{ date('Y') }} SunnyVale
+<footer class="bg-bg-deep text-text-muted py-4 text-center border-t border-border">
+    &copy; {{ date('Y') }} twentySix
 </footer>

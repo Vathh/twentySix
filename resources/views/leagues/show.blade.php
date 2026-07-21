@@ -4,107 +4,116 @@
 
 @section('content')
 
-    <div class="flex min-h-screen bg-dark-bg text-light-white">
+    <div class="detail-layout">
 
         @leagueAdmin($league)
-            <aside class="w-72 backdrop-blur bg-white/5 border-r border-white/10 p-6 flex flex-col">
-                <h2 class="text-light-green font-bold text-lg mb-6 tracking-wide">⚙️ Zarządzanie ligą</h2>
+            <aside class="admin-sidebar">
+                <h2 class="admin-sidebar-title">⚙️ Zarządzanie ligą</h2>
 
                 <nav class="flex flex-col space-y-3">
-                    <a href="{{ route('seasons.create') }}?leagueId={{ $league->id }}"
-                       class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
+                    <a href="{{ route('seasons.create') }}?leagueId={{ $league->id }}" class="admin-sidebar-link">
                         ➕ Dodaj sezon
                     </a>
-                    <a href="{{ route('leagues.admins', $league->id) }}"
-                       class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
-                        ‍💼 Administratorzy
+                    <a href="{{ route('leagues.admins', $league->id) }}" class="admin-sidebar-link">
+                        💼 Administratorzy
                     </a>
-                    <a href="{{ route('leagues.edit', ['league' => $league->id]) }}"
-                       class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
+                    <a href="{{ route('leagues.edit', ['league' => $league->id]) }}" class="admin-sidebar-link">
                         ✏️ Edytuj ligę
                     </a>
-                    <a href="{{ route('leagues.relatedUsers', $league->id) }}"
-                       class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
-                        👨‍👨‍👦 Powiązani użytkownicy
+                    <a href="{{ route('leagues.relatedUsers', $league->id) }}" class="admin-sidebar-link">
+                        全家 Powiązani użytkownicy
                     </a>
-                    <a href="{{ route('leagues.guests', $league->id) }}"
-                       class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
-                        👨‍👨‍👦 Goście
+                    <a href="{{ route('leagues.guests', $league->id) }}" class="admin-sidebar-link">
+                        全家 Goście
                     </a>
-                    {{--                    <a href="#" class="flex items-center gap-3 bg-light-red/20 hover:bg-light-red/30 px-4 py-3 rounded-lg transition">--}}
-                    {{--                        🗑️ Usuń ligę--}}
-                    {{--                    </a>--}}
                 </nav>
             </aside>
         @endleagueAdmin
 
-        <div class="flex-1 p-10 flex justify-center">
-            <div class="max-w-3xl w-full">
+        <div class="detail-main">
+            <div class="detail-content">
 
-                <h1 class="text-4xl font-bold text-light-orange mb-6 tracking-wide">{{ $league->name }}</h1>
+                <header class="entity-header">
+                    <p class="entity-eyebrow">Liga</p>
+                    <h1 class="entity-title">{{ $league->name }}</h1>
+                    <span class="entity-rule" aria-hidden="true"></span>
+                </header>
 
-                <div class="bg-white/5 border border-white/10 p-6 rounded-xl shadow-lg backdrop-blur">
-                    <p class="mb-2"><span
-                            class="text-light-green font-semibold">Opis:</span> {{ $league->description }}</p>
-                    <p class="mb-2"><span
-                            class="text-light-green font-semibold">Data utworzenia:</span> {{ $league->createdAtDate() }}
-                    </p>
-                    <p class="mb-2"><span
-                            class="text-light-green font-semibold">Ilość sezonów:</span> {{ count($league->seasons) }}
-                    </p>
-                    <p><span
-                            class="text-light-green font-semibold">Ostatnia aktywność:</span> {{ $league->updatedAtDate() }}
-                    </p>
+                <div class="entity-meta">
+                    <dl class="entity-meta-grid cols-2">
+                        <div class="entity-meta-item span-full">
+                            <dt class="entity-meta-label">Opis</dt>
+                            <dd class="entity-meta-value">{{ $league->description ?: '—' }}</dd>
+                        </div>
+                        <div class="entity-meta-item">
+                            <dt class="entity-meta-label">Data utworzenia</dt>
+                            <dd class="entity-meta-value score-num">{{ $league->createdAtDate() }}</dd>
+                        </div>
+                        <div class="entity-meta-item">
+                            <dt class="entity-meta-label">Ilość sezonów</dt>
+                            <dd class="entity-meta-value score-num">{{ count($league->seasons) }}</dd>
+                        </div>
+                        <div class="entity-meta-item span-full">
+                            <dt class="entity-meta-label">Ostatnia aktywność</dt>
+                            <dd class="entity-meta-value score-num">{{ $league->updatedAtDate() }}</dd>
+                        </div>
+                    </dl>
                 </div>
 
-                <h2 class="text-2xl font-bold text-light-green mt-10 mb-4">Tabela wyników ligi (top 40)</h2>
-                <div class="overflow-x-auto rounded-lg p-4 bg-darker-bg border-border mb-10">
-                    <table class="border-collapse text-sm text-text-primary min-w-full">
+                <h2 class="section-title mt-12">Tabela wyników ligi (top 40)</h2>
+                <div class="table-wrap mb-10">
+                    <table class="table-surface">
                         <thead>
-                        <tr class="bg-dark-bg text-text-muted hover:bg-thead-hover transition">
-                            <th class="px-3 py-2 text-center">Miejsce</th>
-                            <th class="px-3 py-2 text-left">Zawodnik</th>
-                            <th class="px-2 py-2 text-center">Punkty</th>
-                            <th class="px-2 py-2 text-center">180</th>
-                            <th class="px-2 py-2 text-center">170+</th>
-                            <th class="px-2 py-2 text-center">QF</th>
-                            <th class="px-2 py-2 text-center">HF</th>
-                            <th class="px-2 py-2 text-center">Najniższa lotka</th>
-                            <th class="px-2 py-2 text-center">Najwyższy finish</th>
+                        <tr>
+                            <th class="text-center">Miejsce</th>
+                            <th class="text-left">Zawodnik</th>
+                            <th class="text-center">Punkty</th>
+                            <th class="text-center">180</th>
+                            <th class="text-center">170+</th>
+                            <th class="text-center">QF</th>
+                            <th class="text-center">HF</th>
+                            <th class="text-center">Najniższa lotka</th>
+                            <th class="text-center">Najwyższy finish</th>
                         </tr>
                         </thead>
-                        <tbody class="divide-y divide-border">
+                        <tbody>
                         @foreach($standings as $row)
-                            <tr class="hover:bg-row-hover transition">
-                                <td class="px-3 py-2 text-center font-semibold text-light-green">{{ $row->place }}</td>
-                                <td class="px-3 py-2 font-medium text-text-primary whitespace-nowrap">
-                                    <a href="{{ route('players.show', $row->player_id) }}" class="hover:text-light-green transition">{{ $row->player_name }}</a>
+                            <tr>
+                                <td class="text-center font-semibold text-accent">{{ $row->place }}</td>
+                                <td class="font-medium text-text whitespace-nowrap">
+                                    <a href="{{ route('players.show', $row->player_id) }}" class="hover:text-accent transition">{{ $row->player_name }}</a>
                                 </td>
-                                <td class="px-2 py-2 text-center">{{ $row->points }}</td>
-                                <td class="px-2 py-2 text-center">{{ $row->count_max }}</td>
-                                <td class="px-2 py-2 text-center">{{ $row->count_170_plus }}</td>
-                                <td class="px-2 py-2 text-center">{{ $row->count_qf }}</td>
-                                <td class="px-2 py-2 text-center">{{ $row->count_hf }}</td>
-                                <td class="px-2 py-2 text-center">{{ $row->best_qf !== null ? $row->best_qf . ' lotek' : '–' }}</td>
-                                <td class="px-2 py-2 text-center">{{ $row->best_hf ?? '–' }}</td>
+                                <td class="text-center">{{ $row->points }}</td>
+                                <td class="text-center">{{ $row->count_max }}</td>
+                                <td class="text-center">{{ $row->count_170_plus }}</td>
+                                <td class="text-center">{{ $row->count_qf }}</td>
+                                <td class="text-center">{{ $row->count_hf }}</td>
+                                <td class="text-center">{{ $row->best_qf !== null ? $row->best_qf . ' lotek' : '–' }}</td>
+                                <td class="text-center">{{ $row->best_hf ?? '–' }}</td>
                             </tr>
                         @endforeach
                         @if($standings->isEmpty())
                             <tr>
-                                <td colspan="9" class="px-3 py-6 text-center text-text-muted">Brak danych. Rozegraj turnieje w sezonach tej ligi.</td>
+                                <td colspan="9" class="py-6 text-center text-text-muted">Brak danych. Rozegraj turnieje w sezonach tej ligi.</td>
                             </tr>
                         @endif
                         </tbody>
                     </table>
                 </div>
 
-                <h2 class="text-2xl font-bold text-light-green mt-10 mb-4">Sezony</h2>
+                <h2 class="section-title">Sezony</h2>
                 <div class="space-y-3">
-                    @foreach($seasons as $season)
+                    @forelse($seasons as $season)
                         <a href="{{ route('seasons.show', ['season' => $season->id]) }}">
-                            <div class="mb-5 bg-white/5 p-4 rounded-lg border border-white/10 hover:bg-white/10 transition">{{ $season->name }}</div>
+                            <div class="list-item mb-2">{{ $season->name }}</div>
                         </a>
-                    @endforeach
+                    @empty
+                        <x-empty-state
+                            class="!py-10"
+                            title="Brak sezonów"
+                            description="Dodaj sezon z panelu zarządzania ligą."
+                        />
+                    @endforelse
                 </div>
 
             </div>
@@ -113,4 +122,3 @@
     </div>
 
 @endsection
-

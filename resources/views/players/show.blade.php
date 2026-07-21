@@ -41,14 +41,14 @@ document.addEventListener('alpine:init', () => {
 @section('content')
     <div class="py-8" x-data="playerProfileData()">
         {{-- Nagłówek profilu --}}
-        <div class="bg-lighter-bg rounded-lg p-6 mb-6 border border-border">
+        <div class="card mb-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-light-green">{{ $player->name }}</h1>
+                    <h1 class="text-3xl font-bold text-text">{{ $player->name }}</h1>
                     @if($player->user_id && $player->user)
-                        <p class="text-light-white mt-2">Zarejestrowany od {{ $player->user->created_at->format('d.m.Y') }}</p>
+                        <p class="text-text-secondary mt-2">Zarejestrowany od {{ $player->user->created_at->format('d.m.Y') }}</p>
                     @else
-                        <p class="text-light-gray mt-2">Gracz gość</p>
+                        <p class="text-text-muted mt-2">Gracz gość</p>
                     @endif
                 </div>
                 @auth
@@ -58,19 +58,19 @@ document.addEventListener('alpine:init', () => {
                             <button type="submit" class="btn btn-mini">Dodaj do znajomych</button>
                         </form>
                     @elseif($isFriend)
-                        <span class="text-light-green font-semibold">Znajomy</span>
+                        <span class="text-accent font-semibold">Znajomy</span>
                     @elseif($pendingSentInvitation)
-                        <span class="text-light-orange font-semibold">Zaproszenie wysłane</span>
+                        <span class="text-accent font-semibold">Zaproszenie wysłane</span>
                     @elseif($pendingReceivedInvitation)
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="text-light-orange text-sm">Zaproszenie od tego gracza</span>
+                            <span class="text-accent text-sm">Zaproszenie od tego gracza</span>
                             <form action="{{ route('friends.invitations.accept', $pendingReceivedInvitation->id) }}" method="POST" class="inline">
                                 @csrf
                                 <button type="submit" class="btn btn-mini">Akceptuj</button>
                             </form>
                             <form action="{{ route('friends.invitations.reject', $pendingReceivedInvitation->id) }}" method="POST" class="inline">
                                 @csrf
-                                <button type="submit" class="btn btn-mini border border-light-orange text-light-orange bg-transparent hover:bg-light-orange/10">Odrzuć</button>
+                                <button type="submit" class="btn btn-mini border border-accent text-accent bg-transparent hover:bg-accent/10">Odrzuć</button>
                             </form>
                         </div>
                     @endif
@@ -79,23 +79,23 @@ document.addEventListener('alpine:init', () => {
         </div>
 
         @if(session('success'))
-            <div class="mb-4 p-3 bg-green-900/50 border border-green-600 rounded text-light-green">{{ session('success') }}</div>
+            <div class="mb-4 p-3 alert-success">{{ session('success') }}</div>
         @endif
         @if(session('error'))
-            <div class="mb-4 p-3 bg-red-900/50 border border-red-600 rounded text-light-red">{{ session('error') }}</div>
+            <div class="mb-4 alert-danger">{{ session('error') }}</div>
         @endif
 
         {{-- Zakładki --}}
         <div class="flex gap-2 mb-6 border-b border-border pb-2">
             <button type="button"
                     @click="activeTab = 'overview'"
-                    :class="activeTab === 'overview' ? 'bg-light-green/20 text-light-green border-light-green' : 'border-border text-light-white hover:bg-lighter-bg'"
+                    :class="activeTab === 'overview' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
                     class="px-4 py-2 rounded-t border font-medium transition">
                 Przegląd
             </button>
             <button type="button"
                     @click="activeTab = 'history'"
-                    :class="activeTab === 'history' ? 'bg-light-green/20 text-light-green border-light-green' : 'border-border text-light-white hover:bg-lighter-bg'"
+                    :class="activeTab === 'history' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
                     class="px-4 py-2 rounded-t border font-medium transition">
                 Historia meczów
             </button>
@@ -105,9 +105,9 @@ document.addEventListener('alpine:init', () => {
         <div x-show="activeTab === 'overview'" class="space-y-8">
             {{-- Statystyki: mecze szybkie --}}
             <section>
-                <h2 class="text-xl font-bold text-light-orange mb-4">Statystyki – mecze szybkie</h2>
-                <div class="bg-lighter-bg rounded-lg p-6 border border-border overflow-x-auto">
-                    <table class="w-full text-left text-light-white">
+                <h2 class="text-xl font-bold text-accent mb-4">Statystyki – mecze szybkie</h2>
+                <div class="bg-bg-elevated rounded-lg p-6 border border-border overflow-x-auto">
+                    <table class="w-full text-left text-text-secondary">
                         <thead>
                             <tr class="border-b border-border">
                                 <th class="pb-2 pr-4">Metryka</th>
@@ -130,9 +130,9 @@ document.addEventListener('alpine:init', () => {
 
             {{-- Statystyki: turnieje --}}
             <section>
-                <h2 class="text-xl font-bold text-light-orange mb-4">Statystyki – turnieje</h2>
-                <div class="bg-lighter-bg rounded-lg p-6 border border-border overflow-x-auto">
-                    <table class="w-full text-left text-light-white">
+                <h2 class="text-xl font-bold text-accent mb-4">Statystyki – turnieje</h2>
+                <div class="bg-bg-elevated rounded-lg p-6 border border-border overflow-x-auto">
+                    <table class="w-full text-left text-text-secondary">
                         <thead>
                             <tr class="border-b border-border">
                                 <th class="pb-2 pr-4">Metryka</th>
@@ -157,12 +157,12 @@ document.addEventListener('alpine:init', () => {
         {{-- Zakładka: Historia meczów --}}
         <div x-show="activeTab === 'history'" x-cloak>
             <section>
-                <h2 class="text-xl font-bold text-light-orange mb-4">Ostatnie mecze</h2>
-                <div class="bg-lighter-bg rounded-lg border border-border overflow-hidden">
+                <h2 class="text-xl font-bold text-accent mb-4">Ostatnie mecze</h2>
+                <div class="bg-bg-elevated rounded-lg border border-border overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-light-white">
+                        <table class="w-full text-left text-text-secondary">
                             <thead>
-                                <tr class="border-b border-border bg-darker-bg/50">
+                                <tr class="border-b border-border bg-bg-deep/50">
                                     <th class="px-4 py-3">Data</th>
                                     <th class="px-4 py-3">Typ</th>
                                     <th class="px-4 py-3">Przeciwnik / przeciwnicy</th>
@@ -173,19 +173,19 @@ document.addEventListener('alpine:init', () => {
                             </thead>
                             <tbody>
                                 <template x-for="(m, i) in gameHistory.items" :key="i">
-                                    <tr class="border-b border-border/50 hover:bg-darker-bg/30 transition">
+                                    <tr class="border-b border-border/50 hover:bg-bg-deep/30 transition">
                                         <td class="px-4 py-3" x-text="m.date_formatted"></td>
                                         <td class="px-4 py-3" x-text="typeLabel(m.type)"></td>
                                         <td class="px-4 py-3" x-text="m.opponents"></td>
                                         <td class="px-4 py-3">
-                                            <span :class="m.result === 'wygrana' ? 'text-light-green font-semibold' : 'text-light-gray'" x-text="m.result"></span>
+                                            <span :class="m.result === 'wygrana' ? 'text-accent font-semibold' : 'text-text-muted'" x-text="m.result"></span>
                                         </td>
                                         <td class="px-4 py-3" x-text="m.score || '–'"></td>
                                         <td class="px-4 py-3" x-text="m.tournament_name || '–'"></td>
                                     </tr>
                                 </template>
                                 <tr x-show="gameHistory.items.length === 0">
-                                    <td colspan="6" class="px-4 py-8 text-center text-light-gray">Brak meczów w historii.</td>
+                                    <td colspan="6" class="px-4 py-8 text-center text-text-muted">Brak meczów w historii.</td>
                                 </tr>
                             </tbody>
                         </table>

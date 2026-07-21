@@ -6,61 +6,48 @@
 
 @section('content')
 
-    <div class="flex justify-center items-center min-h-[70vh]">
-        <form class="bg-lighter-bg rounded-2xl p-20"
+    <div class="flex justify-center items-center min-h-[70vh] px-4">
+        <form class="form-card"
               action="{{ route('seasons.update', $season->id) }}"
               method="POST">
             @csrf
             @method('PUT')
 
-            <div class="flex flex-col items-center">
-                <h1 class="text-center text-light-green mb-10 text-2xl">Edycja sezonu</h1>
+            <div class="flex flex-col items-stretch">
+                <h1 class="page-title text-center">Edycja sezonu</h1>
 
-                <label class="mb-3 text-xl text-light-orange" for="leagueName"><b>Nazwa sezonu</b></label>
+                <label class="form-label text-accent" for="leagueName">Nazwa sezonu</label>
                 <input
-                    class="mb-5 input-orange"
+                    class="mb-5 input-field"
                     type="text"
+                    id="leagueName"
                     name="leagueName"
                     value="{{ old('leagueName', $season->name) }}"
                     required
                 >
 
-                <label class="mb-3 text-xl text-light-orange" for="login"><b>Data rozpoczęcia</b></label>
-                <input class="mb-5 input-orange"
+                <label class="form-label text-accent" for="startDate">Data rozpoczęcia</label>
+                <input class="mb-5 input-field"
                        type="date"
+                       id="startDate"
                        name="startDate"
                        value="{{ old('startDate', $season->startDate->format('Y-m-d')) }}"
                        required>
 
-                <label class="mb-3 text-xl text-light-orange" for="login"><b>Data zakończenia</b></label>
-                <input class="mb-5 input-orange"
+                <label class="form-label text-accent" for="endDate">Data zakończenia</label>
+                <input class="mb-5 input-field"
                        type="date"
+                       id="endDate"
                        name="endDate"
                        value="{{ old('endDate', $season->endDate->format('Y-m-d')) }}"
                        required>
 
-                <button class="btn btn-primary mt-8" type="submit">Zapisz zmiany</button>
-
-                <a href="{{ route('seasons.show', $season->id) }}"
-                   class="btn btn-primary mt-5">Powrót</a>
+                <button class="btn btn-primary" type="submit">Zapisz zmiany</button>
+                <a href="{{ route('seasons.show', $season->id) }}" class="btn btn-secondary mt-4 text-center">Powrót</a>
 
                 <x-errors/>
             </div>
         </form>
     </div>
 
-@endsection
-
-@section('scripts')
-    <script>
-        function updateCounter() {
-            const textarea = document.getElementById('description');
-            const counter = document.getElementById('charCount');
-            counter.textContent = textarea.value.length;
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            updateCounter();
-        });
-    </script>
 @endsection

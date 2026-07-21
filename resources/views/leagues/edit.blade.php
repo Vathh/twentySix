@@ -6,42 +6,41 @@
 
 @section('content')
 
-    <div class="flex justify-center items-center min-h-[70vh]">
-        <form class="bg-lighter-bg rounded-2xl p-20"
+    <div class="flex justify-center items-center min-h-[70vh] px-4">
+        <form class="form-card"
               action="{{ route('leagues.update', $league->id) }}"
               method="POST">
             @csrf
             @method('PUT')
 
-            <div class="flex flex-col items-center">
-                <h1 class="text-center text-light-green mb-10 text-2xl">Edycja ligi</h1>
+            <div class="flex flex-col items-stretch">
+                <h1 class="page-title text-center">Edycja ligi</h1>
 
-                <label class="mb-3 text-xl text-light-orange" for="leagueName"><b>Nazwa ligi</b></label>
+                <label class="form-label text-accent" for="leagueName">Nazwa ligi</label>
                 <input
-                    class="mb-5 input-orange"
+                    class="mb-5 input-field"
                     type="text"
+                    id="leagueName"
                     name="leagueName"
                     value="{{ old('leagueName', $league->name) }}"
                     required
                 >
 
-                <label class="mb-3 text-xl text-light-orange" for="description"><b>Opis ligi</b></label>
+                <label class="form-label text-accent" for="description">Opis ligi</label>
                 <textarea
-                    class="input-orange mb-2 h-32 resize-none"
+                    class="input-field mb-2 h-32 resize-none"
                     id="description"
                     name="description"
                     maxlength="500"
                     oninput="updateCounter()"
                 >{{ old('description', $league->description) }}</textarea>
 
-                <div class="text-light-green text-sm text-right w-full">
+                <div class="text-accent text-sm text-right mb-6">
                     <span id="charCount">0</span>/500
                 </div>
 
-                <button class="btn btn-primary mt-8" type="submit">Zapisz zmiany</button>
-
-                <a href="{{ route('leagues.show', $league->id) }}"
-                   class="btn btn-primary mt-5">Powrót</a>
+                <button class="btn btn-primary" type="submit">Zapisz zmiany</button>
+                <a href="{{ route('leagues.show', $league->id) }}" class="btn btn-secondary mt-4 text-center">Powrót</a>
 
                 <x-errors/>
             </div>

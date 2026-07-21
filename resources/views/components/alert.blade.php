@@ -1,11 +1,11 @@
 @props([
-    'messages' => [],  // ['type' => 'success', 'text' => 'Liga dodana']
+    'messages' => [],
     'duration' => 4000
 ])
 
 <div
     x-data="{ toasts: {{ json_encode($messages) }} }"
-    class="fixed top-5 right-5 z-50 space-y-2 w-96"
+    class="fixed top-5 right-5 z-50 space-y-2 w-96 max-w-[calc(100vw-2rem)]"
 >
     <template x-for="(toast, index) in toasts" :key="index">
         <div
@@ -13,15 +13,15 @@
             x-init="setTimeout(() => toast.show = false, toast.duration ?? {{ $duration }})"
             x-transition
             :class="{
-                'bg-green-500 text-white': toast.type === 'success',
-                'bg-red-500 text-white': toast.type === 'error',
-                'bg-blue-500 text-white': toast.type === 'info',
-                'bg-yellow-500 text-black': toast.type === 'warning'
+                'alert-success': toast.type === 'success',
+                'alert-danger': toast.type === 'error',
+                'alert-info': toast.type === 'info',
+                'alert-warning': toast.type === 'warning'
             }"
-            class="p-4 rounded shadow-lg flex justify-between items-center"
+            class="flex justify-between items-center gap-3"
         >
             <div x-text="toast.text"></div>
-            <button @click="toast.show = false" class="ml-4 font-bold">&times;</button>
+            <button @click="toast.show = false" class="shrink-0 font-bold opacity-70 hover:opacity-100">&times;</button>
         </div>
     </template>
 </div>

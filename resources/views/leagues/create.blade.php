@@ -4,23 +4,24 @@
 
 @section('content')
 
-    <div class="flex justify-center items-center min-h-[70vh]">
-        <form class="bg-lighter-bg rounded-2xl p-20 " action="{{ route('leagues.store') }}" method="POST">
+    <div class="flex justify-center items-center min-h-[70vh] px-4">
+        <form class="form-card" action="{{ route('leagues.store') }}" method="POST">
             @csrf
-            <div class="flex flex-col items-center">
-                <h1 class="text-center text-light-green mb-10 text-2xl">Tworzenie nowej ligi</h1>
+            <div class="flex flex-col items-stretch">
+                <h1 class="page-title text-center">Tworzenie nowej ligi</h1>
 
-                <label class="mb-3 text-xl text-light-orange" for="login"><b>Nazwa ligi</b></label>
-                <input class="mb-5 input-orange"
+                <label class="form-label text-accent" for="leagueName">Nazwa ligi</label>
+                <input class="mb-5 input-field"
                        type="text"
+                       id="leagueName"
                        placeholder="Wprowadź nazwę ligi"
                        name="leagueName"
                        value="{{ old('leagueName') }}"
                        required>
 
-                <label class="mb-3 text-xl text-light-orange" for="description"><b>Opis ligi</b></label>
+                <label class="form-label text-accent" for="description">Opis ligi</label>
                 <textarea
-                    class=" input-orange mb-2 h-32 resize-none"
+                    class="input-field mb-2 h-32 resize-none"
                     id="description"
                     name="description"
                     maxlength="500"
@@ -28,13 +29,12 @@
                     placeholder="Opis ligi (np. lokalizacja, terminy spotkań, poziom, zasady...)"
                 >{{ old('description') }}</textarea>
 
-                <div class="text-light-green text-sm text-right">
+                <div class="text-accent text-sm text-right mb-6">
                     <span id="charCount">0</span>/500
                 </div>
 
-                <button class="btn btn-primary mt-8" type="submit" name="loginBtn">Stwórz ligę</button>
-
-                <a href="{{ route('leagues.index') }}" class="btn btn-primary mt-5" type="submit">Powrót</a>
+                <button class="btn btn-primary" type="submit" name="loginBtn">Stwórz ligę</button>
+                <a href="{{ route('leagues.index') }}" class="btn btn-secondary mt-4 text-center">Powrót</a>
 
                 <x-errors/>
             </div>
@@ -56,4 +56,3 @@
         });
     </script>
 @endsection
-

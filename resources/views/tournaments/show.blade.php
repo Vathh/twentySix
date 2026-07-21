@@ -4,44 +4,60 @@
 
 @section('content')
 
-    <div class="flex min-h-screen bg-dark-bg text-light-white">
+    <div class="detail-layout">
 
         @if($canManageTournament)
             @include('tournaments.partials.admin-sidebar')
         @endif
 
-        <div class="flex-1 p-10 flex justify-center">
-            <div class="max-w-3xl w-full">
+        <div class="detail-main">
+            <div class="detail-content">
 
-                @if($season)
-                    <h2 class="text-4xl font-bold text-light-green mb-6 tracking-wide hover:text-light-orange transition-all duration-300 hover:cursor-pointer">
-                        <a href="{{ route('leagues.show', $season->league->id) }}">{{ $season->league->name }}</a>
-                    </h2>
+                <header class="entity-header">
+                    @if($season)
+                        <nav class="entity-breadcrumb" aria-label="Okruszki">
+                            <a href="{{ route('leagues.show', $season->league->id) }}">{{ $season->league->name }}</a>
+                            <span class="entity-breadcrumb-sep">/</span>
+                            <a href="{{ route('seasons.show', $season->id) }}">{{ $season->name }}</a>
+                            <span class="entity-breadcrumb-sep">/</span>
+                            <span class="text-text-secondary">Turniej</span>
+                        </nav>
+                    @else
+                        <p class="entity-eyebrow">Turniej jednorazowy</p>
+                    @endif
 
-                    <h1 class="text-3xl font-bold text-light-green mb-6 tracking-wide hover:text-light-orange transition-all duration-300 hover:cursor-pointer">
-                        <a href="{{ route('seasons.show', $season->id) }}">{{ $season->name }}</a>
-                    </h1>
-                @else
-                    <p class="text-sm text-light-orange mb-4">Turniej jednorazowy</p>
-                @endif
+                    <div class="entity-title-row">
+                        <h1 class="entity-title">{{ $tournament->name }}</h1>
+                        @php $variant = $tournament->status->badgeVariant(); @endphp
+                        <span @class([
+                            'badge-planned' => $variant === 'planned',
+                            'badge-status-live' => $variant === 'live',
+                            'badge-finished' => $variant === 'finished',
+                        ])>
+                            {{ $tournament->status->label() }}
+                        </span>
+                    </div>
+                    <span class="entity-rule" aria-hidden="true"></span>
+                </header>
 
-                <h1 class="text-2xl font-bold text-light-orange mb-6 tracking-wide">{{ $tournament->name }}</h1>
-
-                <div class="bg-white/5 border border-white/10 p-6 rounded-xl shadow-lg backdrop-blur">
-                    <p class="mb-2"><span
-                            class="text-light-green font-semibold">Data rozgrywek:</span> {{ $tournament->getDate() }}
-                    </p>
+                <div class="entity-meta">
+                    <dl class="entity-meta-grid cols-2">
+                        <div class="entity-meta-item">
+                            <dt class="entity-meta-label">Data rozgrywek</dt>
+                            <dd class="entity-meta-value score-num">{{ $tournament->getDate() ?: '—' }}</dd>
+                        </div>
+                    </dl>
                 </div>
 
                 @if(session('success'))
-                    <div class="mt-4 p-3 bg-green-900/50 border border-green-600 rounded text-light-green">{{ session('success') }}</div>
+                    <div class="mt-4 alert-success">{{ session('success') }}</div>
                 @endif
 
                 @if($canManageTournament && $tournament->isStarted() && $loginCodes->isNotEmpty())
                     @include('tournaments.partials.login-codes', ['loginCodes' => $loginCodes])
                 @endif
 
-                <div class="flex border-b border-white/10 mb-8 mt-8">
+                <div class="flex border-b border-border mb-8 mt-10">
                     @php
                         $tabs = [
                             'results' => 'Wyniki',
@@ -53,10 +69,10 @@
 
                     @foreach($tabs as $key => $label)
                         <a href="{{ route('tournaments.show', [$tournament->id, 'tab' => $key]) }}"
-                           class="px-5 py-3 text-sm font-semibold transition
+                           class="px-5 py-3 text-sm font-semibold transition border-b-2 -mb-px
                   {{ $tab === $key
-                        ? 'border-b-2 border-light-green text-light-green'
-                        : 'text-text-muted hover:text-light-green' }}">
+                        ? 'border-accent text-accent'
+                        : 'border-transparent text-text-muted hover:text-accent' }}">
                             {{ $label }}
                         </a>
                     @endforeach
@@ -80,7 +96,6 @@
                     @elseif($tab === 'achievements')
                         @include('tournaments.tabs.achievements', ['achievements' => $achievements])
                     @endif
-
                 @endif
             </div>
         </div>
@@ -88,4 +103,3 @@
     </div>
 
 @endsection
-

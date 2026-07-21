@@ -4,71 +4,75 @@
 
 @section('content')
 
-    <div class="flex min-h-screen bg-dark-bg text-light-white">
+    <div class="detail-layout">
 
         @seasonAdmin($season)
-        <aside class="w-72 backdrop-blur bg-white/5 border-r border-white/10 p-6 flex flex-col">
-            <h2 class="text-light-green font-bold text-lg mb-6 tracking-wide">⚙️ Zarządzanie sezonem</h2>
+        <aside class="admin-sidebar">
+            <h2 class="admin-sidebar-title">⚙️ Zarządzanie sezonem</h2>
 
             <nav class="flex flex-col space-y-3">
-                <a href="{{ route('tournaments.create') }}?seasonId={{ $season->id }}"
-                   class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
+                <a href="{{ route('tournaments.create') }}?seasonId={{ $season->id }}" class="admin-sidebar-link">
                     ➕ Dodaj turniej
                 </a>
-                <a href="{{ route('seasons.admins', $season->id) }}"
-                   class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
-                    ‍💼 Administratorzy
+                <a href="{{ route('seasons.admins', $season->id) }}" class="admin-sidebar-link">
+                    💼 Administratorzy
                 </a>
-                <a href="{{ route('seasons.edit', ['season' => $season->id]) }}"
-                   class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
+                <a href="{{ route('seasons.edit', ['season' => $season->id]) }}" class="admin-sidebar-link">
                     ✏️ Edytuj sezon
                 </a>
-                <a href="{{ route('seasons.relatedUsers', $season->id) }}"
-                   class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
-                    👨‍👨‍👦 Powiązani użytkownicy
+                <a href="{{ route('seasons.relatedUsers', $season->id) }}" class="admin-sidebar-link">
+                    全家 Powiązani użytkownicy
                 </a>
-                <a href="{{ route('seasons.guests', $season->id) }}"
-                   class="flex items-center gap-3 bg-white/10 hover:bg-white/15 px-4 py-3 rounded-lg transition">
-                    👨‍👨‍👦 Goście
+                <a href="{{ route('seasons.guests', $season->id) }}" class="admin-sidebar-link">
+                    全家 Goście
                 </a>
-                {{--                    <a href="#" class="flex items-center gap-3 bg-light-red/20 hover:bg-light-red/30 px-4 py-3 rounded-lg transition">--}}
-                {{--                        🗑️ Usuń ligę--}}
-                {{--                    </a>--}}
             </nav>
         </aside>
         @endseasonAdmin
 
-        <div class="flex-1 p-10 flex justify-center">
-            <div class="max-w-3xl w-full">
+        <div class="detail-main">
+            <div class="detail-content">
 
-                <h1 class="text-4xl font-bold text-light-green mb-6 tracking-wide hover:text-light-orange transition-all duration-300 hover:cursor-pointer">
-                    <a href="{{ route('leagues.show', $season->league->id) }}">{{ $season->league->name }}</a>
-                </h1>
+                <header class="entity-header">
+                    <nav class="entity-breadcrumb" aria-label="Okruszki">
+                        <a href="{{ route('leagues.show', $season->league->id) }}">{{ $season->league->name }}</a>
+                        <span class="entity-breadcrumb-sep">/</span>
+                        <span class="text-text-secondary">Sezon</span>
+                    </nav>
+                    <h1 class="entity-title">{{ $season->name }}</h1>
+                    <span class="entity-rule" aria-hidden="true"></span>
+                </header>
 
-                <h1 class="text-4xl font-bold text-light-orange mb-6 tracking-wide">{{ $season->name }}</h1>
-
-                <div class="bg-white/5 border border-white/10 p-6 rounded-xl shadow-lg backdrop-blur">
-                    <p class="mb-2"><span
-                                class="text-light-green font-semibold">Data rozpoczęcia:</span> {{ $season->getStartDate() }}
-                    </p>
-                    <p class="mb-2"><span
-                                class="text-light-green font-semibold">Data zakończenia:</span> {{ $season->getEndDate() }}
-                    </p>
-                    {{--                    <p class="mb-2"><span--}}
-                    {{--                            class="text-light-green font-semibold">Liczba rozegranych turniejów:</span> {{ count($season->tournaments) }}--}}
-                    {{--                    </p>--}}
-                    <p><span
-                                class="text-light-green font-semibold">Ostatnia aktywność:</span> {{ $season->getUpdatedAtDate() }}
-                    </p>
+                <div class="entity-meta">
+                    <dl class="entity-meta-grid cols-2">
+                        <div class="entity-meta-item">
+                            <dt class="entity-meta-label">Data rozpoczęcia</dt>
+                            <dd class="entity-meta-value score-num">{{ $season->getStartDate() }}</dd>
+                        </div>
+                        <div class="entity-meta-item">
+                            <dt class="entity-meta-label">Data zakończenia</dt>
+                            <dd class="entity-meta-value score-num">{{ $season->getEndDate() }}</dd>
+                        </div>
+                        <div class="entity-meta-item span-full">
+                            <dt class="entity-meta-label">Ostatnia aktywność</dt>
+                            <dd class="entity-meta-value score-num">{{ $season->getUpdatedAtDate() }}</dd>
+                        </div>
+                    </dl>
                 </div>
 
-                <h2 class="text-2xl font-bold text-light-green mt-10 mb-4">Turnieje</h2>
+                <h2 class="section-title mt-12">Turnieje</h2>
                 <div class="space-y-3">
-                    @foreach($season->tournaments as $tournament)
+                    @forelse($season->tournaments as $tournament)
                         <a href="{{ route('tournaments.show', ['tournament' => $tournament->id]) }}">
-                            <div class="bg-white/5 p-4 rounded-lg border border-white/10 hover:bg-white/10 transition">{{ $tournament->name }}</div>
+                            <div class="list-item">{{ $tournament->name }}</div>
                         </a>
-                    @endforeach
+                    @empty
+                        <x-empty-state
+                            class="!py-10"
+                            title="Brak turniejów"
+                            description="Dodaj turniej z panelu zarządzania sezonem."
+                        />
+                    @endforelse
                 </div>
 
             </div>
@@ -77,4 +81,3 @@
     </div>
 
 @endsection
-

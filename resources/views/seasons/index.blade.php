@@ -6,17 +6,21 @@
 
     <div class="max-w-6xl mx-auto px-4 pt-10 pb-28">
         @if($seasons->isEmpty())
-            <p class="text-center text-[#c5c5c5]">Brak sezonów.</p>
+            <x-empty-state
+                title="Brak sezonów"
+                description="Sezony pojawią się po utworzeniu ich w ligach."
+            />
         @else
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                @foreach($seasons as $season)
-                    <a href="{{ route('seasons.show', ['season' => $season->id]) }}" class="block group">
-                        <div
-                            class="bg-lighter-bg shadow rounded-lg p-6 h-full min-h-[120px] flex flex-col justify-center hover:shadow-xl hover:cursor-pointer hover:bg-[#333333] transition border border-transparent group-hover:border-white/10">
-                            <h3 class="text-lg font-semibold text-white leading-snug mb-3">
+            <div class="index-grid">
+                @foreach($seasons as $index => $season)
+                    <a href="{{ route('seasons.show', ['season' => $season->id]) }}"
+                       class="block"
+                       style="--stagger: {{ $index }}">
+                        <div class="index-card">
+                            <h3 class="text-lg font-semibold text-text leading-snug mb-3">
                                 {{ $season->displayTitle() }}
                             </h3>
-                            <p class="text-sm text-[#a8a8a8]">
+                            <p class="card-description mb-0">
                                 @if($season->getPlayDatesFormatted())
                                     Data rozgrywek: {{ $season->getPlayDatesFormatted() }}
                                 @else
@@ -31,8 +35,7 @@
     </div>
 
     @canCreateLeagues
-    <a href="{{ route('seasons.create') }}"
-       class="fixed bottom-30 right-20 btn-primary py-5 px-8 rounded-xl font-bold">
+    <a href="{{ route('seasons.create') }}" class="btn-fab">
         Stwórz nowy sezon
     </a>
     @endcanCreateLeagues

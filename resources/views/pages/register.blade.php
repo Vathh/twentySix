@@ -3,52 +3,56 @@
 @section('title', 'Rejestracja')
 
 @section('content')
-    <div class="flex items-center justify-center w-full min-h-[80vh]">
-        <div class="container flex justify-center items-center flex-grow flex-1">
-            <div class="inline-flex flex-col justify-center items-center bg-lighter-bg rounded-2xl p-20 ">
-                <form class="" action="{{ route('register') }}" method="POST">
-                    @csrf
-                    <div class="flex flex-col items-center">
-                        <h1 class="text-center text-light-green mb-10 text-2xl">Rejestracja</h1>
+    <div class="flex items-center justify-center w-full min-h-[80vh] px-4">
+        <div class="auth-card">
+            <form action="{{ route('register') }}" method="POST">
+                @csrf
+                <div class="flex flex-col items-stretch">
+                    <h1 class="page-title text-center">Rejestracja</h1>
 
-                        <label class="mb-3 text-xl text-light-orange" for="login"><b>Nazwa użytkownika</b></label>
-                        <input class="mb-5 input-orange"
-                               type="text"
-                               placeholder="Wprowadź nazwę użytkownika"
-                               name="name"
-                               value="{{ old('name') }}"
-                               required>
+                    <label class="form-label text-accent" for="name">Nazwa użytkownika</label>
+                    <input class="mb-5 input-field"
+                           type="text"
+                           placeholder="Wprowadź nazwę użytkownika"
+                           name="name"
+                           id="name"
+                           value="{{ old('name') }}"
+                           required>
 
-                        <label class="mb-3 text-xl text-light-orange" for="login"><b>Email</b></label>
-                        <input class="mb-5 input-orange"
-                               type="email"
-                               placeholder="Wprowadź email"
-                               name="email"
-                               value="{{ old('email') }}"
-                               required>
+                    <label class="form-label text-accent" for="email">Email</label>
+                    <input class="mb-5 input-field"
+                           type="email"
+                           placeholder="Wprowadź email"
+                           name="email"
+                           id="email"
+                           value="{{ old('email') }}"
+                           required>
 
-                        <label class="mb-3 text-xl text-light-orange" for="password"><b>Hasło</b></label>
-                        <input class="mb-5 input-orange"
-                               type="password"
-                               placeholder="Wprowadź hasło"
-                               name="password" id="password"
-                               required>
+                    <label class="form-label text-accent" for="password">Hasło</label>
+                    <input class="mb-5 input-field"
+                           type="password"
+                           placeholder="Wprowadź hasło"
+                           name="password"
+                           id="password"
+                           required>
 
-                        <label class="mb-3 text-xl text-light-orange" for="password"><b>Powtórz hasło</b></label>
-                        <input class="mb-5 input-orange"
-                               type="password"
-                               placeholder="Powtórz hasło"
-                               name="password_confirmation"
-                               required>
+                    <label class="form-label text-accent" for="password_confirmation">Powtórz hasło</label>
+                    <input class="mb-5 input-field"
+                           type="password"
+                           placeholder="Powtórz hasło"
+                           name="password_confirmation"
+                           id="password_confirmation"
+                           required>
 
-                        <button class="btn btn-primary mt-3" type="submit" name="loginBtn">Stwórz konto</button>
+                    <button class="btn btn-primary mt-3" type="submit" name="loginBtn">Stwórz konto</button>
 
-                        <x-errors/>
-                    </div>
-                </form>
-                <p class="text-light-orange mt-7">Masz już konto? <a href="{{ route('pages.loginPanel') }}" class="font-bold">Zaloguj się</a></p>
-            </div>
+                    <x-errors/>
+                </div>
+            </form>
+            <p class="text-accent mt-7 text-center">
+                Masz już konto?
+                <a href="{{ route('pages.loginPanel') }}" class="font-bold hover:underline">Zaloguj się</a>
+            </p>
         </div>
     </div>
 @endsection
-

@@ -1,5 +1,5 @@
 <div class="mt-12 mb-16">
-    <h2 class="text-center text-2xl font-bold text-light-green mb-8 tracking-wide">
+    <h2 class="text-center page-title mb-8 tracking-wide">
         Playoff
     </h2>
 
@@ -45,7 +45,7 @@
         @if(isset($playoffGames['SEMI']))
             <div class="flex flex-col min-w-[220px]">
                 <p class="text-center text-sm text-text-muted mb-2">Półfinały</p>
-                <div class="flex flex-col gap-74 justify-center flex-1">
+                <div class="flex flex-col gap-72 justify-center flex-1">
                     @foreach($playoffGames['SEMI'] as $game)
                         @include('tournaments.partials.bracket-game', ['game' => $game])
                     @endforeach
