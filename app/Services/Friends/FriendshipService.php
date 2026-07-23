@@ -6,13 +6,15 @@ use App\Domain\FriendshipDomain;
 use App\Domain\FriendshipInvitationDomain;
 use App\Repositories\Friends\FriendshipRepository;
 use App\Repositories\Friends\FriendshipInvitationRepository;
+use App\Services\Push\InvitationPushService;
 use Illuminate\Support\Collection;
 
 class FriendshipService
 {
     public function __construct(
         private FriendshipRepository $friendshipRepository,
-        private FriendshipInvitationRepository $invitationRepository
+        private FriendshipInvitationRepository $invitationRepository,
+        private InvitationPushService $invitationPushService,
     )
     {
     }
@@ -78,7 +80,15 @@ class FriendshipService
             throw new \RuntimeException('Zaproszenie już zostało wysłane');
         }
 
-        return $this->invitationRepository->create($senderId, $receiverId);
+        $invitation = $this->invitationRepository->create($senderId, $receiverId);
+
+        $this->invitationPushService->notifyFriendInvitation(
+            recipientUserId: $invitation->receiverId,
+            invitationId: $invitation->id,
+            senderName: $invitation->senderPlayer?->name ?? 'Gracz',
+        );
+
+        return $invitation;
     }
 
     /**

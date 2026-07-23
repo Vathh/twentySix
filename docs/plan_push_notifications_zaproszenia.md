@@ -1,6 +1,6 @@
 # Plan: powiadomienia push — zaproszenia (mobile)
 
-**Status:** 📋 **plan do realizacji** (nie wdrożone)  
+**Status:** ✅ **wdrożone** (kod lipiec 2026) — E2E na fizycznym APK wymaga FCM w Expo dashboard (właściciel)  
 **Ostatnia aktualizacja planu:** lipiec 2026  
 **Źródło prawdy produktu:** [`product.md`](product.md) — sekcje „Zaproszenia do turnieju”, „Znajomi”, „Quick game”  
 **Powiązany ekran mobile:** `InvitationsScreen.jsx` (zakładki: Turniej | Pojedynek | Znajomi)
@@ -291,41 +291,41 @@ Ograniczone wsparcie push w dev — **ostateczna weryfikacja na buildzie EAS**, 
 
 ### Faza A — Fundament (backend + mobile token)
 
-- [ ] Migracja `user_push_tokens`
-- [ ] `PushTokenController` + routes
-- [ ] Mobile: rejestracja tokena po logowaniu, DELETE przy logout
-- [ ] Testy API tokenów
+- [x] Migracja `user_push_tokens`
+- [x] `PushTokenController` + routes
+- [x] Mobile: rejestracja tokena po logowaniu, DELETE przy logout
+- [x] Testy API tokenów
 
 **Kryterium done:** token w DB po logowaniu na dev build; brak wysyłki push jeszcze OK.
 
 ### Faza B — Znajomi (najprostszy flow)
 
-- [ ] `ExpoPushService` + `InvitationPushService`
-- [ ] Job + hook w `FriendshipService::sendInvitation`
-- [ ] Mobile: listener tap → `Zaproszenia` tab `friends`
-- [ ] Test Feature + ręczny test 2 telefonów
+- [x] `ExpoPushService` + `InvitationPushService`
+- [x] Job + hook w `FriendshipService::sendInvitation`
+- [x] Mobile: listener tap → `Zaproszenia` tab `friends`
+- [x] Test Feature + ręczny test 2 telefonów
 
 **Kryterium done:** invite znajomego → push na drugim telefonie → tap → ekran zaproszeń.
 
 ### Faza C — Quick game lobby
 
-- [ ] Hook w `QuickGameLobbyService::invite`
-- [ ] Nawigacja tab `pojedynek`
-- [ ] Test
+- [x] Hook w `QuickGameLobbyService::invite`
+- [x] Nawigacja tab `pojedynek`
+- [x] Test
 
 ### Faza D — Turniej (web → mobile)
 
-- [ ] Hook w `TournamentInvitationService::send` i `sendBulk`
-- [ ] Kolejka dla bulk
-- [ ] Nawigacja tab `tournament`
-- [ ] Test: admin wysyła z web → gracz dostaje push na mobile
+- [x] Hook w `TournamentInvitationService::send` i `sendBulk`
+- [x] Kolejka dla bulk
+- [x] Nawigacja tab `tournament`
+- [x] Test: admin wysyła z web → gracz dostaje push na mobile
 
 ### Faza E — Polish (opcjonalnie później)
 
 - [ ] Badge count (liczba pending) — wymaga `expo-notifications` setBadgeCount
 - [ ] Ustawienia w app: „Powiadomienia o zaproszeniach” on/off
-- [ ] Logowanie błędów Expo w Laravel (`Log::warning`)
-- [ ] Aktualizacja `IMPLEMENTED_FEATURES.md` + `product.md`
+- [x] Logowanie błędów Expo w Laravel (`Log::warning`)
+- [x] Aktualizacja `IMPLEMENTED_FEATURES.md` + `product.md`
 
 ---
 

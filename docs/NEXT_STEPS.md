@@ -63,7 +63,6 @@ Gdy użytkownik sam wdraża lub poprosi agenta:
 
 | Temat | Plan |
 |-------|------|
-| Push — zaproszenia (znajomi / turniej / quick game) | [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md) |
 | **Format gry — Faza 5** (później) | [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) §6 |
 
 ### Format gry — Faza 5 (szczegóły backlogu)
@@ -76,7 +75,9 @@ Gdy użytkownik sam wdraża lub poprosi agenta:
 
 | Temat | Stan |
 |-------|------|
+| Push — zaproszenia (znajomi / turniej / quick game) | ✅ lipiec 2026 — [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md) |
 | Konfigurowalny format gry — fazy 1–4 (MatchFormat, quick/trening/turniej, walkower) | ✅ lipiec 2026 — [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) |
+| Arena Dark (web + mobile) | ✅ lipiec 2026 |
 
 ---
 

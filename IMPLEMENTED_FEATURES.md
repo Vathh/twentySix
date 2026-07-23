@@ -75,6 +75,7 @@ Szczegóły wymagań: [`docs/product.md`](docs/product.md). Aktywne zadania: [`d
 | WebSocket (Reverb) | ✅ | `GameScoringStateUpdated`, `QuickGameLobbyUpdated`, `channels.php` |
 | FFA presence + walkower 2P | ✅ | `POST .../ffa/presence`, `GET .../active-match`, `QuickGameFfaPresenceService` |
 | Znajomi web (invite flow) | ✅ | `PlayerController`, `FriendInvitationController`, test `PlayerFriendInvitationWebTest` |
+| Push zaproszeń (Expo) | ✅ | `user_push_tokens`, `PUT/DELETE /api/push-tokens`, `SendInvitationPushJob`, hooki friends/tournament/lobby |
 
 ---
 

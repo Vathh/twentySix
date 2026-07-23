@@ -7,7 +7,7 @@ use App\Models\QuickGame\QuickGameLobby;
 use App\Repositories\Friends\FriendshipRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameLobbyRepository;
-
+use App\Services\Push\InvitationPushService;
 use App\Support\GameScoring\MatchFormat;
 
 class QuickGameLobbyService
@@ -19,6 +19,7 @@ class QuickGameLobbyService
         private PlayerRepository $playerRepository,
         private QuickGameFfaScoringService $ffaScoringService,
         private FriendshipRepository $friendshipRepository,
+        private InvitationPushService $invitationPushService,
     ) {
     }
 
@@ -111,8 +112,15 @@ class QuickGameLobbyService
             throw new \RuntimeException('Do quick game można zapraszać tylko znajomych');
         }
 
-        $this->lobbyRepository->createInvitation($lobbyId, $invitedPlayerId);
+        $invitation = $this->lobbyRepository->createInvitation($lobbyId, $invitedPlayerId);
         $this->broadcastLobbyUpdatedById($lobbyId);
+
+        $lobby->loadMissing('host.player');
+        $this->invitationPushService->notifyLobbyInvitation(
+            recipientUserId: $invited->userId,
+            invitationId: (int) $invitation->id,
+            hostName: $lobby->host->player?->name ?? 'Host',
+        );
     }
 
     public function getPendingInvitationsForUser(int $userId): \Illuminate\Support\Collection

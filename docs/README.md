@@ -55,7 +55,7 @@ Testy automatyczne backendu: `php artisan test`. Mobile: `npm run test:game-scor
 
 | Dokument | Temat | Status |
 |----------|-------|--------|
-| [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md) | Push mobile przy zaproszeniach (znajomi / turniej / quick game) | 📋 plan |
+| [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md) | Push mobile przy zaproszeniach (znajomi / turniej / quick game) | ✅ wdrożone |
 | [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) | Konfigurowalny format X01 (fazy 1–4 ✅; faza 5: presety/BO chips/cricket) | ✅ core · 📋 faza 5 |
 
 ---

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FriendshipController;
 use App\Http\Controllers\Api\GameController;
+use App\Http\Controllers\Api\PushTokenController;
 use App\Http\Controllers\Api\QuickGameController;
 use App\Http\Controllers\Api\QuickGameFfaController;
 use App\Http\Controllers\Api\QuickGameLobbyController;
@@ -25,6 +26,9 @@ Route::middleware('auth:sanctum')->prefix('account')->group(function () {
 // Wynik quick game online finalizuje silnik FFA; ten endpoint tylko dla achievementów po meczu.
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::put('/push-tokens', [PushTokenController::class, 'upsert']);
+    Route::delete('/push-tokens', [PushTokenController::class, 'destroy']);
 
     Route::prefix('game')->group(function () {
         Route::post('/inProgress', [GameController::class, 'setStatusInProgress']);

@@ -7,12 +7,14 @@ use App\Enums\TournamentInvitationStatus;
 use App\Enums\TournamentStatus;
 use App\Models\Tournament\Tournament;
 use App\Repositories\Tournament\TournamentInvitationRepository;
+use App\Services\Push\InvitationPushService;
 use Illuminate\Support\Collection;
 
 class TournamentInvitationService
 {
     public function __construct(
         private TournamentInvitationRepository $invitationRepository,
+        private InvitationPushService $invitationPushService,
     ) {
     }
 
@@ -45,7 +47,12 @@ class TournamentInvitationService
 
         foreach (array_unique($userIds) as $userId) {
             try {
-                $this->invitationRepository->createOrReinvite($tournamentId, (int) $userId, $invitedBy);
+                $invitation = $this->invitationRepository->createOrReinvite(
+                    $tournamentId,
+                    (int) $userId,
+                    $invitedBy,
+                );
+                $this->dispatchTournamentPush($invitation);
                 $sent++;
             } catch (\RuntimeException) {
                 $skipped++;
@@ -59,7 +66,10 @@ class TournamentInvitationService
     {
         $this->assertTournamentAcceptsInvitations($tournamentId);
 
-        return $this->invitationRepository->createOrReinvite($tournamentId, $userId, $invitedBy);
+        $invitation = $this->invitationRepository->createOrReinvite($tournamentId, $userId, $invitedBy);
+        $this->dispatchTournamentPush($invitation);
+
+        return $invitation;
     }
 
     public function cancel(int $tournamentId, int $invitationId): void
@@ -128,5 +138,14 @@ class TournamentInvitationService
         if ($tournament->status !== TournamentStatus::CREATED) {
             throw new \RuntimeException('Turniej już wystartował — zaproszenia i zmiany uczestników są zablokowane');
         }
+    }
+
+    private function dispatchTournamentPush(TournamentInvitationDomain $invitation): void
+    {
+        $this->invitationPushService->notifyTournamentInvitation(
+            recipientUserId: $invitation->userId,
+            invitationId: $invitation->id,
+            tournamentName: $invitation->tournamentName,
+        );
     }
 }

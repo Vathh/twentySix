@@ -43,7 +43,7 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 - Znajomi (zaproszenie + akceptacja — **mobile**; podstawowy invite/accept także na **webie** od lipca 2026).
 - Własne statystyki i historia (turnieje + quick game online).
 - **Mobile:** lobby quick game online, akceptacja zaproszeń (turniej, lobby, znajomi), tablet turniejowy, **mecz treningowy** (lokalny, bez zapisu).
-- Docelowo: komunikator na webie, odznaczenia, link live quick game, push do zaproszeń.
+- Docelowo: komunikator na webie, odznaczenia, link live quick game.
 
 ### Premium (docelowo)
 
@@ -103,7 +103,7 @@ Wybór → API → `w trakcie` (lock); inne tablety nie widzą meczu; race → b
 | ---------------------- | ------------------------------------------------------------------- | ---------------------- |
 | Gość (web)             | Podgląd lig/turniejów                                               | + pojedyncze mecze     |
 | Gość (mobile)          | Trening (bez konta), turniej kodem tabletu                          | bez zmian              |
-| Użytkownik             | Quick game, turnieje, znajomi (akceptacja **mobile**; invite/accept także **web**) | + komunikator, push |
+| Użytkownik             | Quick game, turnieje, znajomi (akceptacja **mobile**; invite/accept także **web**); **push** zaproszeń | + komunikator |
 | **Organizator**        | **Twórca ligi = organizator**; uprawnienia w lidze                  | premium                |
 | **Współadministrator** | Pełne prawa, cała liga (MVP)                                        | granularne uprawnienia |
 | Sędzia (tablet)        | Kod turnieju, wybór meczu                                           | —                      |
@@ -235,7 +235,7 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 #### Mobile — ekran zaproszeń
 
 - **Jeden ekran** z zakładkami: **Turniej** | **Pojedynek** (quick game / lobby) | **Znajomi**.
-- MVP: gracz sam wchodzi w ekran i odświeża listę (pull). **Push** — plan implementacji: [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md).
+- Pull-to-refresh na liście. **Push** przy nowym zaproszeniu (znajomi / turniej / lobby) — [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md).
 
 ## Liga i punktacja (MVP)
 
@@ -248,7 +248,8 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 
 - **Mobile:** zaproszenie + akceptacja (główny flow akceptacji zaproszeń turniejowych i lobby).
 - **Web (od lipca 2026):** invite → accept na profilu gracza i w panelu bocznym — **bez** komunikatora.
-- **Docelowo:** pełny komunikator, push powiadomień o zaproszeniach — plan push: [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md).
+- **Docelowo:** pełny komunikator.
+- **Push** przy zaproszeniach (znajomi / turniej / quick game): ✅ — [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md).
 
 ### Quick game online (MVP)
 
@@ -433,7 +434,6 @@ Wspólne dla **quick game online**, **treningu** i (tam gdzie dotyczy) **turniej
 
 - Krykiet
 - Komunikator, odznaczenia, stream, premium
-- **Push** do zaproszeń — plan: [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md)
 - Granularne uprawnienia współadmina
 - Quick game z dowolnym zalogowanym
 - Publiczny podgląd pojedynczych meczów
