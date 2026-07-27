@@ -21,7 +21,13 @@
                     @endif
                 </td>
                 <td class="px-3 py-2 font-medium text-text whitespace-nowrap">
-                    {{ $result['player']->name }}
+                    @if($result['player']->userId)
+                        <a href="{{ route('players.show', $result['player']->id) }}" class="text-text hover:text-accent hover:underline transition-colors">
+                            {{ $result['player']->name }}
+                        </a>
+                    @else
+                        {{ $result['player']->name }}
+                    @endif
                 </td>
                 @if($showPointsColumn ?? false)
                     <td class="px-2 py-2 text-center tabular-nums">{{ $result['points'] ?? '—' }}</td>

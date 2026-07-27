@@ -26,6 +26,7 @@ use App\Services\Player\PlayerStatsService;
 use App\Services\PlayoffGame\PlayoffService;
 use App\Services\QuickGame\QuickGameService;
 use App\Services\Tournament\TournamentFinishService;
+use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentResultService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +49,7 @@ class GameService
         private PlayerStatsService   $playerStatsService,
         private LeagueStatsService   $leagueStatsService,
         private GameLockService     $gameLockService,
+        private TournamentGroupMatrixLiveService $groupMatrixLiveService,
     )
     {
     }
@@ -131,6 +133,7 @@ class GameService
             DB::transaction(function () use ($dto) {
                 $this->assertGameIsFinished($dto->gameResultDTO);
                 $this->achievementsService->createMany($dto->achievementsDTOs);
+                $this->recalculatePlayerAndLeagueStats($dto->gameResultDTO);
             });
 
             return true;
@@ -309,6 +312,11 @@ class GameService
 
             });
 
+            $finishedGame = Game::query()->find($dto->gameResultDTO->gameId);
+            if ($finishedGame !== null) {
+                $this->groupMatrixLiveService->pushFromGroupGame($finishedGame, true);
+            }
+
             return true;
         } catch (Throwable $e) {
             \Log::error('Group game update failed', [
@@ -329,6 +337,8 @@ class GameService
             $this->recalculatePlayerAndLeagueStats($dto);
             $this->handlePlayoffStart($dto->tournamentId);
         });
+
+        // Broadcast z standings jest w GameScoringService::closeLeg (afterCommit).
     }
 
     private function finalizePlayoffGameFromScoring(GameResultDTO $dto): void

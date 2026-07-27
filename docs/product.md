@@ -364,7 +364,7 @@ Już istniejący wybór w lobby mobilnym:
 - **`setsToWinMatch === 1`:** wynik w legach (np. 2:0 przy „do 2 legów”).
 - **`setsToWinMatch > 1`:** wynik w setach (np. 2:0); szczegóły legów w secie opcjonalnie w UI korekty.
 
-Plan implementacji (fazy 1–4 ✅): [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md). Faza 5 (presety ligi, chipy BO5/BO7, cricket) — opcjonalnie.
+Plan implementacji (fazy 1–4 ✅, presety ligi ✅; BO5/BO7 odpuszczone): [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md). Cricket (trening + quick, bez turnieju): [`plan_cricket.md`](plan_cricket.md).
 
 ### Format gry — podsumowanie kontekstów
 

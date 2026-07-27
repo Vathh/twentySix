@@ -96,6 +96,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{lobbyId}/ffa/presence', [QuickGameFfaController::class, 'updatePresence']);
         Route::post('/{lobbyId}/ffa/visits', [QuickGameFfaController::class, 'recordVisit']);
         Route::post('/{lobbyId}/ffa/visits/undo', [QuickGameFfaController::class, 'undoVisit']);
+        Route::post('/{lobbyId}/ffa/cricket/darts', [QuickGameFfaController::class, 'recordCricketDart']);
+        Route::post('/{lobbyId}/ffa/cricket/darts/undo', [QuickGameFfaController::class, 'undoCricketDart']);
     });
 
 });

@@ -3,7 +3,7 @@
 @section('title', 'Mecz — '.$player1->name.' vs '.$player2->name)
 
 @section('content')
-    <div class="container mx-auto py-8 max-w-4xl text-text">
+    <div class="container mx-auto py-6 sm:py-8 max-w-4xl text-text px-0 sm:px-0">
         <a href="{{ $backUrl }}" class="link-back mb-4 inline-block">← Powrót</a>
 
         <div class="flex flex-wrap items-center gap-3 mb-2">
@@ -25,9 +25,17 @@
         </div>
 
         <h1 class="page-title mb-6">
-            {{ $player1->name }}
+            @if($player1->user_id)
+                <a href="{{ route('players.show', $player1) }}" class="hover:text-accent hover:underline transition-colors">{{ $player1->name }}</a>
+            @else
+                {{ $player1->name }}
+            @endif
             <span class="text-text-muted font-normal">vs</span>
-            {{ $player2->name }}
+            @if($player2->user_id)
+                <a href="{{ route('players.show', $player2) }}" class="hover:text-accent hover:underline transition-colors">{{ $player2->name }}</a>
+            @else
+                {{ $player2->name }}
+            @endif
         </h1>
 
         <div class="bg-bg-elevated rounded-lg p-6 mb-8 border border-border text-center">
@@ -200,31 +208,16 @@
                         <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p1['max180'] }}</td>
                         <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p2['max180'] }}</td>
                     </tr>
-
-                    @if($p1['doublePercent'] !== null || $p2['doublePercent'] !== null || $p1['hf']->isNotEmpty() || $p2['hf']->isNotEmpty() || $p1['qf']->isNotEmpty() || $p2['qf']->isNotEmpty())
-                        <tr class="border-b border-border bg-accent/10">
-                            <td colspan="3" class="py-2 px-4 text-accent font-semibold text-xs uppercase tracking-wide">Turniej</td>
-                        </tr>
-                        <tr class="border-b border-border/50">
-                            <td class="py-2.5 px-4 text-text-muted">Skuteczność na double (mecz)</td>
-                            <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p1['doublePercent'] !== null ? $p1['doublePercent'].'%' : '—' }}</td>
-                            <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p2['doublePercent'] !== null ? $p2['doublePercent'].'%' : '—' }}</td>
-                        </tr>
-                        @if($p1['hf']->isNotEmpty() || $p2['hf']->isNotEmpty())
-                            <tr class="border-b border-border/50">
-                                <td class="py-2.5 px-4 text-text-muted">HF (finish)</td>
-                                <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p1['hf']->pluck('value')->filter()->join(', ') ?: '—' }}</td>
-                                <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p2['hf']->pluck('value')->filter()->join(', ') ?: '—' }}</td>
-                            </tr>
-                        @endif
-                        @if($p1['qf']->isNotEmpty() || $p2['qf']->isNotEmpty())
-                            <tr class="border-b border-border/50">
-                                <td class="py-2.5 px-4 text-text-muted">QF (lotki)</td>
-                                <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p1['qf']->pluck('value')->filter()->join(', ') ?: '—' }}</td>
-                                <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p2['qf']->pluck('value')->filter()->join(', ') ?: '—' }}</td>
-                            </tr>
-                        @endif
-                    @endif
+                    <tr class="border-b border-border/50">
+                        <td class="py-2.5 px-4 text-text-muted">HF (finish)</td>
+                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p1['hf'] !== [] ? implode(', ', $p1['hf']) : '—' }}</td>
+                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p2['hf'] !== [] ? implode(', ', $p2['hf']) : '—' }}</td>
+                    </tr>
+                    <tr class="border-b border-border/50">
+                        <td class="py-2.5 px-4 text-text-muted">QF (lotki)</td>
+                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p1['qf'] !== [] ? implode(', ', $p1['qf']) : '—' }}</td>
+                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p2['qf'] !== [] ? implode(', ', $p2['qf']) : '—' }}</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -232,7 +225,13 @@
         <h2 class="section-title mb-4">Legi i wizyty</h2>
 
         @if($legsDetail->isEmpty())
-            <p class="text-text-muted">Brak rozegranych legów — szczegóły pojawią się po rozpoczęciu liczenia z wizytami.</p>
+            <p class="text-text-muted">
+                @if($status === 'finished')
+                    Brak rozegranych legów.
+                @else
+                    Brak rozegranych legów — szczegóły pojawią się po rozpoczęciu liczenia z wizytami.
+                @endif
+            </p>
         @else
             @php
                 $setsList = $legsBySet ?? [];

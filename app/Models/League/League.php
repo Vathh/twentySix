@@ -12,7 +12,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class League extends Model
 {
     public $timestamps = true;
-    protected $fillable = ['name', 'description'];
+    protected $fillable = ['name', 'description', 'match_format_presets'];
+
+    protected function casts(): array
+    {
+        return [
+            'match_format_presets' => 'array',
+        ];
+    }
 
     public function admins(): BelongsToMany
     {

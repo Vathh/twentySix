@@ -31,12 +31,14 @@ class QuickGameFfaSession extends Model
         'quick_game_id',
         'started_at',
         'finished_at',
+        'cricket_state',
     ];
 
     protected $casts = [
         'player_order' => 'array',
         'legs_won_in_set' => 'array',
         'sets_won' => 'array',
+        'cricket_state' => 'array',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];

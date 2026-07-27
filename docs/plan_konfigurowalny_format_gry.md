@@ -128,8 +128,8 @@ API lobby: źródłem prawdy jest `matchFormat` (`startingScore`, `legsToWinSet`
 
 ### Faza 5 — (opcjonalnie później) 📋
 
-- [ ] Presety formatów w lidze (domyślne dla nowych turniejów)
-- [ ] BO5/BO7 jako szybkie presety w lobby / treningu
+- [x] Presety formatów w lidze (domyślne dla nowych turniejów) — lipiec 2026
+- [x] ~~BO5/BO7 jako szybkie presety w lobby / treningu~~ — odpuszczone (zbędne)
 - [ ] Cricket z własnym formatem (poza X01)
 
 ---
@@ -146,13 +146,11 @@ Docelowo: w ustawieniach **ligi** zapisane „standardy” (np. grupy = do 2 leg
 
 ### 5.2 BO5 / BO7 jako szybkie presety
 
-Dziś host kręci trzema pickerami (punkty / legi / sety).
-
-„BO5” / „BO7” to skróty UI: jeden przycisk = `setsToWinMatch: 1` + `legsToWinSet: 3` (BO5) lub `4` (BO7). Nie nowa logika — tylko chipy presetów obok pickera. (W dacie „pierwszy do N” BO5 = do 3 legów.)
+**Odpuszczone** (lipiec 2026) — zbędny skrót UI; format i tak ustawia się pickerami punktów / legów / setów.
 
 ### 5.3 Cricket
 
-Osobny `gameType` z innym silnikiem punktacji (nie X01). Plan konfigurowalnego formatu **X01 nie obejmuje** krykieta — to duży, osobny feature (świadomie poza MVP, jak w `product.md`).
+Osobny `gameType` z innym silnikiem punktacji (nie X01). Plan konfigurowalnego formatu **X01 nie obejmuje** krykieta — pełny plan: [`plan_cricket.md`](plan_cricket.md).
 
 ---
 
@@ -191,4 +189,4 @@ Osobny `gameType` z innym silnikiem punktacji (nie X01). Plan konfigurowalnego f
 
 ---
 
-*Fazy 1–4 zamknięte. Dalszy rozwój opcjonalny: **Faza 5** (presety ligi, chipy BO5/BO7, cricket).*
+*Fazy 1–4 zamknięte. Presety ligi ✅. BO5/BO7 odpuszczone. Opcjonalnie później: **cricket**.*

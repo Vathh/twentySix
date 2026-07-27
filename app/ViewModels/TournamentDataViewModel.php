@@ -11,8 +11,10 @@ use App\Domain\SeasonDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\Domain\Tournament\TournamentResultDomain;
 use App\Enums\AchievementType;
+use App\Models\Player\Player;
 use App\Models\Tournament\Tournament;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class TournamentDataViewModel
 {
@@ -187,7 +189,7 @@ class TournamentDataViewModel
     }
 
     /**
-     * @return Collection<AchievementDomain>
+     * @return Collection<int, array{player: PlayerDomain, max: int, one_seventy: int, qf: list<AchievementDomain|\stdClass>, hf: list<AchievementDomain>}>
      */
     public function achievements(): Collection
     {
@@ -224,7 +226,65 @@ class TournamentDataViewModel
             }
         }
 
+        // QF z scoringu (darts_thrown < 20 na wygranym legu) — źródło prawdy po tablecie;
+        // client POST często pomijał QF w ścieżce online.
+        $qfFromScoring = $this->quickFinishesFromScoring();
+        if ($qfFromScoring !== []) {
+            $playersById = Player::query()
+                ->whereIn('id', array_keys($qfFromScoring))
+                ->get()
+                ->keyBy('id');
+
+            foreach ($qfFromScoring as $playerId => $dartCounts) {
+                if (! isset($result[$playerId]['player'])) {
+                    $player = $playersById->get($playerId);
+                    if ($player === null) {
+                        continue;
+                    }
+                    $result[$playerId]['player'] = PlayerDomain::fromEloquent($player);
+                    $result[$playerId]['max'] = 0;
+                    $result[$playerId]['one_seventy'] = 0;
+                    $result[$playerId]['hf'] = [];
+                }
+
+                $result[$playerId]['qf'] = array_map(
+                    static fn (int $darts) => (object) ['value' => $darts],
+                    $dartCounts,
+                );
+            }
+        }
+
         return collect($result);
+    }
+
+    /**
+     * @return array<int, list<int>> player_id => lista darts_thrown (QF)
+     */
+    private function quickFinishesFromScoring(): array
+    {
+        $tournamentId = (int) $this->tournament->id;
+
+        $rows = DB::table('game_leg_player_stats as glps')
+            ->join('game_legs as gl', 'gl.id', '=', 'glps.game_leg_id')
+            ->leftJoin('games as g', 'g.id', '=', 'gl.game_id')
+            ->leftJoin('playoff_games as pg', 'pg.id', '=', 'gl.playoff_game_id')
+            ->where(function ($q) use ($tournamentId) {
+                $q->where('g.tournament_id', $tournamentId)
+                    ->orWhere('pg.tournament_id', $tournamentId);
+            })
+            ->whereColumn('gl.winner_id', 'glps.player_id')
+            ->whereNotNull('gl.finished_at')
+            ->whereNotNull('glps.darts_thrown')
+            ->where('glps.darts_thrown', '<', 20)
+            ->orderBy('glps.darts_thrown')
+            ->get(['glps.player_id', 'glps.darts_thrown']);
+
+        $byPlayer = [];
+        foreach ($rows as $row) {
+            $byPlayer[(int) $row->player_id][] = (int) $row->darts_thrown;
+        }
+
+        return $byPlayer;
     }
 
     public function results(): Collection

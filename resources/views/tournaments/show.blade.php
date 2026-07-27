@@ -57,7 +57,8 @@
                     @include('tournaments.partials.login-codes', ['loginCodes' => $loginCodes])
                 @endif
 
-                <div class="flex border-b border-border mb-8 mt-10">
+                <div class="overflow-x-auto -mx-1 px-1 mb-8 mt-10">
+                    <div class="flex border-b border-border min-w-max">
                     @php
                         $tabs = [
                             'results' => 'Wyniki',
@@ -69,13 +70,14 @@
 
                     @foreach($tabs as $key => $label)
                         <a href="{{ route('tournaments.show', [$tournament->id, 'tab' => $key]) }}"
-                           class="px-5 py-3 text-sm font-semibold transition border-b-2 -mb-px
+                           class="px-4 sm:px-5 py-3 text-sm font-semibold transition border-b-2 -mb-px whitespace-nowrap
                   {{ $tab === $key
                         ? 'border-accent text-accent'
                         : 'border-transparent text-text-muted hover:text-accent' }}">
                             {{ $label }}
                         </a>
                     @endforeach
+                    </div>
                 </div>
 
                 @if($tournament->isStarted())

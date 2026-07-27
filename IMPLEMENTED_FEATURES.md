@@ -38,6 +38,7 @@ Szczegóły wymagań: [`docs/product.md`](docs/product.md). Aktywne zadania: [`d
 | Live podgląd meczu (WebSocket) | ✅ | `games/{type}/{id}/live`, `game-live.js`, Reverb `game.state` |
 | Live WebSocket na webie (turniej) | ❌ | Brak widoku live całego turnieju z WS |
 | Znajomi na webie | ✅ | Profil gracza: invite → accept; panel boczny (przychodzące / znajomi / oczekujący); `FriendInvitationController` |
+| Presety formatu gry w lidze | ✅ | `leagues.match_format_presets`, edycja ligi → domyślne w kreatorze startu turnieju |
 
 ---
 

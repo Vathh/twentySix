@@ -25,6 +25,7 @@ class PlayerStatsService
             $this->recalculateAndSave($player->id);
             $stat = $this->playerStatRepository->findByPlayerId($player->id);
         }
+
         return $stat !== null ? $this->rowToQuickStatsArray($stat) : $this->emptyStatsArray();
     }
 
@@ -38,6 +39,7 @@ class PlayerStatsService
             $this->recalculateAndSave($player->id);
             $stat = $this->playerStatRepository->findByPlayerId($player->id);
         }
+
         return $stat !== null ? $this->rowToTournamentStatsArray($stat) : $this->emptyStatsArray();
     }
 
@@ -60,11 +62,30 @@ class PlayerStatsService
     private function computeTournamentStats(int $playerId): array
     {
         $data = $this->playerStatRepository->getDataForTournamentStats($playerId);
-        $stats = $this->buildStatsArray(null, $data['achievements']);
-        $stats['games'] = $data['games_count'];
-        if ($data['avg_from_legs'] !== null) {
-            $stats['avg_three_darts'] = round($data['avg_from_legs'], 2);
+
+        // Scoring API (wizyty / leg_average) — źródło prawdy; achievementy tylko gdy brak scoringu (legacy).
+        if ($data['has_scoring_data']) {
+            $scoring = $data['scoring'];
+            $stats = [
+                'games' => $data['games_count'],
+                'avg_three_darts' => $data['avg_from_legs'] !== null
+                    ? round($data['avg_from_legs'], 2)
+                    : null,
+                'highest_hf' => $scoring['highest_hf'],
+                'fastest_qf' => $scoring['fastest_qf'],
+                'count_max' => $scoring['count_max'],
+                'count_170_plus' => $scoring['count_170_plus'],
+                'count_hf' => $scoring['count_hf'],
+                'count_qf' => $scoring['count_qf'],
+            ];
+        } else {
+            $stats = $this->buildStatsArray(null, $data['achievements']);
+            $stats['games'] = $data['games_count'];
+            if ($data['avg_from_legs'] !== null) {
+                $stats['avg_three_darts'] = round($data['avg_from_legs'], 2);
+            }
         }
+
         return $stats;
     }
 

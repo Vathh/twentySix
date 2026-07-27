@@ -123,6 +123,42 @@ class LeagueControllerTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_save_match_format_presets(): void
+    {
+        $this->actingAs($this->adminUser);
+        $league = League::create(['name' => 'Test League', 'description' => 'Desc']);
+        $league->admins()->attach($this->adminUser->id);
+
+        $formats = [];
+        foreach (\App\Enums\GameStage::cases() as $stage) {
+            $formats[$stage->value] = [
+                'startingScore' => 501,
+                'legsToWinSet' => 2,
+                'setsToWinMatch' => 1,
+            ];
+        }
+        $formats[\App\Enums\GameStage::GROUP->value]['legsToWinSet'] = 2;
+        $formats[\App\Enums\GameStage::FINAL->value]['legsToWinSet'] = 5;
+
+        $response = $this->put("/leagues/{$league->id}", [
+            'leagueName' => 'Test League',
+            'description' => 'Desc',
+            'matchFormats' => $formats,
+        ]);
+
+        $response->assertRedirect("/leagues/{$league->id}");
+
+        $league->refresh();
+        $this->assertSame(
+            5,
+            $league->match_format_presets[\App\Enums\GameStage::FINAL->value]['legsToWinSet'],
+        );
+        $this->assertSame(
+            2,
+            $league->match_format_presets[\App\Enums\GameStage::GROUP->value]['legsToWinSet'],
+        );
+    }
+
     public function test_non_admin_cannot_update_league(): void
     {
         $this->actingAs($this->regularUser);

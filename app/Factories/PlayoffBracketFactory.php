@@ -48,28 +48,6 @@ class PlayoffBracketFactory
     }
 
     /**
-     * @param list<int> $playerIds
-     * @return Collection<int, PlayoffGameDomain>
-     *
-     * @deprecated Użyj {@see create()} z parami pierwszej rundy.
-     */
-    public function createFor16(int $tournamentId, array $playerIds): Collection
-    {
-        $advancing = array_map(
-            fn (int $playerId, int $index) => [
-                'player_id' => $playerId,
-                'group_number' => $index + 1,
-            ],
-            $playerIds,
-            array_keys($playerIds),
-        );
-
-        $pairs = \App\Support\Tournament\PlayoffFirstRoundPairing::pair($advancing);
-
-        return $this->create($tournamentId, 16, $pairs);
-    }
-
-    /**
      * @return Collection<int, PlayoffGameDomain>
      */
     private function buildFor2(int $tournamentId): Collection

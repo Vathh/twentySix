@@ -12,6 +12,7 @@ use App\Services\Season\SeasonService;
 use App\Services\User\UserService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
@@ -26,11 +27,19 @@ class SeasonController extends Controller
     {
     }
 
-    public function index(): Factory|View
+    public function index(Request $request): Factory|View|JsonResponse
     {
-        $seasons = $this->seasonService->getAll();
+        $page = max(1, (int) $request->query('page', 1));
+        $data = $this->seasonService->getIndexPage($page);
 
-        return view('seasons.index', ['seasons' => $seasons]);
+        if ($request->wantsJson()) {
+            return response()->json($data);
+        }
+
+        return view('seasons.index', [
+            'items' => $data['items'],
+            'hasMore' => $data['has_more'],
+        ]);
     }
 
     public function create(Request $request): Factory|View

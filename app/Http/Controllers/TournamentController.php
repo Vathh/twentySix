@@ -13,11 +13,14 @@ use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\Player\PlayerService;
 use App\Services\Tournament\LoginCodeService;
 use App\Services\Tournament\TournamentGuestParticipantService;
+use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentInvitationService;
 use App\Services\Tournament\TournamentService;
+use Illuminate\Http\JsonResponse;
 use App\Services\User\UserService;
 use App\Support\Tournament\TournamentStartRules;
 use App\Support\GameScoring\MatchFormat;
+use App\Support\League\LeagueMatchFormatPresets;
 use App\Support\Tournament\TournamentMatchFormatRequestParser;
 use DomainException;
 use Illuminate\Contracts\View\Factory;
@@ -40,14 +43,23 @@ class TournamentController extends Controller
         private GetTournamentData $getTournamentGroupResults,
         private LoginCodeService $loginCodeService,
         private GameAuthorizationService $gameAuthorizationService,
+        private TournamentGroupMatrixLiveService $groupMatrixLiveService,
     ) {
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $tournaments = $this->tournamentService->getAll();
+        $page = max(1, (int) $request->query('page', 1));
+        $data = $this->tournamentService->getIndexPage($page);
 
-        return view('tournaments.index', ['tournaments' => $tournaments]);
+        if ($request->wantsJson()) {
+            return response()->json($data);
+        }
+
+        return view('tournaments.index', [
+            'items' => $data['items'],
+            'hasMore' => $data['has_more'],
+        ]);
     }
 
     public function create(Request $request): Factory|View
@@ -122,6 +134,13 @@ class TournamentController extends Controller
             'canManageTournament' => $canManageTournament,
             'loginCodes' => $loginCodes,
         ]);
+    }
+
+    public function groupsLive(Tournament $tournament): JsonResponse
+    {
+        return response()->json(
+            $this->groupMatrixLiveService->snapshot($tournament->id),
+        );
     }
 
     public function edit(Tournament $tournament)
@@ -238,6 +257,12 @@ class TournamentController extends Controller
             );
         }
 
+        $leaguePresets = $tournament->season?->league?->matchFormatPresets;
+        $defaultMatchFormatsByStage = LeagueMatchFormatPresets::defaultsByStage(
+            $leaguePresets !== [] ? $leaguePresets : null,
+        );
+        $hasLeagueFormatPresets = is_array($leaguePresets) && $leaguePresets !== [];
+
         return view('tournaments.start', [
             'tournament' => $tournament,
             'invitationPipeline' => $invitationPipeline,
@@ -258,6 +283,8 @@ class TournamentController extends Controller
             'defaultPlayoffBracketSize' => $defaultPlayoffBracketSize,
             'startingScoreOptions' => MatchFormat::ALLOWED_STARTING_SCORES,
             'defaultMatchFormat' => MatchFormat::default()->toArray(),
+            'defaultMatchFormatsByStage' => $defaultMatchFormatsByStage,
+            'hasLeagueFormatPresets' => $hasLeagueFormatPresets,
             'matchFormatStagesByBracket' => $matchFormatStagesByBracket,
             'oldMatchFormats' => old('matchFormats', []),
         ]);

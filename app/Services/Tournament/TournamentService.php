@@ -44,6 +44,31 @@ class TournamentService
             ->values();
     }
 
+    /**
+     * @return array{items: list<array{id: int, url: string, title: string, subtitle: string|null, subtitle_missing: bool, status_label: string, status_variant: string}>, has_more: bool}
+     */
+    public function getIndexPage(int $page): array
+    {
+        $pageData = $this->tournamentRepository->getPage($page);
+
+        return [
+            'items' => $pageData['items']->map(function ($tournament) {
+                $date = $tournament->getPlayDateFormatted();
+
+                return [
+                    'id' => $tournament->id,
+                    'url' => route('tournaments.show', ['tournament' => $tournament->id]),
+                    'title' => $tournament->displayTitle(),
+                    'subtitle' => $date ? 'Data rozgrywek: '.$date : null,
+                    'subtitle_missing' => $date === null,
+                    'status_label' => $tournament->status->label(),
+                    'status_variant' => $tournament->status->badgeVariant(),
+                ];
+            })->all(),
+            'has_more' => $pageData['has_more'],
+        ];
+    }
+
     public function create(
         ?int    $seasonId,
         string  $name,

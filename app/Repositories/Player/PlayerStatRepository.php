@@ -68,9 +68,25 @@ class PlayerStatRepository
     }
 
     /**
-     * Dane do wyliczenia statystyk turniejowych (games, playoff_games, game_legs, achievements z tournament_id).
+     * Dane do wyliczenia statystyk turniejowych.
      *
-     * @return array{games_count: int, avg_from_legs: float|null, achievements: Collection<int, object>}
+     * Średnia / max / HF / QF z scoring API (game_leg_player_stats + game_visits).
+     * Achievementy — legacy / uzupełnienie gdy brak danych scoringu.
+     *
+     * @return array{
+     *     games_count: int,
+     *     avg_from_legs: float|null,
+     *     has_scoring_data: bool,
+     *     scoring: array{
+     *         count_max: int,
+     *         count_170_plus: int,
+     *         count_hf: int,
+     *         count_qf: int,
+     *         highest_hf: ?int,
+     *         fastest_qf: ?int
+     *     },
+     *     achievements: Collection<int, object>
+     * }
      */
     public function getDataForTournamentStats(int $playerId): array
     {
@@ -88,7 +104,9 @@ class PlayerStatRepository
             ->where('status', 'finished')
             ->count();
 
-        $avgFromLegs = $this->getTournamentAverageFromLegs($playerId);
+        $scoring = $this->getTournamentScoringAggregates($playerId);
+        $avgFromLegs = $scoring['avg_three_darts']
+            ?? $this->getLegacyTournamentAverageFromLegs($playerId);
 
         $achievements = DB::table('achievements')
             ->where('player_id', $playerId)
@@ -98,11 +116,122 @@ class PlayerStatRepository
         return [
             'games_count' => $gamesCount,
             'avg_from_legs' => $avgFromLegs,
+            'has_scoring_data' => $scoring['has_scoring_data'],
+            'scoring' => [
+                'count_max' => $scoring['count_max'],
+                'count_170_plus' => $scoring['count_170_plus'],
+                'count_hf' => $scoring['count_hf'],
+                'count_qf' => $scoring['count_qf'],
+                'highest_hf' => $scoring['highest_hf'],
+                'fastest_qf' => $scoring['fastest_qf'],
+            ],
             'achievements' => $achievements,
         ];
     }
 
-    private function getTournamentAverageFromLegs(int $playerId): ?float
+    /**
+     * Agregaty z wizyt / średnich legów scoringu (grupa + playoff).
+     *
+     * @return array{
+     *     has_scoring_data: bool,
+     *     avg_three_darts: ?float,
+     *     count_max: int,
+     *     count_170_plus: int,
+     *     count_hf: int,
+     *     count_qf: int,
+     *     highest_hf: ?int,
+     *     fastest_qf: ?int
+     * }
+     */
+    private function getTournamentScoringAggregates(int $playerId): array
+    {
+        $empty = [
+            'has_scoring_data' => false,
+            'avg_three_darts' => null,
+            'count_max' => 0,
+            'count_170_plus' => 0,
+            'count_hf' => 0,
+            'count_qf' => 0,
+            'highest_hf' => null,
+            'fastest_qf' => null,
+        ];
+
+        $avg = DB::table('game_leg_player_stats as glps')
+            ->join('game_legs as gl', 'gl.id', '=', 'glps.game_leg_id')
+            ->where('glps.player_id', $playerId)
+            ->whereNotNull('glps.leg_average')
+            ->whereNotNull('gl.finished_at')
+            ->where(function ($q) {
+                $q->whereNotNull('gl.game_id')->orWhereNotNull('gl.playoff_game_id');
+            })
+            ->avg('glps.leg_average');
+
+        $visitRows = DB::table('game_visits as gv')
+            ->join('game_legs as gl', 'gl.id', '=', 'gv.game_leg_id')
+            ->where('gv.player_id', $playerId)
+            ->where('gv.is_voided', false)
+            ->where('gv.bust', false)
+            ->where(function ($q) {
+                $q->whereNotNull('gl.game_id')->orWhereNotNull('gl.playoff_game_id');
+            })
+            ->select('gv.score', 'gv.closed_leg')
+            ->get();
+
+        $qfDarts = DB::table('game_leg_player_stats as glps')
+            ->join('game_legs as gl', 'gl.id', '=', 'glps.game_leg_id')
+            ->where('glps.player_id', $playerId)
+            ->whereColumn('gl.winner_id', 'glps.player_id')
+            ->whereNotNull('glps.darts_thrown')
+            ->where('glps.darts_thrown', '<', 20)
+            ->whereNotNull('gl.finished_at')
+            ->where(function ($q) {
+                $q->whereNotNull('gl.game_id')->orWhereNotNull('gl.playoff_game_id');
+            })
+            ->pluck('glps.darts_thrown');
+
+        $hasScoringData = $avg !== null || $visitRows->isNotEmpty() || $qfDarts->isNotEmpty();
+        if (! $hasScoringData) {
+            return $empty;
+        }
+
+        $countMax = 0;
+        $count170 = 0;
+        $countHf = 0;
+        $highestHf = null;
+
+        foreach ($visitRows as $row) {
+            $score = (int) $row->score;
+            if ($score === 180) {
+                $countMax++;
+            } elseif ($score >= 170 && $score < 180) {
+                $count170++;
+            }
+            if ($row->closed_leg && $score >= 100) {
+                $countHf++;
+                if ($highestHf === null || $score > $highestHf) {
+                    $highestHf = $score;
+                }
+            }
+        }
+
+        $fastestQf = $qfDarts->isEmpty() ? null : (int) $qfDarts->min();
+
+        return [
+            'has_scoring_data' => true,
+            'avg_three_darts' => $avg !== null ? (float) $avg : null,
+            'count_max' => $countMax,
+            'count_170_plus' => $count170,
+            'count_hf' => $countHf,
+            'count_qf' => $qfDarts->count(),
+            'highest_hf' => $highestHf,
+            'fastest_qf' => $fastestQf,
+        ];
+    }
+
+    /**
+     * Legacy: średnie z kolumn game_legs.player*_average (bulk finish sprzed scoring API).
+     */
+    private function getLegacyTournamentAverageFromLegs(int $playerId): ?float
     {
         $fromGames = $this->getLegAveragesFromGames($playerId);
         $fromPlayoff = $this->getLegAveragesFromPlayoff($playerId);
@@ -110,6 +239,7 @@ class PlayerStatRepository
         if ($all->isEmpty()) {
             return null;
         }
+
         return (float) $all->avg();
     }
 
@@ -125,6 +255,7 @@ class PlayerStatRepository
             ->where('games.player2_id', $playerId)
             ->whereNotNull('game_legs.player2_average')
             ->pluck('game_legs.player2_average');
+
         return $p1->merge($p2);
     }
 
@@ -140,18 +271,7 @@ class PlayerStatRepository
             ->where('playoff_games.player2_id', $playerId)
             ->whereNotNull('game_legs.player2_average')
             ->pluck('game_legs.player2_average');
+
         return $p1->merge($p2);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

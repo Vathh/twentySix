@@ -8,12 +8,35 @@ use Illuminate\Support\Collection;
 
 class LeagueRepository
 {
+    public const INDEX_PER_PAGE = 9;
+
     /**
      * @return Collection<int, LeagueDomain>
      */
     public function getAll(): Collection
     {
         return League::all()->map(fn($league) => LeagueDomain::fromEloquent($league));
+    }
+
+    /**
+     * Strona listy lig (najpierw ostatnio aktualizowane).
+     *
+     * @return array{items: Collection<int, LeagueDomain>, has_more: bool}
+     */
+    public function getPage(int $page): array
+    {
+        $page = max(1, $page);
+        $paginator = League::query()
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->paginate(self::INDEX_PER_PAGE, ['*'], 'page', $page);
+
+        return [
+            'items' => $paginator->getCollection()
+                ->map(fn (League $league) => LeagueDomain::fromEloquent($league))
+                ->values(),
+            'has_more' => $paginator->hasMorePages(),
+        ];
     }
 
     /**
@@ -75,12 +98,24 @@ class LeagueRepository
         $league->admins()->detach($userId);
     }
 
-    public function update(int $leagueId, string $name, string $description): void
-    {
-        League::where('id', $leagueId)->update([
-            'name' => $name,
-            'description' => $description
-        ]);
+    /**
+     * @param  array<string, array<string, int|string>>|null  $matchFormatPresets
+     */
+    public function update(
+        int $leagueId,
+        string $name,
+        string $description,
+        ?array $matchFormatPresets = null,
+    ): void {
+        $league = League::findOrFail($leagueId);
+        $league->name = $name;
+        $league->description = $description;
+
+        if ($matchFormatPresets !== null) {
+            $league->match_format_presets = $matchFormatPresets;
+        }
+
+        $league->save();
     }
 
     /**

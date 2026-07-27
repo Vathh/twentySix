@@ -31,6 +31,7 @@ class QuickGameFfaScoringService
         private QuickGameFfaStateBuilder $stateBuilder,
         private PlayerRepository $playerRepository,
         private QuickGameRepository $quickGameRepository,
+        private QuickGameFfaCricketScoringService $cricketScoringService,
     ) {
     }
 
@@ -66,17 +67,23 @@ class QuickGameFfaScoringService
         $matchFormat->validate();
         $emptyScores = array_fill_keys($playerIds, 0);
 
+        $isCricket = strtolower($matchFormat->gameType) === 'cricket';
+        $setsToWin = $isCricket ? 1 : $matchFormat->setsToWinMatch;
+
         $session = $this->sessionRepository->create([
             'lobby_id' => $lobby->id,
             'legs_to_win_set' => $matchFormat->legsToWinSet,
-            'sets_to_win_match' => $matchFormat->setsToWinMatch,
-            'game_type' => $matchFormat->gameType,
+            'sets_to_win_match' => $setsToWin,
+            'game_type' => $isCricket ? 'cricket' : $matchFormat->gameType,
             'scoring_mode' => $scoringMode,
             'starting_score' => $matchFormat->startingScore,
             'status' => \App\Models\QuickGame\QuickGameFfaSession::STATUS_IN_PROGRESS,
             'player_order' => $playerIds,
             'legs_won_in_set' => $emptyScores,
             'sets_won' => $emptyScores,
+            'cricket_state' => $isCricket
+                ? \App\Support\QuickGameFfa\CricketRules::initialState($playerIds)
+                : null,
             'leg_opener_index' => 0,
             'current_player_index' => 0,
             'current_leg_number' => 1,
@@ -97,6 +104,11 @@ class QuickGameFfaScoringService
     {
         $session = $this->sessionRepository->findOrFailForLobby($lobbyId);
         $session->loadMissing('lobby');
+
+        if (strtolower((string) $session->game_type) === 'cricket') {
+            return $this->cricketScoringService->getState($lobbyId, $userId);
+        }
+
         $this->syncStalePresence($session);
         $visits = $this->visitRepository->getActiveForSession($session);
         $presence = $this->buildPresencePayload($session);
@@ -207,6 +219,10 @@ class QuickGameFfaScoringService
 
             if (! $session->isInProgress()) {
                 throw new DomainException('Mecz jest już zakończony.');
+            }
+
+            if (strtolower((string) $session->game_type) === 'cricket') {
+                throw new DomainException('Sesja cricket — użyj endpointu /ffa/cricket/darts.');
             }
 
             $playerIds = array_map('intval', $session->player_order ?? []);

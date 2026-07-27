@@ -19,6 +19,7 @@ use App\Services\GroupStanding\GroupStandingService;
 use App\Services\League\LeagueStatsService;
 use App\Services\PlayoffGame\PlayoffService;
 use App\Services\Player\PlayerStatsService;
+use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentResultService;
 use App\Support\GameScoring\GameLegScoreValidator;
 use App\Support\GameScoring\MatchFormat;
@@ -39,6 +40,7 @@ class GameResultCorrectionService
         private LeagueStatsService $leagueStatsService,
         private TournamentRepository $tournamentRepository,
         private TournamentResultService $tournamentResultService,
+        private TournamentGroupMatrixLiveService $groupMatrixLiveService,
     ) {
     }
 
@@ -116,6 +118,11 @@ class GameResultCorrectionService
                 );
                 $this->recalculatePlayerAndLeagueStats($dto);
             });
+
+            $fresh = Game::query()->find($gameId);
+            if ($fresh !== null) {
+                $this->groupMatrixLiveService->pushFromGroupGame($fresh, true);
+            }
 
             return;
         }

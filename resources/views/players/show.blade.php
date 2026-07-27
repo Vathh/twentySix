@@ -32,6 +32,18 @@ document.addEventListener('alpine:init', () => {
             if (type === 'group') return 'Grupa';
             if (type === 'playoff') return 'Play-off';
             return type;
+        },
+        gameUrl(m) {
+            if (!m?.id || !['quick', 'group', 'playoff'].includes(m.type)) {
+                return null;
+            }
+            return '{{ url('/games') }}/' + m.type + '/' + m.id;
+        },
+        openGame(m) {
+            const url = this.gameUrl(m);
+            if (url) {
+                window.location.href = url;
+            }
         }
     }));
 });
@@ -39,12 +51,12 @@ document.addEventListener('alpine:init', () => {
 @endsection
 
 @section('content')
-    <div class="py-8" x-data="playerProfileData()">
+    <div class="py-6 sm:py-8" x-data="playerProfileData()">
         {{-- Nagłówek profilu --}}
-        <div class="card mb-6">
+        <div class="card mb-6 !p-4 sm:!p-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h1 class="text-3xl font-bold text-text">{{ $player->name }}</h1>
+                <div class="min-w-0">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-text break-words">{{ $player->name }}</h1>
                     @if($player->user_id && $player->user)
                         <p class="text-text-secondary mt-2">Zarejestrowany od {{ $player->user->created_at->format('d.m.Y') }}</p>
                     @else
@@ -86,17 +98,17 @@ document.addEventListener('alpine:init', () => {
         @endif
 
         {{-- Zakładki --}}
-        <div class="flex gap-2 mb-6 border-b border-border pb-2">
+        <div class="flex gap-2 mb-6 border-b border-border pb-2 overflow-x-auto">
             <button type="button"
                     @click="activeTab = 'overview'"
                     :class="activeTab === 'overview' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
-                    class="px-4 py-2 rounded-t border font-medium transition">
+                    class="px-4 py-2 rounded-t border font-medium transition whitespace-nowrap shrink-0">
                 Przegląd
             </button>
             <button type="button"
                     @click="activeTab = 'history'"
                     :class="activeTab === 'history' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
-                    class="px-4 py-2 rounded-t border font-medium transition">
+                    class="px-4 py-2 rounded-t border font-medium transition whitespace-nowrap shrink-0">
                 Historia meczów
             </button>
         </div>
@@ -163,25 +175,34 @@ document.addEventListener('alpine:init', () => {
                         <table class="w-full text-left text-text-secondary">
                             <thead>
                                 <tr class="border-b border-border bg-bg-deep/50">
-                                    <th class="px-4 py-3">Data</th>
-                                    <th class="px-4 py-3">Typ</th>
-                                    <th class="px-4 py-3">Przeciwnik / przeciwnicy</th>
-                                    <th class="px-4 py-3">Wynik</th>
-                                    <th class="px-4 py-3">Score</th>
-                                    <th class="px-4 py-3">Turniej</th>
+                                    <th class="px-3 sm:px-4 py-3 whitespace-nowrap">Data</th>
+                                    <th class="px-3 sm:px-4 py-3 whitespace-nowrap">Typ</th>
+                                    <th class="px-3 sm:px-4 py-3 min-w-[8rem]">Przeciwnik / przeciwnicy</th>
+                                    <th class="px-3 sm:px-4 py-3 whitespace-nowrap">Wynik</th>
+                                    <th class="px-3 sm:px-4 py-3 whitespace-nowrap">Score</th>
+                                    <th class="px-3 sm:px-4 py-3 whitespace-nowrap">Turniej</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-for="(m, i) in gameHistory.items" :key="i">
-                                    <tr class="border-b border-border/50 hover:bg-bg-deep/30 transition">
-                                        <td class="px-4 py-3" x-text="m.date_formatted"></td>
-                                        <td class="px-4 py-3" x-text="typeLabel(m.type)"></td>
-                                        <td class="px-4 py-3" x-text="m.opponents"></td>
-                                        <td class="px-4 py-3">
+                                    <tr
+                                        class="border-b border-border/50 transition"
+                                        :class="gameUrl(m) ? 'hover:bg-bg-deep/30 cursor-pointer' : ''"
+                                        :tabindex="gameUrl(m) ? 0 : null"
+                                        :role="gameUrl(m) ? 'link' : null"
+                                        :aria-label="gameUrl(m) ? ('Szczegóły meczu: ' + (m.opponents || '')) : null"
+                                        @click="openGame(m)"
+                                        @keydown.enter.prevent="openGame(m)"
+                                        @keydown.space.prevent="openGame(m)"
+                                    >
+                                        <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-sm" x-text="m.date_formatted"></td>
+                                        <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-sm" x-text="typeLabel(m.type)"></td>
+                                        <td class="px-3 sm:px-4 py-3 text-sm" x-text="m.opponents"></td>
+                                        <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-sm">
                                             <span :class="m.result === 'wygrana' ? 'text-accent font-semibold' : 'text-text-muted'" x-text="m.result"></span>
                                         </td>
-                                        <td class="px-4 py-3" x-text="m.score || '–'"></td>
-                                        <td class="px-4 py-3" x-text="m.tournament_name || '–'"></td>
+                                        <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-sm" x-text="m.score || '–'"></td>
+                                        <td class="px-3 sm:px-4 py-3 text-sm" x-text="m.tournament_name || '–'"></td>
                                     </tr>
                                 </template>
                                 <tr x-show="gameHistory.items.length === 0">

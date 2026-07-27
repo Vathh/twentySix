@@ -15,6 +15,7 @@ use App\Repositories\Game\GameLegPlayerStatRepository;
 use App\Repositories\Game\GameLegRepository;
 use App\Repositories\Game\GameVisitRepository;
 use App\Services\Game\GameService;
+use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
 use App\Support\GameScoring\MatchFormatScoring;
@@ -31,6 +32,7 @@ class GameScoringService
         private GameLegPlayerStatRepository $gameLegPlayerStatRepository,
         private GameScoringStateBuilder $gameScoringStateBuilder,
         private GameService $gameService,
+        private TournamentGroupMatrixLiveService $groupMatrixLiveService,
     ) {
     }
 
@@ -103,7 +105,10 @@ class GameScoringService
 
             $this->setGameInProgress($game);
 
-            return $this->broadcastState($context, $game);
+            $state = $this->broadcastState($context, $game);
+            $this->pushGroupMatrixLive($context, $game, includeStandings: false);
+
+            return $state;
         });
     }
 
@@ -190,7 +195,13 @@ class GameScoringService
                 }
             }
 
-            return $this->broadcastState($context, $game->fresh(['player1', 'player2']));
+            $fresh = $game->fresh(['player1', 'player2']);
+            $state = $this->broadcastState($context, $fresh);
+            if ($wasClosed) {
+                $this->pushGroupMatrixLive($context, $fresh, includeStandings: false);
+            }
+
+            return $state;
         });
     }
 
@@ -256,7 +267,14 @@ class GameScoringService
                 $this->gameService->finalizeTournamentGameFromScoring($context, $freshGame);
             }
 
-            return $this->broadcastState($context, $freshGame);
+            $state = $this->broadcastState($context, $freshGame);
+            $this->pushGroupMatrixLive(
+                $context,
+                $freshGame,
+                includeStandings: $freshGame->status === GameStatus::FINISHED,
+            );
+
+            return $state;
         });
     }
 
@@ -322,6 +340,18 @@ class GameScoringService
             $game->status = GameStatus::IN_PROGRESS;
             $game->save();
         }
+    }
+
+    private function pushGroupMatrixLive(
+        GameScoringContext $context,
+        Game|PlayoffGame|QuickGame $game,
+        bool $includeStandings,
+    ): void {
+        if ($context->kind !== GameKind::GROUP || ! $game instanceof Game) {
+            return;
+        }
+
+        $this->groupMatrixLiveService->pushFromGroupGameAfterCommit($game, $includeStandings);
     }
 
     /**

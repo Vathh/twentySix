@@ -59,16 +59,16 @@
     }
 
     .btn-fab {
-        @apply inline-flex items-center justify-center font-bold py-4 px-8 rounded-xl shadow-lg
-            fixed bottom-8 right-8 z-20
+        @apply inline-flex items-center justify-center font-bold py-3 px-5 sm:py-4 sm:px-8 rounded-xl shadow-lg
+            fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-20
             bg-accent text-on-accent hover:bg-accent-hover
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40
-            transition-colors duration-150;
+            transition-colors duration-150 text-sm sm:text-base;
     }
 
     /* --- Powierzchnie --- */
     .card {
-        @apply bg-bg-elevated border border-border rounded-xl p-6;
+        @apply bg-bg-elevated border border-border rounded-xl p-4 sm:p-6;
     }
 
     .card-glass {
@@ -126,7 +126,7 @@
 
     /* --- Nawigacja --- */
     .nav-btn {
-        @apply relative px-3 py-1.5 rounded-md text-text-muted hover:text-text transition-colors duration-150;
+        @apply relative px-3 py-2 md:py-1.5 rounded-md text-text-muted hover:text-text hover:bg-bg-elevated/40 md:hover:bg-transparent transition-colors duration-150;
     }
 
     .nav-btn.active {
@@ -138,10 +138,20 @@
         position: absolute;
         left: 0.75rem;
         right: 0.75rem;
-        bottom: 0;
+        bottom: 0.15rem;
         height: 2px;
         border-radius: 999px;
         background-color: var(--color-accent);
+    }
+
+    @media (max-width: 767px) {
+        .nav-btn.active::after {
+            display: none;
+        }
+
+        .nav-btn.active {
+            @apply bg-accent-muted;
+        }
     }
 
     .brand-mark {
@@ -150,16 +160,16 @@
     }
 
     .site-header {
-        @apply sticky top-0 z-40 bg-bg-deep/90 backdrop-blur-md text-text-secondary py-4 border-b border-border;
+        @apply sticky top-0 z-40 bg-bg-deep/90 backdrop-blur-md text-text-secondary py-3 sm:py-4 border-b border-border;
     }
 
     .admin-sidebar {
-        @apply w-72 shrink-0 border-r border-border-subtle p-6 flex flex-col
-            bg-bg-deep/25 backdrop-blur-sm;
+        @apply w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-border-subtle
+            p-4 sm:p-6 flex flex-col bg-bg-deep/25 backdrop-blur-sm;
     }
 
     .admin-sidebar-title {
-        @apply text-text font-bold text-lg mb-6 tracking-wide;
+        @apply text-text font-bold text-base sm:text-lg mb-4 sm:mb-6 tracking-wide;
     }
 
     .admin-sidebar-link {
@@ -168,15 +178,15 @@
 
     /* Strony szczegółów — treść na gradiencie app-shell, bez płaskiej podkładki */
     .detail-layout {
-        @apply flex min-h-[calc(100vh-8rem)] text-text-secondary -mx-4 sm:mx-0;
+        @apply flex flex-col lg:flex-row min-h-[calc(100vh-8rem)] text-text-secondary -mx-4 sm:mx-0;
     }
 
     .detail-main {
-        @apply flex-1 px-4 py-8 sm:px-8 sm:py-10 lg:px-12 flex justify-center min-w-0;
+        @apply flex-1 px-4 py-6 sm:px-8 sm:py-10 lg:px-12 flex justify-center min-w-0;
     }
 
     .detail-content {
-        @apply w-full max-w-3xl;
+        @apply w-full max-w-3xl min-w-0;
     }
 
     /* --- Alerty / badge --- */
@@ -287,7 +297,7 @@
     }
 
     .entity-title {
-        @apply text-3xl sm:text-4xl font-bold text-text tracking-tight leading-tight mb-4;
+        @apply text-2xl sm:text-4xl font-bold text-text tracking-tight leading-tight mb-4 break-words;
     }
 
     .entity-title-row {
@@ -365,11 +375,11 @@
 
     /* --- Layout --- */
     .auth-card {
-        @apply bg-bg-elevated border border-border rounded-2xl p-12 max-w-md w-full;
+        @apply bg-bg-elevated border border-border rounded-2xl p-6 sm:p-12 max-w-md w-full;
     }
 
     .form-card {
-        @apply bg-bg-elevated border border-border rounded-2xl p-12 max-w-lg w-full mx-auto;
+        @apply bg-bg-elevated border border-border rounded-2xl p-6 sm:p-12 max-w-lg w-full mx-auto;
     }
 
     .overlay {
@@ -427,13 +437,13 @@
 
     /* --- Friends panel --- */
     .friends-fab {
-        @apply fixed right-4 top-24 z-30 px-3 py-2 rounded-lg border border-border
+        @apply fixed right-3 top-[4.5rem] sm:right-4 sm:top-24 z-30 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-border
             bg-bg-deep/80 backdrop-blur-md text-accent hover:border-accent/50 hover:bg-bg-elevated
-            transition text-sm font-semibold shadow-lg;
+            transition text-xs sm:text-sm font-semibold shadow-lg;
     }
 
     .friends-panel {
-        @apply fixed right-0 top-0 bottom-0 w-72 max-w-[85vw] z-40 flex flex-col
+        @apply fixed right-0 top-0 bottom-0 w-72 max-w-[min(85vw,18rem)] z-40 flex flex-col
             bg-bg-deep/95 backdrop-blur-md border-l border-border shadow-xl;
     }
 
@@ -461,7 +471,7 @@
     }
 
     .home-hero {
-        @apply relative text-center py-16 px-8 max-w-xl w-full rounded-2xl border border-border overflow-hidden;
+        @apply relative text-center py-10 px-5 sm:py-16 sm:px-8 max-w-xl w-full rounded-2xl border border-border overflow-hidden;
         background: linear-gradient(
             160deg,
             color-mix(in srgb, var(--color-bg-elevated) 92%, var(--color-accent)),
@@ -512,4 +522,34 @@
             transition: none !important;
         }
     }
+}
+
+/* Scrollbary — Arena Dark (Firefox + WebKit/Blink) */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) var(--color-bg-deep);
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--color-bg-deep);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 999px;
+    border: 2px solid var(--color-bg-deep);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--color-accent) 50%, var(--color-border));
+}
+
+*::-webkit-scrollbar-corner {
+    background: transparent;
 }

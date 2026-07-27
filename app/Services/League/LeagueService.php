@@ -29,6 +29,24 @@ class LeagueService
             ->values();
     }
 
+    /**
+     * @return array{items: list<array{id: int, url: string, title: string, subtitle: string}>, has_more: bool}
+     */
+    public function getIndexPage(int $page): array
+    {
+        $pageData = $this->leagueRepository->getPage($page);
+
+        return [
+            'items' => $pageData['items']->map(fn (LeagueDomain $league) => [
+                'id' => $league->id,
+                'url' => route('leagues.show', ['league' => $league->id]),
+                'title' => $league->displayTitle(),
+                'subtitle' => $league->getCardSubtitle(),
+            ])->all(),
+            'has_more' => $pageData['has_more'],
+        ];
+    }
+
     public function getByIdWithAdmins(int $id): ?LeagueDomain
     {
         return $this->leagueRepository->findByIdWithAdmins($id);
@@ -77,9 +95,16 @@ class LeagueService
         $this->leagueRepository->removeAdmin($leagueId, $userId);
     }
 
-    public function update(int $leagueId, string $name, string $description): void
-    {
-        $this->leagueRepository->update($leagueId, $name, $description);
+    /**
+     * @param  array<string, array<string, int|string>>|null  $matchFormatPresets
+     */
+    public function update(
+        int $leagueId,
+        string $name,
+        string $description,
+        ?array $matchFormatPresets = null,
+    ): void {
+        $this->leagueRepository->update($leagueId, $name, $description, $matchFormatPresets);
     }
 }
 

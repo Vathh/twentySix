@@ -2,10 +2,8 @@
 
 namespace App\Services\GameScoring;
 
-use App\Enums\AchievementType;
 use App\Enums\GameStatus;
 use App\Enums\GameKind;
-use App\Models\Achievements\Achievement;
 use App\Models\Game\Game;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\QuickGame\QuickGame;
@@ -55,7 +53,6 @@ class GameDetailService
             backUrl: $game->tournament
                 ? route('tournaments.show', ['tournament' => $game->tournament_id, 'tab' => 'groups'])
                 : route('pages.home'),
-            tournamentId: $game->tournament_id,
         );
     }
 
@@ -74,7 +71,6 @@ class GameDetailService
             backUrl: $game->tournament
                 ? route('tournaments.show', ['tournament' => $game->tournament_id, 'tab' => 'playoff'])
                 : route('pages.home'),
-            tournamentId: $game->tournament_id,
         );
     }
 
@@ -91,7 +87,6 @@ class GameDetailService
             label: 'Towarzyski',
             subtitle: 'Szybki mecz',
             backUrl: route('pages.home'),
-            tournamentId: null,
         );
     }
 
@@ -104,19 +99,11 @@ class GameDetailService
         string $label,
         ?string $subtitle,
         string $backUrl,
-        ?int $tournamentId,
     ): array {
         $legs = $this->gameLegRepository->getForContext($context);
         $legIds = $legs->pluck('id')->all();
         $visits = $this->gameVisitRepository->getActiveForGameLegs($legIds);
         $legStats = $this->gameLegPlayerStatRepository->getForLegIds($legIds);
-
-        $achievements = $tournamentId
-            ? Achievement::query()
-                ->where('tournament_id', $tournamentId)
-                ->whereIn('player_id', [$context->player1Id, $context->player2Id])
-                ->get()
-            : collect();
 
         $openLeg = $legs->first(fn ($leg) => $leg->isOpen());
 
@@ -125,7 +112,6 @@ class GameDetailService
                 $context->player1Id,
                 $game->player1?->name ?? '—',
                 $legStats,
-                $achievements,
                 $visits,
                 $legs,
                 $openLeg?->id,
@@ -134,7 +120,6 @@ class GameDetailService
                 $context->player2Id,
                 $game->player2?->name ?? '—',
                 $legStats,
-                $achievements,
                 $visits,
                 $legs,
                 $openLeg?->id,
@@ -168,6 +153,10 @@ class GameDetailService
             $context->player1Id,
             $context->player2Id,
         );
+
+        $tournamentId = $game instanceof QuickGame
+            ? null
+            : ($game->tournament_id !== null ? (int) $game->tournament_id : null);
 
         return [
             'kind' => $context->kind->value,
@@ -208,25 +197,63 @@ class GameDetailService
         int $playerId,
         string $name,
         Collection $legStats,
-        Collection $achievements,
         Collection $visits,
         Collection $legs,
         ?int $openLegId,
     ): array {
-        $playerAchievements = $achievements->where('player_id', $playerId);
-
         return array_merge(
             GameStatisticsCalculator::playerMatchStats($visits, $legs, $legStats, $playerId, $openLegId),
             [
                 'id' => $playerId,
                 'name' => $name,
-                'doublePercent' => GameStatisticsCalculator::gameDoublePercent($legStats, $playerId),
-                'max' => $playerAchievements->where('type', AchievementType::MAX)->count(),
-                'oneSeventy' => $playerAchievements->where('type', AchievementType::ONE_SEVENTY)->count(),
-                'hf' => $playerAchievements->where('type', AchievementType::HF)->values(),
-                'qf' => $playerAchievements->where('type', AchievementType::QF)->values(),
+                'hf' => $this->highFinishesInGame($visits, $playerId),
+                'qf' => $this->quickFinishesInGame($legs, $legStats, $playerId),
             ],
         );
+    }
+
+    /**
+     * HF w tym meczu: checkouty ≥ 100.
+     *
+     * @return list<int>
+     */
+    private function highFinishesInGame(Collection $visits, int $playerId): array
+    {
+        return $visits
+            ->where('player_id', $playerId)
+            ->where('bust', false)
+            ->where('closed_leg', true)
+            ->filter(fn ($v) => (int) $v->score >= 100)
+            ->map(fn ($v) => (int) $v->score)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * QF w tym meczu: wygrane legi w mniej niż 20 lotek.
+     *
+     * @return list<int>
+     */
+    private function quickFinishesInGame(Collection $legs, Collection $legStats, int $playerId): array
+    {
+        $wonLegIds = $legs
+            ->whereNotNull('finished_at')
+            ->where('winner_id', $playerId)
+            ->pluck('id')
+            ->all();
+
+        if ($wonLegIds === []) {
+            return [];
+        }
+
+        return $legStats
+            ->where('player_id', $playerId)
+            ->whereIn('game_leg_id', $wonLegIds)
+            ->filter(fn ($s) => $s->darts_thrown !== null && (int) $s->darts_thrown < 20)
+            ->map(fn ($s) => (int) $s->darts_thrown)
+            ->sort()
+            ->values()
+            ->all();
     }
 
     public static function kindFromRoute(string $type): GameKind

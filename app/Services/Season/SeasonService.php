@@ -34,6 +34,29 @@ class SeasonService
             ->values();
     }
 
+    /**
+     * @return array{items: list<array{id: int, url: string, title: string, subtitle: string|null, subtitle_missing: bool}>, has_more: bool}
+     */
+    public function getIndexPage(int $page): array
+    {
+        $pageData = $this->seasonRepository->getPage($page);
+
+        return [
+            'items' => $pageData['items']->map(function (SeasonDomain $season) {
+                $dates = $season->getPlayDatesFormatted();
+
+                return [
+                    'id' => $season->id,
+                    'url' => route('seasons.show', ['season' => $season->id]),
+                    'title' => $season->displayTitle(),
+                    'subtitle' => $dates ? 'Data rozgrywek: '.$dates : null,
+                    'subtitle_missing' => $dates === null,
+                ];
+            })->all(),
+            'has_more' => $pageData['has_more'],
+        ];
+    }
+
     public function create(
         ?int     $leagueId,
         string  $name,

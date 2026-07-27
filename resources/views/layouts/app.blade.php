@@ -14,7 +14,7 @@
     @include('layouts.header')
 
     <div class="flex flex-grow relative">
-        <main class="container mx-auto flex-grow py-4">
+        <main class="container mx-auto flex-grow py-4 px-4 min-w-0">
             @yield('content')
         </main>
 

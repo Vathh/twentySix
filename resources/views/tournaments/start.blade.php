@@ -3,9 +3,9 @@
 @section('title', 'Start turnieju')
 
 @section('content')
-    <div class="container mx-auto py-8 max-w-5xl">
+    <div class="container mx-auto py-6 sm:py-8 max-w-5xl min-w-0">
 
-        <h1 class="page-title mb-4">
+        <h1 class="page-title mb-4 break-words">
             Start turnieju: {{ $tournament->name }}
         </h1>
 
@@ -307,6 +307,8 @@
                     'matchFormatStagesByBracket' => $matchFormatStagesByBracket,
                     'startingScoreOptions' => $startingScoreOptions,
                     'defaultMatchFormat' => $defaultMatchFormat,
+                    'defaultMatchFormatsByStage' => $defaultMatchFormatsByStage,
+                    'hasLeagueFormatPresets' => $hasLeagueFormatPresets,
                     'oldMatchFormats' => $oldMatchFormats,
                     'minPlayers' => $minPlayers,
                     'minPlayersPerGroup' => $minPlayersPerGroup,
@@ -396,8 +398,10 @@
                              x-show="activeFormatStages.length"
                              x-cloak>
                             <p class="text-accent font-semibold text-sm mb-1">Format gry per etap</p>
-                            <p class="text-text-secondary/70 text-xs mb-4">
-                                Domyślnie 501 · 1 set · 2 legi. Tablet odczyta format z meczu — bez konfiguracji przy starcie gry.
+                            <p class="text-text-secondary/70 text-xs mb-4"
+                               x-text="hasLeagueFormatPresets
+                                   ? 'Domyślne z presetów ligi — możesz nadpisać przed startem. Tablet odczyta format z meczu.'
+                                   : 'Domyślnie 501 · 1 set · 2 legi. Tablet odczyta format z meczu — bez konfiguracji przy starcie gry.'">
                             </p>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm text-text-secondary">
@@ -484,6 +488,8 @@
                 matchFormatStagesByBracket: config.matchFormatStagesByBracket ?? {},
                 startingScoreOptions: config.startingScoreOptions ?? [],
                 defaultMatchFormat: config.defaultMatchFormat ?? {},
+                defaultMatchFormatsByStage: config.defaultMatchFormatsByStage ?? {},
+                hasLeagueFormatPresets: !!config.hasLeagueFormatPresets,
                 oldMatchFormats: config.oldMatchFormats ?? {},
                 matchFormats: {},
                 minPlayers: config.minPlayers ?? 4,
@@ -516,6 +522,7 @@
                     for (const stage of stages) {
                         next[stage.value] = {
                             ...this.defaultMatchFormat,
+                            ...(this.defaultMatchFormatsByStage[stage.value] ?? {}),
                             ...(this.oldMatchFormats[stage.value] ?? {}),
                             ...(this.matchFormats[stage.value] ?? {}),
                         };

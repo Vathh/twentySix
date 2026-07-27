@@ -47,6 +47,7 @@ class PlayerController extends Controller
             abort(404, 'Profil dostępny tylko dla graczy zarejestrowanych.');
         }
         $player->load('user');
+        $this->playerStatsService->recalculateAndSave($player->id);
         $quickStats = $this->playerStatsService->getStoredQuickStats($player);
         $tournamentStats = $this->playerStatsService->getStoredTournamentStats($player);
 

@@ -7,15 +7,11 @@ use Carbon\Carbon;
 class LeagueDomain
 {
     /**
-     * @param int $id
-     * @param string $name
-     * @param string $description
-     * @param Carbon $createdAt
-     * @param Carbon $updatedAt
-     * @param array $admins
-     * @param array<SeasonDomain> $seasons
-     * @param array $relatedUsers
-     * @param array $guests
+     * @param  array<string, array<string, int|string>>  $matchFormatPresets
+     * @param  array  $admins
+     * @param  array<SeasonDomain>  $seasons
+     * @param  array  $relatedUsers
+     * @param  array  $guests
      */
     public function __construct(
         public readonly int $id,
@@ -26,7 +22,8 @@ class LeagueDomain
         public readonly array $admins,
         public readonly array $seasons,
         public readonly array $relatedUsers,
-        public readonly array $guests
+        public readonly array $guests,
+        public readonly array $matchFormatPresets = [],
     )
     {}
 
@@ -38,6 +35,8 @@ class LeagueDomain
     public static function fromEloquent(League $league, array $with = []): self
     {
         $league->loadMissing(array_intersect($with, ['seasons', 'admins', 'relatedUsers', 'guests']));
+
+        $presets = is_array($league->match_format_presets) ? $league->match_format_presets : [];
 
         return new self(
             id: $league->id,
@@ -65,9 +64,9 @@ class LeagueDomain
                     'id' => $guest->id,
                     'name' => $guest->name
                 ])->toArray()
-                : []
+                : [],
+            matchFormatPresets: $presets,
         );
-
     }
 
     public function updatedAtDate(): string
@@ -103,5 +102,9 @@ class LeagueDomain
     {
         return array_column($this->admins, 'id');
     }
-}
 
+    public function hasMatchFormatPresets(): bool
+    {
+        return $this->matchFormatPresets !== [];
+    }
+}

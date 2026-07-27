@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\DTO\QuickGameFfa\RecordFfaVisitDTO;
+use App\Services\QuickGame\QuickGameFfaCricketScoringService;
 use App\Services\QuickGame\QuickGameFfaPresenceService;
 use App\Services\QuickGame\QuickGameFfaScoringService;
 use App\Services\QuickGame\QuickGameLobbyService;
@@ -14,6 +15,7 @@ class QuickGameFfaController
 {
     public function __construct(
         private QuickGameFfaScoringService $ffaScoringService,
+        private QuickGameFfaCricketScoringService $cricketScoringService,
         private QuickGameFfaPresenceService $presenceService,
         private QuickGameLobbyService $lobbyService,
     ) {
@@ -97,6 +99,53 @@ class QuickGameFfaController
 
             return response()->json(
                 $this->ffaScoringService->undoLastVisit((int) $lobbyId, $request->user()->id)
+            );
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function recordCricketDart(Request $request, string $lobbyId): JsonResponse
+    {
+        $validated = $request->validate([
+            'playerId' => 'required|integer|exists:players,id',
+            'kind' => 'required|string|in:hit,miss',
+            'segment' => 'nullable',
+            'multiplier' => 'integer|min:1|max:3',
+            'clientDartId' => 'required|uuid',
+        ]);
+
+        try {
+            $this->assertLobbyParticipant((int) $lobbyId, $request->user()->id);
+
+            $segment = $validated['segment'] ?? null;
+            if ($segment !== null && $segment !== 'bull') {
+                $segment = (string) $segment;
+            }
+
+            return response()->json(
+                $this->cricketScoringService->recordDart(
+                    (int) $lobbyId,
+                    $request->user()->id,
+                    (int) $validated['playerId'],
+                    $validated['kind'],
+                    $segment,
+                    (int) ($validated['multiplier'] ?? 1),
+                    $validated['clientDartId'],
+                )
+            );
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function undoCricketDart(Request $request, string $lobbyId): JsonResponse
+    {
+        try {
+            $this->assertLobbyParticipant((int) $lobbyId, $request->user()->id);
+
+            return response()->json(
+                $this->cricketScoringService->undoLastDart((int) $lobbyId, $request->user()->id)
             );
         } catch (DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 422);

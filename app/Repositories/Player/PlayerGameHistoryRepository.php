@@ -12,7 +12,7 @@ class PlayerGameHistoryRepository
     /**
      * Zwraca stronę historii meczów gracza (quick + turniejowe grupy + play-off), posortowaną od najnowszych.
      *
-     * @return array{items: array<int, array{type: string, date: string, date_formatted: string, opponents: string, result: string, score: string|null, tournament_name: string|null}>, has_more: bool}
+     * @return array{items: array<int, array{type: string, id: int|null, date: string, date_formatted: string, opponents: string, result: string, score: string|null, tournament_name: string|null}>, has_more: bool}
      */
     public function getHistoryPage(int $playerId, int $page): array
     {
@@ -74,7 +74,7 @@ class PlayerGameHistoryRepository
      * Dla wycinka stubów pobiera szczegóły (przeciwnicy, wynik, turniej).
      *
      * @param array<int, array{type: string, date: string, source_id: int, source_type: string}> $stubs
-     * @return list<array{type: string, date: string, date_formatted: string, opponents: string, result: string, score: string|null, tournament_name: string|null}>
+     * @return list<array{type: string, id: int|null, date: string, date_formatted: string, opponents: string, result: string, score: string|null, tournament_name: string|null}>
      */
     private function resolveDetails(int $playerId, array $stubs): array
     {
@@ -117,6 +117,7 @@ class PlayerGameHistoryRepository
 
         return [
             'type' => 'quick',
+            'id' => $quickGameId,
             'date' => $date,
             'date_formatted' => date('d.m.Y H:i', strtotime($date)),
             'opponents' => implode(', ', $opponentNames) ?: '–',
@@ -155,6 +156,7 @@ class PlayerGameHistoryRepository
 
         return [
             'type' => 'group',
+            'id' => $gameId,
             'date' => $date,
             'date_formatted' => date('d.m.Y H:i', strtotime($date)),
             'opponents' => $opponentName,
@@ -193,6 +195,7 @@ class PlayerGameHistoryRepository
 
         return [
             'type' => 'playoff',
+            'id' => $playoffId,
             'date' => $date,
             'date_formatted' => date('d.m.Y H:i', strtotime($date)),
             'opponents' => $opponentName,
@@ -206,6 +209,7 @@ class PlayerGameHistoryRepository
     {
         return [
             'type' => 'unknown',
+            'id' => null,
             'date' => $date,
             'date_formatted' => date('d.m.Y H:i', strtotime($date)),
             'opponents' => '–',

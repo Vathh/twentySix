@@ -49,15 +49,17 @@ final class TournamentMatchFormatRequestParser
     }
 
     /**
+     * @param  array<string, array<string, int|string>>|null  $leaguePresets
      * @return array<string, array<string, int|string>>
      */
-    public static function defaultsForBracketSize(int $playoffBracketSize): array
+    public static function defaultsForBracketSize(int $playoffBracketSize, ?array $leaguePresets = null): array
     {
-        $defaults = MatchFormat::default()->toArray();
+        $byStage = \App\Support\League\LeagueMatchFormatPresets::defaultsByStage($leaguePresets);
         $formatsByStage = [];
 
         foreach (GameStage::forPlayoffBracketSize($playoffBracketSize) as $stage) {
-            $formatsByStage[$stage->value] = $defaults;
+            $formatsByStage[$stage->value] = $byStage[$stage->value]
+                ?? MatchFormat::default()->toArray();
         }
 
         return $formatsByStage;

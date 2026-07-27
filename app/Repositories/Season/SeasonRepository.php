@@ -12,6 +12,8 @@ use Throwable;
 class SeasonRepository
 {
 
+    public const INDEX_PER_PAGE = 9;
+
     /**
      * @return Collection<int, SeasonDomain>
      */
@@ -21,6 +23,28 @@ class SeasonRepository
             ->with('league')
             ->get()
             ->map(fn (Season $season) => SeasonDomain::fromEloquent($season, ['league']));
+    }
+
+    /**
+     * Strona listy sezonów (najpierw najnowsze daty startu).
+     *
+     * @return array{items: Collection<int, SeasonDomain>, has_more: bool}
+     */
+    public function getPage(int $page): array
+    {
+        $page = max(1, $page);
+        $paginator = Season::query()
+            ->with('league')
+            ->orderByRaw('COALESCE(start_date, end_date, ?) DESC', ['1970-01-01'])
+            ->orderByDesc('id')
+            ->paginate(self::INDEX_PER_PAGE, ['*'], 'page', $page);
+
+        return [
+            'items' => $paginator->getCollection()
+                ->map(fn (Season $season) => SeasonDomain::fromEloquent($season, ['league']))
+                ->values(),
+            'has_more' => $paginator->hasMorePages(),
+        ];
     }
 
     /**

@@ -10,8 +10,11 @@ use App\Services\League\LeagueService;
 use App\Services\League\LeagueStatsService;
 use App\Services\Player\PlayerService;
 use App\Services\User\UserService;
+use App\Support\GameScoring\MatchFormat;
+use App\Support\League\LeagueMatchFormatPresets;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -28,11 +31,19 @@ class LeagueController extends Controller
         $this->authorizeResource(League::class, 'league');
     }
 
-    public function index(): Factory|View
+    public function index(Request $request): Factory|View|JsonResponse
     {
-        $leagues = $this->leagueService->getAll();
+        $page = max(1, (int) $request->query('page', 1));
+        $data = $this->leagueService->getIndexPage($page);
 
-        return view('leagues.index', ['leagues' => $leagues]);
+        if ($request->wantsJson()) {
+            return response()->json($data);
+        }
+
+        return view('leagues.index', [
+            'items' => $data['items'],
+            'hasMore' => $data['has_more'],
+        ]);
     }
 
     public function create(): Factory|View
@@ -74,7 +85,15 @@ class LeagueController extends Controller
     {
         $leagueDomain = LeagueDomain::fromEloquent($league, ['admins']);
 
-        return view('leagues.edit', ['league' => $leagueDomain]);
+        return view('leagues.edit', [
+            'league' => $leagueDomain,
+            'startingScoreOptions' => MatchFormat::ALLOWED_STARTING_SCORES,
+            'matchFormatStages' => LeagueMatchFormatPresets::stageOptions(),
+            'matchFormats' => old(
+                'matchFormats',
+                LeagueMatchFormatPresets::forEditForm($leagueDomain->matchFormatPresets),
+            ),
+        ]);
     }
 
     public function update(Request $request, League $league)
@@ -82,12 +101,18 @@ class LeagueController extends Controller
         $validated = $request->validate([
             'leagueName' => 'required|string|max:255',
             'description' => 'required|string|max:500',
+            'matchFormats' => 'nullable|array',
         ]);
+
+        $presets = LeagueMatchFormatPresets::fromFormInput(
+            is_array($validated['matchFormats'] ?? null) ? $validated['matchFormats'] : [],
+        );
 
         $this->leagueService->update(
             $league->id,
             $validated['leagueName'],
-            $validated['description']
+            $validated['description'],
+            $presets,
         );
 
         return redirect()

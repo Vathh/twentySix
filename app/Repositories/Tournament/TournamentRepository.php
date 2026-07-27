@@ -12,6 +12,8 @@ use Throwable;
 
 class TournamentRepository
 {
+    public const INDEX_PER_PAGE = 9;
+
     /**
      * @return Collection<int, TournamentDomain>
      */
@@ -21,6 +23,28 @@ class TournamentRepository
             ->with(['season.league'])
             ->get()
             ->map(fn (Tournament $tournament) => TournamentDomain::fromEloquent($tournament, ['season']));
+    }
+
+    /**
+     * Strona listy turniejów (najpierw najnowsze daty rozgrywek).
+     *
+     * @return array{items: Collection<int, TournamentDomain>, has_more: bool}
+     */
+    public function getPage(int $page): array
+    {
+        $page = max(1, $page);
+        $paginator = Tournament::query()
+            ->with(['season.league'])
+            ->orderByRaw('COALESCE(date, ?) DESC', ['1970-01-01'])
+            ->orderByDesc('id')
+            ->paginate(self::INDEX_PER_PAGE, ['*'], 'page', $page);
+
+        return [
+            'items' => $paginator->getCollection()
+                ->map(fn (Tournament $tournament) => TournamentDomain::fromEloquent($tournament, ['season']))
+                ->values(),
+            'has_more' => $paginator->hasMorePages(),
+        ];
     }
 
     public function create(

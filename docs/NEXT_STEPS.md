@@ -59,22 +59,23 @@ Gdy użytkownik sam wdraża lub poprosi agenta:
 
 ---
 
-## Backlog (udokumentowane, nie w toku)
+## Backlog / w toku
 
 | Temat | Plan |
 |-------|------|
-| **Format gry — Faza 5** (później) | [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) §6 |
+| **Cricket** (trening + quick) | [`plan_cricket.md`](plan_cricket.md) — ✅ fazy 1–3 |
 
-### Format gry — Faza 5 (szczegóły backlogu)
+### Format gry — pozostałe
 
-1. **Presety formatów w lidze** — domyślne formaty per etap dla nowych turniejów w danej lidze (kreator wczytuje, admin może nadpisać).
-2. **Chipy BO5 / BO7** w lobby i treningu — szybkie skróty UI (`legsToWinSet: 3` / `4` przy 1 secie), bez nowej logiki scoringu.
-3. **Cricket** — osobny `gameType` z własnym silnikiem (poza X01; osobny większy feature).
+1. ~~**Presety formatów w lidze**~~ ✅ lipiec 2026 — `leagues.match_format_presets` → kreator startu turnieju
+2. ~~**Chipy BO5 / BO7**~~ — odpuszczone (zbędny skrót UI; format i tak ustawia się pickerami)
+3. **Cricket** — [`plan_cricket.md`](plan_cricket.md) (standard scoring; trening + quick; bez turnieju).
 
 ## Niedawno domknięte
 
 | Temat | Stan |
 |-------|------|
+| Presety formatu gry w lidze | ✅ lipiec 2026 — [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) §5.1 |
 | Push — zaproszenia (znajomi / turniej / quick game) | ✅ lipiec 2026 — [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md) |
 | Konfigurowalny format gry — fazy 1–4 (MatchFormat, quick/trening/turniej, walkower) | ✅ lipiec 2026 — [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) |
 | Arena Dark (web + mobile) | ✅ lipiec 2026 |
