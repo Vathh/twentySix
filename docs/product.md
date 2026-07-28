@@ -190,6 +190,7 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - Wysyłka: admin na **webie** — **na stronie startu turnieju** (bez osobnej podstrony): wyszukiwarka + lista zaproszonych + masowe zaproszenia ze składu ligi.
 - Akceptacja / wycofanie udziału: **mobile**.
 - Goście (nazwa od admina): edycja puli gości na ekranach sezonu/ligi; na stronie startu admin **dodaje gościa do turnieju** z listy powiązanych.
+- **Zgłoszenia przez QR** (plan): gracz skanuje QR na starcie turnieju → admin Dołącz/Odrzuć — [`plan_tournament_join_qr.md`](plan_tournament_join_qr.md).
 
 #### Stały skład ligi (`relatedUsers`)
 

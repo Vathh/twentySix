@@ -11,6 +11,28 @@
 
         <x-errors/>
 
+        <div
+            x-show="$store.tournamentStartLive.flash"
+            x-cloak
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-x-2"
+            x-transition:enter-end="opacity-100 translate-x-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed top-5 right-5 z-50 w-96 max-w-[calc(100vw-2rem)] p-3 rounded-lg shadow-xl flex items-start justify-between gap-3 bg-bg-elevated"
+            :class="$store.tournamentStartLive.flash?.type === 'error'
+                ? 'border border-danger text-danger-text'
+                : 'border border-success text-success-bright'"
+        >
+            <div x-text="$store.tournamentStartLive.flash?.message"></div>
+            <button
+                type="button"
+                class="shrink-0 font-bold opacity-70 hover:opacity-100"
+                @click="$store.tournamentStartLive.flash = null"
+            >&times;</button>
+        </div>
+
         @if(session('success'))
             <div class="mb-4 p-3 alert-success">{{ session('success') }}</div>
         @endif
@@ -25,22 +47,80 @@
         @endif
 
         {{-- Strefa 1: Uczestnicy turnieju (sticky + przewijana lista) --}}
-        <div class="mb-8 card border-2 border-success/40 lg:sticky lg:top-4 lg:z-20">
+        <div
+            class="mb-8 card border-2 border-success/40 lg:sticky lg:top-4 lg:z-20"
+            @if($canManageParticipants)
+                x-data
+                x-init="$store.tournamentStartLive.init(@js([
+                    'participants' => $participantsLive ?? [],
+                    'participantCount' => $participantCount,
+                    'minPlayers' => $minPlayers,
+                    'canManage' => true,
+                    'csrfToken' => csrf_token(),
+                ]))"
+            @endif
+        >
             <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
                 <h2 class="section-title">Uczestnicy turnieju</h2>
-                <span @class([
-                    'text-sm font-semibold px-3 py-1 rounded-full shrink-0',
-                    'bg-success-muted text-success-bright' => $participantCount >= $minPlayers,
-                    'bg-accent/20 text-accent' => $participantCount < $minPlayers,
-                ])>
-                    {{ $participantCount }} / min. {{ $minPlayers }}
-                </span>
+                @if($canManageParticipants)
+                    <span
+                        class="text-sm font-semibold px-3 py-1 rounded-full shrink-0"
+                        :class="$store.tournamentStartLive.participantCount >= $store.tournamentStartLive.minPlayers
+                            ? 'bg-success-muted text-success-bright'
+                            : 'bg-accent/20 text-accent'"
+                        x-text="$store.tournamentStartLive.participantCount + ' / min. ' + $store.tournamentStartLive.minPlayers"
+                    ></span>
+                @else
+                    <span @class([
+                        'text-sm font-semibold px-3 py-1 rounded-full shrink-0',
+                        'bg-success-muted text-success-bright' => $participantCount >= $minPlayers,
+                        'bg-accent/20 text-accent' => $participantCount < $minPlayers,
+                    ])>
+                        {{ $participantCount }} / min. {{ $minPlayers }}
+                    </span>
+                @endif
             </div>
             <p class="text-text-secondary text-sm mb-3">
                 W turnieju grają wszyscy z tej listy — zaakceptowane zaproszenia oraz goście dodani do turnieju.
             </p>
 
-            @if($participants->isEmpty())
+            @if($canManageParticipants)
+                <p
+                    class="text-text-secondary/80 italic text-sm"
+                    x-show="$store.tournamentStartLive.participants.length === 0"
+                >
+                    Brak uczestników. Użyj sekcji poniżej, aby wysłać zaproszenia lub dodać gości.
+                </p>
+                <div x-show="$store.tournamentStartLive.participants.length > 0" x-cloak>
+                    <p
+                        class="text-accent/70 text-xs mb-2"
+                        x-show="$store.tournamentStartLive.participants.length > 12"
+                    >Duża lista — przewiń, aby zobaczyć wszystkich.</p>
+                    <div class="max-h-36 sm:max-h-44 overflow-y-auto overflow-x-hidden pr-1 -mr-1">
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="p in $store.tournamentStartLive.participants" :key="(p.kind || '') + '-' + (p.invitationId || p.playerId)">
+                                <div class="flex items-center gap-1 bg-bg text-text-secondary pl-3 pr-1 py-1.5 rounded-lg text-sm">
+                                    <span>
+                                        <span x-text="p.name"></span>
+                                        <span
+                                            class="text-xs text-accent ml-1"
+                                            x-show="p.kind === 'guest'"
+                                        >gość</span>
+                                    </span>
+                                    <button
+                                        type="button"
+                                        class="btn-mini-danger w-7 h-7 p-0 flex items-center justify-center font-bold"
+                                        title="Usuń z turnieju"
+                                        x-show="p.removeUrl"
+                                        :disabled="$store.tournamentStartLive.busyKey === ((p.kind || '') + '-' + (p.invitationId || p.playerId))"
+                                        @click="$store.tournamentStartLive.removeParticipant(p)"
+                                    >×</button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            @elseif($participants->isEmpty())
                 <p class="text-text-secondary/80 italic text-sm">
                     Brak uczestników. Użyj sekcji poniżej, aby wysłać zaproszenia lub dodać gości.
                 </p>
@@ -58,21 +138,6 @@
                                         <span class="text-xs text-accent ml-1">gość</span>
                                     @endif
                                 </span>
-                                @if($canManageParticipants)
-                                    @if($participant['kind'] === 'user')
-                                        <form action="{{ route('tournaments.invitations.remove', [$tournament->id, $participant['invitationId']]) }}" method="POST" class="inline">
-                                            @csrf
-                                            <button type="submit" class="btn-mini-danger w-7 h-7 p-0 flex items-center justify-center font-bold" title="Usuń z turnieju">×</button>
-                                        </form>
-                                    @else
-                                        <form action="{{ route('tournaments.participants.guests.remove', $tournament->id) }}" method="POST" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <input type="hidden" name="player_id" value="{{ $participant['playerId'] }}">
-                                            <button type="submit" class="btn-mini-danger w-7 h-7 p-0 flex items-center justify-center font-bold" title="Usuń z turnieju">×</button>
-                                        </form>
-                                    @endif
-                                @endif
                             </div>
                         @endforeach
                     </div>
@@ -85,6 +150,125 @@
             <div class="mb-8 card overflow-hidden">
                 <div class="border-b border-border px-6 pt-6 pb-4">
                     <h2 class="text-xl font-semibold text-accent mb-4">Dodaj uczestników</h2>
+
+                    {{-- QR zgłoszenia --}}
+                    @if(!empty($joinCode) && !empty($joinUrl))
+                        <div
+                            class="mb-6 p-4 rounded-lg border border-border bg-bg/40"
+                            x-data="tournamentJoinRequestsLive(@js([
+                                'channel' => 'tournament.'.$tournament->id,
+                                'snapshotUrl' => route('tournaments.join-requests-live', $tournament->id),
+                                'csrfToken' => csrf_token(),
+                                'initialRequests' => $pendingJoinRequestsLive ?? [],
+                                'initialParticipants' => $participantsLive ?? [],
+                                'participantCount' => $participantCount,
+                                'minPlayers' => $minPlayers,
+                                'canManage' => true,
+                                'reverb' => [
+                                    'key' => (string) config('broadcasting.connections.reverb.key'),
+                                    'host' => (string) env('REVERB_HOST', '127.0.0.1'),
+                                    'port' => (int) env('REVERB_PORT', 8080),
+                                    'scheme' => (string) env('REVERB_SCHEME', 'http'),
+                                ],
+                            ]))"
+                            x-init="init()"
+                        >
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <h3 class="text-accent font-semibold mb-0">Dołącz przez QR</h3>
+                                <span
+                                    class="px-2 py-0.5 rounded text-xs font-semibold bg-accent/25 text-accent"
+                                    x-text="connectionLabel()"
+                                >Łączenie…</span>
+                            </div>
+                            <p class="text-text-secondary text-sm mb-4">
+                                Zawodnik skanuje kod → zgłasza się w aplikacji. Zgłoszenia pojawiają się poniżej na żywo — zatwierdzasz Dołącz / Odrzuć.
+                            </p>
+                            <div class="flex flex-wrap items-start gap-6">
+                                <div class="bg-white p-3 rounded-lg inline-block">
+                                    <img
+                                        src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&amp;data={{ urlencode($joinUrl) }}"
+                                        width="180"
+                                        height="180"
+                                        alt="QR dołączania do turnieju"
+                                    >
+                                </div>
+                                <div class="flex-1 min-w-[180px]">
+                                    <p class="text-text-secondary text-sm mb-1">Kod</p>
+                                    <p class="font-mono text-2xl tracking-widest text-accent mb-3">{{ $joinCode }}</p>
+                                    <p class="text-text-secondary text-xs break-all mb-4">{{ $joinUrl }}</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <form action="{{ route('tournaments.join-code.regenerate', $tournament->id) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="btn-mini">Nowy kod</button>
+                                        </form>
+                                        <form action="{{ route('tournaments.join-code.toggle', $tournament->id) }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="enabled" value="{{ !empty($joinCodeEnabled) ? 0 : 1 }}">
+                                            <button type="submit" class="btn-mini">
+                                                {{ !empty($joinCodeEnabled) ? 'Wyłącz zgłoszenia' : 'Włącz zgłoszenia' }}
+                                            </button>
+                                        </form>
+                                    </div>
+                                    @unless(!empty($joinCodeEnabled))
+                                        <p class="text-danger text-sm mt-2">Przyjmowanie zgłoszeń jest wyłączone.</p>
+                                    @endunless
+                                </div>
+                            </div>
+
+                            <div class="mt-5">
+                                <h4 class="text-accent font-semibold mb-2">
+                                    Zgłoszenia
+                                    <span
+                                        class="text-sm font-normal text-text-secondary"
+                                        x-show="requests.length > 0"
+                                        x-text="'(' + requests.length + ')'"
+                                    ></span>
+                                </h4>
+                                <p class="text-text-secondary text-sm" x-show="requests.length === 0">
+                                    Brak oczekujących zgłoszeń.
+                                </p>
+                                <div
+                                    class="overflow-x-auto rounded-lg border border-border"
+                                    x-show="requests.length > 0"
+                                    x-cloak
+                                >
+                                    <table class="w-full text-text-secondary text-sm">
+                                        <thead class="bg-bg">
+                                            <tr class="text-accent">
+                                                <th class="text-left py-2 px-3">Zawodnik</th>
+                                                <th class="text-left py-2 px-3">Zgłoszono</th>
+                                                <th class="text-left py-2 px-3">Akcja</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template x-for="req in requests" :key="req.id">
+                                                <tr class="border-t border-border/50">
+                                                    <td class="py-2 px-3" x-text="req.playerName"></td>
+                                                    <td class="py-2 px-3" x-text="req.createdAt"></td>
+                                                    <td class="py-2 px-3">
+                                                        <div class="flex flex-wrap gap-2">
+                                                            <button
+                                                                type="button"
+                                                                class="btn-mini"
+                                                                :disabled="busyId === req.id"
+                                                                @click="resolveRequest(req, 'approve')"
+                                                            >Dołącz</button>
+                                                            <button
+                                                                type="button"
+                                                                class="btn-mini"
+                                                                :disabled="busyId === req.id"
+                                                                @click="resolveRequest(req, 'reject')"
+                                                            >Odrzuć</button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     {{-- Wyszukiwarka — zawsze widoczna (niezależnie od zakładek) --}}
                     <div class="mb-2">
@@ -320,7 +504,7 @@
             </script>
             <div
                 x-data="tournamentStartForm()"
-                x-init="syncGroupsCount(); syncBracketSelect(); syncMatchFormats()"
+                x-init="init(); syncGroupsCount(); syncBracketSelect(); syncMatchFormats()"
                 class="mb-8 card"
             >
                 <h2 class="section-title text-accent">Start turnieju</h2>
@@ -495,6 +679,14 @@
                 minPlayers: config.minPlayers ?? 4,
                 minPlayersPerGroup: config.minPlayersPerGroup ?? 3,
                 participantCount: config.participantCount ?? 0,
+                init() {
+                    window.addEventListener('tournament-participant-count', (e) => {
+                        const next = Number(e.detail?.participantCount);
+                        if (!Number.isNaN(next)) {
+                            this.participantCount = next;
+                        }
+                    });
+                },
                 get bracketOptions() {
                     const opts = this.bracketOptionsByGroupCount[this.groupsCount]
                         ?? this.bracketOptionsByGroupCount[String(this.groupsCount)]

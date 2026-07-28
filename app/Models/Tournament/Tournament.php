@@ -30,12 +30,17 @@ class Tournament extends Model
         'playoff_bracket_size',
         'group_advances',
         'tablets_count',
+        'join_code',
+        'join_code_generated_at',
+        'join_code_enabled',
     ];
 
     protected $casts = [
         'date' => 'date',
         'status' => TournamentStatus::class,
         'group_advances' => 'array',
+        'join_code_generated_at' => 'datetime',
+        'join_code_enabled' => 'boolean',
     ];
 
     public function season(): BelongsTo
@@ -81,6 +86,11 @@ class Tournament extends Model
     public function guestParticipants(): HasMany
     {
         return $this->hasMany(TournamentGuestParticipant::class);
+    }
+
+    public function joinRequests(): HasMany
+    {
+        return $this->hasMany(TournamentJoinRequest::class);
     }
 
     public function admins(): BelongsToMany

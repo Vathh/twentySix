@@ -63,6 +63,7 @@ Gdy użytkownik sam wdraża lub poprosi agenta:
 
 | Temat | Plan |
 |-------|------|
+| **QR zgłoszenia do turnieju** | [`plan_tournament_join_qr.md`](plan_tournament_join_qr.md) — ✅ fazy 1–2 |
 | **Cricket** (trening + quick) | [`plan_cricket.md`](plan_cricket.md) — ✅ fazy 1–3 |
 
 ### Format gry — pozostałe

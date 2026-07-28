@@ -15,6 +15,7 @@ use App\Services\Tournament\LoginCodeService;
 use App\Services\Tournament\TournamentGuestParticipantService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentInvitationService;
+use App\Services\Tournament\TournamentJoinRequestService;
 use App\Services\Tournament\TournamentService;
 use Illuminate\Http\JsonResponse;
 use App\Services\User\UserService;
@@ -38,6 +39,7 @@ class TournamentController extends Controller
         private TournamentService $tournamentService,
         private PlayerService $playerService,
         private TournamentInvitationService $invitationService,
+        private TournamentJoinRequestService $joinRequestService,
         private TournamentGuestParticipantService $guestParticipantService,
         private UserService $userService,
         private GetTournamentData $getTournamentGroupResults,
@@ -143,6 +145,15 @@ class TournamentController extends Controller
         );
     }
 
+    public function joinRequestsLive(Tournament $tournament): JsonResponse
+    {
+        $this->loadAndAuthorize($tournament->id);
+
+        return response()->json(
+            $this->joinRequestService->pendingSnapshot($tournament->id),
+        );
+    }
+
     public function edit(Tournament $tournament)
     {
         //
@@ -161,6 +172,10 @@ class TournamentController extends Controller
     public function start(Request $request, int $tournamentId): Factory|View
     {
         $tournament = $this->loadAndAuthorize($tournamentId);
+        $tournamentModel = Tournament::findOrFail($tournamentId);
+        if ($tournamentModel->status === TournamentStatus::CREATED) {
+            $tournamentModel = $this->joinRequestService->ensureJoinCode($tournamentModel);
+        }
         $seasonId = $tournament->season?->id;
 
         $invitations = $this->invitationService->getForTournament($tournamentId);
@@ -263,14 +278,39 @@ class TournamentController extends Controller
         );
         $hasLeagueFormatPresets = is_array($leaguePresets) && $leaguePresets !== [];
 
+        $pendingJoinRequests = $tournament->status === TournamentStatus::CREATED
+            ? $this->joinRequestService->getPendingForTournament($tournamentId)
+            : collect();
+        $pendingJoinRequestsLive = $tournament->status === TournamentStatus::CREATED
+            ? $this->joinRequestService->pendingSnapshot($tournamentId)['requests']
+            : [];
+
         return view('tournaments.start', [
             'tournament' => $tournament,
             'invitationPipeline' => $invitationPipeline,
             'regulars' => $regulars,
             'searchUsers' => $searchUsers,
             'participants' => $participants,
+            'participantsLive' => $participants->map(fn ($p) => [
+                'kind' => $p['kind'],
+                'playerId' => $p['playerId'],
+                'name' => $p['name'],
+                'invitationId' => $p['invitationId'],
+                'removeUrl' => $p['kind'] === 'user' && $p['invitationId']
+                    ? route('tournaments.invitations.remove', [$tournamentId, $p['invitationId']], false)
+                    : ($p['kind'] === 'guest'
+                        ? route('tournaments.participants.guests.remove', $tournamentId, false)
+                        : null),
+            ])->values()->all(),
             'participantCount' => $participantCount,
             'relatedGuests' => $relatedGuests,
+            'pendingJoinRequests' => $pendingJoinRequests,
+            'pendingJoinRequestsLive' => $pendingJoinRequestsLive,
+            'joinCode' => $tournamentModel->join_code,
+            'joinCodeEnabled' => (bool) $tournamentModel->join_code_enabled,
+            'joinUrl' => $tournamentModel->join_code
+                ? $this->joinRequestService->joinUrl($tournamentModel)
+                : null,
             'addTab' => $addTab,
             'canManageParticipants' => $tournament->status === TournamentStatus::CREATED,
             'groupCountOptions' => $groupCountOptions,
@@ -348,17 +388,111 @@ class TournamentController extends Controller
         return back()->with('success', 'Zaproszenie anulowane');
     }
 
-    public function removeParticipant(int $tournamentId, int $invitationId): RedirectResponse
+    public function removeParticipant(Request $request, int $tournamentId, int $invitationId): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($tournamentId);
 
         try {
             $this->invitationService->removeParticipant($tournamentId, $invitationId);
         } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
             return back()->with('error', $e->getMessage());
         }
 
+        if ($request->wantsJson()) {
+            return response()->json($this->joinActionPayload(
+                $tournamentId,
+                'Uczestnik usunięty z turnieju',
+            ));
+        }
+
         return back()->with('success', 'Uczestnik usunięty z turnieju');
+    }
+
+    public function regenerateJoinCode(int $tournamentId): RedirectResponse
+    {
+        $this->loadAndAuthorize($tournamentId);
+        $tournament = Tournament::findOrFail($tournamentId);
+
+        try {
+            $this->joinRequestService->regenerateJoinCode($tournament);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Wygenerowano nowy kod QR');
+    }
+
+    public function toggleJoinCode(Request $request, int $tournamentId): RedirectResponse
+    {
+        $this->loadAndAuthorize($tournamentId);
+        $tournament = Tournament::findOrFail($tournamentId);
+
+        $validated = $request->validate([
+            'enabled' => 'required|boolean',
+        ]);
+
+        try {
+            $this->joinRequestService->toggleJoinCode($tournament, (bool) $validated['enabled']);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with(
+            'success',
+            $validated['enabled'] ? 'Przyjmowanie zgłoszeń włączone' : 'Przyjmowanie zgłoszeń wyłączone',
+        );
+    }
+
+    public function approveJoinRequest(Request $request, int $tournamentId, int $requestId): RedirectResponse|JsonResponse
+    {
+        $this->loadAndAuthorize($tournamentId);
+
+        try {
+            $this->joinRequestService->approve($tournamentId, $requestId, (int) Auth::id());
+        } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
+            return back()->with('error', $e->getMessage());
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json($this->joinActionPayload(
+                $tournamentId,
+                'Zawodnik dołączony do turnieju',
+            ));
+        }
+
+        return back()->with('success', 'Zawodnik dołączony do turnieju');
+    }
+
+    public function rejectJoinRequest(Request $request, int $tournamentId, int $requestId): RedirectResponse|JsonResponse
+    {
+        $this->loadAndAuthorize($tournamentId);
+
+        try {
+            $this->joinRequestService->reject($tournamentId, $requestId, (int) Auth::id());
+        } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
+            return back()->with('error', $e->getMessage());
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json($this->joinActionPayload(
+                $tournamentId,
+                'Zgłoszenie odrzucone',
+            ));
+        }
+
+        return back()->with('success', 'Zgłoszenie odrzucone');
     }
 
     public function addGuestParticipant(Request $request, int $tournamentId): RedirectResponse
@@ -405,7 +539,7 @@ class TournamentController extends Controller
         return back()->with('success', 'Gość dodany do turnieju');
     }
 
-    public function removeGuestParticipant(Request $request, int $tournamentId): RedirectResponse
+    public function removeGuestParticipant(Request $request, int $tournamentId): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($tournamentId);
 
@@ -416,7 +550,18 @@ class TournamentController extends Controller
         try {
             $this->guestParticipantService->remove($tournamentId, (int) $validated['player_id']);
         } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
             return back()->with('error', $e->getMessage());
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json($this->joinActionPayload(
+                $tournamentId,
+                'Gość usunięty z turnieju',
+            ));
         }
 
         return redirect()
@@ -540,5 +685,52 @@ class TournamentController extends Controller
         $this->gameAuthorizationService->authorizeManageTournament($tournament);
 
         return TournamentDomain::fromEloquent($tournament, $allRelations);
+    }
+
+    /**
+     * @return array{message: string, requests: list<array<string, mixed>>, participants: list<array<string, mixed>>, participantCount: int, minPlayers: int}
+     */
+    private function joinActionPayload(int $tournamentId, string $message): array
+    {
+        $participants = $this->buildParticipantsLive($tournamentId);
+
+        return [
+            'message' => $message,
+            'requests' => $this->joinRequestService->pendingSnapshot($tournamentId)['requests'],
+            'participants' => $participants,
+            'participantCount' => count($participants),
+            'minPlayers' => TournamentStartRules::MIN_PLAYERS,
+        ];
+    }
+
+    /**
+     * @return list<array{kind: string, playerId: int|null, name: string, invitationId: int|null, removeUrl: string|null}>
+     */
+    private function buildParticipantsLive(int $tournamentId): array
+    {
+        $invitations = $this->invitationService->getForTournament($tournamentId);
+        $tournamentGuests = $this->playerService->getTournamentGuestParticipants($tournamentId);
+
+        return $invitations
+            ->filter(fn ($inv) => $inv->status === TournamentInvitationStatus::ACCEPTED)
+            ->map(fn ($inv) => [
+                'kind' => 'user',
+                'playerId' => $inv->userPlayer?->id,
+                'name' => $inv->userPlayer?->name ?? '—',
+                'invitationId' => $inv->id,
+                'removeUrl' => route('tournaments.invitations.remove', [$tournamentId, $inv->id], false),
+            ])
+            ->merge(
+                $tournamentGuests->map(fn ($guest) => [
+                    'kind' => 'guest',
+                    'playerId' => $guest->id,
+                    'name' => $guest->name,
+                    'invitationId' => null,
+                    'removeUrl' => route('tournaments.participants.guests.remove', $tournamentId, false),
+                ])
+            )
+            ->sortBy('name')
+            ->values()
+            ->all();
     }
 }

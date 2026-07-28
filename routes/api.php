@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\QuickGameController;
 use App\Http\Controllers\Api\QuickGameFfaController;
 use App\Http\Controllers\Api\QuickGameLobbyController;
 use App\Http\Controllers\Api\TournamentInvitationController;
+use App\Http\Controllers\Api\TournamentJoinController;
 use App\Http\Controllers\Api\GameScoring\GroupGameScoringController;
 use App\Http\Controllers\Api\GameScoring\PlayoffGameScoringController;
 use Illuminate\Support\Facades\Route;
@@ -77,6 +78,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{invitationId}/accept', [TournamentInvitationController::class, 'accept'])->whereNumber('invitationId');
         Route::post('/{invitationId}/reject', [TournamentInvitationController::class, 'reject'])->whereNumber('invitationId');
         Route::post('/{invitationId}/withdraw', [TournamentInvitationController::class, 'withdraw'])->whereNumber('invitationId');
+    });
+
+    Route::prefix('tournaments/join')->group(function () {
+        Route::get('/{code}', [TournamentJoinController::class, 'preview'])->where('code', '[A-Za-z0-9]+');
+        Route::post('/{code}', [TournamentJoinController::class, 'apply'])->where('code', '[A-Za-z0-9]+');
     });
 
     Route::prefix('quick-game/lobby')->group(function () {

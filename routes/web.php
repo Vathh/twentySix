@@ -9,9 +9,13 @@ use App\Http\Controllers\PagesController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\TournamentController;
+use App\Http\Controllers\TournamentJoinLandingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PagesController::class, 'showHomePage'])->name('pages.home');
+Route::get('/join-tournament/{code}', [TournamentJoinLandingController::class, 'show'])
+    ->where('code', '[A-Za-z0-9]+')
+    ->name('tournaments.join-landing');
 
 Route::get('/games/{type}/{id}', [GameViewController::class, 'show'])
     ->where('type', 'group|playoff|quick')
@@ -85,6 +89,7 @@ Route::prefix('seasons/{season}')->group(function () {
 Route::resource('tournaments', TournamentController::class);
 Route::prefix('tournaments/{tournament}')->group(function () {
    Route::get('/groups-live', [TournamentController::class, 'groupsLive'])->name('tournaments.groups-live');
+   Route::get('/join-requests-live', [TournamentController::class, 'joinRequestsLive'])->name('tournaments.join-requests-live');
    Route::get('/admins', [TournamentController::class, 'admins'])->name('tournaments.admins');
    Route::post('/admins/add', [TournamentController::class, 'addAdmin'])->name('tournaments.admins.add');
    Route::delete('/admins/remove', [TournamentController::class, 'removeAdmin'])->name('tournaments.admins.remove');
@@ -94,6 +99,10 @@ Route::prefix('tournaments/{tournament}')->group(function () {
    Route::post('/invitations/bulk', [TournamentController::class, 'sendBulkInvitations'])->name('tournaments.invitations.bulk');
    Route::post('/invitations/{invitation}/cancel', [TournamentController::class, 'cancelInvitation'])->name('tournaments.invitations.cancel');
    Route::post('/invitations/{invitation}/remove', [TournamentController::class, 'removeParticipant'])->name('tournaments.invitations.remove');
+   Route::post('/join-code/regenerate', [TournamentController::class, 'regenerateJoinCode'])->name('tournaments.join-code.regenerate');
+   Route::post('/join-code/toggle', [TournamentController::class, 'toggleJoinCode'])->name('tournaments.join-code.toggle');
+   Route::post('/join-requests/{joinRequest}/approve', [TournamentController::class, 'approveJoinRequest'])->name('tournaments.join-requests.approve');
+   Route::post('/join-requests/{joinRequest}/reject', [TournamentController::class, 'rejectJoinRequest'])->name('tournaments.join-requests.reject');
    Route::post('/participants/guests/add', [TournamentController::class, 'addGuestParticipant'])->name('tournaments.participants.guests.add');
    Route::post('/participants/guests/create', [TournamentController::class, 'createGuestParticipant'])->name('tournaments.participants.guests.create');
    Route::delete('/participants/guests/remove', [TournamentController::class, 'removeGuestParticipant'])->name('tournaments.participants.guests.remove');

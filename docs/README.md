@@ -58,6 +58,7 @@ Testy automatyczne backendu: `php artisan test`. Mobile: `npm run test:game-scor
 | [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md) | Push mobile przy zaproszeniach (znajomi / turniej / quick game) | ✅ wdrożone |
 | [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) | Konfigurowalny format X01 (fazy 1–4 + presety ligi ✅) | ✅ core |
 | [`plan_cricket.md`](plan_cricket.md) | Cricket (standard scoring; trening + quick; bez turnieju) | ✅ |
+| [`plan_tournament_join_qr.md`](plan_tournament_join_qr.md) | Zgłoszenia do turnieju przez QR (admin Dołącz/Odrzuć) | 🔄 |
 
 ---
 

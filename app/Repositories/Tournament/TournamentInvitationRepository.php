@@ -162,6 +162,46 @@ class TournamentInvitationRepository
         ]);
     }
 
+    /**
+     * Admin zatwierdza zgłoszenie QR — uczestnik od razu ACCEPTED.
+     */
+    public function acceptByAdmin(int $tournamentId, int $userId, int $invitedBy): TournamentInvitationDomain
+    {
+        $existing = TournamentInvitation::where('tournament_id', $tournamentId)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($existing === null) {
+            $invitation = TournamentInvitation::create([
+                'tournament_id' => $tournamentId,
+                'user_id' => $userId,
+                'invited_by' => $invitedBy,
+                'status' => TournamentInvitationStatus::ACCEPTED,
+                'responded_at' => now(),
+            ]);
+
+            return TournamentInvitationDomain::fromEloquent(
+                $invitation->load(['user.player', 'tournament'])
+            );
+        }
+
+        if ($existing->status === TournamentInvitationStatus::ACCEPTED) {
+            return TournamentInvitationDomain::fromEloquent(
+                $existing->load(['user.player', 'tournament'])
+            );
+        }
+
+        $existing->update([
+            'invited_by' => $invitedBy,
+            'status' => TournamentInvitationStatus::ACCEPTED,
+            'responded_at' => now(),
+        ]);
+
+        return TournamentInvitationDomain::fromEloquent(
+            $existing->fresh(['user.player', 'tournament'])
+        );
+    }
+
     public function reject(int $invitationId, int $userId): void
     {
         $invitation = TournamentInvitation::findOrFail($invitationId);
