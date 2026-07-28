@@ -95,6 +95,7 @@ Route::prefix('tournaments/{tournament}')->group(function () {
    Route::delete('/admins/remove', [TournamentController::class, 'removeAdmin'])->name('tournaments.admins.remove');
    Route::get('/start', [TournamentController::class, 'start'])->name('tournaments.start');
    Route::post('/run', [TournamentController::class, 'runTournament'])->name('tournaments.run');
+   Route::get('/invitations/search', [TournamentController::class, 'searchInvitationUsers'])->name('tournaments.invitations.search');
    Route::post('/invitations/send', [TournamentController::class, 'sendInvitation'])->name('tournaments.invitations.send');
    Route::post('/invitations/bulk', [TournamentController::class, 'sendBulkInvitations'])->name('tournaments.invitations.bulk');
    Route::post('/invitations/{invitation}/cancel', [TournamentController::class, 'cancelInvitation'])->name('tournaments.invitations.cancel');

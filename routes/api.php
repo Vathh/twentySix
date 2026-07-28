@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FriendshipController;
 use App\Http\Controllers\Api\GameController;
+use App\Http\Controllers\Api\PlayerProfileController;
 use App\Http\Controllers\Api\PushTokenController;
 use App\Http\Controllers\Api\QuickGameController;
 use App\Http\Controllers\Api\QuickGameFfaController;
@@ -67,6 +68,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('users')->group(function () {
         Route::get('/search', [FriendshipController::class, 'searchUsers']);
+    });
+
+    Route::prefix('players')->group(function () {
+        Route::get('/{player}', [PlayerProfileController::class, 'show'])->whereNumber('player');
+        Route::get('/{player}/games', [PlayerProfileController::class, 'games'])->whereNumber('player');
     });
 
     Route::prefix('quick-game')->group(function () {

@@ -57,6 +57,8 @@
                     'minPlayers' => $minPlayers,
                     'canManage' => true,
                     'csrfToken' => csrf_token(),
+                    'inviteUrl' => route('tournaments.invitations.send', $tournament->id),
+                    'invitationPipeline' => $invitationPipelineLive ?? [],
                 ]))"
             @endif
         >
@@ -159,6 +161,8 @@
                                 'channel' => 'tournament.'.$tournament->id,
                                 'snapshotUrl' => route('tournaments.join-requests-live', $tournament->id),
                                 'csrfToken' => csrf_token(),
+                                'inviteUrl' => route('tournaments.invitations.send', $tournament->id),
+                                'invitationPipeline' => $invitationPipelineLive ?? [],
                                 'initialRequests' => $pendingJoinRequestsLive ?? [],
                                 'initialParticipants' => $participantsLive ?? [],
                                 'participantCount' => $participantCount,
@@ -271,31 +275,44 @@
                     @endif
 
                     {{-- Wyszukiwarka — zawsze widoczna (niezależnie od zakładek) --}}
-                    <div class="mb-2">
+                    <div
+                        class="mb-2"
+                        x-data="tournamentUserSearch(@js([
+                            'searchUrl' => route('tournaments.invitations.search', $tournament->id),
+                            'csrfToken' => csrf_token(),
+                        ]))"
+                    >
                         <h3 class="text-accent font-semibold mb-2">Wyszukaj użytkownika</h3>
                         <p class="text-text-secondary text-sm mb-3">Wpisz imię lub fragment nazwy gracza i wyślij zaproszenie.</p>
-                        <form action="{{ route('tournaments.start', $tournament->id) }}" method="GET" class="flex flex-wrap items-center gap-4">
-                            <input type="text" name="search" placeholder="Min. 2 znaki..."
-                                   value="{{ request('search') }}" class="input-field flex-1 min-w-[200px]">
-                            <button type="submit" class="btn btn-primary">Szukaj</button>
+                        <form @submit.prevent="search()" class="flex flex-wrap items-center gap-4">
+                            <input
+                                type="text"
+                                x-model="query"
+                                placeholder="Min. 2 znaki..."
+                                class="input-field flex-1 min-w-[200px]"
+                                autocomplete="off"
+                            >
+                            <button type="submit" class="btn btn-primary" :disabled="loading">
+                                <span x-text="loading ? 'Szukam…' : 'Szukaj'"></span>
+                            </button>
                         </form>
 
-                        @if(request('search') && $searchUsers->isEmpty())
-                            <p class="text-text-secondary mt-3 text-sm">Brak wyników.</p>
-                        @elseif($searchUsers->isNotEmpty())
-                            <div class="flex flex-wrap gap-2 mt-3">
-                                @foreach($searchUsers as $user)
-                                    <div class="flex items-center gap-2 bg-bg rounded-lg px-3 py-2">
-                                        <span class="text-text-secondary text-sm">{{ $user->player->name }}</span>
-                                        <form action="{{ route('tournaments.invitations.send', $tournament->id) }}" method="POST">
-                                            @csrf
-                                            <input type="hidden" name="user_id" value="{{ $user->id }}">
-                                            <button type="submit" class="btn-mini">Zaproś</button>
-                                        </form>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
+                        <p class="text-text-secondary mt-3 text-sm" x-show="searched && results.length === 0" x-cloak>
+                            Brak wyników.
+                        </p>
+                        <div class="flex flex-wrap gap-2 mt-3" x-show="results.length > 0" x-cloak>
+                            <template x-for="user in results" :key="user.id">
+                                <div class="flex items-center gap-2 bg-bg rounded-lg px-3 py-2">
+                                    <span class="text-text-secondary text-sm" x-text="user.name"></span>
+                                    <button
+                                        type="button"
+                                        class="btn-mini"
+                                        :disabled="$store.tournamentStartLive.inviteBusyKey === ('search-' + user.id)"
+                                        @click="invite(user)"
+                                    >Zaproś</button>
+                                </div>
+                            </template>
+                        </div>
                     </div>
 
                     {{-- Goście bez konta — zawsze widoczne --}}
@@ -318,46 +335,51 @@
                     </div>
 
                     {{-- Oczekujące zaproszenia --}}
-                    @if($invitationPipeline->isNotEmpty())
-                        <div class="mt-6">
-                            <h3 class="text-accent font-semibold mb-2">Zaproszenia w toku</h3>
-                            <div class="overflow-x-auto rounded-lg border border-border">
-                                <table class="w-full text-text-secondary text-sm">
-                                    <thead class="bg-bg">
-                                        <tr class="text-accent">
-                                            <th class="text-left py-2 px-3">Zawodnik</th>
-                                            <th class="text-left py-2 px-3">Status</th>
-                                            <th class="text-left py-2 px-3">Akcja</th>
+                    <div class="mt-6" x-show="$store.tournamentStartLive.invitationPipeline.length > 0" x-cloak>
+                        <h3 class="text-accent font-semibold mb-2">Zaproszenia w toku</h3>
+                        <div class="overflow-x-auto rounded-lg border border-border">
+                            <table class="w-full text-text-secondary text-sm">
+                                <thead class="bg-bg">
+                                    <tr class="text-accent">
+                                        <th class="text-left py-2 px-3">Zawodnik</th>
+                                        <th class="text-left py-2 px-3">Status</th>
+                                        <th class="text-left py-2 px-3">Akcja</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template
+                                        x-for="inv in $store.tournamentStartLive.invitationPipeline"
+                                        :key="inv.id"
+                                    >
+                                        <tr class="border-t border-border/50">
+                                            <td class="py-2 px-3" x-text="inv.name"></td>
+                                            <td class="py-2 px-3" x-text="inv.statusLabel"></td>
+                                            <td class="py-2 px-3">
+                                                <button
+                                                    type="button"
+                                                    class="btn-mini"
+                                                    x-show="inv.isPending"
+                                                    :disabled="$store.tournamentStartLive.inviteBusyKey === ('cancel-' + inv.id)"
+                                                    @click="$store.tournamentStartLive.cancelInvitation(inv)"
+                                                >Anuluj</button>
+                                                <button
+                                                    type="button"
+                                                    class="btn-mini"
+                                                    x-show="inv.canReinvite"
+                                                    :disabled="$store.tournamentStartLive.inviteBusyKey === ('reinvite-' + inv.id)"
+                                                    @click="$store.tournamentStartLive.reinvite(inv)"
+                                                >Zaproś ponownie</button>
+                                                <span
+                                                    class="text-accent/60"
+                                                    x-show="!inv.isPending && !inv.canReinvite"
+                                                >—</span>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($invitationPipeline as $invitation)
-                                            <tr class="border-t border-border/50">
-                                                <td class="py-2 px-3">{{ $invitation->userPlayer?->name ?? '—' }}</td>
-                                                <td class="py-2 px-3">{{ $invitation->status->label() }}</td>
-                                                <td class="py-2 px-3">
-                                                    @if($invitation->status === \App\Enums\TournamentInvitationStatus::PENDING)
-                                                        <form action="{{ route('tournaments.invitations.cancel', [$tournament->id, $invitation->id]) }}" method="POST" class="inline">
-                                                            @csrf
-                                                            <button type="submit" class="btn-mini">Anuluj</button>
-                                                        </form>
-                                                    @elseif($invitation->status->canReinvite())
-                                                        <form action="{{ route('tournaments.invitations.send', $tournament->id) }}" method="POST" class="inline">
-                                                            @csrf
-                                                            <input type="hidden" name="user_id" value="{{ $invitation->userId }}">
-                                                            <button type="submit" class="btn-mini">Zaproś ponownie</button>
-                                                        </form>
-                                                    @else
-                                                        <span class="text-accent/60">—</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+                                    </template>
+                                </tbody>
+                            </table>
                         </div>
-                    @endif
+                    </div>
                 </div>
 
                 @if($tournament->season)

@@ -210,4 +210,27 @@ class TournamentJoinRequestTest extends TestCase
             ->assertJsonCount(1, 'requests')
             ->assertJsonPath('requests.0.playerName', 'Player One');
     }
+
+    public function test_invitation_search_and_send_via_json(): void
+    {
+        $this->actingAs($this->admin)
+            ->getJson(route('tournaments.invitations.search', $this->tournament->id).'?q=Player')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $this->player->id, 'name' => 'Player One']);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('tournaments.invitations.send', $this->tournament->id), [
+                'user_id' => $this->player->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Zaproszenie wysłane')
+            ->assertJsonCount(1, 'invitationPipeline')
+            ->assertJsonPath('invitationPipeline.0.name', 'Player One');
+
+        $this->assertDatabaseHas('tournament_invitations', [
+            'tournament_id' => $this->tournament->id,
+            'user_id' => $this->player->id,
+            'status' => TournamentInvitationStatus::PENDING->value,
+        ]);
+    }
 }

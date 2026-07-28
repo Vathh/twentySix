@@ -200,14 +200,6 @@ class TournamentController extends Controller
                 ->values()
             : collect();
 
-        $searchUsers = collect();
-        $search = $request->input('search');
-
-        if ($search !== null && trim($search) !== '') {
-            $excludeIds = $this->invitationService->getActiveInvitedUserIds($tournamentId);
-            $searchUsers = $this->userService->searchForTournamentInvitations($search, $excludeIds);
-        }
-
         $tournamentGuests = $this->playerService->getTournamentGuestParticipants($tournamentId);
         $tournamentGuestIds = $tournamentGuests->pluck('id');
 
@@ -288,8 +280,8 @@ class TournamentController extends Controller
         return view('tournaments.start', [
             'tournament' => $tournament,
             'invitationPipeline' => $invitationPipeline,
+            'invitationPipelineLive' => $this->buildInvitationPipelineLive($tournamentId),
             'regulars' => $regulars,
-            'searchUsers' => $searchUsers,
             'participants' => $participants,
             'participantsLive' => $participants->map(fn ($p) => [
                 'kind' => $p['kind'],
@@ -330,7 +322,33 @@ class TournamentController extends Controller
         ]);
     }
 
-    public function sendInvitation(Request $request, int $tournamentId): RedirectResponse
+    public function searchInvitationUsers(Request $request, int $tournamentId): JsonResponse
+    {
+        $this->loadAndAuthorize($tournamentId);
+
+        $search = trim((string) $request->input('q', $request->input('search', '')));
+
+        try {
+            $excludeIds = $this->invitationService->getActiveInvitedUserIds($tournamentId);
+            $users = $this->userService->searchForTournamentInvitations($search, $excludeIds);
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?: 'Nieprawidłowe wyszukiwanie.';
+
+            return response()->json(['message' => $message, 'users' => []], 422);
+        }
+
+        return response()->json([
+            'users' => $users
+                ->map(fn ($user) => [
+                    'id' => $user->id,
+                    'name' => $user->player?->name ?? '—',
+                ])
+                ->values()
+                ->all(),
+        ]);
+    }
+
+    public function sendInvitation(Request $request, int $tournamentId): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($tournamentId);
 
@@ -345,7 +363,15 @@ class TournamentController extends Controller
                 (int) Auth::id(),
             );
         } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
             return back()->with('error', $e->getMessage());
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json($this->invitationActionPayload($tournamentId, 'Zaproszenie wysłane'));
         }
 
         return back()->with('success', 'Zaproszenie wysłane');
@@ -375,14 +401,22 @@ class TournamentController extends Controller
         return back()->with('success', $message);
     }
 
-    public function cancelInvitation(int $tournamentId, int $invitationId): RedirectResponse
+    public function cancelInvitation(Request $request, int $tournamentId, int $invitationId): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($tournamentId);
 
         try {
             $this->invitationService->cancel($tournamentId, $invitationId);
         } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
             return back()->with('error', $e->getMessage());
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json($this->invitationActionPayload($tournamentId, 'Zaproszenie anulowane'));
         }
 
         return back()->with('success', 'Zaproszenie anulowane');
@@ -701,6 +735,41 @@ class TournamentController extends Controller
             'participantCount' => count($participants),
             'minPlayers' => TournamentStartRules::MIN_PLAYERS,
         ];
+    }
+
+    /**
+     * @return array{message: string, invitationPipeline: list<array<string, mixed>>}
+     */
+    private function invitationActionPayload(int $tournamentId, string $message): array
+    {
+        return [
+            'message' => $message,
+            'invitationPipeline' => $this->buildInvitationPipelineLive($tournamentId),
+        ];
+    }
+
+    /**
+     * @return list<array{id: int, userId: int, name: string, status: string, statusLabel: string, isPending: bool, canReinvite: bool, cancelUrl: string}>
+     */
+    private function buildInvitationPipelineLive(int $tournamentId): array
+    {
+        $invitations = $this->invitationService->getForTournament($tournamentId);
+
+        return $invitations
+            ->filter(fn ($inv) => $inv->status !== TournamentInvitationStatus::ACCEPTED)
+            ->sortBy(fn ($inv) => $inv->userPlayer?->name ?? '')
+            ->values()
+            ->map(fn ($inv) => [
+                'id' => $inv->id,
+                'userId' => $inv->userId,
+                'name' => $inv->userPlayer?->name ?? '—',
+                'status' => $inv->status->value,
+                'statusLabel' => $inv->status->label(),
+                'isPending' => $inv->status === TournamentInvitationStatus::PENDING,
+                'canReinvite' => $inv->status->canReinvite(),
+                'cancelUrl' => route('tournaments.invitations.cancel', [$tournamentId, $inv->id], false),
+            ])
+            ->all();
     }
 
     /**
