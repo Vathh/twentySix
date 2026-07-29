@@ -37,7 +37,9 @@
                  style="display: none;">
                 <div class="friends-panel-header">
                     <div class="flex items-center gap-2.5 min-w-0">
-                        <span class="brand-mark !w-8 !h-8 text-xs" aria-hidden="true">26</span>
+                        <span class="brand-logotyp !h-9 !w-[3.6rem]" aria-hidden="true">
+                            <img src="{{ asset('images/logotyp.svg') }}" alt="" width="58" height="36">
+                        </span>
                         <h2 class="text-lg font-bold text-text truncate">Znajomi</h2>
                     </div>
                     <button type="button" @click="friendsOpen = false" class="text-text-muted hover:text-accent transition p-1 text-lg leading-none" aria-label="Zamknij">✕</button>

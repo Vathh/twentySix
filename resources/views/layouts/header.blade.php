@@ -1,16 +1,19 @@
 <header class="site-header" x-data="{ navOpen: false }">
     <div class="container mx-auto flex flex-wrap items-center justify-between gap-3 px-4">
         <a href="{{ route('pages.home') }}" class="flex items-center gap-2 sm:gap-3 no-underline hover:opacity-95 transition min-w-0">
-            <span class="brand-mark" aria-hidden="true">26</span>
-            <h1 class="text-lg sm:text-2xl font-bold text-text mb-0 truncate">
-                twentySix
-                @auth
-                    <span class="text-text-muted pl-2 sm:pl-4 font-normal">/</span>
-                    <span class="text-accent pl-2 sm:pl-4 text-base sm:text-lg font-semibold truncate max-w-[9rem] sm:max-w-[14rem] inline-block align-bottom">
-                        {{ Auth::user()->player?->name ?? 'Użytkownik' }}
-                    </span>
-                @endauth
-            </h1>
+            <img
+                class="brand-logo"
+                src="{{ asset('images/logo.svg') }}"
+                alt="twentySix"
+                width="209"
+                height="44"
+            >
+            @auth
+                <span class="text-text-muted font-normal text-lg sm:text-2xl shrink-0" aria-hidden="true">/</span>
+                <span class="text-accent text-base sm:text-lg font-semibold truncate max-w-[9rem] sm:max-w-[14rem]">
+                    {{ Auth::user()->player?->name ?? 'Użytkownik' }}
+                </span>
+            @endauth
         </a>
 
         <button type="button"
