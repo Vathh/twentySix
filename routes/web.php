@@ -8,6 +8,7 @@ use App\Http\Controllers\GameViewController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\SeasonController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TournamentJoinLandingController;
 use Illuminate\Support\Facades\Route;
@@ -49,7 +50,15 @@ Route::get('/login', [PagesController::class, 'showLoginPage'])->name('pages.log
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+Route::middleware('auth')->prefix('settings')->name('settings.')->group(function () {
+    Route::get('/', [SettingsController::class, 'index'])->name('index');
+    Route::get('/password', [SettingsController::class, 'editPassword'])->name('password.edit');
+    Route::put('/password', [SettingsController::class, 'updatePassword'])->name('password.update');
+});
+
 Route::get('/players/search', [PlayerController::class, 'search'])->name('players.search');
+Route::get('/players/{player}/edit', [PlayerController::class, 'edit'])->middleware('auth')->name('players.edit');
+Route::put('/players/{player}', [PlayerController::class, 'update'])->middleware('auth')->name('players.update');
 Route::get('/players/{player}', [PlayerController::class, 'show'])->name('players.show');
 Route::get('/players/{player}/games', [PlayerController::class, 'gameHistory'])->name('players.games');
 Route::post('/players/{player}/add-friend', [PlayerController::class, 'addFriend'])->name('players.add-friend')->middleware('auth');

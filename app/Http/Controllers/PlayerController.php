@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Player\Player;
 use App\Services\Friends\FriendshipService;
 use App\Services\Player\PlayerGameHistoryService;
+use App\Services\Player\PlayerProfileService;
 use App\Services\Player\PlayerStatsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,7 @@ class PlayerController extends Controller
         private PlayerStatsService $playerStatsService,
         private PlayerGameHistoryService $playerGameHistoryService,
         private FriendshipService $friendshipService,
+        private PlayerProfileService $playerProfileService,
     ) {
     }
 
@@ -55,9 +57,11 @@ class PlayerController extends Controller
         $canInviteFriend = false;
         $pendingSentInvitation = null;
         $pendingReceivedInvitation = null;
+        $isOwnProfile = false;
 
         if (Auth::check()) {
             $viewerPlayer = Auth::user()->player;
+            $isOwnProfile = $viewerPlayer !== null && (int) $viewerPlayer->id === (int) $player->id;
             if ($viewerPlayer && $player->user_id) {
                 $viewerUserId = (int) Auth::id();
                 $profileUserId = (int) $player->user_id;
@@ -71,7 +75,7 @@ class PlayerController extends Controller
                     $viewerUserId,
                 );
                 $canInviteFriend = ! $isFriend
-                    && $viewerPlayer->id !== $player->id
+                    && ! $isOwnProfile
                     && $pendingSentInvitation === null
                     && $pendingReceivedInvitation === null;
             }
@@ -83,6 +87,7 @@ class PlayerController extends Controller
             'player' => $player,
             'quickStats' => $quickStats,
             'tournamentStats' => $tournamentStats,
+            'isOwnProfile' => $isOwnProfile,
             'isFriend' => $isFriend,
             'canInviteFriend' => $canInviteFriend,
             'pendingSentInvitation' => $pendingSentInvitation,
@@ -90,6 +95,36 @@ class PlayerController extends Controller
             'gameHistoryItems' => $historyFirstPage['items'],
             'gameHistoryHasMore' => $historyFirstPage['has_more'],
         ]);
+    }
+
+    public function edit(Player $player): View
+    {
+        $this->assertOwnsPlayer($player);
+
+        return view('players.edit', [
+            'player' => $player,
+        ]);
+    }
+
+    public function update(Request $request, Player $player): RedirectResponse
+    {
+        $this->playerProfileService->updateOwnProfile($player, Auth::user(), $request->all());
+
+        return redirect()
+            ->route('players.show', $player)
+            ->with('success', 'Profil został zaktualizowany.');
+    }
+
+    private function assertOwnsPlayer(Player $player): void
+    {
+        $viewerPlayer = Auth::user()?->player;
+        if ($viewerPlayer === null || (int) $viewerPlayer->id !== (int) $player->id) {
+            abort(403, 'Możesz edytować tylko swój profil.');
+        }
+
+        if (! $player->user_id) {
+            abort(404, 'Profil dostępny tylko dla graczy zarejestrowanych.');
+        }
     }
 
     public function gameHistory(Request $request, Player $player): JsonResponse

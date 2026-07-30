@@ -8,12 +8,6 @@
 
         <h1 class="page-title">Administratorzy turnieju: {{ $tournament->name }}</h1>
 
-        @if(session('success'))
-            <div class="mb-4 alert-success">{{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="mb-4 alert-danger">{{ session('error') }}</div>
-        @endif
         @if($errors->any())
             <div class="mb-4 alert-danger">{{ $errors->first() }}</div>
         @endif

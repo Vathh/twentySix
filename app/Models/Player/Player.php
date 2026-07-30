@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Player extends Model
 {
-    protected $fillable = ['name', 'user_id', 'league_id', 'season_id'];
+    protected $fillable = ['name', 'description', 'user_id', 'league_id', 'season_id'];
 
     public function user(): BelongsTo
     {

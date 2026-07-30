@@ -18,6 +18,15 @@ Słowo `match` jest słowem kluczowym w PHP (`match ($x) { ... }`). Unikamy go w
 - `GameLegDTO` zamiast `MatchLegDTO`
 - Tabela w bazie: `game_legs` zamiast `match_legs`
 
+## Web — komunikaty flash (toast)
+
+Flash z sesji (`session('success')`, `session('error')`) wyświetlamy **tylko** jako toast w **prawym górnym rogu** — komponent `resources/views/components/notifications.blade.php` (+ `alert.blade.php`), dołączany w `layouts/app.blade.php`.
+
+### Zasady
+- ✅ Po akcji: `->with('success', '…')` / `->with('error', '…')` — toast pojawi się sam
+- ❌ **Nie** dodawaj w widokach banerów `@if(session('success'))` / `@if(session('error'))` na środku strony (duplikat toasta)
+- ✅ Błędy **walidacji formularza** (`<x-errors/>`, `$errors`) zostają **przy formularzu** — to nie są flash toasty
+
 ## Architektura
 
 ### Domain-Repository-Service Pattern

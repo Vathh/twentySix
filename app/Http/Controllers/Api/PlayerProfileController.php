@@ -35,4 +35,26 @@ class PlayerProfileController
             $this->playerProfileService->buildGameHistoryPage($player, $page),
         );
     }
+
+    /**
+     * PUT /api/players/{player}
+     */
+    public function update(Request $request, Player $player): JsonResponse
+    {
+        $updated = $this->playerProfileService->updateOwnProfile(
+            $player,
+            $request->user(),
+            $request->all(),
+        );
+
+        return response()->json([
+            'message' => 'Profil został zaktualizowany.',
+            'player' => [
+                'id' => $updated->id,
+                'userId' => (int) $updated->user_id,
+                'name' => $updated->name,
+                'description' => $updated->description,
+            ],
+        ]);
+    }
 }

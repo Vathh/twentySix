@@ -5,6 +5,8 @@ namespace App\Services\Player;
 use App\Models\Player\Player;
 use App\Models\Users\User;
 use App\Services\Friends\FriendshipService;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class PlayerProfileService
 {
@@ -19,7 +21,7 @@ class PlayerProfileService
      * Pełny payload profilu dla API mobile (odpowiednik web players.show).
      *
      * @return array{
-     *     player: array{id: int, userId: int, name: string, registeredAt: string|null},
+     *     player: array{id: int, userId: int, name: string, description: string|null, registeredAt: string|null},
      *     friendship: array{
      *         isSelf: bool,
      *         isFriend: bool,
@@ -48,6 +50,7 @@ class PlayerProfileService
                 'id' => $player->id,
                 'userId' => (int) $player->user_id,
                 'name' => $player->name,
+                'description' => $player->description,
                 'registeredAt' => $player->user?->created_at?->format('d.m.Y'),
             ],
             'friendship' => $this->buildFriendship($player, $viewer),
@@ -58,6 +61,41 @@ class PlayerProfileService
                 'hasMore' => (bool) $historyFirstPage['has_more'],
             ],
         ];
+    }
+
+    /**
+     * @param  array{description?: string|null}  $data
+     *
+     * @throws ValidationException
+     */
+    public function updateOwnProfile(Player $player, User $actor, array $data): Player
+    {
+        $actorPlayer = $actor->player;
+        if ($actorPlayer === null || (int) $actorPlayer->id !== (int) $player->id) {
+            abort(403, 'Możesz edytować tylko swój profil.');
+        }
+
+        if (! $player->user_id) {
+            abort(404, 'Profil dostępny tylko dla graczy zarejestrowanych.');
+        }
+
+        $validated = Validator::make($data, [
+            'description' => ['nullable', 'string', 'max:1000'],
+        ])->validate();
+
+        $description = array_key_exists('description', $validated)
+            ? trim((string) $validated['description'])
+            : null;
+
+        if ($description === '') {
+            $description = null;
+        }
+
+        $player->update([
+            'description' => $description,
+        ]);
+
+        return $player->fresh();
     }
 
     /**

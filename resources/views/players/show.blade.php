@@ -64,7 +64,9 @@ document.addEventListener('alpine:init', () => {
                     @endif
                 </div>
                 @auth
-                    @if($canInviteFriend)
+                    @if($isOwnProfile)
+                        <a href="{{ route('players.edit', $player) }}" class="btn btn-mini">Edytuj profil</a>
+                    @elseif($canInviteFriend)
                         <form action="{{ route('players.add-friend', $player) }}" method="POST" class="inline">
                             @csrf
                             <button type="submit" class="btn btn-mini">Dodaj do znajomych</button>
@@ -88,14 +90,18 @@ document.addEventListener('alpine:init', () => {
                     @endif
                 @endauth
             </div>
-        </div>
 
-        @if(session('success'))
-            <div class="mb-4 p-3 alert-success">{{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="mb-4 alert-danger">{{ session('error') }}</div>
-        @endif
+            @if(filled($player->description))
+                <div class="mt-4 pt-4 border-t border-border">
+                    <p class="text-sm font-semibold text-accent mb-2">Opis</p>
+                    <p class="text-text-secondary whitespace-pre-wrap break-words">{{ $player->description }}</p>
+                </div>
+            @elseif($isOwnProfile)
+                <div class="mt-4 pt-4 border-t border-border">
+                    <p class="text-text-muted text-sm">Nie masz jeszcze opisu. <a href="{{ route('players.edit', $player) }}" class="text-accent hover:underline">Dodaj go w edycji profilu</a>.</p>
+                </div>
+            @endif
+        </div>
 
         {{-- Zakładki --}}
         <div class="flex gap-2 mb-6 border-b border-border pb-2 overflow-x-auto">

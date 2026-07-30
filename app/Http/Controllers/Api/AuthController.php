@@ -6,6 +6,7 @@ use App\Enums\TournamentStatus;
 use App\Models\Tournament\LoginCode;
 use App\Models\Users\User;
 use App\Services\Auth\MobileAppTokenService;
+use App\Services\Auth\PasswordChangeService;
 use App\Services\Auth\UserRegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class AuthController
     public function __construct(
         private UserRegistrationService $registrationService,
         private MobileAppTokenService $mobileAppTokenService,
+        private PasswordChangeService $passwordChangeService,
     ) {
     }
 
@@ -153,6 +155,18 @@ class AuthController
         return response()->json([
             'token' => $payload['token'],
             'user' => $payload['user'],
+        ]);
+    }
+
+    /**
+     * Zmiana hasła konta gracza (aktualne + nowe + potwierdzenie).
+     */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $this->passwordChangeService->change($request->user(), $request->all());
+
+        return response()->json([
+            'message' => 'Hasło zostało zmienione.',
         ]);
     }
 }

@@ -49,10 +49,6 @@
                     </dl>
                 </div>
 
-                @if(session('success'))
-                    <div class="mt-4 alert-success">{{ session('success') }}</div>
-                @endif
-
                 @if($canManageTournament && $tournament->isStarted() && $loginCodes->isNotEmpty())
                     @include('tournaments.partials.login-codes', ['loginCodes' => $loginCodes])
                 @endif

@@ -26,6 +26,7 @@ Route::post('/email/verification-notification', [AuthController::class, 'resendV
 Route::middleware('auth:sanctum')->prefix('account')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/session/refresh', [AuthController::class, 'refreshSession']);
+    Route::put('/password', [AuthController::class, 'changePassword']);
 });
 
 // Wynik quick game online finalizuje silnik FFA; ten endpoint tylko dla achievementów po meczu.
@@ -75,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('players')->group(function () {
         Route::get('/{player}', [PlayerProfileController::class, 'show'])->whereNumber('player');
+        Route::put('/{player}', [PlayerProfileController::class, 'update'])->whereNumber('player');
         Route::get('/{player}/games', [PlayerProfileController::class, 'games'])->whereNumber('player');
     });
 

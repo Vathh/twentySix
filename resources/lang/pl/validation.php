@@ -127,6 +127,9 @@ return [
     'attributes' => [
         'email' => 'adres email',
         'password' => 'hasło',
+        'password_confirmation' => 'potwierdzenie hasła',
+        'current_password' => 'aktualne hasło',
+        'description' => 'opis',
         'name' => 'Nazwa użytkownika',
         'leagueName' => 'Nazwa ligi',
         'seasonName' => 'Nazwa sezonu',

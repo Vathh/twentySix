@@ -50,7 +50,7 @@ class PlayerProfileApiTest extends TestCase
             ->assertJsonPath('player.id', $this->profilePlayer->id)
             ->assertJsonPath('player.name', 'Anna Nowak')
             ->assertJsonStructure([
-                'player' => ['id', 'userId', 'name', 'registeredAt'],
+                'player' => ['id', 'userId', 'name', 'description', 'registeredAt'],
                 'friendship' => [
                     'isSelf',
                     'isFriend',
@@ -81,7 +81,8 @@ class PlayerProfileApiTest extends TestCase
                 'gameHistory' => ['items', 'hasMore'],
             ])
             ->assertJsonPath('friendship.isSelf', false)
-            ->assertJsonPath('friendship.canInvite', true);
+            ->assertJsonPath('friendship.canInvite', true)
+            ->assertJsonPath('player.description', null);
     }
 
     public function test_guest_player_without_user_returns_404(): void
@@ -104,5 +105,44 @@ class PlayerProfileApiTest extends TestCase
         $this->getJson('/api/players/'.$this->profilePlayer->id.'/games?page=1')
             ->assertOk()
             ->assertJsonStructure(['items', 'has_more']);
+    }
+
+    public function test_player_can_update_own_description(): void
+    {
+        Sanctum::actingAs($this->profileUser);
+
+        $this->putJson('/api/players/'.$this->profilePlayer->id, [
+            'description' => 'Lubię grać w X01.',
+        ])
+            ->assertOk()
+            ->assertJsonPath('player.description', 'Lubię grać w X01.');
+
+        $this->assertDatabaseHas('players', [
+            'id' => $this->profilePlayer->id,
+            'description' => 'Lubię grać w X01.',
+        ]);
+    }
+
+    public function test_player_cannot_update_someone_elses_description(): void
+    {
+        Sanctum::actingAs($this->viewer);
+
+        $this->putJson('/api/players/'.$this->profilePlayer->id, [
+            'description' => 'Hack',
+        ])->assertForbidden();
+
+        $this->assertDatabaseMissing('players', [
+            'id' => $this->profilePlayer->id,
+            'description' => 'Hack',
+        ]);
+    }
+
+    public function test_description_cannot_exceed_1000_characters(): void
+    {
+        Sanctum::actingAs($this->profileUser);
+
+        $this->putJson('/api/players/'.$this->profilePlayer->id, [
+            'description' => str_repeat('a', 1001),
+        ])->assertStatus(422);
     }
 }

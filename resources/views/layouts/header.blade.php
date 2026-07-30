@@ -25,6 +25,13 @@
             <span class="text-xl leading-none" x-text="navOpen ? '✕' : '☰'"></span>
         </button>
 
+        @php
+            $currentPlayer = request()->routeIs('players.show') ? request()->route('player') : null;
+            $isMyProfile = Auth::check()
+                && Auth::user()->player
+                && $currentPlayer
+                && (int) $currentPlayer->id === (int) Auth::user()->player->id;
+        @endphp
         <nav id="site-nav"
              class="w-full md:w-auto md:flex md:flex-wrap md:items-center md:gap-1"
              :class="navOpen ? 'flex flex-col gap-1 border-t border-border pt-3 mt-1' : 'hidden'">
@@ -33,16 +40,10 @@
             <a href='{{ route('leagues.index') }}' class="nav-btn {{ request()->routeIs('leagues.*') ? 'active' : '' }}" @click="navOpen = false">Ligi</a>
             <a href='{{ route('seasons.index') }}' class="nav-btn {{ request()->routeIs('seasons.*') ? 'active' : '' }}" @click="navOpen = false">Sezony</a>
             <a href='{{ route('tournaments.index') }}' class="nav-btn {{ request()->routeIs('tournaments.*') ? 'active' : '' }}" @click="navOpen = false">Turnieje</a>
-            <a href='{{ route('players.search') }}' class="nav-btn {{ request()->routeIs('players.*') ? 'active' : '' }}" @click="navOpen = false">Szukaj graczy</a>
+            <a href='{{ route('players.search') }}' class="nav-btn {{ request()->routeIs('players.*') && ! $isMyProfile ? 'active' : '' }}" @click="navOpen = false">Szukaj graczy</a>
 
             @auth
-                @if(Auth::user()->player)
-                    @php
-                        $currentPlayer = request()->routeIs('players.show') ? request()->route('player') : null;
-                        $isMyProfile = $currentPlayer && $currentPlayer->id === Auth::user()->player->id;
-                    @endphp
-                    <a href='{{ route('players.show', Auth::user()->player) }}' class="nav-btn {{ $isMyProfile ? 'active' : '' }}" @click="navOpen = false">Mój profil</a>
-                @endif
+                <a href='{{ route('settings.index') }}' class="nav-btn {{ request()->routeIs('settings.*') ? 'active' : '' }}" @click="navOpen = false">Ustawienia</a>
             @endauth
 
             @guest

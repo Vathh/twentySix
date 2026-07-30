@@ -65,6 +65,7 @@ Gdy użytkownik sam wdraża lub poprosi agenta:
 |-------|------|
 | **QR zgłoszenia do turnieju** | [`plan_tournament_join_qr.md`](plan_tournament_join_qr.md) — ✅ fazy 1–2 |
 | **Cricket** (trening + quick) | [`plan_cricket.md`](plan_cricket.md) — ✅ fazy 1–3 |
+| **Awatary graczy** | 📋 zaplanowane (jeszcze bez planu) — upload + wyświetlanie na profilu/listach; przy `Player`; storage `public` → później S3/CDN; MVP: limity + fallback inicjałów, potem crop |
 
 ### Format gry — pozostałe
 

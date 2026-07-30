@@ -33,13 +33,6 @@
             >&times;</button>
         </div>
 
-        @if(session('success'))
-            <div class="mb-4 p-3 alert-success">{{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="mb-4 alert-danger">{{ session('error') }}</div>
-        @endif
-
         @if(!$canManageParticipants)
             <div class="mb-6 p-4 rounded-lg bg-bg-elevated border border-accent text-text-secondary">
                 Turniej już wystartował — zaproszenia i zmiany uczestników są zablokowane.

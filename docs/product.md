@@ -435,6 +435,7 @@ Wspólne dla **quick game online**, **treningu** i (tam gdzie dotyczy) **turniej
 
 - Krykiet
 - Komunikator, odznaczenia, stream, premium
+- **Awatary graczy** — upload zdjęcia profilowego (web + mobile); przy `Player`; limity pliku, fallback inicjałów; crop / CDN później. Backlog: [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - Granularne uprawnienia współadmina
 - Quick game z dowolnym zalogowanym
 - Publiczny podgląd pojedynczych meczów
