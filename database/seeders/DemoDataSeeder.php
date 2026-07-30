@@ -155,7 +155,7 @@ class DemoDataSeeder extends Seeder
             'status' => TournamentStatus::CREATED,
         ]);
         $big->admins()->sync($seasonA->admins->pluck('id')->all());
-        $ok = $tournamentService->tryCreateGroupGames($big->id, $players->pluck('id')->all(), 8);
+        $ok = $tournamentService->tryCreateGroupGames($big->id, $players->pluck('id')->all(), 8, 16);
         if (! $ok) {
             throw new \RuntimeException('Nie udało się utworzyć faz grupowych turnieju 32-osobowego.');
         }
@@ -177,7 +177,7 @@ class DemoDataSeeder extends Seeder
         $small->admins()->sync($seasonA->admins->pluck('id')->all());
         // MVP: min. 3 graczy na grupę + liczba grup = potęga 2 → 6 graczy / 2 grupy.
         $sixIds = $players->take(6)->pluck('id')->all();
-        $tournamentService->tryCreateGroupGames($small->id, $sixIds, 2);
+        $tournamentService->tryCreateGroupGames($small->id, $sixIds, 2, 4);
 
         $seasonB = $this->createSeason(
             $league,
@@ -331,8 +331,8 @@ class DemoDataSeeder extends Seeder
                         type: GameType::GROUP,
                         player1Id: (int) $game->player1_id,
                         player2Id: (int) $game->player2_id,
-                        player1Score: $p1Win ? 3 : 1,
-                        player2Score: $p1Win ? 1 : 3,
+                        player1Score: $p1Win ? 2 : 0,
+                        player2Score: $p1Win ? 0 : 2,
                         winnerId: $winnerId,
                         tournamentId: $tournamentId,
                         groupNumber: $groupNumber,
@@ -403,8 +403,8 @@ class DemoDataSeeder extends Seeder
                         type: GameType::PLAYOFF,
                         player1Id: (int) $pg->player1_id,
                         player2Id: (int) $pg->player2_id,
-                        player1Score: 3,
-                        player2Score: 1,
+                        player1Score: 2,
+                        player2Score: 0,
                         winnerId: $winnerId,
                         tournamentId: $tournamentId,
                         groupNumber: 0,

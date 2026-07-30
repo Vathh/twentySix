@@ -21,7 +21,6 @@ use App\Services\Achievements\AchievementsService;
 use App\Services\Game\GameLegService;
 use App\Services\Game\GameLockService;
 use App\Services\GroupStanding\GroupStandingService;
-use App\Services\League\LeagueStatsService;
 use App\Services\Player\PlayerStatsService;
 use App\Services\PlayoffGame\PlayoffService;
 use App\Services\QuickGame\QuickGameService;
@@ -47,7 +46,6 @@ class GameService
         private TournamentFinishService $tournamentFinishService,
         private GameLegService      $gameLegService,
         private PlayerStatsService   $playerStatsService,
-        private LeagueStatsService   $leagueStatsService,
         private GameLockService     $gameLockService,
         private TournamentGroupMatrixLiveService $groupMatrixLiveService,
     )
@@ -133,7 +131,7 @@ class GameService
             DB::transaction(function () use ($dto) {
                 $this->assertGameIsFinished($dto->gameResultDTO);
                 $this->achievementsService->createMany($dto->achievementsDTOs);
-                $this->recalculatePlayerAndLeagueStats($dto->gameResultDTO);
+                $this->recalculatePlayerStats($dto->gameResultDTO);
             });
 
             return true;
@@ -268,7 +266,7 @@ class GameService
                     );
                 }
 
-                $this->recalculatePlayerAndLeagueStats($dto->gameResultDTO);
+                $this->recalculatePlayerStats($dto->gameResultDTO);
             });
 
             return true;
@@ -306,7 +304,7 @@ class GameService
                     );
                 }
 
-                $this->recalculatePlayerAndLeagueStats($dto->gameResultDTO);
+                $this->recalculatePlayerStats($dto->gameResultDTO);
 
                 $this->handlePlayoffStart($dto->gameResultDTO->tournamentId);
 
@@ -334,7 +332,7 @@ class GameService
         DB::transaction(function () use ($dto) {
             $this->groupStandingService->updateStandingsDetails($dto);
             $this->groupStandingService->updateGroupStandings($dto->tournamentId, $dto->groupNumber);
-            $this->recalculatePlayerAndLeagueStats($dto);
+            $this->recalculatePlayerStats($dto);
             $this->handlePlayoffStart($dto->tournamentId);
         });
 
@@ -376,7 +374,7 @@ class GameService
             }
 
             $this->playoffService->applyWinnerAdvancement($dto, $gameToUpdate);
-            $this->recalculatePlayerAndLeagueStats($dto);
+            $this->recalculatePlayerStats($dto);
 
             if (in_array($gameToUpdate->round, [GameStage::FINAL, GameStage::THIRD], true)) {
                 $this->tournamentFinishService->tryFinish($gameToUpdate->tournamentId);
@@ -434,20 +432,12 @@ class GameService
         }
     }
 
-    private function recalculatePlayerAndLeagueStats(GameResultDTO $dto): void
+    private function recalculatePlayerStats(GameResultDTO $dto): void
     {
         foreach ([$dto->player1Id, $dto->player2Id] as $playerId) {
             $player = $this->playerRepository->findById($playerId);
             if ($player !== null && $player->userId !== null) {
                 $this->playerStatsService->recalculateAndSave($player->id);
-            }
-        }
-
-        $tournamentId = $dto->tournamentId;
-        if ($tournamentId !== null) {
-            $leagueId = $this->tournamentRepository->getLeagueIdForTournament($tournamentId);
-            if ($leagueId !== null) {
-                $this->leagueStatsService->recalculateForLeague($leagueId);
             }
         }
     }

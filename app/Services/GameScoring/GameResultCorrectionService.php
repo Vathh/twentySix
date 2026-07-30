@@ -13,10 +13,8 @@ use App\Models\Game\Game;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\Player\PlayerRepository;
-use App\Repositories\Tournament\TournamentRepository;
 use App\Services\Game\GameService;
 use App\Services\GroupStanding\GroupStandingService;
-use App\Services\League\LeagueStatsService;
 use App\Services\PlayoffGame\PlayoffService;
 use App\Services\Player\PlayerStatsService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
@@ -37,8 +35,6 @@ class GameResultCorrectionService
         private PlayoffService $playoffService,
         private PlayerRepository $playerRepository,
         private PlayerStatsService $playerStatsService,
-        private LeagueStatsService $leagueStatsService,
-        private TournamentRepository $tournamentRepository,
         private TournamentResultService $tournamentResultService,
         private TournamentGroupMatrixLiveService $groupMatrixLiveService,
     ) {
@@ -116,7 +112,7 @@ class GameResultCorrectionService
                     $dto->gameResultDTO->tournamentId,
                     $dto->gameResultDTO->groupNumber,
                 );
-                $this->recalculatePlayerAndLeagueStats($dto);
+                $this->recalculatePlayerStats($dto);
             });
 
             $fresh = Game::query()->find($gameId);
@@ -184,7 +180,7 @@ class GameResultCorrectionService
                     $this->syncPodiumAfterPlayoffCorrection($game->round, $dto);
                 }
 
-                $this->recalculatePlayerAndLeagueStats(new UpdateGameDTO($dto, [], []));
+                $this->recalculatePlayerStats(new UpdateGameDTO($dto, [], []));
             });
 
             return;
@@ -267,21 +263,13 @@ class GameResultCorrectionService
         };
     }
 
-    private function recalculatePlayerAndLeagueStats(UpdateGameDTO $dto): void
+    private function recalculatePlayerStats(UpdateGameDTO $dto): void
     {
         try {
             foreach ([$dto->gameResultDTO->player1Id, $dto->gameResultDTO->player2Id] as $playerId) {
                 $player = $this->playerRepository->findById($playerId);
                 if ($player !== null && $player->userId !== null) {
                     $this->playerStatsService->recalculateAndSave($player->id);
-                }
-            }
-
-            $tournamentId = $dto->gameResultDTO->tournamentId;
-            if ($tournamentId !== null) {
-                $leagueId = $this->tournamentRepository->getLeagueIdForTournament($tournamentId);
-                if ($leagueId !== null) {
-                    $this->leagueStatsService->recalculateForLeague($leagueId);
                 }
             }
         } catch (Throwable) {

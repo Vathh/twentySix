@@ -7,7 +7,6 @@ use App\Enums\AssignableEntityType;
 use App\Models\League\League;
 use App\Models\Users\User;
 use App\Services\League\LeagueService;
-use App\Services\League\LeagueStatsService;
 use App\Services\Player\PlayerService;
 use App\Services\User\UserService;
 use App\Support\GameScoring\MatchFormat;
@@ -24,7 +23,6 @@ class LeagueController extends Controller
 {
     public function __construct(
         private LeagueService $leagueService,
-        private LeagueStatsService $leagueStatsService,
         private UserService $userService,
         private PlayerService $playerService
     ) {
@@ -72,12 +70,9 @@ class LeagueController extends Controller
             ->sortByDesc(fn($season) => $season->updatedAt)
             ->values();
 
-        $standings = $this->leagueStatsService->getTop40($league->id);
-
         return view('leagues.show', [
             'league' => $leagueDomain,
             'seasons' => $seasons,
-            'standings' => $standings,
         ]);
     }
 

@@ -3,11 +3,14 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FriendshipController;
 use App\Http\Controllers\Api\GameController;
+use App\Http\Controllers\Api\LeagueController;
 use App\Http\Controllers\Api\PlayerProfileController;
 use App\Http\Controllers\Api\PushTokenController;
 use App\Http\Controllers\Api\QuickGameController;
 use App\Http\Controllers\Api\QuickGameFfaController;
 use App\Http\Controllers\Api\QuickGameLobbyController;
+use App\Http\Controllers\Api\SeasonController;
+use App\Http\Controllers\Api\TournamentCatalogController;
 use App\Http\Controllers\Api\TournamentInvitationController;
 use App\Http\Controllers\Api\TournamentJoinController;
 use App\Http\Controllers\Api\GameScoring\GroupGameScoringController;
@@ -78,6 +81,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('quick-game')->group(function () {
         Route::post('/update', [QuickGameController::class, 'update']);
     });
+
+    Route::get('/leagues', [LeagueController::class, 'index']);
+    Route::get('/leagues/{league}', [LeagueController::class, 'show'])->whereNumber('league');
+    Route::get('/seasons', [SeasonController::class, 'index']);
+    Route::get('/seasons/{season}', [SeasonController::class, 'show'])->whereNumber('season');
+    Route::get('/seasons/{season}/standings', [SeasonController::class, 'standings'])->whereNumber('season');
+    Route::get('/tournaments', [TournamentCatalogController::class, 'index']);
+    Route::get('/tournaments/{tournament}', [TournamentCatalogController::class, 'show'])->whereNumber('tournament');
 
     Route::prefix('tournaments/invitations')->group(function () {
         Route::get('/received', [TournamentInvitationController::class, 'received']);
