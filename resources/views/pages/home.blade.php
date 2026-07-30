@@ -11,7 +11,19 @@
             <p class="text-base sm:text-lg mb-8 sm:mb-10 text-text-secondary max-w-md mx-auto">
                 Śledź rankingi i rozgrywki — wszystko w jednym miejscu.
             </p>
-            <a href="/tournaments" class="btn btn-primary">Zobacz turnieje</a>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center">
+                <a href="/tournaments" class="btn btn-primary">Zobacz turnieje</a>
+                @if(config('mobile.apk_download_url'))
+                    <a
+                        href="{{ config('mobile.apk_download_url') }}"
+                        class="btn btn-secondary"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Pobierz aplikację mobilną
+                    </a>
+                @endif
+            </div>
         </div>
     </div>
 

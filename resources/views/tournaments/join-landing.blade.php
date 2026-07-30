@@ -25,6 +25,19 @@
             Otwórz w aplikacji
         </a>
 
+        @if(config('mobile.apk_download_url'))
+            <div class="mb-3">
+                <a
+                    href="{{ config('mobile.apk_download_url') }}"
+                    class="btn btn-secondary inline-block"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Pobierz aplikację mobilną
+                </a>
+            </div>
+        @endif
+
         <p class="text-text-secondary text-xs mt-4">
             Jeśli przycisk nie działa: uruchom twentySix → wpisz kod <strong>{{ $code }}</strong> w „Dołącz do turnieju”.
         </p>
