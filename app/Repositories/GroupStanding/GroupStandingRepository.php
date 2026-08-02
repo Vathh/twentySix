@@ -120,6 +120,30 @@ class GroupStandingRepository
     }
 
     /**
+     * Uporządkowane (miejsce rosnąco) surowe modele standings grupy — do payloadu live/snapshot.
+     *
+     * @return Collection<int, GroupStanding>
+     */
+    public function getOrderedByPlaceForGroup(int $tournamentId, int $groupNumber): Collection
+    {
+        return GroupStanding::where('tournament_id', $tournamentId)
+            ->where('group_number', $groupNumber)
+            ->orderBy('place')
+            ->get();
+    }
+
+    /**
+     * Mapa player_id => place dla całego turnieju (wszystkie grupy).
+     *
+     * @return Collection<int, int>
+     */
+    public function getPlacesByPlayerId(int $tournamentId): Collection
+    {
+        return GroupStanding::where('tournament_id', $tournamentId)
+            ->pluck('place', 'player_id');
+    }
+
+    /**
      * @param array<int, int> $advancesByGroupNumber group_number => liczba awansujących
      * @return Collection<GroupStandingDomain>
      */

@@ -11,6 +11,7 @@ use App\Models\Tournament\TournamentJoinRequest;
 use App\Models\Users\User;
 use App\Repositories\Tournament\TournamentInvitationRepository;
 use App\Repositories\Tournament\TournamentJoinRequestRepository;
+use App\Repositories\Tournament\TournamentRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -21,6 +22,7 @@ class TournamentJoinRequestService
     public function __construct(
         private TournamentJoinRequestRepository $joinRequestRepository,
         private TournamentInvitationRepository $invitationRepository,
+        private TournamentRepository $tournamentRepository,
     ) {
     }
 
@@ -39,23 +41,16 @@ class TournamentJoinRequestService
 
         do {
             $code = strtoupper(Str::random(self::CODE_LENGTH));
-        } while (Tournament::where('join_code', $code)->exists());
+        } while ($this->tournamentRepository->joinCodeExists($code));
 
-        $tournament->join_code = $code;
-        $tournament->join_code_generated_at = now();
-        $tournament->join_code_enabled = true;
-        $tournament->save();
-
-        return $tournament->fresh();
+        return $this->tournamentRepository->setJoinCode($tournament, $code);
     }
 
     public function toggleJoinCode(Tournament $tournament, bool $enabled): Tournament
     {
         $this->assertNotStarted($tournament);
-        $tournament->join_code_enabled = $enabled;
-        $tournament->save();
 
-        return $tournament->fresh();
+        return $this->tournamentRepository->setJoinCodeEnabled($tournament, $enabled);
     }
 
     public function findByJoinCode(string $code): ?Tournament
@@ -65,9 +60,7 @@ class TournamentJoinRequestService
             return null;
         }
 
-        return Tournament::with(['season.league'])
-            ->where('join_code', $normalized)
-            ->first();
+        return $this->tournamentRepository->findByJoinCode($normalized);
     }
 
     /**
@@ -186,7 +179,7 @@ class TournamentJoinRequestService
 
     public function approve(int $tournamentId, int $requestId, int $adminId): void
     {
-        $tournament = Tournament::findOrFail($tournamentId);
+        $tournament = $this->tournamentRepository->findModel($tournamentId);
         $this->assertNotStarted($tournament);
 
         $request = $this->joinRequestRepository->findById($requestId);
@@ -204,7 +197,7 @@ class TournamentJoinRequestService
 
     public function reject(int $tournamentId, int $requestId, int $adminId): void
     {
-        $tournament = Tournament::findOrFail($tournamentId);
+        $tournament = $this->tournamentRepository->findModel($tournamentId);
         $this->assertNotStarted($tournament);
 
         $request = $this->joinRequestRepository->findById($requestId);

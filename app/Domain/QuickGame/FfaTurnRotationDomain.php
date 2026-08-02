@@ -1,11 +1,14 @@
 <?php
 
-namespace App\Support\QuickGameFfa;
+namespace App\Domain\QuickGame;
 
 /**
- * Rotacja tur FFA z pominięciem graczy, którzy świadomie opuścili mecz (status left).
+ * Rotacja tur/openera FFA z pominięciem graczy, którzy świadomie opuścili mecz (status left).
+ *
+ * Czyste reguły domenowe — bez Eloquent, bez HTTP. Używane zarówno do rotacji
+ * bieżącego gracza (current_player_index), jak i openera lega (leg_opener_index).
  */
-final class QuickGameFfaTurnRotation
+final class FfaTurnRotationDomain
 {
     /**
      * @param  array<int, int>  $playerIds

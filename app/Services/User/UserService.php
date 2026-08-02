@@ -2,7 +2,6 @@
 
 namespace App\Services\User;
 
-use App\Models\Users\User;
 use App\Repositories\User\UserRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
@@ -30,12 +29,7 @@ class UserService
 
         $relatedUsersIds = collect($relatedUsers)->pluck('id');
 
-        return User::whereHas('player', function ($query) use ($search) {
-            $query->where('name', 'LIKE', "%$search%");
-            })
-            ->with('player')
-            ->get()
-            ->sortBy('player.name')
+        return $this->userRepository->findByPlayerNameLike($search)
             ->reject(fn ($user) => $relatedUsersIds->contains($user->id));
     }
 
@@ -93,12 +87,7 @@ class UserService
             ]);
         }
 
-        return User::whereHas('player', function ($query) use ($search) {
-            $query->where('name', 'LIKE', "%{$search}%");
-        })
-            ->with('player')
-            ->get()
-            ->sortBy('player.name')
+        return $this->userRepository->findByPlayerNameLike($search)
             ->reject(fn ($user) => $excludeUserIds->contains($user->id))
             ->values();
     }

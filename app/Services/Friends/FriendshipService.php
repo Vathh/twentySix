@@ -70,15 +70,12 @@ class FriendshipService
      */
     public function sendInvitation(int $senderId, int $receiverId): FriendshipInvitationDomain
     {
-        // Sprawdź czy nie są już znajomymi
-        if ($this->friendshipRepository->areFriends($senderId, $receiverId)) {
-            throw new \RuntimeException('Użytkownicy są już znajomymi');
-        }
-
-        // Sprawdź czy nie ma już zaproszenia
-        if ($this->invitationRepository->hasPendingInvitation($senderId, $receiverId)) {
-            throw new \RuntimeException('Zaproszenie już zostało wysłane');
-        }
+        FriendshipInvitationDomain::assertCanSend(
+            senderId: $senderId,
+            receiverId: $receiverId,
+            areFriends: $this->friendshipRepository->areFriends($senderId, $receiverId),
+            hasPendingInvitation: $this->invitationRepository->hasPendingInvitation($senderId, $receiverId),
+        );
 
         $invitation = $this->invitationRepository->create($senderId, $receiverId);
 

@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -27,7 +28,10 @@ class QuickGameFfaStateUpdated implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
+            // Uczestnicy (mobile) — prywatny kanał z auth.
             new PrivateChannel('quick-game-lobby.'.$this->lobbyId),
+            // Publiczny podgląd live na webie (jak H2H group-game.*).
+            new Channel('quick-game-ffa-lobby.'.$this->lobbyId),
         ];
     }
 

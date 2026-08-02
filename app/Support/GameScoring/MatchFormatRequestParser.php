@@ -2,6 +2,8 @@
 
 namespace App\Support\GameScoring;
 
+use App\Domain\GameScoring\MatchFormat;
+
 final class MatchFormatRequestParser
 {
     /**

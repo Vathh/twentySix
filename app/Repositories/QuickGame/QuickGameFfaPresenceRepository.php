@@ -49,6 +49,15 @@ class QuickGameFfaPresenceRepository
             ->first();
     }
 
+    public function hasLeftStatus(int $ffaSessionId, int $playerId): bool
+    {
+        return QuickGameFfaPresence::query()
+            ->where('ffa_session_id', $ffaSessionId)
+            ->where('player_id', $playerId)
+            ->where('status', QuickGameFfaPresence::STATUS_LEFT)
+            ->exists();
+    }
+
     public function save(QuickGameFfaPresence $presence): void
     {
         $presence->save();

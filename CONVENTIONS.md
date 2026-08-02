@@ -29,24 +29,48 @@ Flash z sesji (`session('success')`, `session('error')`) wyświetlamy **tylko** 
 
 ## Architektura
 
-### Domain-Repository-Service Pattern
-Projekt ścisłe przestrzega wzorca Domain-Repository-Service:
-- **Domain**: Logika biznesowa, encje domenowe
-- **Repository**: Dostęp do danych, operacje na bazie
-- **Service**: Orkiestracja, koordynacja między warstwami
+### Warstwy (target: Domain B)
+
+Ścisły przepływ zależności:
+
+```text
+Controller → Service → Repository → Eloquent/DB
+                ↘ Domain (reguły biznesowe)
+Support = wyłącznie helpers techniczne (HTTP/WS mapping, serializacja, I/O), nie reguły gry.
+```
+
+| Warstwa | Odpowiedzialność |
+|---------|------------------|
+| **Controller** | HTTP: walidacja requestu, auth gate, odpowiedź. **Bez** Repository i bez Eloquent query (poza route model binding / `Auth::user()`). |
+| **Service** | Orkiestracja use-case’ów: woła Domain + Repository, broadcast, transakcje. |
+| **Domain** | **Logika biznesowa** i invarianty (reguły scoringu, turnieju, auth policy…). Preferuj bogate Domain nad anemicznymi mapperami. |
+| **Repository** | **Jedyny** dostęp do bazy (query/persist). Service **nie** robi ad-hoc `Model::query()` / `::findOrFail` / `::create`, gdy istnieje lub powinno istnieć Repo. |
+| **Support** | Techniczne helpers (budowa payloadu WS/HTTP, kontrakty serializacji, adaptery). **Nie** umieszczaj tu nowych reguł biznesowych — migruj je do Domain (strangler). |
+| **Models** | Eloquent ORM — persistence, nie miejsce na reguły domenowe. |
+
+### Zakazy
+
+- ❌ Controller → Repository
+- ❌ Controller → ciężkie Eloquent query (poza bindingiem)
+- ❌ Nowa reguła gry / turnieju tylko w `Support/` bez Domain
+- ❌ Duplikowanie orkiestracji web vs API — wspólny Service
 
 ### Struktura katalogów
 ```
 app/
-├── Domain/          # Encje domenowe
-├── Repositories/    # Warstwa dostępu do danych
-├── Services/        # Warstwa logiki biznesowej
-├── DTO/            # Data Transfer Objects
-├── Models/         # Eloquent models
+├── Domain/          # Logika biznesowa (target B)
+├── Repositories/    # Dostęp do danych
+├── Services/        # Orkiestracja
+├── Support/         # Helpers techniczne (bez nowych reguł biznesowych)
+├── DTO/             # Data Transfer Objects
+├── Models/          # Eloquent
 └── Http/
-    └── Controllers/ # Kontrolery API i web
+    └── Controllers/ # Cienkie kontrolery
 ```
 
+### Migracja (ewolucja)
+
+Istniejący kod w `Support/GameScoring`, FFA itd. przenosimy do Domain **stopniowo** (strangler + testy), bez big-bang rewrite. Do czasu przeniesienia Support może trzymać legacy reguły — nowe zmiany idą już do Domain.
 ## Użytkownik a gracz (Player)
 
 - **Każdy zarejestrowany użytkownik (`User`) ma dokładnie jeden powiązany rekord `Player`** (`players.user_id` jest unikalne). Nie zakładamy istnienia konta bez gracza.

@@ -2,6 +2,9 @@
 
 namespace App\Support\GameScoring;
 
+use App\Domain\GameScoring\MatchFormat;
+use App\Domain\GameScoring\VisitRecorder;
+
 /**
  * Wspólny kontrakt pól odpowiedzi scoringu (turniej H2H + quick FFA).
  * Format meczu: wyłącznie `meta.matchFormat` (oraz `game|session.matchFormat` od builderów).

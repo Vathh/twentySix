@@ -5,9 +5,27 @@ namespace App\Repositories\Tournament;
 use App\Domain\Tournament\TournamentResultDomain;
 use App\Enums\GameStage;
 use App\Models\Tournament\TournamentResult;
+use Illuminate\Support\Collection;
 
 class TournamentResultRepository
 {
+    /**
+     * Surowe modele wyników turnieju (do przeliczeń miejsc końcowych).
+     *
+     * @return Collection<int, TournamentResult>
+     */
+    public function getAllForTournament(int $tournamentId): Collection
+    {
+        return TournamentResult::where('tournament_id', $tournamentId)->get();
+    }
+
+    public function updatePlace(int $tournamentId, int $playerId, int $place): void
+    {
+        TournamentResult::where('tournament_id', $tournamentId)
+            ->where('player_id', $playerId)
+            ->update(['place' => $place]);
+    }
+
     public function createMany(array $tournamentResults): void
     {
         $mapped = array_map(fn (TournamentResultDomain $result) => [

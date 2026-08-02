@@ -13,7 +13,10 @@ use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\QuickGame\QuickGame;
 use App\Repositories\Game\GameLegPlayerStatRepository;
 use App\Repositories\Game\GameLegRepository;
+use App\Repositories\Game\GameRepository;
 use App\Repositories\Game\GameVisitRepository;
+use App\Repositories\PlayoffGame\PlayoffGameRepository;
+use App\Repositories\QuickGame\QuickGameRepository;
 use App\Services\Game\GameService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Support\GameScoring\GameScoringContext;
@@ -27,6 +30,9 @@ use Illuminate\Support\Facades\DB;
 class GameScoringService
 {
     public function __construct(
+        private GameRepository $gameRepository,
+        private PlayoffGameRepository $playoffGameRepository,
+        private QuickGameRepository $quickGameRepository,
         private GameLegRepository $gameLegRepository,
         private GameVisitRepository $gameVisitRepository,
         private GameLegPlayerStatRepository $gameLegPlayerStatRepository,
@@ -38,7 +44,7 @@ class GameScoringService
 
     public function resolveGroupGame(int $gameId): array
     {
-        $game = Game::with(['player1', 'player2'])->findOrFail($gameId);
+        $game = $this->gameRepository->findModel($gameId, ['player1', 'player2']);
         $context = GameScoringContext::fromGroupGame($game);
 
         return [$context, $game];
@@ -46,7 +52,7 @@ class GameScoringService
 
     public function resolvePlayoffGame(int $playoffGameId): array
     {
-        $game = PlayoffGame::with(['player1', 'player2'])->findOrFail($playoffGameId);
+        $game = $this->playoffGameRepository->findModel($playoffGameId, ['player1', 'player2']);
         $context = GameScoringContext::fromPlayoffGame($game);
 
         return [$context, $game];
@@ -57,7 +63,7 @@ class GameScoringService
      */
     public function resolveQuickGame(int $quickGameId): array
     {
-        $game = QuickGame::with(['player1', 'player2'])->findOrFail($quickGameId);
+        $game = $this->quickGameRepository->findModel($quickGameId, ['player1', 'player2']);
         $context = GameScoringContext::fromQuickGame($game);
 
         return [$context, $game];
@@ -319,7 +325,7 @@ class GameScoringService
 
     private function resolveLegForContext(GameScoringContext $context, int $legId): GameLeg
     {
-        $leg = GameLeg::findOrFail($legId);
+        $leg = $this->gameLegRepository->findModel($legId);
 
         $belongs = match ($context->kind) {
             GameKind::GROUP => (int) $leg->game_id === $context->gameId,

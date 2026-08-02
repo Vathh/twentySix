@@ -3,8 +3,8 @@
 namespace App\Services\QuickGame;
 
 use App\DTO\QuickGame\PlayerResultDTO;
+use App\Domain\QuickGame\FfaTurnRotationDomain;
 use App\Events\QuickGameFfaStateUpdated;
-use App\Models\Player\Player;
 use App\Models\QuickGame\QuickGameFfaSession;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameFfaPresenceRepository;
@@ -12,7 +12,6 @@ use App\Repositories\QuickGame\QuickGameFfaSessionRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 use App\Support\GameScoring\MatchFormat;
 use App\Support\QuickGameFfa\CricketRules;
-use App\Support\QuickGameFfa\QuickGameFfaTurnRotation;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 
@@ -232,7 +231,7 @@ class QuickGameFfaCricketScoringService
             $state['boards'] = CricketRules::initialState($playerIds)['boards'];
             $state['dartsInVisit'] = 0;
             $state['dartLog'] = [];
-            $session->leg_opener_index = QuickGameFfaTurnRotation::nextIndexAfter(
+            $session->leg_opener_index = FfaTurnRotationDomain::nextIndexAfter(
                 (int) $session->leg_opener_index,
                 $playerIds,
                 $leftIds,
@@ -246,7 +245,7 @@ class QuickGameFfaCricketScoringService
         $nextDarts = (int) $state['dartsInVisit'] + 1;
         if ($nextDarts >= 3) {
             $state['dartsInVisit'] = 0;
-            $session->current_player_index = QuickGameFfaTurnRotation::nextIndexAfter(
+            $session->current_player_index = FfaTurnRotationDomain::nextIndexAfter(
                 (int) $session->current_player_index,
                 $playerIds,
                 $leftIds,
@@ -316,7 +315,7 @@ class QuickGameFfaCricketScoringService
         $p1 = $playerIds[0] ?? null;
         $p2 = $playerIds[1] ?? null;
 
-        \App\Models\QuickGame\QuickGame::where('id', $quickGameId)->update(array_merge(
+        $this->quickGameRepository->updateResultFields($quickGameId, array_merge(
             [
                 'player1_score' => (int) ($legsWon[$p1] ?? 0),
                 'player2_score' => (int) ($legsWon[$p2] ?? 0),
@@ -357,7 +356,7 @@ class QuickGameFfaCricketScoringService
     {
         $playerIds = array_map('intval', $session->player_order ?? []);
         $cricket = $this->normalizeCricketState($session, $playerIds);
-        $players = Player::whereIn('id', $playerIds)->get()->keyBy('id');
+        $players = $this->playerRepository->findManyByIds($playerIds)->keyBy('id');
         $format = MatchFormat::fromRecord($session);
         $legsWon = $session->legs_won_in_set ?? [];
 
@@ -507,12 +506,12 @@ class QuickGameFfaCricketScoringService
         if ($leftIds === []) {
             return;
         }
-        $session->current_player_index = QuickGameFfaTurnRotation::normalizeIndexAt(
+        $session->current_player_index = FfaTurnRotationDomain::normalizeIndexAt(
             (int) $session->current_player_index,
             $playerIds,
             $leftIds,
         );
-        $session->leg_opener_index = QuickGameFfaTurnRotation::normalizeIndexAt(
+        $session->leg_opener_index = FfaTurnRotationDomain::normalizeIndexAt(
             (int) $session->leg_opener_index,
             $playerIds,
             $leftIds,

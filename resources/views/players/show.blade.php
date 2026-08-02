@@ -101,6 +101,32 @@ document.addEventListener('alpine:init', () => {
                     <p class="text-text-muted text-sm">Nie masz jeszcze opisu. <a href="{{ route('players.edit', $player) }}" class="text-accent hover:underline">Dodaj go w edycji profilu</a>.</p>
                 </div>
             @endif
+
+            @if(!empty($liveGames))
+                <div class="mt-4 pt-4 border-t border-border space-y-2">
+                    @foreach($liveGames as $liveGame)
+                        <a href="{{ $liveGame['liveUrl'] }}"
+                           class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-accent/40 bg-accent/10 px-4 py-3 hover:bg-accent/15 transition no-underline">
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2 mb-1">
+                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-accent/25 text-accent">
+                                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" aria-hidden="true"></span>
+                                        Na żywo
+                                    </span>
+                                    <span class="text-xs text-text-muted">{{ $liveGame['stageLabel'] }}</span>
+                                </div>
+                                <p class="text-text font-semibold break-words">
+                                    Gra teraz vs {{ $liveGame['opponentName'] }}
+                                    @if($liveGame['tournamentName'])
+                                        <span class="text-text-secondary font-normal">· {{ $liveGame['tournamentName'] }}</span>
+                                    @endif
+                                </p>
+                            </div>
+                            <span class="text-accent text-sm font-semibold shrink-0">Podgląd live →</span>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
         </div>
 
         {{-- Zakładki --}}

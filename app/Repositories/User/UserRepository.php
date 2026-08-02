@@ -8,6 +8,46 @@ use Illuminate\Support\Collection;
 
 class UserRepository
 {
+    public function findByEmail(string $email): ?User
+    {
+        return User::query()->where('email', $email)->first();
+    }
+
+    public function findModel(int $id): User
+    {
+        return User::findOrFail($id);
+    }
+
+    public function create(string $email, string $password): User
+    {
+        return User::create([
+            'email' => $email,
+            'password' => $password,
+        ]);
+    }
+
+    public function updatePassword(User $user, string $password): void
+    {
+        $user->update([
+            'password' => $password,
+        ]);
+    }
+
+    /**
+     * Wyszukuje użytkowników po nazwie gracza (Eloquent User z relacją `player`), posortowanych po nazwie gracza.
+     *
+     * @return Collection<int, User>
+     */
+    public function findByPlayerNameLike(string $search): Collection
+    {
+        return User::whereHas('player', function ($query) use ($search) {
+            $query->where('name', 'LIKE', "%{$search}%");
+        })
+            ->with('player')
+            ->get()
+            ->sortBy('player.name');
+    }
+
     /**
      * Wyszukuje użytkowników po nazwie gracza (dla wyszukiwania znajomych)
      * @param string $searchTerm

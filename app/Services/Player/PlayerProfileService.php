@@ -2,8 +2,11 @@
 
 namespace App\Services\Player;
 
+use App\Domain\FriendshipInvitationDomain;
+use App\Domain\PlayerDomain;
 use App\Models\Player\Player;
 use App\Models\Users\User;
+use App\Repositories\Player\PlayerRepository;
 use App\Services\Friends\FriendshipService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -14,6 +17,8 @@ class PlayerProfileService
         private PlayerStatsService $playerStatsService,
         private PlayerGameHistoryService $playerGameHistoryService,
         private FriendshipService $friendshipService,
+        private PlayerLiveGameService $playerLiveGameService,
+        private PlayerRepository $playerRepository,
     ) {
     }
 
@@ -36,14 +41,8 @@ class PlayerProfileService
      */
     public function buildProfile(Player $player, ?User $viewer): array
     {
-        if (! $player->user_id) {
-            abort(404, 'Profil dostępny tylko dla graczy zarejestrowanych.');
-        }
-
-        $player->loadMissing('user');
-        $this->playerStatsService->recalculateAndSave($player->id);
-
-        $historyFirstPage = $this->playerGameHistoryService->getHistoryPage($player->id, 1);
+        $core = $this->prepareRegisteredProfile($player);
+        $friendship = $this->resolveFriendshipState($player, $viewer);
 
         return [
             'player' => [
@@ -53,12 +52,12 @@ class PlayerProfileService
                 'description' => $player->description,
                 'registeredAt' => $player->user?->created_at?->format('d.m.Y'),
             ],
-            'friendship' => $this->buildFriendship($player, $viewer),
-            'quickStats' => $this->playerStatsService->getStoredQuickStats($player),
-            'tournamentStats' => $this->playerStatsService->getStoredTournamentStats($player),
+            'friendship' => $this->mapFriendshipForApi($friendship),
+            'quickStats' => $core['quickStats'],
+            'tournamentStats' => $core['tournamentStats'],
             'gameHistory' => [
-                'items' => $historyFirstPage['items'],
-                'hasMore' => (bool) $historyFirstPage['has_more'],
+                'items' => $core['historyItems'],
+                'hasMore' => $core['historyHasMore'],
             ],
         ];
     }
@@ -80,22 +79,14 @@ class PlayerProfileService
         }
 
         $validated = Validator::make($data, [
-            'description' => ['nullable', 'string', 'max:1000'],
+            'description' => ['nullable', 'string', 'max:'.PlayerDomain::DESCRIPTION_MAX_LENGTH],
         ])->validate();
 
         $description = array_key_exists('description', $validated)
-            ? trim((string) $validated['description'])
+            ? PlayerDomain::normalizeDescription($validated['description'])
             : null;
 
-        if ($description === '') {
-            $description = null;
-        }
-
-        $player->update([
-            'description' => $description,
-        ]);
-
-        return $player->fresh();
+        return $this->playerRepository->updateDescription($player, $description);
     }
 
     /**
@@ -111,6 +102,77 @@ class PlayerProfileService
     }
 
     /**
+     * Dane widoku web players.show — ten sam rdzeń co buildProfile(), plus modele pod formularze.
+     *
+     * @return array{
+     *     player: Player,
+     *     quickStats: array<string, mixed>,
+     *     tournamentStats: array<string, mixed>,
+     *     isOwnProfile: bool,
+     *     isFriend: bool,
+     *     canInviteFriend: bool,
+     *     pendingSentInvitation: FriendshipInvitationDomain|null,
+     *     pendingReceivedInvitation: FriendshipInvitationDomain|null,
+     *     gameHistoryItems: array,
+     *     gameHistoryHasMore: bool,
+     *     liveGames: array
+     * }
+     */
+    public function buildWebShow(Player $player, ?User $viewer): array
+    {
+        $core = $this->prepareRegisteredProfile($player);
+        $friendship = $this->resolveFriendshipState($player, $viewer);
+
+        return [
+            'player' => $player,
+            'quickStats' => $core['quickStats'],
+            'tournamentStats' => $core['tournamentStats'],
+            'isOwnProfile' => $friendship['isSelf'],
+            'isFriend' => $friendship['isFriend'],
+            'canInviteFriend' => $friendship['canInvite'],
+            'pendingSentInvitation' => $friendship['pendingSent'],
+            'pendingReceivedInvitation' => $friendship['pendingReceived'],
+            'gameHistoryItems' => $core['historyItems'],
+            'gameHistoryHasMore' => $core['historyHasMore'],
+            'liveGames' => $this->playerLiveGameService->findLiveGamesForPlayer((int) $player->id),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     quickStats: array<string, mixed>,
+     *     tournamentStats: array<string, mixed>,
+     *     historyItems: array,
+     *     historyHasMore: bool
+     * }
+     */
+    private function prepareRegisteredProfile(Player $player): array
+    {
+        if (! $player->user_id) {
+            abort(404, 'Profil dostępny tylko dla graczy zarejestrowanych.');
+        }
+
+        $player->loadMissing('user');
+        $this->playerStatsService->recalculateAndSave($player->id);
+
+        $historyFirstPage = $this->playerGameHistoryService->getHistoryPage($player->id, 1);
+
+        return [
+            'quickStats' => $this->playerStatsService->getStoredQuickStats($player),
+            'tournamentStats' => $this->playerStatsService->getStoredTournamentStats($player),
+            'historyItems' => $historyFirstPage['items'],
+            'historyHasMore' => (bool) $historyFirstPage['has_more'],
+        ];
+    }
+
+    /**
+     * @param  array{
+     *     isSelf: bool,
+     *     isFriend: bool,
+     *     canInvite: bool,
+     *     pendingSent: FriendshipInvitationDomain|null,
+     *     pendingReceived: FriendshipInvitationDomain|null
+     * }  $state
      * @return array{
      *     isSelf: bool,
      *     isFriend: bool,
@@ -119,20 +181,36 @@ class PlayerProfileService
      *     pendingReceived: array{id: int}|null
      * }
      */
-    private function buildFriendship(Player $player, ?User $viewer): array
+    private function mapFriendshipForApi(array $state): array
     {
-        $isSelf = false;
-        $isFriend = false;
-        $canInvite = false;
-        $pendingSent = false;
-        $pendingReceived = null;
+        return [
+            'isSelf' => $state['isSelf'],
+            'isFriend' => $state['isFriend'],
+            'canInvite' => $state['canInvite'],
+            'pendingSent' => $state['pendingSent'] !== null,
+            'pendingReceived' => $state['pendingReceived'] !== null
+                ? ['id' => $state['pendingReceived']->id]
+                : null,
+        ];
+    }
 
+    /**
+     * @return array{
+     *     isSelf: bool,
+     *     isFriend: bool,
+     *     canInvite: bool,
+     *     pendingSent: FriendshipInvitationDomain|null,
+     *     pendingReceived: FriendshipInvitationDomain|null
+     * }
+     */
+    private function resolveFriendshipState(Player $player, ?User $viewer): array
+    {
         if ($viewer === null) {
             return [
                 'isSelf' => false,
                 'isFriend' => false,
                 'canInvite' => false,
-                'pendingSent' => false,
+                'pendingSent' => null,
                 'pendingReceived' => null,
             ];
         }
@@ -142,16 +220,20 @@ class PlayerProfileService
         $viewerUserId = (int) $viewer->id;
         $isSelf = $viewerPlayer !== null && (int) $viewerPlayer->id === (int) $player->id;
 
+        $isFriend = false;
+        $pendingSent = null;
+        $pendingReceived = null;
+        $canInvite = false;
+
         if ($viewerPlayer && $profileUserId > 0) {
             $isFriend = $this->friendshipService->areFriends($viewerUserId, $profileUserId);
-            $sent = $this->friendshipService->findPendingInvitation($viewerUserId, $profileUserId);
-            $received = $this->friendshipService->findPendingInvitation($profileUserId, $viewerUserId);
-            $pendingSent = $sent !== null;
-            $pendingReceived = $received !== null ? ['id' => $received->id] : null;
-            $canInvite = ! $isFriend
-                && ! $isSelf
-                && $sent === null
-                && $received === null;
+            $pendingSent = $this->friendshipService->findPendingInvitation($viewerUserId, $profileUserId);
+            $pendingReceived = $this->friendshipService->findPendingInvitation($profileUserId, $viewerUserId);
+            $canInvite = FriendshipInvitationDomain::canInvite(
+                isSelf: $isSelf,
+                areFriends: $isFriend,
+                hasPendingInvitation: $pendingSent !== null || $pendingReceived !== null,
+            );
         }
 
         return [

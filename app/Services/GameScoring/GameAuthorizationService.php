@@ -4,17 +4,23 @@ namespace App\Services\GameScoring;
 
 use App\Enums\GameKind;
 use App\Models\Tournament\Tournament;
+use App\Repositories\Tournament\TournamentRepository;
 use Illuminate\Support\Facades\Auth;
 
 class GameAuthorizationService
 {
+    public function __construct(
+        private TournamentRepository $tournamentRepository,
+    ) {
+    }
+
     public function canCorrectTournamentGame(?int $tournamentId, GameKind $kind): bool
     {
         if ($kind === GameKind::QUICK || $tournamentId === null || ! Auth::check()) {
             return false;
         }
 
-        $tournament = Tournament::query()->find($tournamentId);
+        $tournament = $this->tournamentRepository->findModelOrNull($tournamentId);
 
         return $this->canManageTournament($tournament);
     }

@@ -2,21 +2,20 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\TournamentStatus;
-use App\Models\Tournament\LoginCode;
-use App\Models\Users\User;
+use App\Services\Auth\AccountAuthException;
+use App\Services\Auth\AccountAuthService;
 use App\Services\Auth\MobileAppTokenService;
 use App\Services\Auth\PasswordChangeService;
 use App\Services\Auth\UserRegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController
 {
 
     public function __construct(
         private UserRegistrationService $registrationService,
+        private AccountAuthService $accountAuthService,
         private MobileAppTokenService $mobileAppTokenService,
         private PasswordChangeService $passwordChangeService,
     ) {
@@ -28,28 +27,17 @@ class AuthController
            'code' => 'required|string',
         ]);
 
-        $loginCode = LoginCode::query()
-            ->with('tournament')
-            ->where('code', $validated['code'])
-            ->first();
-
-        if (! $loginCode || $loginCode->tournament === null) {
+        try {
+            $payload = $this->accountAuthService->tournamentLogin($validated['code']);
+        } catch (AccountAuthException $e) {
             return response()->json([
-                'message' => 'Nieprawidłowy kod logowania',
-            ], 401);
+                'message' => $e->getMessage(),
+            ], $e->statusCode);
         }
-
-        if ($loginCode->tournament->status === TournamentStatus::FINISHED) {
-            return response()->json([
-                'message' => 'Turniej zakończony — kody sędziowania są już nieważne.',
-            ], 401);
-        }
-
-        $token = $loginCode->createToken('counter')->plainTextToken;
 
         return response()->json([
-            'token' => $token,
-            'tournamentId' => $loginCode->tournament_id,
+            'token' => $payload['token'],
+            'tournamentId' => $payload['tournamentId'],
         ]);
     }
 
@@ -75,11 +63,7 @@ class AuthController
             'email' => 'required|email',
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
-
-        if ($user !== null && ! $user->hasVerifiedEmail()) {
-            $user->sendEmailVerificationNotification();
-        }
+        $this->accountAuthService->resendVerificationEmail($validated['email']);
 
         return response()->json([
             'message' => 'Jeśli konto istnieje i nie jest potwierdzone, wysłaliśmy link aktywacyjny.',
@@ -97,21 +81,16 @@ class AuthController
             'password' => 'required|string|max:255',
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
-
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
+        try {
+            $payload = $this->accountAuthService->loginApi(
+                $validated['email'],
+                $validated['password'],
+            );
+        } catch (AccountAuthException $e) {
             return response()->json([
-                'message' => 'Nieprawidłowy email lub hasło',
-            ], 401);
+                'message' => $e->getMessage(),
+            ], $e->statusCode);
         }
-
-        if (! $user->hasVerifiedEmail()) {
-            return response()->json([
-                'message' => 'Potwierdź adres email — sprawdź skrzynkę (link z rejestracji).',
-            ], 403);
-        }
-
-        $payload = $this->mobileAppTokenService->issueForUser($user);
 
         return response()->json([
             'token' => $payload['token'],

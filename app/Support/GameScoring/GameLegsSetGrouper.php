@@ -2,6 +2,7 @@
 
 namespace App\Support\GameScoring;
 
+use App\Domain\GameScoring\MatchFormat;
 use Illuminate\Support\Collection;
 
 /**

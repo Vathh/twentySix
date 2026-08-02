@@ -3,8 +3,6 @@
 namespace App\Services\Game;
 
 use App\Enums\GameType;
-use App\Models\Game\Game;
-use App\Models\PlayoffGame\PlayoffGame;
 use App\Repositories\Game\GameLegRepository;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\Game\GameVisitRepository;
@@ -42,10 +40,10 @@ class GameLockService
     {
         $context = match ($type) {
             GameType::GROUP => GameScoringContext::fromGroupGame(
-                Game::query()->findOrFail($gameId),
+                $this->gameRepository->findModel($gameId),
             ),
             GameType::PLAYOFF => GameScoringContext::fromPlayoffGame(
-                PlayoffGame::query()->findOrFail($gameId),
+                $this->playoffGameRepository->findModel($gameId),
             ),
             GameType::QUICK_MATCH => throw new DomainException('Quick game zwalnia się z sesją FFA, nie przez release turniejowy.'),
         };

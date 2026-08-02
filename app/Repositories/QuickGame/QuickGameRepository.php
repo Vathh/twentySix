@@ -4,6 +4,7 @@ namespace App\Repositories\QuickGame;
 
 use App\Enums\GameStatus;
 use App\Models\QuickGame\QuickGame;
+use Illuminate\Support\Collection;
 
 class QuickGameRepository
 {
@@ -54,5 +55,39 @@ class QuickGameRepository
         }
 
         \App\Models\QuickGame\QuickGameResult::insert($rows);
+    }
+
+    /**
+     * Surowy model Eloquent (np. do serwisów scoringu operujących na QuickGame).
+     *
+     * @param  string[]  $relations
+     */
+    public function findModel(int $gameId, array $relations = []): QuickGame
+    {
+        return QuickGame::with($relations)->findOrFail($gameId);
+    }
+
+    /**
+     * @return Collection<int, QuickGame>
+     */
+    public function findInProgressForPlayer(int $playerId): Collection
+    {
+        return QuickGame::query()
+            ->with(['player1:id,name', 'player2:id,name'])
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->where(function ($q) use ($playerId) {
+                $q->where('player1_id', $playerId)->orWhere('player2_id', $playerId);
+            })
+            ->get();
+    }
+
+    /**
+     * Aktualizuje kolumny wyniku QuickGame (np. po zakończeniu sesji FFA).
+     *
+     * @param  array<string, mixed>  $fields
+     */
+    public function updateResultFields(int $quickGameId, array $fields): void
+    {
+        QuickGame::where('id', $quickGameId)->update($fields);
     }
 }

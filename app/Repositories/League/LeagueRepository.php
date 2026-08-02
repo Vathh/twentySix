@@ -40,13 +40,13 @@ class LeagueRepository
     }
 
     /**
-     * @param int $id
+     * @param int|null $id
      * @return LeagueDomain|null
      */
-    public function findByIdWithAdmins(int $id): ?LeagueDomain
+    public function findByIdWithAdmins(?int $id): ?LeagueDomain
     {
         $league = League::with('admins')->findOrFail($id);
-        return $league ? LeagueDomain::fromEloquent($league, ['admmins']) : null;
+        return $league ? LeagueDomain::fromEloquent($league, ['admins']) : null;
     }
 
     /**

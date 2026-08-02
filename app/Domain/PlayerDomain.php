@@ -9,6 +9,8 @@ use Illuminate\Support\Collection;
 
 class PlayerDomain
 {
+    /** Maksymalna długość opisu profilu gracza (zgodna z regułą walidacji `max:1000`). */
+    public const DESCRIPTION_MAX_LENGTH = 1000;
 
     /**
      * @param int $id
@@ -46,6 +48,18 @@ class PlayerDomain
                 ? $player->achievements->map(fn($achievement) => AchievementDomain::fromEloquent($achievement))->values()
                 : collect()
         );
+    }
+
+    /** Normalizuje opis profilu: przycina białe znaki, pusty string traktuje jako brak opisu. */
+    public static function normalizeDescription(?string $raw): ?string
+    {
+        if ($raw === null) {
+            return null;
+        }
+
+        $trimmed = trim($raw);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }
 

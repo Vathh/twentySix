@@ -9,7 +9,10 @@ use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\QuickGame\QuickGame;
 use App\Repositories\Game\GameLegPlayerStatRepository;
 use App\Repositories\Game\GameLegRepository;
+use App\Repositories\Game\GameRepository;
 use App\Repositories\Game\GameVisitRepository;
+use App\Repositories\PlayoffGame\PlayoffGameRepository;
+use App\Repositories\QuickGame\QuickGameRepository;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameLegsSetGrouper;
 use App\Support\GameScoring\GameStatisticsCalculator;
@@ -19,6 +22,9 @@ use Illuminate\Support\Collection;
 class GameDetailService
 {
     public function __construct(
+        private GameRepository $gameRepository,
+        private PlayoffGameRepository $playoffGameRepository,
+        private QuickGameRepository $quickGameRepository,
         private GameLegRepository $gameLegRepository,
         private GameVisitRepository $gameVisitRepository,
         private GameLegPlayerStatRepository $gameLegPlayerStatRepository,
@@ -32,9 +38,15 @@ class GameDetailService
     public function build(GameKind $kind, int $id): array
     {
         return match ($kind) {
-            GameKind::GROUP => $this->buildFromGroupGame(Game::with(['player1', 'player2', 'tournament.season.league'])->findOrFail($id)),
-            GameKind::PLAYOFF => $this->buildFromPlayoffGame(PlayoffGame::with(['player1', 'player2', 'tournament.season.league'])->findOrFail($id)),
-            GameKind::QUICK => $this->buildFromQuickGame(QuickGame::with(['player1', 'player2'])->findOrFail($id)),
+            GameKind::GROUP => $this->buildFromGroupGame(
+                $this->gameRepository->findModel($id, ['player1', 'player2', 'tournament.season.league']),
+            ),
+            GameKind::PLAYOFF => $this->buildFromPlayoffGame(
+                $this->playoffGameRepository->findModel($id, ['player1', 'player2', 'tournament.season.league']),
+            ),
+            GameKind::QUICK => $this->buildFromQuickGame(
+                $this->quickGameRepository->findModel($id, ['player1', 'player2']),
+            ),
         };
     }
 

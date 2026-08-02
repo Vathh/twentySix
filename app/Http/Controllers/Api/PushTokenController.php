@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Repositories\Push\UserPushTokenRepository;
+use App\Services\Push\PushTokenService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PushTokenController
 {
     public function __construct(
-        private UserPushTokenRepository $tokenRepository,
+        private PushTokenService $pushTokenService,
     ) {
     }
 
@@ -29,7 +29,7 @@ class PushTokenController
             'deviceName' => 'nullable|string|max:255',
         ]);
 
-        $this->tokenRepository->upsert(
+        $this->pushTokenService->upsert(
             userId: $request->user()->id,
             expoPushToken: $validated['token'],
             platform: $validated['platform'] ?? 'unknown',
@@ -55,9 +55,9 @@ class PushTokenController
             ],
         ]);
 
-        $this->tokenRepository->deleteByToken(
-            expoPushToken: $validated['token'],
+        $this->pushTokenService->deleteForUser(
             userId: $request->user()->id,
+            expoPushToken: $validated['token'],
         );
 
         return response()->json([

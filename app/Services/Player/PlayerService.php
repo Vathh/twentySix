@@ -4,6 +4,7 @@ namespace App\Services\Player;
 
 use App\Domain\PlayerDomain;
 use App\Enums\AssignableEntityType;
+use App\Models\Player\Player;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\Tournament\TournamentGuestParticipantRepository;
 use App\Repositories\Tournament\TournamentInvitationRepository;
@@ -24,6 +25,19 @@ class PlayerService
     public function create(string $name, int $userId): void
     {
         $this->playerRepository->create($name, $userId);
+    }
+
+    /**
+     * @return Collection<int, Player>
+     */
+    public function searchRegisteredByName(string $query): Collection
+    {
+        $nameQuery = trim($query);
+        if ($nameQuery === '') {
+            return collect();
+        }
+
+        return $this->playerRepository->searchRegisteredByName($nameQuery);
     }
 
     public function createGuest(string $name, int $targetId, AssignableEntityType $targetType): void

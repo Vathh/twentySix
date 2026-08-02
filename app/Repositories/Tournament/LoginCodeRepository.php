@@ -8,6 +8,14 @@ use Illuminate\Support\Collection;
 
 class LoginCodeRepository
 {
+    public function findByCodeWithTournament(string $code): ?LoginCode
+    {
+        return LoginCode::query()
+            ->with('tournament')
+            ->where('code', $code)
+            ->first();
+    }
+
     /**
      * @return Collection<int, string>
      */

@@ -2,15 +2,19 @@
 
 namespace App\Services\Auth;
 
+use App\Domain\Auth\PasswordPolicyDomain;
 use App\Models\Users\User;
+use App\Repositories\User\UserRepository;
 use App\Rules\UniquePlayerNameForRegistered;
 use App\Services\Player\PlayerService;
 use Illuminate\Support\Facades\Validator;
 
 class UserRegistrationService
 {
-    public function __construct(private PlayerService $playerService)
-    {
+    public function __construct(
+        private PlayerService $playerService,
+        private UserRepository $userRepository,
+    ) {
     }
 
     /**
@@ -21,19 +25,12 @@ class UserRegistrationService
         $rules = [
             'name' => ['required', 'string', 'max:20', new UniquePlayerNameForRegistered()],
             'email' => 'required|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => PasswordPolicyDomain::rules($requirePasswordConfirmation),
         ];
-
-        if ($requirePasswordConfirmation) {
-            $rules['password'] = 'required|string|min:8|confirmed';
-        }
 
         $validated = Validator::make($data, $rules)->validate();
 
-        $user = User::create([
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-        ]);
+        $user = $this->userRepository->create($validated['email'], $validated['password']);
 
         $this->playerService->create($validated['name'], $user->id);
         $user->sendEmailVerificationNotification();

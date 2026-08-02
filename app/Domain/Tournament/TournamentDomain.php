@@ -158,5 +158,11 @@ class TournamentDomain
     {
         return $this->season !== null && $this->pointScheme !== null;
     }
+
+    /** Czy turniej w bieżącym statusie może przejść do statusu $target (patrz `TournamentStatus::canTransitionTo`). */
+    public function canTransitionTo(TournamentStatus $target): bool
+    {
+        return $this->status->canTransitionTo($target);
+    }
 }
 

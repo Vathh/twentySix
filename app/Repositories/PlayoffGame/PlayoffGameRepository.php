@@ -93,6 +93,16 @@ class PlayoffGameRepository
         return PlayoffGameDomain::fromEloquent(PlayoffGame::where('id', $id)->firstOrFail());
     }
 
+    /**
+     * Surowy model Eloquent (np. do serwisów lock/scoring/korekty operujących na PlayoffGame).
+     *
+     * @param  string[]  $relations
+     */
+    public function findModel(int $gameId, array $relations = []): PlayoffGame
+    {
+        return PlayoffGame::with($relations)->findOrFail($gameId);
+    }
+
     public function setPlayer1Slot(int $tournamentId, PlayoffSlot $slot, int $playerId): void
     {
         PlayoffGame::where('tournament_id', $tournamentId)
@@ -129,6 +139,32 @@ class PlayoffGameRepository
         if ($destinationSlot !== null) {
             $this->resetFinishedBranchFromSlot($tournamentId, $destinationSlot);
         }
+    }
+
+    /**
+     * Liczba meczów playoff per runda (round->value => count) — do wnioskowania rozmiaru drabinki.
+     *
+     * @return Collection<string, int>
+     */
+    public function countByRoundForTournament(int $tournamentId): Collection
+    {
+        return PlayoffGame::where('tournament_id', $tournamentId)
+            ->get()
+            ->countBy(fn (PlayoffGame $game) => $game->round->value);
+    }
+
+    /**
+     * @return Collection<int, PlayoffGame>
+     */
+    public function findInProgressForPlayer(int $playerId): Collection
+    {
+        return PlayoffGame::query()
+            ->with(['player1:id,name', 'player2:id,name', 'tournament:id,name'])
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->where(function ($q) use ($playerId) {
+                $q->where('player1_id', $playerId)->orWhere('player2_id', $playerId);
+            })
+            ->get();
     }
 }
 

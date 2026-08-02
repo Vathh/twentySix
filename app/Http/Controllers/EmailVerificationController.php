@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Users\User;
+use App\Repositories\User\UserRepository;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -10,9 +10,14 @@ use Illuminate\Support\Facades\URL;
 
 class EmailVerificationController extends Controller
 {
+    public function __construct(
+        private UserRepository $userRepository,
+    ) {
+    }
+
     public function verify(Request $request, int $id, string $hash): RedirectResponse
     {
-        $user = User::findOrFail($id);
+        $user = $this->userRepository->findModel($id);
 
         if (! hash_equals(sha1($user->getEmailForVerification()), (string) $hash)) {
             abort(403);
@@ -42,7 +47,7 @@ class EmailVerificationController extends Controller
             'email' => 'required|email',
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
+        $user = $this->userRepository->findByEmail($validated['email']);
 
         if ($user !== null && ! $user->hasVerifiedEmail()) {
             $user->sendEmailVerificationNotification();

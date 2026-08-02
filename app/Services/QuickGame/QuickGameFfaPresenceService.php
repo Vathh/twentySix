@@ -2,7 +2,7 @@
 
 namespace App\Services\QuickGame;
 
-use App\Models\Player\Player;
+use App\Domain\QuickGame\FfaSessionRulesDomain;
 use App\Models\QuickGame\QuickGameFfaPresence;
 use App\Models\QuickGame\QuickGameFfaSession;
 use App\Models\QuickGame\QuickGameLobby;
@@ -129,11 +129,10 @@ class QuickGameFfaPresenceService
             $record = $records->get($playerId);
             $player = $record?->player;
             $isGuestWithoutAccount = $player !== null && $player->user_id === null;
-            $status = $record?->status ?? QuickGameFfaPresence::STATUS_CONNECTED;
-            // Goście lokalni nie łączą się z apką — zawsze traktuj jako connected.
-            if ($isGuestWithoutAccount && $status === QuickGameFfaPresence::STATUS_DISCONNECTED) {
-                $status = QuickGameFfaPresence::STATUS_CONNECTED;
-            }
+            $status = FfaSessionRulesDomain::effectivePresenceStatus(
+                $isGuestWithoutAccount,
+                $record?->status ?? QuickGameFfaPresence::STATUS_CONNECTED,
+            );
             $payload[] = [
                 'playerId' => $playerId,
                 'name' => $player?->name ?? 'Gracz',
@@ -154,12 +153,7 @@ class QuickGameFfaPresenceService
             return null;
         }
 
-        $sessions = QuickGameFfaSession::query()
-            ->where('status', QuickGameFfaSession::STATUS_IN_PROGRESS)
-            ->whereJsonContains('player_order', (int) $player->id)
-            ->whereHas('lobby', fn ($q) => $q->where('status', 'started'))
-            ->with(['lobby.players.player'])
-            ->get();
+        $sessions = $this->sessionRepository->findInProgressForPlayerWithStartedLobby((int) $player->id);
 
         foreach ($sessions as $session) {
             $session->refresh();
@@ -227,9 +221,11 @@ class QuickGameFfaPresenceService
     {
         $playerIds = $session->player_order ?? [];
 
-        return $session->scoring_mode === 'each_own'
-            && count($playerIds) === 2
-            && $session->isInProgress();
+        return FfaSessionRulesDomain::shouldForfeitOnLeave(
+            (string) $session->scoring_mode,
+            count($playerIds),
+            $session->isInProgress(),
+        );
     }
 
     /**
@@ -244,26 +240,16 @@ class QuickGameFfaPresenceService
             return [];
         }
 
-        $guestIds = Player::query()
-            ->whereIn('id', $playerIds)
-            ->whereNull('user_id')
-            ->pluck('id')
-            ->map(static fn ($id) => (int) $id)
-            ->all();
+        $guestIds = $this->playerRepository->getGuestPlayerIds($playerIds);
 
-        return array_values(array_diff($playerIds, $guestIds));
+        return FfaSessionRulesDomain::heartbeatTrackedPlayerIds($playerIds, $guestIds);
     }
 
     private function resolveForfeitWinnerId(QuickGameFfaSession $session, int $leavingPlayerId): int
     {
         $playerIds = array_map('intval', $session->player_order ?? []);
-        foreach ($playerIds as $playerId) {
-            if ($playerId !== $leavingPlayerId) {
-                return $playerId;
-            }
-        }
 
-        throw new DomainException('Nie można ustalić zwycięzcy walkoweru.');
+        return FfaSessionRulesDomain::resolveForfeitWinnerId($playerIds, $leavingPlayerId);
     }
 
     /**
@@ -276,7 +262,7 @@ class QuickGameFfaPresenceService
         int $myPlayerId,
     ): array {
         $playerIds = array_map('intval', $session->player_order ?? []);
-        $players = Player::whereIn('id', $playerIds)->get()->keyBy('id');
+        $players = $this->playerRepository->findManyByIds($playerIds)->keyBy('id');
         $lobbyPlayers = $lobby->players->keyBy('player_id');
 
         $playersPayload = [];

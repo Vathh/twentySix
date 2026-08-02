@@ -6,7 +6,9 @@ use App\Enums\GameStatus;
 use App\Events\TournamentGroupMatrixUpdated;
 use App\Models\Game\Game;
 use App\Models\GroupStanding\GroupStanding;
-use App\Models\Tournament\Tournament;
+use App\Repositories\Game\GameRepository;
+use App\Repositories\GroupStanding\GroupStandingRepository;
+use App\Repositories\Tournament\TournamentRepository;
 use App\ViewModels\TournamentDataViewModel;
 use Illuminate\Support\Facades\DB;
 
@@ -15,6 +17,13 @@ use Illuminate\Support\Facades\DB;
  */
 class TournamentGroupMatrixLiveService
 {
+    public function __construct(
+        private GameRepository $gameRepository,
+        private GroupStandingRepository $groupStandingRepository,
+        private TournamentRepository $tournamentRepository,
+    ) {
+    }
+
     /**
      * Po zmianie wyniku meczu grupowego (leg / koniec / korekta / undo).
      */
@@ -61,9 +70,10 @@ class TournamentGroupMatrixLiveService
      */
     public function snapshot(int $tournamentId): array
     {
-        $games = Game::query()
-            ->where('tournament_id', $tournamentId)
-            ->get(['id', 'group_number', 'player1_id', 'player2_id', 'player1_score', 'player2_score', 'status']);
+        $games = $this->gameRepository->getAllForTournament(
+            $tournamentId,
+            ['id', 'group_number', 'player1_id', 'player2_id', 'player1_score', 'player2_score', 'status'],
+        );
 
         $gamePayload = $games->map(function (Game $game) {
             $status = $game->status instanceof GameStatus
@@ -87,14 +97,14 @@ class TournamentGroupMatrixLiveService
             $standingsByGroup[$groupNumber] = $this->standingsForGroup($tournamentId, $groupNumber);
         }
 
-        $tournament = Tournament::query()->find($tournamentId);
+        $tournament = $this->tournamentRepository->findModelOrNull($tournamentId, [
+            'games.player1',
+            'games.player2',
+            'groupStandings.player',
+        ]);
         $playoffHighlights = [];
         if ($tournament !== null) {
-            $viewModel = new TournamentDataViewModel($tournament->load([
-                'games.player1',
-                'games.player2',
-                'groupStandings.player',
-            ]));
+            $viewModel = new TournamentDataViewModel($tournament);
             $playoffHighlights = $viewModel->groupPlayoffHighlights();
         }
 
@@ -111,11 +121,7 @@ class TournamentGroupMatrixLiveService
      */
     private function standingsForGroup(int $tournamentId, int $groupNumber): array
     {
-        return GroupStanding::query()
-            ->where('tournament_id', $tournamentId)
-            ->where('group_number', $groupNumber)
-            ->orderBy('place')
-            ->get()
+        return $this->groupStandingRepository->getOrderedByPlaceForGroup($tournamentId, $groupNumber)
             ->map(fn (GroupStanding $s) => [
                 'playerId' => (int) $s->player_id,
                 'gamesWon' => (int) $s->games_won,
@@ -133,7 +139,11 @@ class TournamentGroupMatrixLiveService
      */
     private function playoffHighlightForGroup(int $tournamentId, int $groupNumber): array
     {
-        $tournament = Tournament::query()->find($tournamentId);
+        $tournament = $this->tournamentRepository->findModelOrNull($tournamentId, [
+            'games.player1',
+            'games.player2',
+            'groupStandings.player',
+        ]);
         if ($tournament === null) {
             return [
                 'complete' => false,
@@ -142,11 +152,7 @@ class TournamentGroupMatrixLiveService
             ];
         }
 
-        $viewModel = new TournamentDataViewModel($tournament->load([
-            'games.player1',
-            'games.player2',
-            'groupStandings.player',
-        ]));
+        $viewModel = new TournamentDataViewModel($tournament);
         $all = $viewModel->groupPlayoffHighlights();
 
         return $all[$groupNumber] ?? [
@@ -162,7 +168,7 @@ class TournamentGroupMatrixLiveService
         $include = $includeStandings;
 
         $run = function () use ($gameId, $include) {
-            $fresh = Game::query()->find($gameId);
+            $fresh = $this->gameRepository->findModelOrNull($gameId);
             if ($fresh === null) {
                 return;
             }

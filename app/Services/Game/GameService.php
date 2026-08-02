@@ -5,6 +5,7 @@ namespace App\Services\Game;
 use App\DTO\ActiveGameDTO;
 use App\DTO\GameResultDTO;
 use App\DTO\UpdateGameDTO;
+use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameKind;
 use App\Enums\GameStage;
 use App\Enums\GameStatus;
@@ -310,7 +311,7 @@ class GameService
 
             });
 
-            $finishedGame = Game::query()->find($dto->gameResultDTO->gameId);
+            $finishedGame = $this->gameRepository->findModelOrNull($dto->gameResultDTO->gameId);
             if ($finishedGame !== null) {
                 $this->groupMatrixLiveService->pushFromGroupGame($finishedGame, true);
             }
@@ -449,8 +450,10 @@ class GameService
             $this->tournamentResultService->createForGroupLosers($tournamentId);
             $this->playoffService->generateBracket($tournamentId);
             try {
-                $this->tournamentRepository->changeStatus($tournamentId,
-                    TournamentStatus::PLAYOFF);
+                $tournament = $this->tournamentRepository->findModel($tournamentId);
+                if (TournamentDomain::fromEloquent($tournament)->canTransitionTo(TournamentStatus::PLAYOFF)) {
+                    $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::PLAYOFF);
+                }
             } catch (Throwable $e) {
 
             }

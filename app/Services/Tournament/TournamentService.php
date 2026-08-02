@@ -2,13 +2,16 @@
 
 namespace App\Services\Tournament;
 
+use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameStage;
 use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
+use App\Models\Tournament\Tournament;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\GroupStanding\GroupStandingRepository;
 use App\Repositories\Tournament\TournamentMatchFormatRepository;
 use App\Repositories\Tournament\TournamentRepository;
+use App\Services\GameScoring\GameAuthorizationService;
 use App\Support\GameScoring\MatchFormat;
 use App\Support\Tournament\TournamentGroupAdvanceDistribution;
 use App\Support\Tournament\TournamentGroupDistribution;
@@ -31,8 +34,32 @@ class TournamentService
         private PointSchemeService        $pointSchemeService,
         private TournamentStartValidator  $startValidator,
         private TournamentMatchFormatRepository $matchFormatRepository,
+        private GameAuthorizationService  $gameAuthorizationService,
     )
     {
+    }
+
+    /**
+     * Ładuje turniej (z relacjami do autoryzacji) i weryfikuje, że aktualny użytkownik może nim zarządzać.
+     *
+     * @param list<string> $additionalRelations
+     */
+    public function loadAndAuthorize(int $tournamentId, array $additionalRelations = []): TournamentDomain
+    {
+        $allRelations = array_merge($additionalRelations, ['season', 'admins']);
+        $tournament = $this->tournamentRepository->findModel($tournamentId, $allRelations);
+        $this->gameAuthorizationService->authorizeManageTournament($tournament);
+
+        return TournamentDomain::fromEloquent($tournament, $allRelations);
+    }
+
+    /**
+     * Surowy model Eloquent — dla przepływów, które muszą przekazać go do innych serwisów
+     * (np. TournamentJoinRequestService) lub odczytać pola spoza TournamentDomain.
+     */
+    public function getModel(int $tournamentId, array $relations = []): Tournament
+    {
+        return $this->tournamentRepository->findModel($tournamentId, $relations);
     }
 
     public function getAll(): Collection

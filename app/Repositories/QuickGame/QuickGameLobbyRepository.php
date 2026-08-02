@@ -25,6 +25,13 @@ class QuickGameLobbyRepository
             ->findOrFail($lobbyId);
     }
 
+    public function findForChannelAuth(int $lobbyId): ?QuickGameLobby
+    {
+        return QuickGameLobby::query()
+            ->with(['players.player', 'invitations'])
+            ->find($lobbyId);
+    }
+
     public function addPlayer(int $lobbyId, ?int $playerId, ?string $tempPlayerName, bool $isRegistered): void
     {
         QuickGameLobbyPlayer::create([

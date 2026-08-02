@@ -7,6 +7,7 @@ use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\GameViewController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\PlayerController;
+use App\Http\Controllers\QuickGameFfaLiveController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TournamentController;
@@ -35,6 +36,13 @@ Route::get('/games/{type}/{id}/live/state', [GameViewController::class, 'liveSta
     ->where('type', 'group|playoff|quick')
     ->whereNumber('id')
     ->name('games.live.state');
+
+Route::get('/quick-game/lobby/{lobbyId}/live', [QuickGameFfaLiveController::class, 'live'])
+    ->whereNumber('lobbyId')
+    ->name('quick-game.ffa.live');
+Route::get('/quick-game/lobby/{lobbyId}/live/state', [QuickGameFfaLiveController::class, 'liveState'])
+    ->whereNumber('lobbyId')
+    ->name('quick-game.ffa.live.state');
 
 Route::get('/register', [PagesController::class, 'showRegisterPage'])->name('pages.registerPanel');
 Route::post('/register', [AuthController::class, 'register'])->name('register');

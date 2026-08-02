@@ -27,6 +27,15 @@ class PlayerRepository
         return PlayerDomain::fromEloquent($player);
     }
 
+    public function updateDescription(Player $player, ?string $description): Player
+    {
+        $player->update([
+            'description' => $description,
+        ]);
+
+        return $player->fresh();
+    }
+
     public function createQuickGameGuest(string $name): PlayerDomain
     {
         $player = Player::create([
@@ -35,6 +44,20 @@ class PlayerRepository
         ]);
 
         return PlayerDomain::fromEloquent($player);
+    }
+
+    /**
+     * Tworzy gościa bez konta (bez ligi/sezonu), np. dla turnieju jednorazowego.
+     * Zwraca surowy model Eloquent — wywołujący potrzebuje ->id.
+     */
+    public function createGuestPlayer(string $name): Player
+    {
+        return Player::create([
+            'name' => $name,
+            'user_id' => null,
+            'league_id' => null,
+            'season_id' => null,
+        ]);
     }
 
     /**
@@ -138,6 +161,70 @@ class PlayerRepository
     {
         $player = Player::where('user_id', $userId)->first();
         return $player ? PlayerDomain::fromEloquent($player) : null;
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return array<int, string>
+     */
+    public function getNamesByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return Player::query()
+            ->whereIn('id', $ids)
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    /**
+     * Surowe modele Eloquent dla podanych ID (np. do budowy payloadu z nazwami graczy).
+     *
+     * @param  list<int>  $ids
+     * @return Collection<int, Player>
+     */
+    public function findManyByIds(array $ids): Collection
+    {
+        if ($ids === []) {
+            return collect();
+        }
+
+        return Player::whereIn('id', $ids)->get();
+    }
+
+    /**
+     * ID gości bez konta (user_id === null) spośród podanych ID graczy.
+     *
+     * @param  list<int>  $ids
+     * @return list<int>
+     */
+    public function getGuestPlayerIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return Player::query()
+            ->whereIn('id', $ids)
+            ->whereNull('user_id')
+            ->pluck('id')
+            ->map(static fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /**
+     * @return Collection<int, Player>
+     */
+    public function searchRegisteredByName(string $nameQuery, int $limit = 50): Collection
+    {
+        return Player::query()
+            ->whereNotNull('user_id')
+            ->where('name', 'like', '%'.$nameQuery.'%')
+            ->orderBy('name')
+            ->limit($limit)
+            ->get();
     }
 
     /**

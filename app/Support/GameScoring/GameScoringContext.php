@@ -2,6 +2,7 @@
 
 namespace App\Support\GameScoring;
 
+use App\Domain\GameScoring\MatchFormat;
 use App\Enums\GameKind;
 use App\Models\Game\Game;
 use App\Models\PlayoffGame\PlayoffGame;

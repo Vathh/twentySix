@@ -77,6 +77,14 @@ class TournamentRepository
         return (int) $tournament->id;
     }
 
+    /**
+     * Surowy model Eloquent (np. do autoryzacji lub przekazania do serwisów operujących na Tournament).
+     */
+    public function findModel(int $tournamentId, array $relations = []): Tournament
+    {
+        return Tournament::with($relations)->findOrFail($tournamentId);
+    }
+
     public function addAdmin(int $tournamentId, int $userId): void
     {
         Tournament::findOrFail($tournamentId)->admins()->syncWithoutDetaching([$userId]);
@@ -120,7 +128,7 @@ class TournamentRepository
     {
         $tournament = Tournament::findOrFail($tournamentId);
 
-        return $tournament->status === TournamentStatus::CREATED;
+        return TournamentDomain::fromEloquent($tournament)->canTransitionTo(TournamentStatus::GROUP);
     }
 
 
@@ -222,6 +230,44 @@ class TournamentRepository
     {
         $tournament = Tournament::with('season')->find($tournamentId);
         return $tournament?->season?->league_id;
+    }
+
+    /**
+     * Surowy model Eloquent, null gdy nie istnieje (bez wyjątku).
+     */
+    public function findModelOrNull(int $tournamentId, array $relations = []): ?Tournament
+    {
+        return Tournament::with($relations)->find($tournamentId);
+    }
+
+    public function joinCodeExists(string $code): bool
+    {
+        return Tournament::where('join_code', $code)->exists();
+    }
+
+    public function findByJoinCode(string $code): ?Tournament
+    {
+        return Tournament::with(['season.league'])
+            ->where('join_code', $code)
+            ->first();
+    }
+
+    public function setJoinCode(Tournament $tournament, string $code): Tournament
+    {
+        $tournament->join_code = $code;
+        $tournament->join_code_generated_at = now();
+        $tournament->join_code_enabled = true;
+        $tournament->save();
+
+        return $tournament->fresh();
+    }
+
+    public function setJoinCodeEnabled(Tournament $tournament, bool $enabled): Tournament
+    {
+        $tournament->join_code_enabled = $enabled;
+        $tournament->save();
+
+        return $tournament->fresh();
     }
 }
 

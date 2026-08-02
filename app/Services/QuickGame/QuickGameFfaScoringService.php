@@ -4,8 +4,9 @@ namespace App\Services\QuickGame;
 
 use App\DTO\QuickGame\PlayerResultDTO;
 use App\DTO\QuickGameFfa\RecordFfaVisitDTO;
+use App\Domain\QuickGame\FfaSessionRulesDomain;
+use App\Domain\QuickGame\FfaTurnRotationDomain;
 use App\Events\QuickGameFfaStateUpdated;
-use App\Models\Player\Player;
 use App\Models\QuickGame\QuickGameFfaPresence;
 use App\Models\QuickGame\QuickGameLobby;
 use App\Repositories\Player\PlayerRepository;
@@ -14,7 +15,6 @@ use App\Repositories\QuickGame\QuickGameFfaSessionRepository;
 use App\Repositories\QuickGame\QuickGameFfaVisitRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 use App\Support\QuickGameFfa\QuickGameFfaStateBuilder;
-use App\Support\QuickGameFfa\QuickGameFfaTurnRotation;
 use App\Support\GameScoring\MatchFormat;
 use App\Support\GameScoring\MatchFormatScoring;
 use App\Support\GameScoring\VisitRecorder;
@@ -138,10 +138,10 @@ class QuickGameFfaScoringService
                 throw new DomainException('Gracz nie został oznaczony jako opuścił mecz.');
             }
 
-            $activeIds = QuickGameFfaTurnRotation::activePlayerIds($playerIds, $leftIds);
+            $activeIds = FfaTurnRotationDomain::activePlayerIds($playerIds, $leftIds);
 
-            if (count($activeIds) < 2) {
-                $winnerId = $activeIds[0] ?? null;
+            if (FfaSessionRulesDomain::isDecidedByForfeit($activeIds)) {
+                $winnerId = FfaSessionRulesDomain::soleRemainingPlayerId($activeIds);
                 if ($winnerId === null) {
                     throw new DomainException('Brak aktywnych graczy w meczu.');
                 }
@@ -400,7 +400,7 @@ class QuickGameFfaScoringService
             return;
         }
 
-        $session->current_player_index = QuickGameFfaTurnRotation::nextIndexAfter(
+        $session->current_player_index = FfaTurnRotationDomain::nextIndexAfter(
             (int) $session->current_player_index,
             $playerIds,
             $leftIds,
@@ -443,7 +443,7 @@ class QuickGameFfaScoringService
             return;
         }
 
-        $session->leg_opener_index = QuickGameFfaTurnRotation::nextIndexAfter(
+        $session->leg_opener_index = FfaTurnRotationDomain::nextIndexAfter(
             (int) $session->leg_opener_index,
             $playerIds,
             $leftIds,
@@ -493,7 +493,7 @@ class QuickGameFfaScoringService
         $p1 = $playerIds[0] ?? null;
         $p2 = $playerIds[1] ?? null;
 
-        \App\Models\QuickGame\QuickGame::where('id', $quickGameId)->update(array_merge(
+        $this->quickGameRepository->updateResultFields($quickGameId, array_merge(
             [
                 'player1_score' => (int) ($legsWon[$p1] ?? 0),
                 'player2_score' => (int) ($legsWon[$p2] ?? 0),
@@ -529,7 +529,7 @@ class QuickGameFfaScoringService
             (int) $session->leg_opener_index,
         );
 
-        $session->current_player_index = QuickGameFfaTurnRotation::normalizeIndexAt(
+        $session->current_player_index = FfaTurnRotationDomain::normalizeIndexAt(
             $computed,
             $playerIds,
             $leftIds,
@@ -564,12 +564,12 @@ class QuickGameFfaScoringService
             return;
         }
 
-        $session->current_player_index = QuickGameFfaTurnRotation::normalizeIndexAt(
+        $session->current_player_index = FfaTurnRotationDomain::normalizeIndexAt(
             (int) $session->current_player_index,
             $playerIds,
             $leftIds,
         );
-        $session->leg_opener_index = QuickGameFfaTurnRotation::normalizeIndexAt(
+        $session->leg_opener_index = FfaTurnRotationDomain::normalizeIndexAt(
             (int) $session->leg_opener_index,
             $playerIds,
             $leftIds,
@@ -630,14 +630,9 @@ class QuickGameFfaScoringService
             return [];
         }
 
-        $guestIds = Player::query()
-            ->whereIn('id', $playerIds)
-            ->whereNull('user_id')
-            ->pluck('id')
-            ->map(static fn ($id) => (int) $id)
-            ->all();
+        $guestIds = $this->playerRepository->getGuestPlayerIds($playerIds);
 
-        return array_values(array_diff($playerIds, $guestIds));
+        return FfaSessionRulesDomain::heartbeatTrackedPlayerIds($playerIds, $guestIds);
     }
 
     /**
@@ -653,10 +648,10 @@ class QuickGameFfaScoringService
             $record = $records->get($playerId);
             $player = $record?->player;
             $isGuestWithoutAccount = $player !== null && $player->user_id === null;
-            $status = $record?->status ?? QuickGameFfaPresence::STATUS_CONNECTED;
-            if ($isGuestWithoutAccount && $status === QuickGameFfaPresence::STATUS_DISCONNECTED) {
-                $status = QuickGameFfaPresence::STATUS_CONNECTED;
-            }
+            $status = FfaSessionRulesDomain::effectivePresenceStatus(
+                $isGuestWithoutAccount,
+                $record?->status ?? QuickGameFfaPresence::STATUS_CONNECTED,
+            );
             $payload[] = [
                 'playerId' => $playerId,
                 'name' => $player?->name ?? 'Gracz',

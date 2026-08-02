@@ -122,6 +122,14 @@ class SeasonRepository
         $season = Season::with(['league', 'guests'])->findOrFail($seasonId);
         return SeasonDomain::fromEloquent($season, ['league', 'guests']);
     }
+
+    /**
+     * Surowy model Eloquent (np. do autoryzacji policy).
+     */
+    public function findModel(int $seasonId): Season
+    {
+        return Season::findOrFail($seasonId);
+    }
 }
 
 

@@ -1,9 +1,8 @@
 <?php
 namespace App\Services\Season;
 
-use App\Domain\LeagueDomain;
 use App\Domain\SeasonDomain;
-use App\Models\League\League;
+use App\Repositories\League\LeagueRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\Season\SeasonRepository;
 use App\Services\Player\PlayerService;
@@ -17,7 +16,8 @@ class SeasonService
     public function __construct(
         private SeasonRepository $seasonRepository,
         private PlayerService $playerService,
-        private PlayerRepository $playerRepository
+        private PlayerRepository $playerRepository,
+        private LeagueRepository $leagueRepository,
     )
     {
     }
@@ -65,8 +65,8 @@ class SeasonService
         ?string $endDate = null
     ): void
     {
-        $league = LeagueDomain::fromEloquent(League::findOrFail($leagueId), ['admins']);
-        $leagueAdminsIds = $league->getAdminsIds();
+        $league = $this->leagueRepository->findByIdWithAdmins($leagueId);
+        $leagueAdminsIds = $league?->getAdminsIds() ?? [];
         $allAdminsIds = array_unique(array_merge($leagueAdminsIds, $adminsIds));
         try {
             $this->seasonRepository->create($leagueId, $name, $allAdminsIds, $startDate, $endDate);

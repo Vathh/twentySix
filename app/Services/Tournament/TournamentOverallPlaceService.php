@@ -3,16 +3,20 @@
 namespace App\Services\Tournament;
 
 use App\Enums\GameStage;
-use App\Models\GroupStanding\GroupStanding;
-use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\Tournament\TournamentResult;
+use App\Repositories\GroupStanding\GroupStandingRepository;
+use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\Tournament\TournamentRepository;
+use App\Repositories\Tournament\TournamentResultRepository;
 use App\Support\Tournament\TournamentOverallPlaceCalculator;
 
 class TournamentOverallPlaceService
 {
     public function __construct(
         private TournamentRepository $tournamentRepository,
+        private TournamentResultRepository $tournamentResultRepository,
+        private GroupStandingRepository $groupStandingRepository,
+        private PlayoffGameRepository $playoffGameRepository,
         private TournamentOverallPlaceCalculator $calculator,
     ) {
     }
@@ -27,17 +31,13 @@ class TournamentOverallPlaceService
             return;
         }
 
-        $results = TournamentResult::query()
-            ->where('tournament_id', $tournamentId)
-            ->get();
+        $results = $this->tournamentResultRepository->getAllForTournament($tournamentId);
 
         if ($results->isEmpty()) {
             return;
         }
 
-        $groupPlacesByPlayer = GroupStanding::query()
-            ->where('tournament_id', $tournamentId)
-            ->pluck('place', 'player_id');
+        $groupPlacesByPlayer = $this->groupStandingRepository->getPlacesByPlayerId($tournamentId);
 
         $rows = $results->map(fn (TournamentResult $result) => [
             'player_id' => $result->player_id,
@@ -51,10 +51,7 @@ class TournamentOverallPlaceService
         $places = $this->calculator->calculate($bracketSize, $rows);
 
         foreach ($places as $playerId => $place) {
-            TournamentResult::query()
-                ->where('tournament_id', $tournamentId)
-                ->where('player_id', $playerId)
-                ->update(['place' => $place]);
+            $this->tournamentResultRepository->updatePlace($tournamentId, $playerId, $place);
         }
     }
 
@@ -69,10 +66,7 @@ class TournamentOverallPlaceService
 
     private function inferBracketSizeFromPlayoffGames(int $tournamentId): ?int
     {
-        $countsByStage = PlayoffGame::query()
-            ->where('tournament_id', $tournamentId)
-            ->get()
-            ->countBy(fn (PlayoffGame $game) => $game->round->value);
+        $countsByStage = $this->playoffGameRepository->countByRoundForTournament($tournamentId);
 
         foreach ([GameStage::SIXTEEN, GameStage::EIGHT, GameStage::QUARTER] as $stage) {
             $count = $countsByStage[$stage->value] ?? 0;

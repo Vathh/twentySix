@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Auth\AccountAuthService;
 use App\Services\Auth\UserRegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
-use App\Models\Users\User;
 
 class AuthController extends Controller
 {
 
-    public function __construct(private UserRegistrationService $registrationService)
-    {
+    public function __construct(
+        private UserRegistrationService $registrationService,
+        private AccountAuthService $accountAuthService,
+    ) {
     }
 
     public function register(Request $request)
@@ -36,25 +36,14 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
+        $this->accountAuthService->attemptWebLogin(
+            $validated['email'],
+            $validated['password'],
+        );
 
-        if ($user !== null
-            && Hash::check($validated['password'], $user->password)
-            && ! $user->hasVerifiedEmail()) {
-            throw ValidationException::withMessages([
-                'email' => 'Potwierdź adres email — sprawdź skrzynkę (link z rejestracji).',
-            ]);
-        }
+        $request->session()->regenerate();
 
-        if (Auth::attempt($validated)) {
-            $request->session()->regenerate();
-
-            return redirect()->route('pages.home');
-        }
-
-        throw ValidationException::withMessages([
-            'credentials' => __('validation.auth.failed'),
-        ]);
+        return redirect()->route('pages.home');
     }
 
     public function logout(Request $request)

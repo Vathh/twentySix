@@ -2,13 +2,19 @@
 
 namespace App\Services\Auth;
 
+use App\Domain\Auth\PasswordPolicyDomain;
 use App\Models\Users\User;
+use App\Repositories\User\UserRepository;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class PasswordChangeService
 {
+    public function __construct(private UserRepository $userRepository)
+    {
+    }
+
     /**
      * @param  array{current_password: string, password: string, password_confirmation?: string}  $data
      *
@@ -18,17 +24,13 @@ class PasswordChangeService
     {
         $validated = Validator::make($data, [
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => PasswordPolicyDomain::rules(),
         ])->validate();
 
-        if (! Hash::check($validated['current_password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'current_password' => __('validation.current_password'),
-            ]);
-        }
+        PasswordPolicyDomain::assertCurrentPasswordMatches(
+            Hash::check($validated['current_password'], $user->password),
+        );
 
-        $user->update([
-            'password' => $validated['password'],
-        ]);
+        $this->userRepository->updatePassword($user, $validated['password']);
     }
 }

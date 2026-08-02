@@ -9,7 +9,6 @@ use App\Enums\GameStatus;
 use App\Enums\GameType;
 use App\Enums\GameKind;
 use App\Enums\PlayoffSlot;
-use App\Models\Game\Game;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\Player\PlayerRepository;
@@ -73,7 +72,7 @@ class GameResultCorrectionService
     private function applyGroupResult(int $gameId, int $player1Score, int $player2Score): void
     {
         $game = $this->gameRepository->find($gameId);
-        $gameModel = Game::findOrFail($gameId);
+        $gameModel = $this->gameRepository->findModel($gameId);
 
         if ($game->player1 === null || $game->player2 === null) {
             throw new DomainException('Mecz nie ma przypisanych graczy.');
@@ -115,7 +114,7 @@ class GameResultCorrectionService
                 $this->recalculatePlayerStats($dto);
             });
 
-            $fresh = Game::query()->find($gameId);
+            $fresh = $this->gameRepository->findModelOrNull($gameId);
             if ($fresh !== null) {
                 $this->groupMatrixLiveService->pushFromGroupGame($fresh, true);
             }
@@ -136,7 +135,7 @@ class GameResultCorrectionService
             throw new DomainException('Mecz playoff nie ma przypisanych graczy.');
         }
 
-        $gameModel = \App\Models\PlayoffGame\PlayoffGame::findOrFail($gameId);
+        $gameModel = $this->playoffGameRepository->findModel($gameId);
         $format = MatchFormat::fromRecord($gameModel);
 
         $winnerId = GameLegScoreValidator::validateAndResolveWinner(
@@ -199,7 +198,7 @@ class GameResultCorrectionService
     private function resolveGroupContext(int $gameId): array
     {
         $game = $this->gameRepository->find($gameId);
-        $gameModel = Game::findOrFail($gameId);
+        $gameModel = $this->gameRepository->findModel($gameId);
 
         if ($game->player1 === null || $game->player2 === null) {
             throw new DomainException('Mecz nie ma przypisanych graczy.');
@@ -214,7 +213,7 @@ class GameResultCorrectionService
     private function resolvePlayoffContext(int $gameId): array
     {
         $game = $this->playoffGameRepository->find($gameId);
-        $gameModel = \App\Models\PlayoffGame\PlayoffGame::findOrFail($gameId);
+        $gameModel = $this->playoffGameRepository->findModel($gameId);
 
         if ($game->player1Id === null || $game->player2Id === null) {
             throw new DomainException('Mecz playoff nie ma przypisanych graczy.');

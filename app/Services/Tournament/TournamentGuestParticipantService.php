@@ -3,11 +3,10 @@
 namespace App\Services\Tournament;
 
 use App\Enums\TournamentStatus;
-use App\Models\Player\Player;
-use App\Models\Tournament\Tournament;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\Tournament\TournamentGuestParticipantRepository;
 use App\Repositories\Tournament\TournamentInvitationRepository;
+use App\Repositories\Tournament\TournamentRepository;
 
 class TournamentGuestParticipantService
 {
@@ -15,6 +14,7 @@ class TournamentGuestParticipantService
         private TournamentGuestParticipantRepository $repository,
         private PlayerRepository $playerRepository,
         private TournamentInvitationRepository $invitationRepository,
+        private TournamentRepository $tournamentRepository,
     ) {
     }
 
@@ -47,12 +47,7 @@ class TournamentGuestParticipantService
 
         $this->assertNameAvailableInTournament($tournamentId, $trimmed);
 
-        $player = Player::create([
-            'name' => $trimmed,
-            'user_id' => null,
-            'league_id' => null,
-            'season_id' => null,
-        ]);
+        $player = $this->playerRepository->createGuestPlayer($trimmed);
 
         $this->repository->add($tournamentId, $player->id);
     }
@@ -65,7 +60,7 @@ class TournamentGuestParticipantService
 
     private function assertTournamentOpen(int $tournamentId): void
     {
-        $tournament = Tournament::findOrFail($tournamentId);
+        $tournament = $this->tournamentRepository->findModel($tournamentId);
 
         if ($tournament->status !== TournamentStatus::CREATED) {
             throw new \RuntimeException('Turniej już wystartował — nie można zmieniać uczestników');

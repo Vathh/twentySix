@@ -99,6 +99,47 @@ class GameRepository
 
         return GroupGameDomain::fromEloquent($game, ['player1', 'player2', 'winner']);
     }
+
+    /**
+     * Surowy model Eloquent (np. do serwisów lock/scoring/korekty operujących na Game).
+     *
+     * @param  string[]  $relations
+     */
+    public function findModel(int $gameId, array $relations = []): Game
+    {
+        return Game::with($relations)->findOrFail($gameId);
+    }
+
+    /**
+     * @return Collection<int, Game>
+     */
+    public function findInProgressForPlayer(int $playerId): Collection
+    {
+        return Game::query()
+            ->with(['player1:id,name', 'player2:id,name', 'tournament:id,name'])
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->where(function ($q) use ($playerId) {
+                $q->where('player1_id', $playerId)->orWhere('player2_id', $playerId);
+            })
+            ->get();
+    }
+
+    /**
+     * Surowe modele wszystkich meczów grupowych turnieju (np. do payloadu live matrix).
+     *
+     * @return Collection<int, Game>
+     */
+    public function getAllForTournament(int $tournamentId, array $columns = ['*']): Collection
+    {
+        return Game::query()
+            ->where('tournament_id', $tournamentId)
+            ->get($columns);
+    }
+
+    public function findModelOrNull(int $id): ?Game
+    {
+        return Game::query()->find($id);
+    }
 }
 
 

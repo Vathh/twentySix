@@ -28,4 +28,18 @@ enum TournamentStatus: string
             self::FINISHED => 'finished',
         };
     }
+
+    /**
+     * Czy dozwolone jest przejście z bieżącego statusu do $target.
+     * Kolejność etapów turnieju jest liniowa i bez cofania: CREATED → GROUP → PLAYOFF → FINISHED.
+     */
+    public function canTransitionTo(self $target): bool
+    {
+        return match ($this) {
+            self::CREATED => $target === self::GROUP,
+            self::GROUP => $target === self::PLAYOFF,
+            self::PLAYOFF => $target === self::FINISHED,
+            self::FINISHED => false,
+        };
+    }
 }

@@ -5,8 +5,8 @@ namespace App\Services\Tournament;
 use App\Domain\Tournament\TournamentInvitationDomain;
 use App\Enums\TournamentInvitationStatus;
 use App\Enums\TournamentStatus;
-use App\Models\Tournament\Tournament;
 use App\Repositories\Tournament\TournamentInvitationRepository;
+use App\Repositories\Tournament\TournamentRepository;
 use App\Services\Push\InvitationPushService;
 use Illuminate\Support\Collection;
 
@@ -15,6 +15,7 @@ class TournamentInvitationService
     public function __construct(
         private TournamentInvitationRepository $invitationRepository,
         private InvitationPushService $invitationPushService,
+        private TournamentRepository $tournamentRepository,
     ) {
     }
 
@@ -133,7 +134,7 @@ class TournamentInvitationService
 
     private function assertTournamentAcceptsInvitations(int $tournamentId): void
     {
-        $tournament = Tournament::findOrFail($tournamentId);
+        $tournament = $this->tournamentRepository->findModel($tournamentId);
 
         if ($tournament->status !== TournamentStatus::CREATED) {
             throw new \RuntimeException('Turniej już wystartował — zaproszenia i zmiany uczestników są zablokowane');

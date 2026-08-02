@@ -2,10 +2,10 @@
 
 namespace App\Services\Tournament;
 
+use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
 use App\Events\TournamentFinished;
-use App\Models\Tournament\Tournament;
 use App\Repositories\Tournament\TournamentRepository;
 use Illuminate\Support\Facades\DB;
 
@@ -25,11 +25,9 @@ class TournamentFinishService
      */
     public function tryFinish(int $tournamentId): bool
     {
-        $tournament = Tournament::query()
-            ->with('playoffGames')
-            ->findOrFail($tournamentId);
+        $tournament = $this->tournamentRepository->findModel($tournamentId, ['playoffGames']);
 
-        if ($tournament->status === TournamentStatus::FINISHED) {
+        if (! TournamentDomain::fromEloquent($tournament)->canTransitionTo(TournamentStatus::FINISHED)) {
             return false;
         }
 

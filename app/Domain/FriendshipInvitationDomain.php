@@ -32,4 +32,33 @@ class FriendshipInvitationDomain
             createdAt: $invitation->created_at,
         );
     }
+
+    /**
+     * Reguła: kogo można zaprosić do znajomych (bez wysyłania zaproszenia).
+     * Używane np. przy wyświetlaniu profilu gracza, żeby zdecydować, czy pokazać przycisk zaproszenia.
+     */
+    public static function canInvite(bool $isSelf, bool $areFriends, bool $hasPendingInvitation): bool
+    {
+        return ! $isSelf && ! $areFriends && ! $hasPendingInvitation;
+    }
+
+    /**
+     * Waliduje, czy zaproszenie do znajomych może zostać wysłane; rzuca wyjątek z komunikatem dla użytkownika.
+     *
+     * @throws \RuntimeException
+     */
+    public static function assertCanSend(int $senderId, int $receiverId, bool $areFriends, bool $hasPendingInvitation): void
+    {
+        if ($senderId === $receiverId) {
+            throw new \RuntimeException('Nie możesz wysłać zaproszenia do siebie');
+        }
+
+        if ($areFriends) {
+            throw new \RuntimeException('Użytkownicy są już znajomymi');
+        }
+
+        if ($hasPendingInvitation) {
+            throw new \RuntimeException('Zaproszenie już zostało wysłane');
+        }
+    }
 }

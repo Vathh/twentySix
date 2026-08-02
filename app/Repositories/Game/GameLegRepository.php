@@ -82,6 +82,11 @@ class GameLegRepository
         };
     }
 
+    public function findModel(int $legId): GameLeg
+    {
+        return GameLeg::findOrFail($legId);
+    }
+
     public function findOpenForContext(GameScoringContext $context): ?GameLeg
     {
         $query = GameLeg::query()->whereNull('finished_at');
