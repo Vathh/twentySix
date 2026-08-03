@@ -52,6 +52,8 @@ class ActiveGameDTO
      */
     public static function fromPlayoffGame(PlayoffGame $game): ?ActiveGameDTO
     {
+        $game->loadMissing(['tournament', 'player1', 'player2']);
+
         return self::fromPlayoffGameDomain(
             PlayoffGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2']),
         );

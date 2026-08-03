@@ -2,12 +2,17 @@
 
 namespace App\Domain;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\AchievementType;
 use App\Models\Achievements\Achievement;
 
 class AchievementDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** @var list<string> */
+    private const RELATIONS = ['tournament', 'player'];
     /**
      * @param int $id
      * @param TournamentDomain|null $tournament
@@ -31,7 +36,7 @@ class AchievementDomain
      */
     public static function fromEloquent(Achievement $achievement, array $with = []): AchievementDomain
     {
-        $achievement->loadMissing(array_intersect($with, ['tournament', 'player']));
+        self::assertRelationsLoaded($achievement, $with, self::RELATIONS);
 
         return new self(
             id: $achievement->id,

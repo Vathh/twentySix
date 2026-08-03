@@ -9,7 +9,7 @@ use App\Models\Users\User;
 use App\Services\League\LeagueService;
 use App\Services\Player\PlayerService;
 use App\Services\User\UserService;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use App\Support\League\LeagueMatchFormatPresets;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -65,6 +65,7 @@ class LeagueController extends Controller
 
     public function show(League $league): Factory|View
     {
+        $league->loadMissing(['admins', 'seasons']);
         $leagueDomain = LeagueDomain::fromEloquent($league, ['admins', 'seasons']);
         $seasons = collect($leagueDomain->seasons)
             ->sortByDesc(fn($season) => $season->updatedAt)
@@ -78,6 +79,7 @@ class LeagueController extends Controller
 
     public function edit(League $league): Factory|View
     {
+        $league->loadMissing(['admins']);
         $leagueDomain = LeagueDomain::fromEloquent($league, ['admins']);
 
         return view('leagues.edit', [

@@ -20,7 +20,8 @@ class GetTournamentData
             'playoffGames.player2',
             'playoffGames.winner',
             'achievements.player',
-            'results.player'
+            'results.player',
+            'pointScheme',
         ])->findOrFail($tournamentId);
 
         return new TournamentDataViewModel($tournament);

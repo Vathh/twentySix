@@ -8,7 +8,7 @@ use App\Enums\GameStatus;
 use App\Enums\PlayerSlot;
 use App\Enums\PlayoffSlot;
 use App\Models\PlayoffGame\PlayoffGame;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -101,6 +101,14 @@ class PlayoffGameRepository
     public function findModel(int $gameId, array $relations = []): PlayoffGame
     {
         return PlayoffGame::with($relations)->findOrFail($gameId);
+    }
+
+    /**
+     * Zapisuje zmiany na modelu PlayoffGame (np. po mutacjach stanu scoringu w Service).
+     */
+    public function save(PlayoffGame $game): void
+    {
+        $game->save();
     }
 
     public function setPlayer1Slot(int $tournamentId, PlayoffSlot $slot, int $playerId): void

@@ -30,6 +30,7 @@ class CompetitionShowSerializer
      */
     public function league(League $league): array
     {
+        $league->loadMissing(['seasons']);
         $domain = LeagueDomain::fromEloquent($league, ['seasons']);
         $seasons = collect($domain->seasons)
             ->sortByDesc(fn (SeasonDomain $season) => $season->updatedAt?->getTimestamp() ?? 0)
@@ -57,6 +58,7 @@ class CompetitionShowSerializer
      */
     public function season(Season $season): array
     {
+        $season->loadMissing(['league', 'tournaments']);
         $domain = SeasonDomain::fromEloquent($season, ['league', 'tournaments']);
 
         $tournaments = $domain->tournaments

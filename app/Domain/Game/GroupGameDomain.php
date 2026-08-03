@@ -2,6 +2,7 @@
 
 namespace App\Domain\Game;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Domain\PlayerDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameStatus;
@@ -9,6 +10,10 @@ use App\Models\Game\Game;
 
 class GroupGameDomain extends GameDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** @var list<string> */
+    private const RELATIONS = ['tournament', 'player1', 'player2', 'winner'];
     /**
      * @param int $id
      * @param TournamentDomain|null $tournament
@@ -50,7 +55,7 @@ class GroupGameDomain extends GameDomain
      */
     public static function fromEloquent(Game $game, array $with = []): GroupGameDomain
     {
-        $game->loadMissing(array_intersect($with, ['tournament', 'player1', 'player2', 'winner']));
+        self::assertRelationsLoaded($game, $with, self::RELATIONS);
 
         $player1 = in_array('player1', $with) && $game->player1
             ? PlayerDomain::fromEloquent($game->player1)

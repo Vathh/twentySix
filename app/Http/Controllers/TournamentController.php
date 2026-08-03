@@ -208,25 +208,12 @@ class TournamentController extends Controller
             'user_id' => 'required|integer|exists:users,id',
         ]);
 
-        try {
-            $this->invitationService->send(
-                $tournamentId,
-                (int) $validated['user_id'],
-                (int) Auth::id(),
-            );
-        } catch (\RuntimeException $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['message' => $e->getMessage()], 422);
-            }
-
-            return back()->with('error', $e->getMessage());
-        }
-
-        if ($request->wantsJson()) {
-            return response()->json($this->invitationActionPayload($tournamentId, 'Zaproszenie wysłane'));
-        }
-
-        return back()->with('success', 'Zaproszenie wysłane');
+        return $this->respondToAction(
+            $request,
+            fn () => $this->invitationService->send($tournamentId, (int) $validated['user_id'], (int) Auth::id()),
+            'Zaproszenie wysłane',
+            fn () => $this->invitationActionPayload($tournamentId, 'Zaproszenie wysłane'),
+        );
     }
 
     public function sendBulkInvitations(Request $request, int $tournamentId): RedirectResponse
@@ -257,45 +244,24 @@ class TournamentController extends Controller
     {
         $this->loadAndAuthorize($tournamentId);
 
-        try {
-            $this->invitationService->cancel($tournamentId, $invitationId);
-        } catch (\RuntimeException $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['message' => $e->getMessage()], 422);
-            }
-
-            return back()->with('error', $e->getMessage());
-        }
-
-        if ($request->wantsJson()) {
-            return response()->json($this->invitationActionPayload($tournamentId, 'Zaproszenie anulowane'));
-        }
-
-        return back()->with('success', 'Zaproszenie anulowane');
+        return $this->respondToAction(
+            $request,
+            fn () => $this->invitationService->cancel($tournamentId, $invitationId),
+            'Zaproszenie anulowane',
+            fn () => $this->invitationActionPayload($tournamentId, 'Zaproszenie anulowane'),
+        );
     }
 
     public function removeParticipant(Request $request, int $tournamentId, int $invitationId): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($tournamentId);
 
-        try {
-            $this->invitationService->removeParticipant($tournamentId, $invitationId);
-        } catch (\RuntimeException $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['message' => $e->getMessage()], 422);
-            }
-
-            return back()->with('error', $e->getMessage());
-        }
-
-        if ($request->wantsJson()) {
-            return response()->json($this->joinActionPayload(
-                $tournamentId,
-                'Uczestnik usunięty z turnieju',
-            ));
-        }
-
-        return back()->with('success', 'Uczestnik usunięty z turnieju');
+        return $this->respondToAction(
+            $request,
+            fn () => $this->invitationService->removeParticipant($tournamentId, $invitationId),
+            'Uczestnik usunięty z turnieju',
+            fn () => $this->joinActionPayload($tournamentId, 'Uczestnik usunięty z turnieju'),
+        );
     }
 
     public function regenerateJoinCode(int $tournamentId): RedirectResponse
@@ -337,48 +303,24 @@ class TournamentController extends Controller
     {
         $this->loadAndAuthorize($tournamentId);
 
-        try {
-            $this->joinRequestService->approve($tournamentId, $requestId, (int) Auth::id());
-        } catch (\RuntimeException $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['message' => $e->getMessage()], 422);
-            }
-
-            return back()->with('error', $e->getMessage());
-        }
-
-        if ($request->wantsJson()) {
-            return response()->json($this->joinActionPayload(
-                $tournamentId,
-                'Zawodnik dołączony do turnieju',
-            ));
-        }
-
-        return back()->with('success', 'Zawodnik dołączony do turnieju');
+        return $this->respondToAction(
+            $request,
+            fn () => $this->joinRequestService->approve($tournamentId, $requestId, (int) Auth::id()),
+            'Zawodnik dołączony do turnieju',
+            fn () => $this->joinActionPayload($tournamentId, 'Zawodnik dołączony do turnieju'),
+        );
     }
 
     public function rejectJoinRequest(Request $request, int $tournamentId, int $requestId): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($tournamentId);
 
-        try {
-            $this->joinRequestService->reject($tournamentId, $requestId, (int) Auth::id());
-        } catch (\RuntimeException $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['message' => $e->getMessage()], 422);
-            }
-
-            return back()->with('error', $e->getMessage());
-        }
-
-        if ($request->wantsJson()) {
-            return response()->json($this->joinActionPayload(
-                $tournamentId,
-                'Zgłoszenie odrzucone',
-            ));
-        }
-
-        return back()->with('success', 'Zgłoszenie odrzucone');
+        return $this->respondToAction(
+            $request,
+            fn () => $this->joinRequestService->reject($tournamentId, $requestId, (int) Auth::id()),
+            'Zgłoszenie odrzucone',
+            fn () => $this->joinActionPayload($tournamentId, 'Zgłoszenie odrzucone'),
+        );
     }
 
     public function addGuestParticipant(Request $request, int $tournamentId): RedirectResponse
@@ -567,6 +509,35 @@ class TournamentController extends Controller
     public function loadAndAuthorize(int $tournamentId, array $additionalRelations = []): TournamentDomain
     {
         return $this->tournamentService->loadAndAuthorize($tournamentId, $additionalRelations);
+    }
+
+    /**
+     * Wspólny try/catch + JSON-vs-redirect dla akcji turniejowych zwracających `RuntimeException` na błąd.
+     *
+     * @param  callable(): mixed  $action
+     * @param  callable(): array<string, mixed>  $jsonPayload
+     */
+    private function respondToAction(
+        Request $request,
+        callable $action,
+        string $successMessage,
+        callable $jsonPayload,
+    ): RedirectResponse|JsonResponse {
+        try {
+            $action();
+        } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
+            return back()->with('error', $e->getMessage());
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json($jsonPayload());
+        }
+
+        return back()->with('success', $successMessage);
     }
 
     /**

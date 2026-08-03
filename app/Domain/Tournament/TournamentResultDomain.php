@@ -2,6 +2,7 @@
 
 namespace App\Domain\Tournament;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Domain\PlayerDomain;
 use App\Domain\SeasonDomain;
 use App\Enums\GameStage;
@@ -9,6 +10,10 @@ use App\Models\Tournament\TournamentResult;
 
 class TournamentResultDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** @var list<string> */
+    private const RELATIONS = ['season', 'tournament', 'player'];
 
     /**
      * @param SeasonDomain|null $season
@@ -42,7 +47,7 @@ class TournamentResultDomain
      */
     public static function fromEloquent(TournamentResult $result, array $with = []): self
     {
-        $result->loadMissing(array_intersect($with, ['season', 'tournament', 'player']));
+        self::assertRelationsLoaded($result, $with, self::RELATIONS);
 
         return new self(
             season: in_array('season', $with)

@@ -68,6 +68,14 @@ class QuickGameRepository
     }
 
     /**
+     * Zapisuje zmiany na modelu QuickGame (np. po mutacjach stanu scoringu w Service).
+     */
+    public function save(QuickGame $game): void
+    {
+        $game->save();
+    }
+
+    /**
      * @return Collection<int, QuickGame>
      */
     public function findInProgressForPlayer(int $playerId): Collection

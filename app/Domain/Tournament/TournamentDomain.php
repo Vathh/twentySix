@@ -3,6 +3,7 @@
 namespace App\Domain\Tournament;
 
 use App\Domain\AchievementDomain;
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Domain\Game\GroupGameDomain;
 use App\Domain\GroupStandingDomain;
 use App\Domain\SeasonDomain;
@@ -13,6 +14,10 @@ use Illuminate\Support\Collection;
 
 class TournamentDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** @var list<string> */
+    private const RELATIONS = ['season', 'achievements', 'games', 'groupStandings', 'pointScheme'];
 
     /**
      * @param int $id
@@ -56,12 +61,7 @@ class TournamentDomain
      */
     public static function fromEloquent(Tournament $tournament, array $with = []): self
     {
-        $relations = array_intersect($with, ['season', 'achievements', 'games', 'groupStandings', 'pointScheme', 'pointScheme.rules']);
-        if (in_array('season', $relations, true)) {
-            $relations = array_values(array_diff($relations, ['season']));
-            $relations[] = 'season.league';
-        }
-        $tournament->loadMissing($relations);
+        self::assertRelationsLoaded($tournament, $with, self::RELATIONS);
 
         return new self(
             id: $tournament->id,
@@ -92,6 +92,24 @@ class TournamentDomain
             groupAdvances: $tournament->group_advances,
             tabletsCount: $tournament->tablets_count,
         );
+    }
+
+    /**
+     * Ścieżki Eloquent do eager-load w Repository przed `fromEloquent($tournament, $with)`.
+     * Metoda czysta (bez I/O) — tylko tłumaczy $with na relacje wymagane wewnętrznie
+     * (np. `season` → `season.league`, bo `SeasonDomain::fromEloquent` zawsze dociąga `league`).
+     *
+     * @param  array<int, string>  $with
+     * @return list<string>
+     */
+    public static function eagerLoadRelationsFor(array $with): array
+    {
+        $relations = array_intersect($with, self::RELATIONS);
+
+        return array_values(array_map(
+            fn (string $relation) => $relation === 'season' ? 'season.league' : $relation,
+            $relations,
+        ));
     }
 
     /** Liczba graczy w drabince playoff. Null przed startem turnieju. */

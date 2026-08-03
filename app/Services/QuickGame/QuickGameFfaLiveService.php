@@ -4,7 +4,8 @@ namespace App\Services\QuickGame;
 
 use App\Models\QuickGame\QuickGameFfaSession;
 use App\Repositories\QuickGame\QuickGameFfaSessionRepository;
-use App\Support\GameScoring\MatchFormat;
+use App\Support\Broadcasting\ReverbClientConfig;
+use App\Domain\GameScoring\MatchFormat;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class QuickGameFfaLiveService
@@ -49,7 +50,7 @@ class QuickGameFfaLiveService
             'liveStateUrl' => route('quick-game.ffa.live.state', ['lobbyId' => $lobbyId]),
             'broadcastChannel' => 'quick-game-ffa-lobby.'.$lobbyId,
             'formatLabel' => $this->formatLabel($session),
-            'reverb' => $this->reverbClientConfig(),
+            'reverb' => ReverbClientConfig::forWeb(),
         ];
     }
 
@@ -113,18 +114,5 @@ class QuickGameFfaLiveService
         }
 
         return $prefix.' · BO'.((($format->setsToWinMatch * 2) - 1)).' (sety)';
-    }
-
-    /**
-     * @return array{key: string, host: string, port: int, scheme: string}
-     */
-    private function reverbClientConfig(): array
-    {
-        return [
-            'key' => (string) config('broadcasting.connections.reverb.key'),
-            'host' => (string) config('broadcasting.connections.reverb.client.host'),
-            'port' => (int) config('broadcasting.connections.reverb.client.port'),
-            'scheme' => (string) config('broadcasting.connections.reverb.client.scheme'),
-        ];
     }
 }

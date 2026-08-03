@@ -3,7 +3,7 @@
 namespace Tests\Unit\GameScoring;
 
 use App\Support\GameScoring\GameLegsSetGrouper;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\TestCase;
 

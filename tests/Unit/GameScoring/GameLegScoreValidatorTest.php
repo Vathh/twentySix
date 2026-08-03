@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\GameScoring;
 
-use App\Support\GameScoring\GameLegScoreValidator;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\GameLegScoreValidator;
+use App\Domain\GameScoring\MatchFormat;
 use DomainException;
 use PHPUnit\Framework\TestCase;
 

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Services\QuickGame\QuickGameLobbyService;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use App\Support\GameScoring\MatchFormatRequestParser;
 use App\Support\QuickGameLobbyPayload;
 use Illuminate\Http\JsonResponse;

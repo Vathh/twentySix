@@ -1,6 +1,7 @@
 <?php
 namespace App\Domain;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Domain\Tournament\TournamentDomain;
 use App\Models\Season\Season;
 use Carbon\Carbon;
@@ -8,6 +9,10 @@ use Illuminate\Support\Collection;
 
 class SeasonDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** @var list<string> */
+    private const RELATIONS = ['league', 'admins', 'relatedUsers', 'tournaments'];
 
     /**
      * @param int $id
@@ -43,7 +48,7 @@ class SeasonDomain
      */
     public static function fromEloquent(Season $season, array $with = []): self
     {
-        $season->loadMissing(array_intersect($with, ['league', 'admins', 'relatedUsers', 'tournaments']));
+        self::assertRelationsLoaded($season, $with, self::RELATIONS);
 
         return new self(
             id: $season->id,

@@ -9,6 +9,7 @@ use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\GameScoring\GameDetailService;
 use App\Services\GameScoring\GameResultCorrectionService;
 use App\Services\GameScoring\GameScoringService;
+use App\Support\Broadcasting\ReverbClientConfig;
 use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -82,7 +83,7 @@ class GameViewController extends Controller
         return view('games.live', array_merge($detail, [
             'initialState' => $initialState,
             'liveStateUrl' => route('games.live.state', ['type' => $type, 'id' => $id]),
-            'reverb' => $this->reverbClientConfig(),
+            'reverb' => ReverbClientConfig::forWeb(),
         ]));
     }
 
@@ -122,18 +123,5 @@ class GameViewController extends Controller
             GameKind::PLAYOFF => $this->gameScoringService->resolvePlayoffGame($id),
             GameKind::QUICK => $this->gameScoringService->resolveQuickGame($id),
         };
-    }
-
-    /**
-     * @return array{key: string, host: string, port: int, scheme: string}
-     */
-    private function reverbClientConfig(): array
-    {
-        return [
-            'key' => (string) config('broadcasting.connections.reverb.key'),
-            'host' => (string) env('REVERB_HOST', '127.0.0.1'),
-            'port' => (int) env('REVERB_PORT', 8080),
-            'scheme' => (string) env('REVERB_SCHEME', 'http'),
-        ];
     }
 }

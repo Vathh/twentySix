@@ -3,7 +3,7 @@
 namespace App\Models\Tournament;
 
 use App\Enums\GameStage;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

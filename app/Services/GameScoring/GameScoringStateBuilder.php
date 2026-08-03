@@ -12,7 +12,7 @@ use App\Repositories\Game\GameLegRepository;
 use App\Repositories\Game\GameVisitRepository;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
-use App\Support\GameScoring\VisitRecorder;
+use App\Domain\GameScoring\VisitRecorder;
 use App\Support\GameScoring\ScoringStateContract;
 
 class GameScoringStateBuilder

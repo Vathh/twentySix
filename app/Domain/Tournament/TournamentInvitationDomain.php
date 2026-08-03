@@ -2,6 +2,7 @@
 
 namespace App\Domain\Tournament;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Domain\PlayerDomain;
 use App\Enums\TournamentInvitationStatus;
 use App\Models\Tournament\TournamentInvitation;
@@ -9,6 +10,10 @@ use Carbon\Carbon;
 
 class TournamentInvitationDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** Relacje zawsze wymagane — dociągnij w Repository (np. `TournamentInvitation::with(self::RELATIONS)`). */
+    public const RELATIONS = ['user.player', 'tournament'];
     public function __construct(
         public readonly int $id,
         public readonly int $tournamentId,
@@ -24,7 +29,7 @@ class TournamentInvitationDomain
 
     public static function fromEloquent(TournamentInvitation $invitation): self
     {
-        $invitation->loadMissing(['user.player', 'tournament']);
+        self::assertRelationsLoaded($invitation, self::RELATIONS, self::RELATIONS);
 
         return new self(
             id: $invitation->id,

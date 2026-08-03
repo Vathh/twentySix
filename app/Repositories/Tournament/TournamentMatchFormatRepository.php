@@ -4,7 +4,7 @@ namespace App\Repositories\Tournament;
 
 use App\Enums\GameStage;
 use App\Models\Tournament\TournamentMatchFormat;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use Illuminate\Support\Collection;
 
 class TournamentMatchFormatRepository

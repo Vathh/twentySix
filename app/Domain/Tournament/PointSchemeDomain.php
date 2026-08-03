@@ -2,6 +2,7 @@
 
 namespace App\Domain\Tournament;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Enums\GameStage;
 use App\Models\PointScheme\PointScheme;
 use App\Models\PointScheme\PointSchemeRule;
@@ -9,6 +10,10 @@ use Illuminate\Support\Collection;
 
 class PointSchemeDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** @var list<string> */
+    private const RELATIONS = ['rules'];
 
     /**
      * @param int $id
@@ -34,7 +39,7 @@ class PointSchemeDomain
      */
     public static function fromEloquent(PointScheme $scheme, array $with = []): self
     {
-        $scheme->loadMissing(array_intersect($with, ['rules']));
+        self::assertRelationsLoaded($scheme, $with, self::RELATIONS);
 
         return new self(
             id: $scheme->id,

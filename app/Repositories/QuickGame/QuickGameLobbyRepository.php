@@ -7,7 +7,7 @@ use App\Models\QuickGame\QuickGameLobbyPlayer;
 use App\Models\QuickGame\QuickGameLobbyInvitation;
 use Illuminate\Support\Facades\DB;
 
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 
 class QuickGameLobbyRepository
 {
@@ -184,6 +184,15 @@ class QuickGameLobbyRepository
             ->where('invited_player_id', $invitedPlayerId)
             ->where('status', 'pending')
             ->exists();
+    }
+
+    public function markFinished(int $lobbyId, int $quickGameId): void
+    {
+        DB::table('quick_game_lobbies')->where('id', $lobbyId)->update([
+            'status' => 'finished',
+            'quick_game_id' => $quickGameId,
+            'updated_at' => now(),
+        ]);
     }
 }
 

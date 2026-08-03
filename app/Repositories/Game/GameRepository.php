@@ -65,7 +65,8 @@ class GameRepository
      */
     public function getFinishedGroupGames(int $tournamentId, int $groupNumber): Collection
     {
-        return Game::where('tournament_id', $tournamentId)
+        return Game::with(['player1', 'player2', 'winner'])
+                    ->where('tournament_id', $tournamentId)
                     ->where('group_number', $groupNumber)
                     ->where('status', GameStatus::FINISHED)
                     ->get()
@@ -139,6 +140,14 @@ class GameRepository
     public function findModelOrNull(int $id): ?Game
     {
         return Game::query()->find($id);
+    }
+
+    /**
+     * Zapisuje zmiany na modelu Game (np. po mutacjach stanu scoringu w Service).
+     */
+    public function save(Game $game): void
+    {
+        $game->save();
     }
 }
 

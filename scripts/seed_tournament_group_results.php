@@ -13,7 +13,7 @@ use App\Models\Game\Game;
 use App\Models\Tournament\Tournament;
 use App\Services\Game\GameService;
 use App\Services\GameScoring\GameResultCorrectionService;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use Illuminate\Contracts\Console\Kernel;
 
 require __DIR__.'/../vendor/autoload.php';

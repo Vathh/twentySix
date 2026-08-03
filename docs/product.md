@@ -400,6 +400,10 @@ Wspólne dla **quick game online**, **treningu** i (tam gdzie dotyczy) **turniej
 - **API:** walidacja grup×awans, podział do grup, statusy meczów, quick game (oba tryby urządzeń), zaproszenia, achievementy, point schemes.
 - **Mobile:** tablet, quick game online, **trening (lokalny)**, znajomi (MVP), akceptacja zaproszeń (turniej, lobby, znajomi).
 
+### Publiczny podgląd live (web)
+
+Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) oraz sesji FFA (`/quick-game/lobby/{lobbyId}/live`) są **celowo publiczne** — bez `middleware('auth')`, dostępne po numerycznym id jako link do udostępnienia (ten sam wzorzec co istniejący `games.show`). Auth chroni **granie/wpisywanie wyniku**, nie **oglądanie**.
+
 ## MVP (wersja 1 — musi działać)
 
 ### Web
@@ -438,7 +442,6 @@ Wspólne dla **quick game online**, **treningu** i (tam gdzie dotyczy) **turniej
 - **Awatary graczy** — upload zdjęcia profilowego (web + mobile); przy `Player`; limity pliku, fallback inicjałów; crop / CDN później. Backlog: [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - Granularne uprawnienia współadmina
 - Quick game z dowolnym zalogowanym
-- Publiczny podgląd pojedynczych meczów
 - **Drabinka playoff > 32 awansujących** — w MVP limit `playoff_bracket_size ≤ 32`. Rozszerzenie: refaktor slotów playoff na **generyczne** (`round` + `index` zamiast enumów `PlayoffSlot` / `WinnerDestinationSlot`), żeby skalować do 64+ awansujących bez eksplozji enumów. **Implementacja: opcja B** — zaplanować po domknięciu MVP turniejowego.
 
 ## Czego nie robimy (na razie)

@@ -12,7 +12,7 @@ use App\Repositories\GroupStanding\GroupStandingRepository;
 use App\Repositories\Tournament\TournamentMatchFormatRepository;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Services\GameScoring\GameAuthorizationService;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use App\Support\Tournament\TournamentGroupAdvanceDistribution;
 use App\Support\Tournament\TournamentGroupDistribution;
 use App\Services\Tournament\LoginCodeService;
@@ -47,7 +47,8 @@ class TournamentService
     public function loadAndAuthorize(int $tournamentId, array $additionalRelations = []): TournamentDomain
     {
         $allRelations = array_merge($additionalRelations, ['season', 'admins']);
-        $tournament = $this->tournamentRepository->findModel($tournamentId, $allRelations);
+        $eagerLoad = array_unique(array_merge(['admins'], TournamentDomain::eagerLoadRelationsFor($allRelations)));
+        $tournament = $this->tournamentRepository->findModel($tournamentId, $eagerLoad);
         $this->gameAuthorizationService->authorizeManageTournament($tournament);
 
         return TournamentDomain::fromEloquent($tournament, $allRelations);

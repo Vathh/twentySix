@@ -2,12 +2,17 @@
 
 namespace App\Domain\Game;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Domain\PlayerDomain;
 use App\Enums\GameStatus;
 use App\Models\QuickGame\QuickGame;
 
 class QuickGameDomain extends GameDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** @var list<string> */
+    private const RELATIONS = ['player1', 'player2', 'winner'];
     /**
      * @param int|null $id
      * @param PlayerDomain|null $player1
@@ -45,7 +50,7 @@ class QuickGameDomain extends GameDomain
      */
     public static function fromEloquent(QuickGame $quickGame, array $with = []): QuickGameDomain
     {
-        $quickGame->loadMissing(array_intersect($with, ['player1', 'player2', 'winner']));
+        self::assertRelationsLoaded($quickGame, $with, self::RELATIONS);
 
         $player1 = in_array('player1', $with) && $quickGame->player1
             ? PlayerDomain::fromEloquent($quickGame->player1)

@@ -2,11 +2,17 @@
 
 namespace App\Domain;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Domain\Tournament\TournamentDomain;
 use App\Models\GroupStanding\GroupStanding;
 
 class GroupStandingDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** @var list<string> */
+    private const RELATIONS = ['tournament', 'player'];
+
     public function __construct(
         public readonly int $id,
         public readonly ?TournamentDomain $tournament,
@@ -25,7 +31,7 @@ class GroupStandingDomain
 
     public static function fromEloquent(GroupStanding $groupStanding, array $with = []): GroupStandingDomain
     {
-        $groupStanding->loadMissing(array_intersect($with, ['tournament', 'player']));
+        self::assertRelationsLoaded($groupStanding, $with, self::RELATIONS);
 
         return new self(
             id: $groupStanding->id,

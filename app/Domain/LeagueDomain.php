@@ -1,11 +1,17 @@
 <?php
 namespace App\Domain;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Models\League\League;
 use Carbon\Carbon;
 
 class LeagueDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** @var list<string> */
+    private const RELATIONS = ['seasons', 'admins', 'relatedUsers', 'guests'];
+
     /**
      * @param  array<string, array<string, int|string>>  $matchFormatPresets
      * @param  array  $admins
@@ -34,7 +40,7 @@ class LeagueDomain
      */
     public static function fromEloquent(League $league, array $with = []): self
     {
-        $league->loadMissing(array_intersect($with, ['seasons', 'admins', 'relatedUsers', 'guests']));
+        self::assertRelationsLoaded($league, $with, self::RELATIONS);
 
         $presets = is_array($league->match_format_presets) ? $league->match_format_presets : [];
 

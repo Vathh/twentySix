@@ -2,6 +2,7 @@
 
 namespace App\Domain;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Models\League\League;
 use App\Models\Player\Player;
 use Carbon\Carbon;
@@ -9,8 +10,13 @@ use Illuminate\Support\Collection;
 
 class PlayerDomain
 {
+    use AssertsRelationsLoaded;
+
     /** Maksymalna długość opisu profilu gracza (zgodna z regułą walidacji `max:1000`). */
     public const DESCRIPTION_MAX_LENGTH = 1000;
+
+    /** @var list<string> */
+    private const RELATIONS = ['achievements'];
 
     /**
      * @param int $id
@@ -38,7 +44,7 @@ class PlayerDomain
             return null;
         }
 
-        $player->loadMissing(array_intersect($with, ['achievements']));
+        self::assertRelationsLoaded($player, $with, self::RELATIONS);
 
         return new self(
             id: $player->id,

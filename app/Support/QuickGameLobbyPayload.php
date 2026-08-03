@@ -3,7 +3,7 @@
 namespace App\Support;
 
 use App\Models\QuickGame\QuickGameLobby;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 
 class QuickGameLobbyPayload
 {

@@ -8,7 +8,7 @@ use App\Repositories\Friends\FriendshipRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameLobbyRepository;
 use App\Services\Push\InvitationPushService;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 
 class QuickGameLobbyService
 {

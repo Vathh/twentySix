@@ -13,11 +13,12 @@ use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameFfaPresenceRepository;
 use App\Repositories\QuickGame\QuickGameFfaSessionRepository;
 use App\Repositories\QuickGame\QuickGameFfaVisitRepository;
+use App\Repositories\QuickGame\QuickGameLobbyRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 use App\Support\QuickGameFfa\QuickGameFfaStateBuilder;
-use App\Support\GameScoring\MatchFormat;
-use App\Support\GameScoring\MatchFormatScoring;
-use App\Support\GameScoring\VisitRecorder;
+use App\Domain\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormatScoring;
+use App\Domain\GameScoring\VisitRecorder;
 use App\Support\QuickGameLobbyPlayerOrder;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,7 @@ class QuickGameFfaScoringService
         private QuickGameFfaStateBuilder $stateBuilder,
         private PlayerRepository $playerRepository,
         private QuickGameRepository $quickGameRepository,
+        private QuickGameLobbyRepository $lobbyRepository,
         private QuickGameFfaCricketScoringService $cricketScoringService,
     ) {
     }
@@ -510,9 +512,7 @@ class QuickGameFfaScoringService
         $session->loadMissing('lobby');
         $lobby = $session->lobby;
         if ($lobby !== null) {
-            $lobby->status = 'finished';
-            $lobby->quick_game_id = $quickGameId;
-            $lobby->save();
+            $this->lobbyRepository->markFinished($lobby->id, $quickGameId);
         }
     }
 

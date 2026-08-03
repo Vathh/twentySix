@@ -3,7 +3,7 @@
 namespace Tests\Unit\League;
 
 use App\Enums\GameStage;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use App\Support\League\LeagueMatchFormatPresets;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;

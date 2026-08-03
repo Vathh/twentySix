@@ -71,6 +71,7 @@ class SeasonController extends Controller
 
     public function show(Season $season)
     {
+        $season->loadMissing(['admins', 'league', 'tournaments']);
         $seasonDomain = SeasonDomain::fromEloquent($season, ['admins', 'league', 'tournaments']);
 
         return view('seasons.show', ['season' => $seasonDomain]);

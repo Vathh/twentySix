@@ -100,6 +100,7 @@ class TournamentGroupMatrixLiveService
         $tournament = $this->tournamentRepository->findModelOrNull($tournamentId, [
             'games.player1',
             'games.player2',
+            'games.winner',
             'groupStandings.player',
         ]);
         $playoffHighlights = [];
@@ -142,6 +143,7 @@ class TournamentGroupMatrixLiveService
         $tournament = $this->tournamentRepository->findModelOrNull($tournamentId, [
             'games.player1',
             'games.player2',
+            'games.winner',
             'groupStandings.player',
         ]);
         if ($tournament === null) {

@@ -12,7 +12,7 @@ use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Services\GameScoring\GameResultCorrectionService;
 use App\Services\GroupStanding\GroupStandingService;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

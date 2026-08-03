@@ -11,7 +11,7 @@ use App\Models\Player\Player;
 use App\Models\Tournament\Tournament;
 use App\Services\GroupStanding\GroupStandingService;
 use App\Services\Tournament\TournamentResultService;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

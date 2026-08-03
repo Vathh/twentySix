@@ -3,7 +3,7 @@
 namespace Tests\Unit\Tournament;
 
 use App\Enums\GameStage;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use App\Support\Tournament\TournamentMatchFormatRequestParser;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;

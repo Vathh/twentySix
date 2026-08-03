@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\GameScoring;
 
-use App\Support\GameScoring\VisitRecorder;
+use App\Domain\GameScoring\VisitRecorder;
 use DomainException;
 use PHPUnit\Framework\TestCase;
 

@@ -10,7 +10,7 @@ use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\Tournament\LoginCode;
 use App\Models\Tournament\Tournament;
 use App\Services\Tournament\TournamentFinishService;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Laravel\Sanctum\PersonalAccessToken;

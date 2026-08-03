@@ -2,6 +2,7 @@
 
 namespace App\Domain\Game;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Domain\PlayerDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\DTO\GameResultDTO;
@@ -13,6 +14,10 @@ use App\Models\PlayoffGame\PlayoffGame;
 
 class PlayoffGameDomain extends GameDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** @var list<string> */
+    private const RELATIONS = ['tournament', 'player1', 'player2', 'winner'];
 
     /**
      * @param int|null $id
@@ -93,7 +98,7 @@ class PlayoffGameDomain extends GameDomain
      */
     public static function fromEloquent(PlayoffGame $game, array $with = []): PlayoffGameDomain
     {
-        $game->loadMissing(array_intersect($with, ['tournament', 'player1', 'player2', 'winner']));
+        self::assertRelationsLoaded($game, $with, self::RELATIONS);
 
         $player1 = in_array('player1', $with) && $game->player1
             ? PlayerDomain::fromEloquent($game->player1)

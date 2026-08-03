@@ -21,8 +21,8 @@ use App\Services\Game\GameService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
-use App\Support\GameScoring\MatchFormatScoring;
-use App\Support\GameScoring\VisitRecorder;
+use App\Domain\GameScoring\MatchFormatScoring;
+use App\Domain\GameScoring\VisitRecorder;
 use DomainException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -197,7 +197,7 @@ class GameScoringService
                 if ($game->status === GameStatus::FINISHED) {
                     $game->status = GameStatus::IN_PROGRESS;
                     $game->winner_id = null;
-                    $game->save();
+                    $this->persistGame($game);
                 }
             }
 
@@ -246,22 +246,30 @@ class GameScoringService
 
             $this->gameLegRepository->finishLeg($leg, $winnerId, $p1Points, $p2Points);
 
-            $game->player1_score = (int) ($game->player1_score ?? 0);
-            $game->player2_score = (int) ($game->player2_score ?? 0);
-
-            $matchFinished = MatchFormatScoring::applyLegWinToH2hGame(
-                $game,
+            $result = MatchFormatScoring::applyLegWinToH2hGame(
                 $context->matchFormat,
                 $winnerId,
                 $context->player1Id,
                 $context->player2Id,
+                (int) ($game->player1_score ?? 0),
+                (int) ($game->player2_score ?? 0),
+                (int) ($game->player1_legs_in_set ?? 0),
+                (int) ($game->player2_legs_in_set ?? 0),
+                (int) ($game->current_set_number ?? 1),
             );
 
-            if ($matchFinished) {
+            $game->player1_score = $result['player1Score'];
+            $game->player2_score = $result['player2Score'];
+            $game->player1_legs_in_set = $result['player1LegsInSet'];
+            $game->player2_legs_in_set = $result['player2LegsInSet'];
+            $game->current_set_number = $result['currentSetNumber'];
+
+            if ($result['finished']) {
                 $game->status = GameStatus::FINISHED;
+                $game->winner_id = $result['winnerId'];
             }
 
-            $game->save();
+            $this->persistGame($game);
 
             $freshGame = $game->fresh(['player1', 'player2']);
 
@@ -313,14 +321,25 @@ class GameScoringService
 
     private function revertLegWinOnGame(Game|PlayoffGame|QuickGame $game, ?int $legWinnerId, GameScoringContext $context): void
     {
-        MatchFormatScoring::revertLegWinOnH2hGame(
-            $game,
+        $result = MatchFormatScoring::revertLegWinOnH2hGame(
             $context->matchFormat,
             $legWinnerId,
             $context->player1Id,
             $context->player2Id,
+            (int) ($game->player1_score ?? 0),
+            (int) ($game->player2_score ?? 0),
+            (int) ($game->player1_legs_in_set ?? 0),
+            (int) ($game->player2_legs_in_set ?? 0),
+            (int) ($game->current_set_number ?? 1),
         );
-        $game->save();
+
+        $game->player1_score = $result['player1Score'];
+        $game->player2_score = $result['player2Score'];
+        $game->player1_legs_in_set = $result['player1LegsInSet'];
+        $game->player2_legs_in_set = $result['player2LegsInSet'];
+        $game->current_set_number = $result['currentSetNumber'];
+
+        $this->persistGame($game);
     }
 
     private function resolveLegForContext(GameScoringContext $context, int $legId): GameLeg
@@ -344,8 +363,17 @@ class GameScoringService
     {
         if ($game->status !== GameStatus::FINISHED) {
             $game->status = GameStatus::IN_PROGRESS;
-            $game->save();
+            $this->persistGame($game);
         }
+    }
+
+    private function persistGame(Game|PlayoffGame|QuickGame $game): void
+    {
+        match (true) {
+            $game instanceof Game => $this->gameRepository->save($game),
+            $game instanceof PlayoffGame => $this->playoffGameRepository->save($game),
+            $game instanceof QuickGame => $this->quickGameRepository->save($game),
+        };
     }
 
     private function pushGroupMatrixLive(

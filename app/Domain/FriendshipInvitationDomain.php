@@ -2,11 +2,16 @@
 
 namespace App\Domain;
 
+use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Models\Friends\FriendshipInvitation;
 use Carbon\Carbon;
 
 class FriendshipInvitationDomain
 {
+    use AssertsRelationsLoaded;
+
+    /** Relacje zawsze wymagane — dociągnij w Repository (np. `FriendshipInvitation::with(self::RELATIONS)`). */
+    public const RELATIONS = ['sender.player', 'receiver.player'];
     public function __construct(
         public readonly int $id,
         public readonly int $senderId,
@@ -20,7 +25,7 @@ class FriendshipInvitationDomain
 
     public static function fromEloquent(FriendshipInvitation $invitation): self
     {
-        $invitation->loadMissing(['sender.player', 'receiver.player']);
+        self::assertRelationsLoaded($invitation, self::RELATIONS, self::RELATIONS);
 
         return new self(
             id: $invitation->id,

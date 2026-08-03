@@ -2,123 +2,169 @@
 
 namespace App\Domain\GameScoring;
 
-use App\Models\Game\Game;
-use App\Models\PlayoffGame\PlayoffGame;
-use App\Models\QuickGame\QuickGame;
-
 final class MatchFormatScoring
 {
     /**
-     * @return bool true when match is finished
+     * Czysta funkcja: liczy nowy stan meczu H2H po wygranym legu. Nie mutuje Eloquent —
+     * zwraca nowy stan, który Service ma zapisać przez Repository.
+     *
+     * @return array{finished: bool, winnerId: ?int, player1Score: int, player2Score: int, player1LegsInSet: int, player2LegsInSet: int, currentSetNumber: int}
      */
     public static function applyLegWinToH2hGame(
-        Game|PlayoffGame|QuickGame $game,
         MatchFormat $format,
         int $winnerPlayerId,
         int $player1Id,
         int $player2Id,
-    ): bool {
+        int $player1Score,
+        int $player2Score,
+        int $player1LegsInSet,
+        int $player2LegsInSet,
+        int $currentSetNumber,
+    ): array {
         if ($format->isSingleSet()) {
             if ($winnerPlayerId === $player1Id) {
-                $game->player1_score = (int) ($game->player1_score ?? 0) + 1;
+                $player1Score++;
             } else {
-                $game->player2_score = (int) ($game->player2_score ?? 0) + 1;
+                $player2Score++;
             }
 
-            $p1 = (int) $game->player1_score;
-            $p2 = (int) $game->player2_score;
+            $finished = $player1Score >= $format->legsToWinSet || $player2Score >= $format->legsToWinSet;
 
-            if ($p1 >= $format->legsToWinSet || $p2 >= $format->legsToWinSet) {
-                $game->winner_id = $p1 >= $format->legsToWinSet ? $player1Id : $player2Id;
-
-                return true;
-            }
-
-            return false;
+            return [
+                'finished' => $finished,
+                'winnerId' => $finished ? ($player1Score >= $format->legsToWinSet ? $player1Id : $player2Id) : null,
+                'player1Score' => $player1Score,
+                'player2Score' => $player2Score,
+                'player1LegsInSet' => $player1LegsInSet,
+                'player2LegsInSet' => $player2LegsInSet,
+                'currentSetNumber' => $currentSetNumber,
+            ];
         }
 
         if ($winnerPlayerId === $player1Id) {
-            $game->player1_legs_in_set = (int) ($game->player1_legs_in_set ?? 0) + 1;
+            $player1LegsInSet++;
         } else {
-            $game->player2_legs_in_set = (int) ($game->player2_legs_in_set ?? 0) + 1;
+            $player2LegsInSet++;
         }
 
-        $p1Legs = (int) $game->player1_legs_in_set;
-        $p2Legs = (int) $game->player2_legs_in_set;
-
-        if ($p1Legs < $format->legsToWinSet && $p2Legs < $format->legsToWinSet) {
-            return false;
+        if ($player1LegsInSet < $format->legsToWinSet && $player2LegsInSet < $format->legsToWinSet) {
+            return [
+                'finished' => false,
+                'winnerId' => null,
+                'player1Score' => $player1Score,
+                'player2Score' => $player2Score,
+                'player1LegsInSet' => $player1LegsInSet,
+                'player2LegsInSet' => $player2LegsInSet,
+                'currentSetNumber' => $currentSetNumber,
+            ];
         }
 
-        if ($p1Legs >= $format->legsToWinSet) {
-            $game->player1_score = (int) ($game->player1_score ?? 0) + 1;
+        if ($player1LegsInSet >= $format->legsToWinSet) {
+            $player1Score++;
         } else {
-            $game->player2_score = (int) ($game->player2_score ?? 0) + 1;
+            $player2Score++;
         }
 
-        $game->player1_legs_in_set = 0;
-        $game->player2_legs_in_set = 0;
-        $game->current_set_number = (int) ($game->current_set_number ?? 1) + 1;
+        $player1LegsInSet = 0;
+        $player2LegsInSet = 0;
+        $currentSetNumber++;
 
-        $p1Sets = (int) $game->player1_score;
-        $p2Sets = (int) $game->player2_score;
+        $finished = $player1Score >= $format->setsToWinMatch || $player2Score >= $format->setsToWinMatch;
 
-        if ($p1Sets >= $format->setsToWinMatch || $p2Sets >= $format->setsToWinMatch) {
-            $game->winner_id = $p1Sets >= $format->setsToWinMatch ? $player1Id : $player2Id;
-
-            return true;
-        }
-
-        return false;
+        return [
+            'finished' => $finished,
+            'winnerId' => $finished ? ($player1Score >= $format->setsToWinMatch ? $player1Id : $player2Id) : null,
+            'player1Score' => $player1Score,
+            'player2Score' => $player2Score,
+            'player1LegsInSet' => $player1LegsInSet,
+            'player2LegsInSet' => $player2LegsInSet,
+            'currentSetNumber' => $currentSetNumber,
+        ];
     }
 
+    /**
+     * Czysta funkcja: liczy stan meczu H2H po cofnięciu wygranego lega. Nie mutuje Eloquent —
+     * zwraca nowy stan, który Service ma zapisać przez Repository.
+     *
+     * @return array{player1Score: int, player2Score: int, player1LegsInSet: int, player2LegsInSet: int, currentSetNumber: int}
+     */
     public static function revertLegWinOnH2hGame(
-        Game|PlayoffGame|QuickGame $game,
         MatchFormat $format,
         ?int $legWinnerId,
         int $player1Id,
         int $player2Id,
-    ): void {
+        int $player1Score,
+        int $player2Score,
+        int $player1LegsInSet,
+        int $player2LegsInSet,
+        int $currentSetNumber,
+    ): array {
+        $unchanged = [
+            'player1Score' => $player1Score,
+            'player2Score' => $player2Score,
+            'player1LegsInSet' => $player1LegsInSet,
+            'player2LegsInSet' => $player2LegsInSet,
+            'currentSetNumber' => $currentSetNumber,
+        ];
+
         if ($legWinnerId === null) {
-            return;
+            return $unchanged;
         }
 
         if ($format->isSingleSet()) {
-            if ((int) $game->player1_id === $legWinnerId && (int) ($game->player1_score ?? 0) > 0) {
-                $game->player1_score--;
-            } elseif ((int) $game->player2_id === $legWinnerId && (int) ($game->player2_score ?? 0) > 0) {
-                $game->player2_score--;
+            if ($player1Id === $legWinnerId && $player1Score > 0) {
+                $player1Score--;
+            } elseif ($player2Id === $legWinnerId && $player2Score > 0) {
+                $player2Score--;
             }
 
-            return;
+            return [
+                'player1Score' => $player1Score,
+                'player2Score' => $player2Score,
+                'player1LegsInSet' => $player1LegsInSet,
+                'player2LegsInSet' => $player2LegsInSet,
+                'currentSetNumber' => $currentSetNumber,
+            ];
         }
 
-        $p1Legs = (int) ($game->player1_legs_in_set ?? 0);
-        $p2Legs = (int) ($game->player2_legs_in_set ?? 0);
-        $setWasClosed = $p1Legs === 0 && $p2Legs === 0
-            && ((int) ($game->player1_score ?? 0) > 0 || (int) ($game->player2_score ?? 0) > 0);
+        $setWasClosed = $player1LegsInSet === 0 && $player2LegsInSet === 0
+            && ($player1Score > 0 || $player2Score > 0);
 
         if ($setWasClosed) {
-            if ((int) $game->player1_id === $legWinnerId && (int) ($game->player1_score ?? 0) > 0) {
-                $game->player1_score--;
-                $game->player1_legs_in_set = $format->legsToWinSet - 1;
-            } elseif ((int) $game->player2_id === $legWinnerId && (int) ($game->player2_score ?? 0) > 0) {
-                $game->player2_score--;
-                $game->player2_legs_in_set = $format->legsToWinSet - 1;
+            if ($player1Id === $legWinnerId && $player1Score > 0) {
+                $player1Score--;
+                $player1LegsInSet = $format->legsToWinSet - 1;
+            } elseif ($player2Id === $legWinnerId && $player2Score > 0) {
+                $player2Score--;
+                $player2LegsInSet = $format->legsToWinSet - 1;
             }
 
-            if ((int) ($game->current_set_number ?? 1) > 1) {
-                $game->current_set_number = (int) $game->current_set_number - 1;
+            if ($currentSetNumber > 1) {
+                $currentSetNumber--;
             }
 
-            return;
+            return [
+                'player1Score' => $player1Score,
+                'player2Score' => $player2Score,
+                'player1LegsInSet' => $player1LegsInSet,
+                'player2LegsInSet' => $player2LegsInSet,
+                'currentSetNumber' => $currentSetNumber,
+            ];
         }
 
-        if ((int) $game->player1_id === $legWinnerId && $p1Legs > 0) {
-            $game->player1_legs_in_set = $p1Legs - 1;
-        } elseif ((int) $game->player2_id === $legWinnerId && $p2Legs > 0) {
-            $game->player2_legs_in_set = $p2Legs - 1;
+        if ($player1Id === $legWinnerId && $player1LegsInSet > 0) {
+            $player1LegsInSet--;
+        } elseif ($player2Id === $legWinnerId && $player2LegsInSet > 0) {
+            $player2LegsInSet--;
         }
+
+        return [
+            'player1Score' => $player1Score,
+            'player2Score' => $player2Score,
+            'player1LegsInSet' => $player1LegsInSet,
+            'player2LegsInSet' => $player2LegsInSet,
+            'currentSetNumber' => $currentSetNumber,
+        ];
     }
 
     /**

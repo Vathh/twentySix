@@ -43,7 +43,7 @@ Support = wyłącznie helpers techniczne (HTTP/WS mapping, serializacja, I/O), n
 |---------|------------------|
 | **Controller** | HTTP: walidacja requestu, auth gate, odpowiedź. **Bez** Repository i bez Eloquent query (poza route model binding / `Auth::user()`). |
 | **Service** | Orkiestracja use-case’ów: woła Domain + Repository, broadcast, transakcje. |
-| **Domain** | **Logika biznesowa** i invarianty (reguły scoringu, turnieju, auth policy…). Preferuj bogate Domain nad anemicznymi mapperami. |
+| **Domain** | **Logika biznesowa** i invarianty (reguły scoringu, turnieju, auth policy…). Preferuj bogate Domain nad anemicznymi mapperami. **Bez I/O**: `fromEloquent()` nie robi `loadMissing`/dociągania relacji — oczekuje, że wymagane relacje są już wczytane, i rzuca `InvalidArgumentException`, gdy ich brakuje. Eager-load (`with([...])`/`loadMissing`) należy zrobić w Repository/Service **przed** wywołaniem `fromEloquent()`. |
 | **Repository** | **Jedyny** dostęp do bazy (query/persist). Service **nie** robi ad-hoc `Model::query()` / `::findOrFail` / `::create`, gdy istnieje lub powinno istnieć Repo. |
 | **Support** | Techniczne helpers (budowa payloadu WS/HTTP, kontrakty serializacji, adaptery). **Nie** umieszczaj tu nowych reguł biznesowych — migruj je do Domain (strangler). |
 | **Models** | Eloquent ORM — persistence, nie miejsce na reguły domenowe. |

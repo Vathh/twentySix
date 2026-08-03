@@ -8,7 +8,7 @@ use App\Enums\TournamentInvitationStatus;
 use App\Enums\TournamentStatus;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Services\Player\PlayerService;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use App\Support\League\LeagueMatchFormatPresets;
 use App\Support\Tournament\TournamentStartRules;
 use Illuminate\Http\Request;
@@ -75,29 +75,8 @@ class TournamentStartPageService
                 ->values()
             : collect();
 
-        $participants = $invitations
-            ->filter(fn ($inv) => $inv->status === TournamentInvitationStatus::ACCEPTED)
-            ->map(fn ($inv) => [
-                'kind' => 'user',
-                'playerId' => $inv->userPlayer?->id,
-                'name' => $inv->userPlayer?->name ?? '—',
-                'invitationId' => $inv->id,
-            ])
-            ->merge(
-                $tournamentGuests->map(fn ($guest) => [
-                    'kind' => 'guest',
-                    'playerId' => $guest->id,
-                    'name' => $guest->name,
-                    'invitationId' => null,
-                ])
-            )
-            ->sortBy('name')
-            ->values();
-
-        $invitationPipeline = $invitations
-            ->filter(fn ($inv) => $inv->status !== TournamentInvitationStatus::ACCEPTED)
-            ->sortBy(fn ($inv) => $inv->userPlayer?->name ?? '')
-            ->values();
+        $participants = $this->participantsList($invitations, $tournamentGuests);
+        $invitationPipeline = $this->pendingInvitations($invitations);
 
         $addTab = in_array($request->input('tab'), ['registered', 'guests'], true)
             ? $request->input('tab')
@@ -140,20 +119,10 @@ class TournamentStartPageService
         return [
             'tournament' => $tournament,
             'invitationPipeline' => $invitationPipeline,
-            'invitationPipelineLive' => $this->buildInvitationPipelineLive($tournamentId),
+            'invitationPipelineLive' => $this->mapInvitationPipelineLive($invitationPipeline, $tournamentId),
             'regulars' => $regulars,
             'participants' => $participants,
-            'participantsLive' => $participants->map(fn ($p) => [
-                'kind' => $p['kind'],
-                'playerId' => $p['playerId'],
-                'name' => $p['name'],
-                'invitationId' => $p['invitationId'],
-                'removeUrl' => $p['kind'] === 'user' && $p['invitationId']
-                    ? route('tournaments.invitations.remove', [$tournamentId, $p['invitationId']], false)
-                    : ($p['kind'] === 'guest'
-                        ? route('tournaments.participants.guests.remove', $tournamentId, false)
-                        : null),
-            ])->values()->all(),
+            'participantsLive' => $this->mapParticipantsLive($participants, $tournamentId),
             'participantCount' => $participantCount,
             'relatedGuests' => $relatedGuests,
             'pendingJoinRequests' => $pendingJoinRequests,
@@ -187,12 +156,95 @@ class TournamentStartPageService
      */
     public function buildInvitationPipelineLive(int $tournamentId): array
     {
-        $invitations = $this->invitationService->getForTournament($tournamentId);
+        $invitations = $this->pendingInvitations($this->invitationService->getForTournament($tournamentId));
 
+        return $this->mapInvitationPipelineLive($invitations, $tournamentId);
+    }
+
+    /**
+     * @return list<array{kind: string, playerId: int|null, name: string, invitationId: int|null, removeUrl: string|null}>
+     */
+    public function buildParticipantsLive(int $tournamentId): array
+    {
+        $invitations = $this->invitationService->getForTournament($tournamentId);
+        $tournamentGuests = $this->playerService->getTournamentGuestParticipants($tournamentId);
+        $participants = $this->participantsList($invitations, $tournamentGuests);
+
+        return $this->mapParticipantsLive($participants, $tournamentId);
+    }
+
+    /**
+     * Zaakceptowani uczestnicy (użytkownicy + goście), posortowani po nazwie.
+     *
+     * @param  \Illuminate\Support\Collection  $invitations
+     * @param  \Illuminate\Support\Collection  $tournamentGuests
+     * @return \Illuminate\Support\Collection<int, array{kind: string, playerId: int|null, name: string, invitationId: int|null}>
+     */
+    private function participantsList($invitations, $tournamentGuests)
+    {
+        return $invitations
+            ->filter(fn ($inv) => $inv->status === TournamentInvitationStatus::ACCEPTED)
+            ->map(fn ($inv) => [
+                'kind' => 'user',
+                'playerId' => $inv->userPlayer?->id,
+                'name' => $inv->userPlayer?->name ?? '—',
+                'invitationId' => $inv->id,
+            ])
+            ->merge(
+                $tournamentGuests->map(fn ($guest) => [
+                    'kind' => 'guest',
+                    'playerId' => $guest->id,
+                    'name' => $guest->name,
+                    'invitationId' => null,
+                ])
+            )
+            ->sortBy('name')
+            ->values();
+    }
+
+    /**
+     * Zaproszenia w pipeline (nie zaakceptowane jeszcze), posortowane po nazwie zapraszanego.
+     *
+     * @param  \Illuminate\Support\Collection  $invitations
+     * @return \Illuminate\Support\Collection
+     */
+    private function pendingInvitations($invitations)
+    {
         return $invitations
             ->filter(fn ($inv) => $inv->status !== TournamentInvitationStatus::ACCEPTED)
             ->sortBy(fn ($inv) => $inv->userPlayer?->name ?? '')
+            ->values();
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection  $participants
+     * @return list<array{kind: string, playerId: int|null, name: string, invitationId: int|null, removeUrl: string|null}>
+     */
+    private function mapParticipantsLive($participants, int $tournamentId): array
+    {
+        return $participants
+            ->map(fn ($p) => [
+                'kind' => $p['kind'],
+                'playerId' => $p['playerId'],
+                'name' => $p['name'],
+                'invitationId' => $p['invitationId'],
+                'removeUrl' => $p['kind'] === 'user' && $p['invitationId']
+                    ? route('tournaments.invitations.remove', [$tournamentId, $p['invitationId']], false)
+                    : ($p['kind'] === 'guest'
+                        ? route('tournaments.participants.guests.remove', $tournamentId, false)
+                        : null),
+            ])
             ->values()
+            ->all();
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection  $invitations
+     * @return list<array{id: int, userId: int, name: string, status: string, statusLabel: string, isPending: bool, canReinvite: bool, cancelUrl: string}>
+     */
+    private function mapInvitationPipelineLive($invitations, int $tournamentId): array
+    {
+        return $invitations
             ->map(fn ($inv) => [
                 'id' => $inv->id,
                 'userId' => $inv->userId,
@@ -203,37 +255,6 @@ class TournamentStartPageService
                 'canReinvite' => $inv->status->canReinvite(),
                 'cancelUrl' => route('tournaments.invitations.cancel', [$tournamentId, $inv->id], false),
             ])
-            ->all();
-    }
-
-    /**
-     * @return list<array{kind: string, playerId: int|null, name: string, invitationId: int|null, removeUrl: string|null}>
-     */
-    public function buildParticipantsLive(int $tournamentId): array
-    {
-        $invitations = $this->invitationService->getForTournament($tournamentId);
-        $tournamentGuests = $this->playerService->getTournamentGuestParticipants($tournamentId);
-
-        return $invitations
-            ->filter(fn ($inv) => $inv->status === TournamentInvitationStatus::ACCEPTED)
-            ->map(fn ($inv) => [
-                'kind' => 'user',
-                'playerId' => $inv->userPlayer?->id,
-                'name' => $inv->userPlayer?->name ?? '—',
-                'invitationId' => $inv->id,
-                'removeUrl' => route('tournaments.invitations.remove', [$tournamentId, $inv->id], false),
-            ])
-            ->merge(
-                $tournamentGuests->map(fn ($guest) => [
-                    'kind' => 'guest',
-                    'playerId' => $guest->id,
-                    'name' => $guest->name,
-                    'invitationId' => null,
-                    'removeUrl' => route('tournaments.participants.guests.remove', $tournamentId, false),
-                ])
-            )
-            ->sortBy('name')
-            ->values()
             ->all();
     }
 }

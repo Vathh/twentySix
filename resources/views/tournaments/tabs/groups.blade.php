@@ -10,12 +10,7 @@
                 'showBase' => url('/games/group'),
                 'liveBase' => url('/games/group'),
             ],
-            'reverb' => [
-                'key' => (string) config('broadcasting.connections.reverb.key'),
-                'host' => (string) env('REVERB_HOST', '127.0.0.1'),
-                'port' => (int) env('REVERB_PORT', 8080),
-                'scheme' => (string) env('REVERB_SCHEME', 'http'),
-            ],
+            'reverb' => \App\Support\Broadcasting\ReverbClientConfig::forWeb(),
         ]))"
         x-init="init()"
     @endif

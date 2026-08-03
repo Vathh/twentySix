@@ -9,7 +9,7 @@ use App\Models\QuickGame\QuickGameLobby;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameFfaPresenceRepository;
 use App\Repositories\QuickGame\QuickGameFfaSessionRepository;
-use App\Support\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormat;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 

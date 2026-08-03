@@ -4,10 +4,10 @@ namespace App\Support\QuickGameFfa;
 
 use App\Models\Player\Player;
 use App\Models\QuickGame\QuickGameFfaSession;
-use App\Support\GameScoring\MatchFormat;
-use App\Support\GameScoring\MatchFormatScoring;
+use App\Domain\GameScoring\MatchFormat;
+use App\Domain\GameScoring\MatchFormatScoring;
 use App\Support\GameScoring\ScoringStateContract;
-use App\Support\GameScoring\VisitRecorder;
+use App\Domain\GameScoring\VisitRecorder;
 use Illuminate\Support\Collection;
 
 class QuickGameFfaStateBuilder
