@@ -210,6 +210,7 @@ php artisan migrate:fresh --force
 ```
 
 Po `migrate:fresh` baza jest pusta — wszyscy od zera przez rejestrację.
+Schematy punktacji (`PointSchemeSeeder`) wstawia migracja `seed_default_point_schemes` — **nie trzeba** osobnego seeda.
 
 ---
 
