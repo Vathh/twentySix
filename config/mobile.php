@@ -28,7 +28,7 @@ return [
 
     'apk_download_url' => env(
         'MOBILE_APK_DOWNLOAD_URL',
-        'https://expo.dev/accounts/vathh/projects/twentysix/builds/e77b020d-155e-42a6-9a35-b18639fc6796',
+        'https://expo.dev/accounts/vathh/projects/twentysix/builds/d0c943af-3171-42da-af91-bc1a91c56a7d',
     ),
 
 ];

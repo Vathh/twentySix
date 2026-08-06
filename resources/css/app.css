@@ -489,22 +489,22 @@
         );
     }
 
-    .home-hero::before {
-        content: '26';
+    .home-hero-mark {
         position: absolute;
-        right: -0.15em;
+        right: -0.35rem;
         top: 50%;
-        transform: translateY(-52%);
-        font-size: clamp(7rem, 22vw, 11rem);
-        font-weight: 800;
-        letter-spacing: -0.06em;
-        line-height: 1;
-        color: color-mix(in srgb, var(--color-accent) 14%, transparent);
+        transform: translateY(-50%);
+        width: clamp(8rem, 28vw, 13rem);
+        height: auto;
+        opacity: 0.18;
+        /* biały SVG → odcień accent (#f59e0b) */
+        filter: sepia(1) saturate(6) hue-rotate(5deg) brightness(0.95);
         pointer-events: none;
         user-select: none;
+        z-index: 0;
     }
 
-    .home-hero > * {
+    .home-hero > *:not(.home-hero-mark) {
         position: relative;
         z-index: 1;
     }
