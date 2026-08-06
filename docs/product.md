@@ -63,7 +63,7 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 
 ### Cykl życia (skrót)
 
-Rejestracja → znajomi (mobile) → quick game → twórca ligi = organizator → turniej → zaproszenia (akceptacja mobile) → start (grupy, awans, kody) → losowy podział do grup → mecze → playoff → punkty ligowe.
+Rejestracja → znajomi (mobile) → quick game → twórca ligi = organizator → turniej → zaproszenia (akceptacja mobile) → start (wybór wariantu: grupy+drabinka / SE / DE) → … → punkty ligowe.
 
 ### Rozgrywka turniejowa
 
@@ -114,7 +114,7 @@ Start turnieju: liczba kodów = liczba tabletów; jeden kod = jeden tablet; bez 
 
 ### Tablet — wybór meczu
 
-Tylko `oczekujący`. **Grupy:** kafelki grup → mecze. **Playoff:** płaska lista (zawodnicy + runda).
+Tylko `oczekujący`. **Grupy** (`groups_playoff`): kafelki grup → mecze. **Playoff / SE / DE:** płaska lista (zawodnicy + etykieta rundy / strony drabinki).
 
 ## Turniej — logika (MVP)
 
@@ -122,7 +122,7 @@ Tylko `oczekujący`. **Grupy:** kafelki grup → mecze. **Playoff:** płaska lis
 
 - Admin może **wystartować turniej** (i quick game), nawet gdy **nie wszyscy** zaproszeni zaakceptowali.
 - Do gry wchodzą **wyłącznie** zawodnicy ze **statusem zaakceptowanym** + **goście** (nazwa od admina).
-- Niezaakceptowani zaproszeni **nie są brani pod uwagę** (nie trafiają do losowania grup).
+- Niezaakceptowani zaproszeni **nie są brani pod uwagę** (nie trafiają do losowania grup / drabinki).
 
 ### Minimum zawodników
 
@@ -133,17 +133,74 @@ Tylko `oczekujący`. **Grupy:** kafelki grup → mecze. **Playoff:** płaska lis
 
 Bez spełnienia minimum start jest **zablokowany** (UI + walidacja API).
 
+### Warianty turnieju (format)
+
+Wybór **tylko przy starcie** (kreator) — po wystartowaniu bez zmiany typu.
+
+| Identyfikator (kod) | UI (skrót) | Opis |
+| --------------------- | ---------- | ---- |
+| `groups_playoff` | Grupy + drabinka | Obecny standard: faza grupowa → playoff |
+| `single_elimination` | Single elimination | Tylko drabinka SE (bez grup) |
+| `double_elimination` | Double elimination | Tylko drabinka DE (bez grup); WB + LB |
+
+**Wspólne dla wszystkich wariantów:** min. 4 graczy; format meczu (501/legi/sety) jak dziś; tablet H2H; walkower/korekta → auto przeliczenie; punkty ligowe po zakończeniu.
+
+**Rozmiar drabinki:** potęgi 2, **max 128**. Model slotów: **generyczny** (`round` + `index` + kierunki awansu), nie rozrost enumów `PlayoffSlot` / `WinnerDestinationSlot`.
+
+**Kolejność wdrożenia:** najpierw SE, potem DE. Design i plan: [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md).
+
+#### `groups_playoff` (bez zmian reguł względem MVP v1)
+
+- Faza grupowa + playoff; playoff **bez bye** (pełna drabinka z awansujących).
+- Limit awansujących do drabinki: **max 128** (wcześniej MVP: 32 — podnosimy wraz z generycznym silnikiem).
+
+#### `single_elimination`
+
+- Bez fazy grupowej → od razu status pucharowy; mecze R1 (i gotowe bye) na tablecie.
+- **Bye dozwolone:** `bracketSize = najbliższa potęga 2 ≥ N` (np. 6 graczy → drabinka 8, 2 bye).
+- Pary R1 + rozmieszczenie bye: **losowo** (bez seedingu z rankingu w tym zakresie).
+- **Mecz o 3. miejsce: tak** (przegrani półfinałów).
+- Miejsca: 1/2 z finału, 3/4 z meczu o 3., dalej z rundy odpadnięcia (ex aequo w tej samej rundzie).
+
+#### `double_elimination`
+
+- Bez fazy grupowej → od razu drabinka; **bye** jak w SE.
+- Pary R1 WB + bye: **losowo**.
+- Przegrana w WB = spadek do LB (pierwsza porażka); **druga porażka** = eliminacja i miejsce.
+- **Bez meczu o 3. miejsce.**
+- **Grand final:** wybór admina przy starcie — **jeden mecz** albo **reset** (jeśli LB wygra GF1 → drugi mecz GF2). Gdyby wybór okazał się zbyt kosztowny w implementacji: domyślnie tylko **reset**.
+- UI web: **dwie oddzielne drabinki** (wygranych / przegranych) + blok Grand Final — nie jedna zlepiona wizualizacja.
+- Miejsca z rundy **drugiej** porażki (przykład 8 graczy):
+
+| Miejsce | Kto |
+| ------- | --- |
+| 1 | zwycięzca Grand Final (ew. GF2) |
+| 2 | przegrany Grand Final (ew. GF2) |
+| 3 | przegrany **LB Final** (ostatni mecz LB przed GF) |
+| 4 | przegrany **półfinału LB** |
+| 5–6… | wcześniejsze rundy LB (ex aequo w tej samej rundzie) |
+
 ### Start turnieju (kreator na webie)
 
+0. **Typ turnieju** — `groups_playoff` / `single_elimination` / `double_elimination` (oraz dla DE: tryb Grand Final, gdy obie opcje są dostępne).
+
+Dla **`groups_playoff`:**
+
 1. **Liczba grup** — dowolna liczba całkowita od **2** do maksimum wynikającego ze składu (co najmniej **3 zawodników w każdej grupie**). Np. 37 graczy → dozwolone 2–12 grup (w tym 6, 7, …).
-2. **Etap drabinki** — wybór etapu, od którego zaczyna się faza pucharowa, z opisem liczby awansujących (np. „1/8 finału — 16 graczy awansujących”). Dozwolone tylko potęgi 2: 4, 8, 16, 32.
-   - **MVP:** maksymalnie **32 awansujących** do drabinki.
+2. **Etap drabinki** — wybór etapu, od którego zaczyna się faza pucharowa, z opisem liczby awansujących (np. „1/8 finału — 16 graczy awansujących”). Dozwolone tylko potęgi 2: 4, 8, 16, 32, 64, 128.
+   - Maksymalnie **128 awansujących** do drabinki.
    - Awansujących musi być **≥ liczba grup** (minimum 1 z każdej grupy) i **≤ liczba zawodników**.
    - Miejsca awansujące rozkładane **proporcjonalnie** do wielkości grup; nadwyżka trafia do większych (wcześniejszych) grup. Przy starcie zapisywany jest rozkład per grupa (`group_advances`).
 3. **Liczba kodów na tablety** — pole niezależne od logiki grup/drabinki.
 4. Losowy podział puli zawodników do grup (reguła wielkości — patrz niżej).
 5. Round-robin w każdej grupie.
 6. **Podgląd w kreatorze:** dla wybranej liczby grup i etapu drabinki administrator widzi „Grupa N: X graczy → Y awansujących”.
+
+Dla **`single_elimination` / `double_elimination`:**
+
+1. Bez liczby grup / awansu — `bracketSize = nextPowerOfTwo(N)`; podgląd „N graczy → drabinka X, Y wolnych losów”.
+2. Liczba kodów na tablety; format meczów per etap (bez etapu `GROUP`).
+3. Start → od razu faza pucharowa (mecze R1 widoczne na tablecie).
 
 ### Podział zawodników do grup
 
@@ -162,11 +219,12 @@ Kolejność miejsc w grupie (tie-breakery):
 
 Logika zgodna z `GroupStandingService` w backendzie (`sortStandings` → `compareByDirectGame` → `shuffle`).
 
-### Grupy i playoff
+### Grupy i playoff (`groups_playoff`)
 
 - Round-robin: każdy z każdym w grupie.
 - **Playoff startuje automatycznie** po rozegraniu **ostatniego meczu grupowego** (status turnieju → playoff).
-- Drabinka: pełna, **bez wolnych losów**; auto przeliczenie po korekcie wyniku na webie.
+- Drabinka playoff po grupach: pełna, **bez wolnych losów**; auto przeliczenie po korekcie wyniku na webie.
+- Wariantach SE/DE bye są **dozwolone** (patrz sekcja „Warianty turnieju”).
 
 ### Losowanie par playoff (pierwsza runda)
 
@@ -442,13 +500,15 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 - **Awatary graczy** — upload zdjęcia profilowego (web + mobile); przy `Player`; limity pliku, fallback inicjałów; crop / CDN później. Backlog: [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - Granularne uprawnienia współadmina
 - Quick game z dowolnym zalogowanym
-- **Drabinka playoff > 32 awansujących** — w MVP limit `playoff_bracket_size ≤ 32`. Rozszerzenie: refaktor slotów playoff na **generyczne** (`round` + `index` zamiast enumów `PlayoffSlot` / `WinnerDestinationSlot`), żeby skalować do 64+ awansujących bez eksplozji enumów. **Implementacja: opcja B** — zaplanować po domknięciu MVP turniejowego.
+- ~~**Drabinka playoff > 32**~~ — decyzja sierpień 2026: generyczny model slotów + **max 128** w ramach wariantów SE/DE ([`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md)); `groups_playoff` na tym samym silniku.
+- **Warianty SE / DE** — zaplanowane; wdrożenie: najpierw SE, potem DE.
 
 ## Czego nie robimy (na razie)
 
 - Krykiet w MVP
 - Tryby drużynowe 2v2 w quick game
-- Wolne losy w drabince
+- Wolne losy w drabince **po fazie grupowej** (`groups_playoff`) — bye tylko w czystym SE/DE
+- Seeding drabinki z rankingu ligowego (MVP wariantów: tylko losowe R1)
 - Równoległe wpisywanie rzutów w multi-device (tylko kolejno)
 
 ## Kryterium „MVP jest gotowe”
@@ -479,7 +539,7 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 
 ## Otwarte pytania
 
-*Brak otwartych pytań produktowych — decyzje z czerwca 2026 zapisane w sekcji „Zaproszenia do turnieju”.*
+*Brak otwartych pytań produktowych — reguły wariantów turnieju (SE/DE) zamknięte sierpień 2026; szczegóły wdrożenia: [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md).*
 
 ## Zgodność kodu z produktem (lipiec 2026)
 
@@ -490,7 +550,8 @@ Historyczne rozbieżności z czasów przed `product.md` — **domknięte w MVP v
 | Podział do grup | Zapełnianie od grupy 1, równe wielkości | ✅ `TournamentGroupDistribution` |
 | Awans z grupy | Etap drabinki + rozkład per grupa | ✅ `playoff_bracket_size`, `group_advances`, `PlayoffService` |
 | Losowanie playoff | Bez par z tej samej grupy (runda 1) | ✅ `PlayoffFirstRoundPairing` |
-| Rozmiar drabinki | Wybór etapu (`playoff_bracket_size`, max 32) | ✅ `PlayoffBracketFactory::create` |
+| Rozmiar drabinki | Wybór etapu (`playoff_bracket_size`; **docelowo max 128**, dziś w kodzie jeszcze 32) | ⚠️ `PlayoffBracketFactory::create` (enumy) → generyczny silnik w planie SE/DE |
+| Warianty SE / DE | Typ przy starcie; bye; miejsca; GF | 📋 [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) |
 | Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile; `relatedUsers` = tylko masowy invite | ✅ `TournamentInvitation`, API, `InvitationsScreen` |
 | Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ |
 | FFA 2–8 oba tryby urządzeń | `one_device` i `each_own` | ✅ unified FFA |

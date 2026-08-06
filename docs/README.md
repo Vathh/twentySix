@@ -47,6 +47,7 @@ Testy automatyczne backendu: `php artisan test`. Mobile: `npm run test:game-scor
 | Dokument | Rola |
 |----------|------|
 | [`design_quick_game_ffa_sync_4c2.md`](design_quick_game_ffa_sync_4c2.md) | Design sync FFA 3–8 (`each_own`) — przed zmianami w lobby/scoring |
+| [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) | Warianty turnieju SE/DE + generyczny bracket (max 128) — przed implementacją |
 | [`game-scoring-unification.md`](game-scoring-unification.md) | Architektura `useGameScoring` + transporty (refaktor ✅ 2026) |
 
 ---
