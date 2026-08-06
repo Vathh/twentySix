@@ -8,7 +8,6 @@ use App\Enums\GameStage;
 use App\Enums\GameStatus;
 use App\Enums\GameType;
 use App\Enums\GameKind;
-use App\Enums\PlayoffSlot;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\Player\PlayerRepository;
@@ -164,11 +163,11 @@ class GameResultCorrectionService
                 $winnerChanged = $oldWinnerId !== null && $oldWinnerId !== $dto->winnerId;
 
                 if ($winnerChanged && $game->winnerDestinationSlot !== null) {
-                    $destination = $game->winnerDestinationSlot->toDestination();
+                    $destination = \App\Domain\Game\WinnerDestination::parse($game->winnerDestinationSlot);
                     $this->resetDownstreamPlayoffAndPodium(
                         $game->tournamentId,
                         $destination->playoffSlot,
-                        includeThird: $destination->playoffSlot === PlayoffSlot::FINAL,
+                        includeThird: $destination->playoffSlot === \App\Support\Tournament\PlayoffSlotIds::FINAL,
                     );
                 }
 
@@ -224,35 +223,38 @@ class GameResultCorrectionService
 
     private function resetDownstreamPlayoffAndPodium(
         int $tournamentId,
-        PlayoffSlot $slot,
+        string $slot,
         bool $includeThird = false,
     ): void {
         $this->playoffGameRepository->resetFinishedBranchFromSlot($tournamentId, $slot);
 
-        if ($slot === PlayoffSlot::FINAL) {
+        if ($slot === \App\Support\Tournament\PlayoffSlotIds::FINAL) {
             $this->tournamentResultService->clearPodiumStage($tournamentId, GameStage::FINAL);
         }
 
-        if ($slot === PlayoffSlot::THIRD || $includeThird) {
-            $this->playoffGameRepository->resetFinishedBranchFromSlot($tournamentId, PlayoffSlot::THIRD);
+        if ($slot === \App\Support\Tournament\PlayoffSlotIds::THIRD || $includeThird) {
+            $this->playoffGameRepository->resetFinishedBranchFromSlot(
+                $tournamentId,
+                \App\Support\Tournament\PlayoffSlotIds::THIRD,
+            );
             $this->tournamentResultService->clearPodiumStage($tournamentId, GameStage::THIRD);
         }
     }
 
-    private function syncPodiumAfterPlayoffCorrection(GameStage $round, GameResultDTO $dto): void
+    private function syncPodiumAfterPlayoffCorrection(string $round, GameResultDTO $dto): void
     {
         if ($dto->tournamentId === null) {
             return;
         }
 
         match ($round) {
-            GameStage::FINAL => $this->tournamentResultService->syncFinalPodium(
+            GameStage::FINAL->value, 'GF', 'GF2' => $this->tournamentResultService->syncFinalPodium(
                 $dto->tournamentId,
                 $dto->winnerId,
                 $dto->player1Id,
                 $dto->player2Id,
             ),
-            GameStage::THIRD => $this->tournamentResultService->syncThirdPodium(
+            GameStage::THIRD->value => $this->tournamentResultService->syncThirdPodium(
                 $dto->tournamentId,
                 $dto->winnerId,
                 $dto->player1Id,

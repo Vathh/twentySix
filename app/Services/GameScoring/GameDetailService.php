@@ -78,7 +78,7 @@ class GameDetailService
         return $this->assemble(
             $context,
             $game,
-            label: 'Turniejowy — '.$game->round->label(),
+            label: 'Turniejowy — '.$game->roundLabel(),
             subtitle: $game->tournament?->name,
             backUrl: $game->tournament
                 ? route('tournaments.show', ['tournament' => $game->tournament_id, 'tab' => 'playoff'])

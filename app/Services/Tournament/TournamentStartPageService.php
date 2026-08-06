@@ -93,7 +93,8 @@ class TournamentStartPageService
         );
 
         $matchFormatStagesByBracket = [];
-        foreach ([2, 4, 8, 16, 32] as $bracketSize) {
+        $matchFormatStagesByBracketSe = [];
+        foreach ([2, 4, 8, 16, 32, 64, 128] as $bracketSize) {
             $matchFormatStagesByBracket[$bracketSize] = array_map(
                 static fn (GameStage $stage): array => [
                     'value' => $stage->value,
@@ -101,7 +102,24 @@ class TournamentStartPageService
                 ],
                 GameStage::forPlayoffBracketSize($bracketSize),
             );
+            $matchFormatStagesByBracketSe[$bracketSize] = array_map(
+                static fn (GameStage $stage): array => [
+                    'value' => $stage->value,
+                    'label' => $stage->label(),
+                ],
+                GameStage::forEliminationBracketSize($bracketSize),
+            );
         }
+
+        $defaultTournamentFormat = (string) old(
+            'tournamentFormat',
+            \App\Enums\TournamentFormat::GroupsPlayoff->value,
+        );
+
+        $seBracketSize = $participantCount >= TournamentStartRules::MIN_PLAYERS
+            ? \App\Support\Tournament\PlayoffByePairing::nextPowerOfTwo($participantCount)
+            : 4;
+        $seByeCount = max(0, $seBracketSize - $participantCount);
 
         $leaguePresets = $tournament->season?->league?->matchFormatPresets;
         $defaultMatchFormatsByStage = LeagueMatchFormatPresets::defaultsByStage(
@@ -142,11 +160,15 @@ class TournamentStartPageService
             'minPlayersPerGroup' => TournamentStartRules::MIN_PLAYERS_PER_GROUP,
             'defaultGroupsCount' => $defaultGroupsCount,
             'defaultPlayoffBracketSize' => $defaultPlayoffBracketSize,
+            'defaultTournamentFormat' => $defaultTournamentFormat,
+            'seBracketSize' => $seBracketSize,
+            'seByeCount' => $seByeCount,
             'startingScoreOptions' => MatchFormat::ALLOWED_STARTING_SCORES,
             'defaultMatchFormat' => MatchFormat::default()->toArray(),
             'defaultMatchFormatsByStage' => $defaultMatchFormatsByStage,
             'hasLeagueFormatPresets' => $hasLeagueFormatPresets,
             'matchFormatStagesByBracket' => $matchFormatStagesByBracket,
+            'matchFormatStagesByBracketSe' => $matchFormatStagesByBracketSe,
             'oldMatchFormats' => old('matchFormats', []),
         ];
     }

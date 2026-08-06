@@ -16,10 +16,7 @@ final class TournamentOverallPlaceCalculator
         $assignments = [];
 
         foreach ($eliminated as $row) {
-            if (
-                in_array($row['elimination_stage'], [GameStage::FINAL, GameStage::THIRD], true)
-                && $row['current_place'] !== null
-            ) {
+            if ($row['current_place'] !== null) {
                 $assignments[$row['player_id']] = $row['current_place'];
             }
         }
@@ -84,6 +81,8 @@ final class TournamentOverallPlaceCalculator
             GameStage::QUARTER => 4,
             GameStage::EIGHT => 8,
             GameStage::SIXTEEN => 16,
+            GameStage::THIRTYTWO => 32,
+            GameStage::SIXTYFOUR => 64,
             default => 0,
         };
     }

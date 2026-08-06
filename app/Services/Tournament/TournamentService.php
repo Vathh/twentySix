@@ -15,6 +15,8 @@ use App\Services\GameScoring\GameAuthorizationService;
 use App\Domain\GameScoring\MatchFormat;
 use App\Support\Tournament\TournamentGroupAdvanceDistribution;
 use App\Support\Tournament\TournamentGroupDistribution;
+use App\Support\Tournament\TournamentMatchFormatRequestParser;
+use App\Support\Tournament\TournamentStartRules;
 use App\Services\Tournament\LoginCodeService;
 use App\Services\PointScheme\PointSchemeService;
 use Illuminate\Support\Collection;
@@ -35,6 +37,7 @@ class TournamentService
         private TournamentStartValidator  $startValidator,
         private TournamentMatchFormatRepository $matchFormatRepository,
         private GameAuthorizationService  $gameAuthorizationService,
+        private \App\Services\PlayoffGame\PlayoffService $playoffService,
     )
     {
     }
@@ -190,11 +193,12 @@ class TournamentService
                 if ($this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId)) {
                     $this->matchFormatRepository->saveForTournament($tournamentId, $formatsByStage);
                     $this->tournamentRepository->saveStartConfiguration(
-                        $tournamentId,
-                        $groupsCount,
-                        $playoffBracketSize,
-                        $groupAdvances,
-                        $tabletsCount,
+                        tournamentId: $tournamentId,
+                        playoffBracketSize: $playoffBracketSize,
+                        tabletsCount: $tabletsCount,
+                        format: \App\Enums\TournamentFormat::GroupsPlayoff,
+                        groupsCount: $groupsCount,
+                        groupAdvances: $groupAdvances,
                     );
                     $this->updatePointSchemeId($tournamentId, $playersAmount);
                     $this->groupStandingRepository->createEmptyStandings($tournamentId, $groups);
@@ -211,6 +215,169 @@ class TournamentService
             $detail = $e->getMessage();
             throw new RuntimeException(
                 'Nie udało się stworzyć grup'.($detail !== '' ? ': '.$detail : ''),
+                0,
+                $e,
+            );
+        }
+    }
+
+    /**
+     * Start turnieju single elimination (bez fazy grupowej).
+     *
+     * @param  list<int>  $playerIds
+     * @param  array<string, array<string, int|string>>  $formatsByStage
+     *
+     * @throws ValidationException
+     */
+    public function tryStartSingleElimination(
+        int $tournamentId,
+        array $playerIds,
+        int $tabletsCount,
+        array $formatsByStage = [],
+    ): bool {
+        $playerCount = count($playerIds);
+
+        if ($playerCount < TournamentStartRules::MIN_PLAYERS) {
+            throw ValidationException::withMessages([
+                'players' => 'Do startu potrzeba co najmniej '.TournamentStartRules::MIN_PLAYERS.' zawodników.',
+            ]);
+        }
+
+        if ($tabletsCount < TournamentStartRules::MIN_TABLETS) {
+            throw ValidationException::withMessages([
+                'tabletsCount' => 'Liczba tabletów musi być co najmniej '.TournamentStartRules::MIN_TABLETS.'.',
+            ]);
+        }
+
+        $bracketSize = \App\Support\Tournament\PlayoffByePairing::nextPowerOfTwo($playerCount);
+
+        if ($bracketSize > TournamentStartRules::MAX_BRACKET_SIZE) {
+            throw ValidationException::withMessages([
+                'players' => 'Za dużo zawodników na drabinkę (max '.TournamentStartRules::MAX_BRACKET_SIZE.').',
+            ]);
+        }
+
+        if ($formatsByStage === []) {
+            $formatsByStage = TournamentMatchFormatRequestParser::defaultsForEliminationBracketSize($bracketSize);
+        }
+
+        try {
+            return DB::transaction(function () use (
+                $tournamentId,
+                $playerIds,
+                $playerCount,
+                $bracketSize,
+                $tabletsCount,
+                $formatsByStage,
+            ) {
+                if (! $this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId)) {
+                    return false;
+                }
+
+                $this->matchFormatRepository->saveForTournament($tournamentId, $formatsByStage);
+                $this->tournamentRepository->saveStartConfiguration(
+                    tournamentId: $tournamentId,
+                    playoffBracketSize: $bracketSize,
+                    tabletsCount: $tabletsCount,
+                    format: \App\Enums\TournamentFormat::SingleElimination,
+                    groupsCount: null,
+                    groupAdvances: null,
+                );
+                $this->updatePointSchemeId($tournamentId, $playerCount);
+                $this->loginCodeService->generateCodes($tabletsCount, $tournamentId);
+                $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::PLAYOFF);
+
+                $this->playoffService->generateSingleEliminationBracket($tournamentId, $playerIds);
+
+                return true;
+            });
+        } catch (Throwable $e) {
+            $detail = $e->getMessage();
+            throw new RuntimeException(
+                'Nie udało się wystartować single elimination'.($detail !== '' ? ': '.$detail : ''),
+                0,
+                $e,
+            );
+        }
+    }
+
+    /**
+     * Start turnieju double elimination (bez fazy grupowej).
+     *
+     * @param  list<int>  $playerIds
+     * @param  array<string, array<string, int|string>>  $formatsByStage
+     *
+     * @throws ValidationException
+     */
+    public function tryStartDoubleElimination(
+        int $tournamentId,
+        array $playerIds,
+        int $tabletsCount,
+        \App\Enums\GrandFinalMode $grandFinalMode,
+        array $formatsByStage = [],
+    ): bool {
+        $playerCount = count($playerIds);
+
+        if ($playerCount < TournamentStartRules::MIN_PLAYERS) {
+            throw ValidationException::withMessages([
+                'players' => 'Do startu potrzeba co najmniej '.TournamentStartRules::MIN_PLAYERS.' zawodników.',
+            ]);
+        }
+
+        if ($tabletsCount < TournamentStartRules::MIN_TABLETS) {
+            throw ValidationException::withMessages([
+                'tabletsCount' => 'Liczba tabletów musi być co najmniej '.TournamentStartRules::MIN_TABLETS.'.',
+            ]);
+        }
+
+        $bracketSize = \App\Support\Tournament\PlayoffByePairing::nextPowerOfTwo($playerCount);
+
+        if ($bracketSize > TournamentStartRules::MAX_BRACKET_SIZE) {
+            throw ValidationException::withMessages([
+                'players' => 'Za dużo zawodników na drabinkę (max '.TournamentStartRules::MAX_BRACKET_SIZE.').',
+            ]);
+        }
+
+        if ($formatsByStage === []) {
+            $formatsByStage = TournamentMatchFormatRequestParser::defaultsForEliminationBracketSize($bracketSize);
+        }
+
+        try {
+            return DB::transaction(function () use (
+                $tournamentId,
+                $playerIds,
+                $playerCount,
+                $bracketSize,
+                $tabletsCount,
+                $grandFinalMode,
+                $formatsByStage,
+            ) {
+                if (! $this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId)) {
+                    return false;
+                }
+
+                $this->matchFormatRepository->saveForTournament($tournamentId, $formatsByStage);
+                $this->tournamentRepository->saveStartConfiguration(
+                    tournamentId: $tournamentId,
+                    playoffBracketSize: $bracketSize,
+                    tabletsCount: $tabletsCount,
+                    format: \App\Enums\TournamentFormat::DoubleElimination,
+                    groupsCount: null,
+                    groupAdvances: null,
+                    grandFinalMode: $grandFinalMode,
+                );
+                $this->updatePointSchemeId($tournamentId, $playerCount);
+                $this->loginCodeService->generateCodes($tabletsCount, $tournamentId);
+                $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::PLAYOFF);
+
+                $this->playoffService->generateDoubleEliminationBracket($tournamentId, $playerIds);
+
+                return true;
+            });
+        } catch (Throwable $e) {
+            $detail = $e->getMessage();
+            throw new RuntimeException(
+                'Nie udało się wystartować double elimination'.($detail !== '' ? ': '.$detail : ''),
                 0,
                 $e,
             );

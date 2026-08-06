@@ -30,7 +30,7 @@ class PlayoffBracketFactoryTest extends TestCase
         $this->assertCount($expectedGames, $games);
         $this->assertSame(
             $bracketSize / 2,
-            $games->where('round', $firstRound)->whereNotNull('player1Id')->count(),
+            $games->where('round', $firstRound->value)->whereNotNull('player1Id')->count(),
         );
         $this->assertSame(
             range(1, $bracketSize),
@@ -51,6 +51,8 @@ class PlayoffBracketFactoryTest extends TestCase
             '8 players' => [8, 8, GameStage::QUARTER],
             '16 players' => [16, 16, GameStage::EIGHT],
             '32 players' => [32, 32, GameStage::SIXTEEN],
+            '64 players' => [64, 64, GameStage::THIRTYTWO],
+            '128 players' => [128, 128, GameStage::SIXTYFOUR],
         ];
     }
 

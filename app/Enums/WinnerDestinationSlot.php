@@ -4,6 +4,9 @@ namespace App\Enums;
 
 use App\Domain\Game\WinnerDestination;
 
+/**
+ * @deprecated Prefer string destinations via {@see WinnerDestination::parse()}. Kept for test fixtures / BC.
+ */
 enum WinnerDestinationSlot: string
 {
     case EIGHT_1_A = 'EIGHT_1-A';
@@ -41,9 +44,6 @@ enum WinnerDestinationSlot: string
 
     public function toDestination(): WinnerDestination
     {
-        [$playoffSlot, $playerSlot] = explode('-', $this->value);
-
-        return new WinnerDestination(PlayoffSlot::from($playoffSlot),
-                                        PlayerSlot::from($playerSlot));
+        return WinnerDestination::parse($this->value);
     }
 }

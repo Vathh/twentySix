@@ -3,10 +3,10 @@
 namespace App\Repositories\PlayoffGame;
 
 use App\Domain\Game\PlayoffGameDomain;
+use App\Domain\Game\WinnerDestination;
 use App\DTO\GameResultDTO;
 use App\Enums\GameStatus;
 use App\Enums\PlayerSlot;
-use App\Enums\PlayoffSlot;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Domain\GameScoring\MatchFormat;
 use Illuminate\Support\Collection;
@@ -21,15 +21,17 @@ class PlayoffGameRepository
     public function createMany(Collection $games, array $formatsByStage = []): void
     {
         foreach ($games as $game) {
-            $format = $formatsByStage[$game->round->value] ?? MatchFormat::default();
+            $format = $formatsByStage[$game->round] ?? MatchFormat::default();
 
             PlayoffGame::create(array_merge([
                 'tournament_id' => $game->tournamentId,
+                'bracket_side' => $game->bracketSide,
                 'round' => $game->round,
                 'slot' => $game->slot,
                 'player1_id' => $game->player1Id ?: null,
                 'player2_id' => $game->player2Id ?: null,
                 'winner_destination_slot' => $game->winnerDestinationSlot ?: null,
+                'loser_destination_slot' => $game->loserDestinationSlot ?: null,
             ], $format->toDatabaseColumns()));
         }
     }
@@ -85,7 +87,7 @@ class PlayoffGameRepository
                             ->where('tournament_id', $tournamentId)
                             ->whereIn('status', [GameStatus::SCHEDULED, GameStatus::IN_PROGRESS])
                             ->get()
-                            ->map(fn($game) => PlayoffGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2']));
+                            ->map(fn ($game) => PlayoffGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2']));
     }
 
     public function find(int $id): ?PlayoffGameDomain
@@ -94,8 +96,6 @@ class PlayoffGameRepository
     }
 
     /**
-     * Surowy model Eloquent (np. do serwisów lock/scoring/korekty operujących na PlayoffGame).
-     *
      * @param  string[]  $relations
      */
     public function findModel(int $gameId, array $relations = []): PlayoffGame
@@ -103,29 +103,26 @@ class PlayoffGameRepository
         return PlayoffGame::with($relations)->findOrFail($gameId);
     }
 
-    /**
-     * Zapisuje zmiany na modelu PlayoffGame (np. po mutacjach stanu scoringu w Service).
-     */
     public function save(PlayoffGame $game): void
     {
         $game->save();
     }
 
-    public function setPlayer1Slot(int $tournamentId, PlayoffSlot $slot, int $playerId): void
+    public function setPlayer1Slot(int $tournamentId, string $slot, int $playerId): void
     {
         PlayoffGame::where('tournament_id', $tournamentId)
             ->where('slot', $slot)
             ->update(['player1_id' => $playerId]);
     }
 
-    public function setPlayer2Slot(int $tournamentId, PlayoffSlot $slot, int $playerId): void
+    public function setPlayer2Slot(int $tournamentId, string $slot, int $playerId): void
     {
         PlayoffGame::where('tournament_id', $tournamentId)
             ->where('slot', $slot)
             ->update(['player2_id' => $playerId]);
     }
 
-    public function resetFinishedBranchFromSlot(int $tournamentId, PlayoffSlot $slot): void
+    public function resetFinishedBranchFromSlot(int $tournamentId, string $slot): void
     {
         $game = PlayoffGame::where('tournament_id', $tournamentId)
             ->where('slot', $slot)
@@ -135,7 +132,10 @@ class PlayoffGameRepository
             return;
         }
 
-        $destinationSlot = $game->winner_destination_slot?->toDestination()?->playoffSlot;
+        $destinationSlot = null;
+        if ($game->winner_destination_slot !== null) {
+            $destinationSlot = WinnerDestination::parse((string) $game->winner_destination_slot)->playoffSlot;
+        }
 
         $game->update([
             'player1_score' => 0,
@@ -150,15 +150,15 @@ class PlayoffGameRepository
     }
 
     /**
-     * Liczba meczów playoff per runda (round->value => count) — do wnioskowania rozmiaru drabinki.
-     *
      * @return Collection<string, int>
      */
     public function countByRoundForTournament(int $tournamentId): Collection
     {
         return PlayoffGame::where('tournament_id', $tournamentId)
             ->get()
-            ->countBy(fn (PlayoffGame $game) => $game->round->value);
+            ->countBy(fn (PlayoffGame $game) => $game->round instanceof \App\Enums\GameStage
+                ? $game->round->value
+                : (string) $game->round);
     }
 
     /**
@@ -174,16 +174,23 @@ class PlayoffGameRepository
             })
             ->get();
     }
+
+    /**
+     * @return Collection<int, PlayoffGameDomain>
+     */
+    public function getScheduledByes(int $tournamentId): Collection
+    {
+        return PlayoffGame::query()
+            ->where('tournament_id', $tournamentId)
+            ->where('status', GameStatus::SCHEDULED)
+            ->where(function ($q) {
+                $q->where(function ($inner) {
+                    $inner->whereNotNull('player1_id')->whereNull('player2_id');
+                })->orWhere(function ($inner) {
+                    $inner->whereNull('player1_id')->whereNotNull('player2_id');
+                });
+            })
+            ->get()
+            ->map(fn (PlayoffGame $game) => PlayoffGameDomain::fromEloquent($game));
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-

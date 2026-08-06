@@ -264,6 +264,8 @@ class CompetitionShowSerializer
     private function mapPlayoff(array $playoffGames): array
     {
         $order = [
+            GameStage::SIXTYFOUR->value,
+            GameStage::THIRTYTWO->value,
             GameStage::SIXTEEN->value,
             GameStage::EIGHT->value,
             GameStage::QUARTER->value,

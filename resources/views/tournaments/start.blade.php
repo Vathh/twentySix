@@ -494,11 +494,16 @@
                 $tournamentStartConfig = [
                     'groupsCount' => $defaultGroupsCount,
                     'playoffBracketSize' => $defaultPlayoffBracketSize,
-                    'tabletsCount' => (int) old('tabletsCount', $defaultGroupsCount),
+                    'tabletsCount' => (int) old('tabletsCount', $defaultGroupsCount ?: 1),
+                    'tournamentFormat' => $defaultTournamentFormat,
+                    'grandFinalMode' => (string) old('grandFinalMode', 'reset'),
+                    'seBracketSize' => $seBracketSize,
+                    'seByeCount' => $seByeCount,
                     'groupCountOptions' => $groupCountOptions,
                     'bracketOptionsByGroupCount' => $bracketOptionsByGroupCount,
                     'startConfigPreview' => $startConfigPreview,
                     'matchFormatStagesByBracket' => $matchFormatStagesByBracket,
+                    'matchFormatStagesByBracketSe' => $matchFormatStagesByBracketSe,
                     'startingScoreOptions' => $startingScoreOptions,
                     'defaultMatchFormat' => $defaultMatchFormat,
                     'defaultMatchFormatsByStage' => $defaultMatchFormatsByStage,
@@ -521,21 +526,66 @@
 
                 @if($participants->isEmpty())
                     <p class="text-text-secondary text-sm">Dodaj uczestników powyżej, aby wystartować turniej.</p>
-                @elseif($groupCountOptions === [])
+                @elseif($participantCount < $minPlayers)
                     <p class="text-text-secondary text-sm">
-                        Przy {{ $participantCount }} uczestnikach nie da się utworzyć grup
-                        (min. {{ $minPlayersPerGroup }} zawodników w grupie, min. 2 grupy —
-                        potrzeba co najmniej {{ $minPlayersPerGroup * 2 }} graczy).
+                        Potrzeba co najmniej {{ $minPlayers }} uczestników (obecnie {{ $participantCount }}).
                     </p>
                 @else
                     <form action="{{ route('tournaments.run', $tournament->id) }}" method="POST" class="flex flex-col items-center gap-4">
                         @csrf
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-2xl">
+                        <div class="w-full max-w-2xl flex flex-col gap-3">
+                            <p class="text-accent font-semibold">Rodzaj turnieju</p>
+                            <label class="flex items-start gap-3 cursor-pointer">
+                                <input type="radio" name="tournamentFormat" value="groups_playoff"
+                                       class="mt-1"
+                                       x-model="tournamentFormat"
+                                       @change="onFormatChange()"
+                                       @disabled($groupCountOptions === [])>
+                                <span>
+                                    <span class="font-medium text-text-primary">Grupy + drabinka</span>
+                                    <span class="block text-text-secondary/70 text-xs mt-0.5">
+                                        Faza grupowa, potem playoff
+                                        @if($groupCountOptions === [])
+                                            — niedostępne przy {{ $participantCount }} graczach (min. {{ $minPlayersPerGroup * 2 }} do grup)
+                                        @endif
+                                    </span>
+                                </span>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer">
+                                <input type="radio" name="tournamentFormat" value="single_elimination"
+                                       class="mt-1"
+                                       x-model="tournamentFormat"
+                                       @change="onFormatChange()">
+                                <span>
+                                    <span class="font-medium text-text-primary">Single elimination</span>
+                                    <span class="block text-text-secondary/70 text-xs mt-0.5">
+                                        Tylko drabinka (bez grup); wolne losy dopełniają do potęgi 2
+                                    </span>
+                                </span>
+                            </label>
+                            <label class="flex items-start gap-3 cursor-pointer">
+                                <input type="radio" name="tournamentFormat" value="double_elimination"
+                                       class="mt-1"
+                                       x-model="tournamentFormat"
+                                       @change="onFormatChange()">
+                                <span>
+                                    <span class="font-medium text-text-primary">Double elimination</span>
+                                    <span class="block text-text-secondary/70 text-xs mt-0.5">
+                                        Drabinka wygranych + przegranych; dwie porażki = odpadnięcie
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-2xl"
+                             x-show="tournamentFormat === 'groups_playoff'"
+                             x-cloak>
                             <div class="flex flex-col">
                                 <label for="groupsCount" class="text-accent font-semibold mb-2">Liczba grup</label>
                                 <select id="groupsCount" name="groupsCount" class="select-field"
-                                        x-model.number="groupsCount" x-on:change="onGroupsChange()">
+                                        x-model.number="groupsCount" x-on:change="onGroupsChange()"
+                                        x-bind:disabled="tournamentFormat !== 'groups_playoff'">
                                     @foreach ($groupCountOptions as $option)
                                         <option value="{{ $option }}" @selected($defaultGroupsCount === $option)>{{ $option }}</option>
                                     @endforeach
@@ -551,7 +601,8 @@
                                         name="playoffBracketSize"
                                         class="select-field"
                                         x-model.number="playoffBracketSize"
-                                        x-on:change="onBracketChange()">
+                                        x-on:change="onBracketChange()"
+                                        x-bind:disabled="tournamentFormat !== 'groups_playoff'">
                                     @foreach ($defaultBracketOptions as $option)
                                         <option value="{{ $option['value'] }}" @selected($defaultPlayoffBracketSize === $option['value'])>{{ $option['label'] }}</option>
                                     @endforeach
@@ -561,14 +612,46 @@
                                 </p>
                             </div>
                             <div class="flex flex-col">
-                                <label for="tabletsCount" class="text-accent font-semibold mb-2">Liczba tabletów</label>
-                                <input id="tabletsCount" type="number" name="tabletsCount" min="1"
-                                       class="select-field" x-model.number="tabletsCount">
+                                <label for="tabletsCountGroups" class="text-accent font-semibold mb-2">Liczba tabletów</label>
+                                <input id="tabletsCountGroups" type="number" name="tabletsCount" min="1"
+                                       class="select-field" x-model.number="tabletsCount"
+                                       x-bind:disabled="tournamentFormat !== 'groups_playoff'">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl"
+                             x-show="tournamentFormat === 'single_elimination' || tournamentFormat === 'double_elimination'"
+                             x-cloak>
+                            <div class="flex flex-col justify-center rounded-lg border border-border bg-bg/40 p-4">
+                                <p class="text-sm text-text-secondary">
+                                    <span x-text="participantCount"></span> graczy → drabinka
+                                    <span class="text-accent font-semibold" x-text="seBracketSize"></span>
+                                    <template x-if="seByeCount > 0">
+                                        <span> (<span x-text="seByeCount"></span> wolnych losów)</span>
+                                    </template>
+                                </p>
+                            </div>
+                            <div class="flex flex-col gap-3">
+                                <div class="flex flex-col">
+                                    <label for="tabletsCountSe" class="text-accent font-semibold mb-2">Liczba tabletów</label>
+                                    <input id="tabletsCountSe" type="number" min="1"
+                                           class="select-field" x-model.number="tabletsCount"
+                                           x-bind:name="(tournamentFormat === 'single_elimination' || tournamentFormat === 'double_elimination') ? 'tabletsCount' : null">
+                                </div>
+                                <div class="flex flex-col" x-show="tournamentFormat === 'double_elimination'" x-cloak>
+                                    <label for="grandFinalMode" class="text-accent font-semibold mb-2">Grand Final</label>
+                                    <select id="grandFinalMode" name="grandFinalMode" class="select-field"
+                                            x-model="grandFinalMode"
+                                            x-bind:disabled="tournamentFormat !== 'double_elimination'">
+                                        <option value="reset">Reset (do 2 meczów, gdy wygra LB)</option>
+                                        <option value="single">Jeden mecz o tytuł</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
                         <div class="w-full max-w-2xl rounded-lg border border-border bg-bg/40 p-4"
-                             x-show="preview"
+                             x-show="tournamentFormat === 'groups_playoff' && preview"
                              x-cloak>
                             <p class="text-accent font-semibold text-sm mb-3">Podgląd podziału</p>
                             <template x-for="(advanceCount, index) in (preview?.advances ?? [])" x-bind:key="index">
@@ -584,7 +667,7 @@
                             </template>
                         </div>
 
-                        <p class="text-accent text-sm">
+                        <p class="text-accent text-sm" x-show="tournamentFormat === 'groups_playoff'" x-cloak>
                             Drabinka playoff: <span x-text="$data.playoffBracketSize"></span> graczy awansujących
                         </p>
 
@@ -676,10 +759,15 @@
                 groupsCount: config.groupsCount ?? 2,
                 playoffBracketSize: config.playoffBracketSize ?? 4,
                 tabletsCount: config.tabletsCount ?? 2,
+                tournamentFormat: config.tournamentFormat ?? 'groups_playoff',
+                grandFinalMode: config.grandFinalMode ?? 'reset',
+                seBracketSize: config.seBracketSize ?? 4,
+                seByeCount: config.seByeCount ?? 0,
                 groupCountOptions: config.groupCountOptions ?? [],
                 bracketOptionsByGroupCount: config.bracketOptionsByGroupCount ?? {},
                 startConfigPreview: config.startConfigPreview ?? {},
                 matchFormatStagesByBracket: config.matchFormatStagesByBracket ?? {},
+                matchFormatStagesByBracketSe: config.matchFormatStagesByBracketSe ?? {},
                 startingScoreOptions: config.startingScoreOptions ?? [],
                 defaultMatchFormat: config.defaultMatchFormat ?? {},
                 defaultMatchFormatsByStage: config.defaultMatchFormatsByStage ?? {},
@@ -690,12 +778,24 @@
                 minPlayersPerGroup: config.minPlayersPerGroup ?? 3,
                 participantCount: config.participantCount ?? 0,
                 init() {
+                    if (this.tournamentFormat === 'groups_playoff' && this.groupCountOptions.length === 0) {
+                        this.tournamentFormat = 'single_elimination';
+                    }
                     window.addEventListener('tournament-participant-count', (e) => {
                         const next = Number(e.detail?.participantCount);
                         if (!Number.isNaN(next)) {
                             this.participantCount = next;
+                            this.refreshSeBracket();
                         }
                     });
+                },
+                refreshSeBracket() {
+                    let power = 1;
+                    while (power < this.participantCount) {
+                        power *= 2;
+                    }
+                    this.seBracketSize = Math.max(4, power);
+                    this.seByeCount = Math.max(0, this.seBracketSize - this.participantCount);
                 },
                 get bracketOptions() {
                     const opts = this.bracketOptionsByGroupCount[this.groupsCount]
@@ -714,6 +814,11 @@
                         ?? null;
                 },
                 get activeFormatStages() {
+                    if (this.tournamentFormat === 'single_elimination' || this.tournamentFormat === 'double_elimination') {
+                        return this.matchFormatStagesByBracketSe[this.seBracketSize]
+                            ?? this.matchFormatStagesByBracketSe[String(this.seBracketSize)]
+                            ?? [];
+                    }
                     return this.matchFormatStagesByBracket[this.playoffBracketSize]
                         ?? this.matchFormatStagesByBracket[String(this.playoffBracketSize)]
                         ?? [];
@@ -753,6 +858,9 @@
                         this.playoffBracketSize = opts[0]?.value ?? 4;
                     }
                     sel.value = String(this.playoffBracketSize);
+                },
+                onFormatChange() {
+                    this.syncMatchFormats();
                 },
                 onGroupsChange() {
                     this.syncBracketSelect();

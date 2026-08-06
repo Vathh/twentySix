@@ -2,10 +2,8 @@
 
 namespace App\Models\PlayoffGame;
 
+use App\Enums\BracketSide;
 use App\Enums\GameStatus;
-use App\Enums\GameStage;
-use App\Enums\PlayoffSlot;
-use App\Enums\WinnerDestinationSlot;
 use App\Models\Player\Player;
 use App\Models\Tournament\Tournament;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +13,7 @@ class PlayoffGame extends Model
 {
     protected $fillable = [
         'tournament_id',
+        'bracket_side',
         'round',
         'slot',
         'player1_id',
@@ -26,6 +25,7 @@ class PlayoffGame extends Model
         'current_set_number',
         'winner_id',
         'winner_destination_slot',
+        'loser_destination_slot',
         'status',
         'starting_score',
         'legs_to_win_set',
@@ -34,9 +34,7 @@ class PlayoffGame extends Model
     ];
 
     protected $casts = [
-        'round' => GameStage::class,
-        'slot' => PlayoffSlot::class,
-        'winner_destination_slot' => WinnerDestinationSlot::class,
+        'bracket_side' => BracketSide::class,
         'status' => GameStatus::class,
     ];
 
@@ -60,5 +58,3 @@ class PlayoffGame extends Model
         return $this->belongsTo(Player::class, 'winner_id');
     }
 }
-
-

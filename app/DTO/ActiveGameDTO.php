@@ -82,8 +82,8 @@ class ActiveGameDTO
                 'name' => $game->player2->name,
             ],
             groupNumber: null,
-            round: $game->round->value,
-            roundLabel: $game->round->label(),
+            round: $game->round,
+            roundLabel: $game->roundLabel(),
         );
     }
 }

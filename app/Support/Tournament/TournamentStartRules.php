@@ -11,8 +11,8 @@ final class TournamentStartRules
 
     public const MIN_GROUPS = 2;
 
-    /** MVP: maksymalna liczba awansujących do drabinki playoff. */
-    public const MAX_BRACKET_SIZE = 32;
+    /** Maksymalna liczba awansujących / rozmiar drabinki (SE/DE/playoff). */
+    public const MAX_BRACKET_SIZE = 128;
 
     public const MIN_BRACKET_SIZE = 4;
 
@@ -100,6 +100,8 @@ final class TournamentStartRules
     public static function bracketStageLabel(int $bracketSize): string
     {
         return match ($bracketSize) {
+            128 => '1/64 finału',
+            64 => '1/32 finału',
             32 => '1/16 finału',
             16 => '1/8 finału',
             8 => '1/4 finału',

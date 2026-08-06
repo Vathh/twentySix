@@ -35,7 +35,15 @@ class TournamentFinishService
             return false;
         }
 
-        $allPlayoffFinished = $tournament->playoffGames->every(
+        $relevant = $tournament->playoffGames->filter(
+            fn ($game) => $game->player1_id !== null && $game->player2_id !== null,
+        );
+
+        if ($relevant->isEmpty()) {
+            return false;
+        }
+
+        $allPlayoffFinished = $relevant->every(
             fn ($game) => $game->status === GameStatus::FINISHED,
         );
 

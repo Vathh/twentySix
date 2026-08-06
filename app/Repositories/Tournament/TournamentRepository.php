@@ -169,12 +169,16 @@ class TournamentRepository
 
     public function saveStartConfiguration(
         int $tournamentId,
-        int $groupsCount,
         int $playoffBracketSize,
-        array $groupAdvances,
         int $tabletsCount,
+        \App\Enums\TournamentFormat $format = \App\Enums\TournamentFormat::GroupsPlayoff,
+        ?int $groupsCount = null,
+        ?array $groupAdvances = null,
+        ?\App\Enums\GrandFinalMode $grandFinalMode = null,
     ): void {
         Tournament::where('id', $tournamentId)->update([
+            'format' => $format,
+            'grand_final_mode' => $grandFinalMode,
             'groups_count' => $groupsCount,
             'playoff_bracket_size' => $playoffBracketSize,
             'group_advances' => $groupAdvances,

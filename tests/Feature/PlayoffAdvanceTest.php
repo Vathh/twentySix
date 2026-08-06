@@ -76,7 +76,7 @@ class PlayoffAdvanceTest extends TestCase
         $this->assertDatabaseCount('playoff_games', 1);
 
         $final = PlayoffGame::where('tournament_id', $tournament->id)->first();
-        $this->assertSame(GameStage::FINAL->value, $final->round->value);
+        $this->assertSame(GameStage::FINAL->value, $final->round);
         $this->assertEqualsCanonicalizing(
             [$players[0]->id, $players[2]->id],
             [$final->player1_id, $final->player2_id],

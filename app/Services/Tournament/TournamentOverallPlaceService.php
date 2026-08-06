@@ -68,7 +68,7 @@ class TournamentOverallPlaceService
     {
         $countsByStage = $this->playoffGameRepository->countByRoundForTournament($tournamentId);
 
-        foreach ([GameStage::SIXTEEN, GameStage::EIGHT, GameStage::QUARTER] as $stage) {
+        foreach ([GameStage::SIXTYFOUR, GameStage::THIRTYTWO, GameStage::SIXTEEN, GameStage::EIGHT, GameStage::QUARTER] as $stage) {
             $count = $countsByStage[$stage->value] ?? 0;
 
             if ($count > 0) {

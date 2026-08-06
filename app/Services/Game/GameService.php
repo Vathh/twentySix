@@ -224,41 +224,16 @@ class GameService
                 $gameToUpdate = $this->playoffGameRepository->find($dto->gameResultDTO->gameId);
                 $gameToUpdate->checkUpdateDataAccuracy($dto->gameResultDTO);
 
-                if(!in_array($gameToUpdate->round, [GameStage::FINAL, GameStage::THIRD, GameStage::SEMI]))
-                {
-                    $this->handleTournamentResultCreating($dto->gameResultDTO->winnerId,
-                                                            $dto->gameResultDTO->player1Id,
-                                                            $dto->gameResultDTO->player2Id,
-                                                            $gameToUpdate->tournamentId,
-                                                            $gameToUpdate->round,
-                                                            null);
-                } else if ($gameToUpdate->round === GameStage::THIRD)
-                {
-                    $this->handleTournamentResultCreating($dto->gameResultDTO->winnerId,
-                                                            $dto->gameResultDTO->player1Id,
-                                                            $dto->gameResultDTO->player2Id,
-                                                            $gameToUpdate->tournamentId,
-                                                            GameStage::THIRD,
-                                                            3);
-                } else if ($gameToUpdate->round === GameStage::FINAL)
-                {
-                    $this->handleTournamentResultCreating($dto->gameResultDTO->winnerId,
-                                                            $dto->gameResultDTO->player1Id,
-                                                            $dto->gameResultDTO->player2Id,
-                                                            $gameToUpdate->tournamentId,
-                                                            GameStage::FINAL,
-                                                            1);
-                }
+                $this->recordPlayoffEliminationResults($dto->gameResultDTO, $gameToUpdate);
 
                 $this->playoffService->update($dto->gameResultDTO, $gameToUpdate);
 
-                if (in_array($gameToUpdate->round, [GameStage::FINAL, GameStage::THIRD], true)) {
+                if ($this->shouldTryFinishAfterPlayoff($gameToUpdate)) {
                     $this->tournamentFinishService->tryFinish($gameToUpdate->tournamentId);
                 }
 
                 $this->achievementsService->createMany($dto->achievementsDTOs);
 
-                // Zapisz szczegóły legów jeśli są dostępne
                 if (!empty($dto->legsDTOs)) {
                     $this->gameLegService->createMany(
                         $dto->legsDTOs,
@@ -279,6 +254,146 @@ class GameService
             ]);
             return false;
         }
+    }
+
+    private function recordPlayoffEliminationResults(
+        \App\DTO\GameResultDTO $dto,
+        \App\Domain\Game\PlayoffGameDomain $game,
+    ): void {
+        $round = $game->round;
+        $isDe = in_array($game->bracketSide, [
+            \App\Enums\BracketSide::Winners,
+            \App\Enums\BracketSide::Losers,
+            \App\Enums\BracketSide::GrandFinal,
+        ], true);
+
+        if ($isDe) {
+            $this->recordDoubleElimResults($dto, $game);
+
+            return;
+        }
+
+        if (! in_array($round, [
+            GameStage::FINAL->value,
+            GameStage::THIRD->value,
+            GameStage::SEMI->value,
+        ], true)) {
+            $stage = $game->roundStage() ?? GameStage::QUARTER;
+            $this->handleTournamentResultCreating(
+                $dto->winnerId,
+                $dto->player1Id,
+                $dto->player2Id,
+                $game->tournamentId,
+                $stage,
+                null,
+            );
+        } elseif ($round === GameStage::THIRD->value) {
+            $this->handleTournamentResultCreating(
+                $dto->winnerId,
+                $dto->player1Id,
+                $dto->player2Id,
+                $game->tournamentId,
+                GameStage::THIRD,
+                3,
+            );
+        } elseif ($round === GameStage::FINAL->value) {
+            $this->handleTournamentResultCreating(
+                $dto->winnerId,
+                $dto->player1Id,
+                $dto->player2Id,
+                $game->tournamentId,
+                GameStage::FINAL,
+                1,
+            );
+        }
+    }
+
+    private function recordDoubleElimResults(
+        \App\DTO\GameResultDTO $dto,
+        \App\Domain\Game\PlayoffGameDomain $game,
+    ): void {
+        $bracketSize = $this->tournamentRepository->getBracketSize($game->tournamentId);
+        $loserId = $dto->winnerId === $dto->player1Id ? $dto->player2Id : $dto->player1Id;
+
+        if ($game->slot === 'GF1') {
+            $tournament = \App\Models\Tournament\Tournament::query()->find($game->tournamentId);
+            $reset = $tournament?->grand_final_mode === \App\Enums\GrandFinalMode::Reset;
+            $lbWon = $dto->winnerId === $dto->player2Id;
+
+            if ($reset && $lbWon) {
+                return; // będzie GF2
+            }
+
+            $this->handleTournamentResultCreating(
+                $dto->winnerId,
+                $dto->player1Id,
+                $dto->player2Id,
+                $game->tournamentId,
+                GameStage::FINAL,
+                1,
+            );
+
+            return;
+        }
+
+        if ($game->slot === 'GF2') {
+            $this->handleTournamentResultCreating(
+                $dto->winnerId,
+                $dto->player1Id,
+                $dto->player2Id,
+                $game->tournamentId,
+                GameStage::FINAL,
+                1,
+            );
+
+            return;
+        }
+
+        $place = \App\Support\Tournament\DoubleEliminationPlacement::placeForLoser(
+            $game->bracketSide,
+            $game->round,
+            $game->slot,
+            $bracketSize,
+            $game->loserDestinationSlot !== null,
+        );
+
+        if ($place === null || $loserId <= 0) {
+            return;
+        }
+
+        $this->tournamentResultService->createForPlayoff(
+            $game->tournamentId,
+            $loserId,
+            \App\Support\Tournament\DoubleEliminationPlacement::resultStageForRound($game->round),
+            $place,
+        );
+    }
+
+    private function shouldTryFinishAfterPlayoff(\App\Domain\Game\PlayoffGameDomain $game): bool
+    {
+        if ($game->slot === 'GF2') {
+            return true;
+        }
+
+        if ($game->slot === 'GF1') {
+            $tournament = \App\Models\Tournament\Tournament::query()->find($game->tournamentId);
+            if ($tournament?->grand_final_mode === \App\Enums\GrandFinalMode::Reset) {
+                // Finish tylko gdy nie ma otwartego GF2 z graczami — uproszczenie: finish gdy GF2 nie ma obu graczy
+                $gf2 = \App\Models\PlayoffGame\PlayoffGame::query()
+                    ->where('tournament_id', $game->tournamentId)
+                    ->where('slot', 'GF2')
+                    ->first();
+
+                return $gf2 === null
+                    || $gf2->player1_id === null
+                    || $gf2->player2_id === null
+                    || $gf2->status === \App\Enums\GameStatus::FINISHED;
+            }
+
+            return true;
+        }
+
+        return in_array($game->round, [GameStage::FINAL->value, GameStage::THIRD->value], true);
     }
 
     private function handleGroupGameUpdate(UpdateGameDTO $dto): bool
@@ -345,39 +460,11 @@ class GameService
         DB::transaction(function () use ($dto) {
             $gameToUpdate = $this->playoffGameRepository->find($dto->gameId);
 
-            if (! in_array($gameToUpdate->round, [GameStage::FINAL, GameStage::THIRD, GameStage::SEMI])) {
-                $this->handleTournamentResultCreating(
-                    $dto->winnerId,
-                    $dto->player1Id,
-                    $dto->player2Id,
-                    $gameToUpdate->tournamentId,
-                    $gameToUpdate->round,
-                    null,
-                );
-            } elseif ($gameToUpdate->round === GameStage::THIRD) {
-                $this->handleTournamentResultCreating(
-                    $dto->winnerId,
-                    $dto->player1Id,
-                    $dto->player2Id,
-                    $gameToUpdate->tournamentId,
-                    GameStage::THIRD,
-                    3,
-                );
-            } elseif ($gameToUpdate->round === GameStage::FINAL) {
-                $this->handleTournamentResultCreating(
-                    $dto->winnerId,
-                    $dto->player1Id,
-                    $dto->player2Id,
-                    $gameToUpdate->tournamentId,
-                    GameStage::FINAL,
-                    1,
-                );
-            }
-
+            $this->recordPlayoffEliminationResults($dto, $gameToUpdate);
             $this->playoffService->applyWinnerAdvancement($dto, $gameToUpdate);
             $this->recalculatePlayerStats($dto);
 
-            if (in_array($gameToUpdate->round, [GameStage::FINAL, GameStage::THIRD], true)) {
+            if ($this->shouldTryFinishAfterPlayoff($gameToUpdate)) {
                 $this->tournamentFinishService->tryFinish($gameToUpdate->tournamentId);
             }
         });

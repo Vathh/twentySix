@@ -402,9 +402,11 @@ class TournamentController extends Controller
         $this->loadAndAuthorize($tournamentId);
 
         $validated = $request->validate([
-            'groupsCount' => ['required', 'integer', 'min:2'],
-            'playoffBracketSize' => ['required', 'integer', 'min:4'],
+            'tournamentFormat' => ['required', 'string', 'in:groups_playoff,single_elimination,double_elimination'],
+            'groupsCount' => ['required_if:tournamentFormat,groups_playoff', 'nullable', 'integer', 'min:2'],
+            'playoffBracketSize' => ['required_if:tournamentFormat,groups_playoff', 'nullable', 'integer', 'min:4'],
             'tabletsCount' => ['sometimes', 'integer', 'min:1'],
+            'grandFinalMode' => ['required_if:tournamentFormat,double_elimination', 'nullable', 'string', 'in:single,reset'],
         ]);
 
         $playerIds = $this->playerService
@@ -412,40 +414,73 @@ class TournamentController extends Controller
             ->pluck('id')
             ->all();
 
-        $groupsCount = (int) $validated['groupsCount'];
-        $playoffBracketSize = (int) $validated['playoffBracketSize'];
+        $format = \App\Enums\TournamentFormat::from($validated['tournamentFormat']);
         $tabletsCount = isset($validated['tabletsCount'])
             ? (int) $validated['tabletsCount']
-            : $groupsCount;
-
-        try {
-            $formatsByStage = TournamentMatchFormatRequestParser::fromRunInput(
-                $request->all(),
-                $playoffBracketSize,
-            );
-        } catch (ValidationException $e) {
-            return back()->withErrors($e->errors())->withInput();
-        }
+            : max(1, (int) ($validated['groupsCount'] ?? 1));
 
         if ($playerIds === []) {
             return back()->with('error', 'Brak uczestników turnieju — dodaj zaakceptowanych zawodników lub gości');
         }
 
         try {
-            if (! $this->tournamentService->tryCreateGroupGames(
-                $tournamentId,
-                $playerIds,
-                $groupsCount,
-                $playoffBracketSize,
-                $tabletsCount,
-                $formatsByStage,
-            )) {
-                return back()->with('error', 'Turniej już wystartował');
+            if ($format === \App\Enums\TournamentFormat::SingleElimination) {
+                $bracketSize = \App\Support\Tournament\PlayoffByePairing::nextPowerOfTwo(count($playerIds));
+                $formatsByStage = TournamentMatchFormatRequestParser::fromRunInput(
+                    $request->all(),
+                    $bracketSize,
+                    includeGroupStage: false,
+                );
+
+                $started = $this->tournamentService->tryStartSingleElimination(
+                    $tournamentId,
+                    $playerIds,
+                    $tabletsCount,
+                    $formatsByStage,
+                );
+            } elseif ($format === \App\Enums\TournamentFormat::DoubleElimination) {
+                $bracketSize = \App\Support\Tournament\PlayoffByePairing::nextPowerOfTwo(count($playerIds));
+                $formatsByStage = TournamentMatchFormatRequestParser::fromRunInput(
+                    $request->all(),
+                    $bracketSize,
+                    includeGroupStage: false,
+                );
+                $grandFinalMode = \App\Enums\GrandFinalMode::from(
+                    $validated['grandFinalMode'] ?? \App\Enums\GrandFinalMode::Reset->value,
+                );
+
+                $started = $this->tournamentService->tryStartDoubleElimination(
+                    $tournamentId,
+                    $playerIds,
+                    $tabletsCount,
+                    $grandFinalMode,
+                    $formatsByStage,
+                );
+            } else {
+                $groupsCount = (int) $validated['groupsCount'];
+                $playoffBracketSize = (int) $validated['playoffBracketSize'];
+                $formatsByStage = TournamentMatchFormatRequestParser::fromRunInput(
+                    $request->all(),
+                    $playoffBracketSize,
+                );
+
+                $started = $this->tournamentService->tryCreateGroupGames(
+                    $tournamentId,
+                    $playerIds,
+                    $groupsCount,
+                    $playoffBracketSize,
+                    $tabletsCount,
+                    $formatsByStage,
+                );
             }
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
         } catch (RuntimeException $e) {
             return back()->with('error', $e->getMessage())->withInput();
+        }
+
+        if (! $started) {
+            return back()->with('error', 'Turniej już wystartował');
         }
 
         return redirect()->route('tournaments.show', ['tournament' => $tournamentId])

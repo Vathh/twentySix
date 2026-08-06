@@ -25,6 +25,8 @@ class Tournament extends Model
         'season_id',
         'date',
         'status',
+        'format',
+        'grand_final_mode',
         'point_scheme_id',
         'groups_count',
         'playoff_bracket_size',
@@ -38,6 +40,8 @@ class Tournament extends Model
     protected $casts = [
         'date' => 'date',
         'status' => TournamentStatus::class,
+        'format' => \App\Enums\TournamentFormat::class,
+        'grand_final_mode' => \App\Enums\GrandFinalMode::class,
         'group_advances' => 'array',
         'join_code_generated_at' => 'datetime',
         'join_code_enabled' => 'boolean',

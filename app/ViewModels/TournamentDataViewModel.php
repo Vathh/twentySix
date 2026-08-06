@@ -74,7 +74,7 @@ class TournamentDataViewModel
                                     ->map(fn($game) => PlayoffGameDomain::fromEloquent($game, ['player1', 'player2', 'winner']));
 
         foreach ($playoffGameDomains as $game) {
-            $result[$game->round->value][] = $game;
+            $result[$game->round][] = $game;
         }
 
         return $result;
