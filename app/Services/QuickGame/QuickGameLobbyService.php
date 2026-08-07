@@ -3,12 +3,17 @@
 namespace App\Services\QuickGame;
 
 use App\Events\QuickGameLobbyUpdated;
+use App\Events\QuickGameRematchCreated;
+use App\Events\QuickGameRematchIntentUpdated;
+use App\Domain\PlayerDomain;
 use App\Models\QuickGame\QuickGameLobby;
 use App\Repositories\Friends\FriendshipRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameLobbyRepository;
 use App\Services\Push\InvitationPushService;
 use App\Domain\GameScoring\MatchFormat;
+use App\Support\QuickGameLobbyPayload;
+use Illuminate\Support\Facades\DB;
 
 class QuickGameLobbyService
 {
@@ -312,6 +317,237 @@ class QuickGameLobbyService
         $this->broadcastLobbyUpdated($lobby);
 
         return $lobby;
+    }
+
+    /**
+     * Zgłoszenie chęci rematchu przez uczestnika zakończonego lobby.
+     * Jeśli host już utworzył rematch — dołącza gracza bez zaproszenia.
+     *
+     * @return array<string, mixed>
+     */
+    public function expressRematchIntent(int $sourceLobbyId, int $userId): array
+    {
+        $source = $this->lobbyRepository->find($sourceLobbyId);
+        $this->assertLobbyFinished($source);
+        $player = $this->assertRegisteredParticipant($source, $userId);
+
+        if ($source->rematch_lobby_id) {
+            $this->lobbyRepository->upsertRematchIntent($source->id, $player->id);
+            $rematch = $this->lobbyRepository->find((int) $source->rematch_lobby_id);
+            $this->ensurePlayerInRematchLobby($rematch, $player);
+            $rematch = $this->lobbyRepository->find((int) $source->rematch_lobby_id);
+
+            return [
+                'status' => 'created',
+                'sourceLobbyId' => $source->id,
+                'waitingForHost' => false,
+                'intents' => $this->formatRematchIntents($source->id),
+                'lobby' => QuickGameLobbyPayload::fromLobby($rematch, $userId),
+            ];
+        }
+
+        $this->lobbyRepository->upsertRematchIntent($source->id, $player->id);
+        $intents = $this->formatRematchIntents($source->id);
+        broadcast(new QuickGameRematchIntentUpdated(
+            $source->id,
+            (int) $source->host_id,
+            $intents,
+        ));
+
+        return [
+            'status' => 'waiting_for_host',
+            'sourceLobbyId' => $source->id,
+            'waitingForHost' => true,
+            'intents' => $intents,
+            'lobby' => null,
+        ];
+    }
+
+    /**
+     * Host tworzy nowe lobby rematch z ustawieniami źródła i auto-dodaje
+     * graczy z intentami (+ gości z poprzedniego meczu).
+     *
+     * @return array<string, mixed>
+     */
+    public function createRematch(int $sourceLobbyId, int $hostUserId): array
+    {
+        $source = $this->lobbyRepository->find($sourceLobbyId);
+        $this->assertLobbyFinished($source);
+
+        if ((int) $source->host_id !== $hostUserId) {
+            throw new \RuntimeException('Tylko host może utworzyć rematch');
+        }
+
+        if ($source->rematch_lobby_id) {
+            $existing = $this->lobbyRepository->find((int) $source->rematch_lobby_id);
+
+            return [
+                'status' => 'created',
+                'sourceLobbyId' => $source->id,
+                'waitingForHost' => false,
+                'intents' => $this->formatRematchIntents($source->id),
+                'lobby' => QuickGameLobbyPayload::fromLobby($existing, $hostUserId),
+            ];
+        }
+
+        $hostPlayer = $this->assertRegisteredParticipant($source, $hostUserId);
+        $this->lobbyRepository->upsertRematchIntent($source->id, $hostPlayer->id);
+
+        $rematch = DB::transaction(function () use ($source, $hostUserId) {
+            $rematch = $this->lobbyRepository->create($hostUserId);
+            $hostPlayer = $this->playerRepository->findByUserId($hostUserId);
+            if ($hostPlayer) {
+                $this->lobbyRepository->addPlayer($rematch->id, $hostPlayer->id, null, true);
+            }
+
+            $matchFormat = MatchFormat::fromRecord($source);
+            $this->lobbyRepository->updateSettings($rematch->id, $hostUserId, $matchFormat);
+
+            $scoringMode = $source->scoring_mode ?? 'each_own';
+            $this->lobbyRepository->updateScoringMode($rematch->id, $hostUserId, $scoringMode);
+
+            $rematch = $this->lobbyRepository->find($rematch->id);
+            $intentPlayerIds = $this->lobbyRepository->getRematchIntentPlayerIds($source->id);
+            $hostPlayerId = $hostPlayer?->id;
+
+            foreach ($intentPlayerIds as $playerId) {
+                if ($hostPlayerId !== null && $playerId === $hostPlayerId) {
+                    continue;
+                }
+                if ($rematch->players->contains('player_id', $playerId)) {
+                    continue;
+                }
+                $this->assertLobbyHasRoom($rematch);
+                $this->lobbyRepository->addPlayerReady($rematch->id, $playerId, null, true, true);
+                $rematch = $this->lobbyRepository->find($rematch->id);
+            }
+
+            foreach ($source->players as $lp) {
+                if ($lp->is_registered) {
+                    continue;
+                }
+                $name = trim((string) ($lp->temp_player_name ?? $lp->player?->name ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+                $this->assertLobbyHasRoom($rematch);
+                try {
+                    $this->assertGuestNameAvailableInLobby($rematch, $name);
+                } catch (\RuntimeException) {
+                    continue;
+                }
+                $guest = $this->playerRepository->createQuickGameGuest($name);
+                $this->lobbyRepository->addPlayer($rematch->id, $guest->id, $name, false);
+                $rematch = $this->lobbyRepository->find($rematch->id);
+            }
+
+            $this->lobbyRepository->setRematchLobbyId($source->id, $rematch->id);
+
+            return $this->lobbyRepository->find($rematch->id);
+        });
+
+        $this->broadcastLobbyUpdated($rematch);
+        broadcast(new QuickGameRematchCreated($source->id, $rematch));
+
+        return [
+            'status' => 'created',
+            'sourceLobbyId' => $source->id,
+            'waitingForHost' => false,
+            'intents' => $this->formatRematchIntents($source->id),
+            'lobby' => QuickGameLobbyPayload::fromLobby($rematch, $hostUserId),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getRematchStatus(int $sourceLobbyId, int $userId): array
+    {
+        $source = $this->lobbyRepository->find($sourceLobbyId);
+        $this->assertLobbyFinished($source);
+        $this->assertRegisteredParticipant($source, $userId);
+
+        if ($source->rematch_lobby_id) {
+            $rematch = $this->lobbyRepository->find((int) $source->rematch_lobby_id);
+
+            return [
+                'status' => 'created',
+                'sourceLobbyId' => $source->id,
+                'waitingForHost' => false,
+                'intents' => $this->formatRematchIntents($source->id),
+                'lobby' => QuickGameLobbyPayload::fromLobby($rematch, $userId),
+            ];
+        }
+
+        return [
+            'status' => 'waiting_for_host',
+            'sourceLobbyId' => $source->id,
+            'waitingForHost' => true,
+            'intents' => $this->formatRematchIntents($source->id),
+            'lobby' => null,
+        ];
+    }
+
+    private function assertLobbyFinished(QuickGameLobby $lobby): void
+    {
+        if ($lobby->status !== 'finished') {
+            throw new \RuntimeException('Rematch jest dostępny tylko po zakończeniu meczu');
+        }
+    }
+
+    private function assertRegisteredParticipant(QuickGameLobby $lobby, int $userId): PlayerDomain
+    {
+        $player = $this->playerRepository->findByUserId($userId);
+        if (! $player) {
+            throw new \RuntimeException('Nie znaleziono gracza dla użytkownika');
+        }
+
+        if ((int) $lobby->host_id === $userId) {
+            return $player;
+        }
+
+        $inLobby = $lobby->players->contains(
+            fn ($lp) => $lp->is_registered && (int) $lp->player_id === (int) $player->id
+        );
+        if (! $inLobby) {
+            throw new \RuntimeException('Nie byłeś uczestnikiem tego meczu');
+        }
+
+        return $player;
+    }
+
+    private function ensurePlayerInRematchLobby(QuickGameLobby $rematch, PlayerDomain $player): void
+    {
+        if ($rematch->status !== 'waiting') {
+            return;
+        }
+
+        if ($rematch->players->contains('player_id', $player->id)) {
+            return;
+        }
+
+        if ((int) $rematch->host_id === (int) ($player->userId ?? 0)) {
+            return;
+        }
+
+        $this->assertLobbyHasRoom($rematch);
+        $this->lobbyRepository->addPlayerReady($rematch->id, $player->id, null, true, true);
+        $fresh = $this->lobbyRepository->find($rematch->id);
+        $this->broadcastLobbyUpdated($fresh);
+    }
+
+    /**
+     * @return list<array{playerId: int, name: string}>
+     */
+    private function formatRematchIntents(int $sourceLobbyId): array
+    {
+        return $this->lobbyRepository->getRematchIntents($sourceLobbyId)
+            ->map(fn ($intent) => [
+                'playerId' => (int) $intent->player_id,
+                'name' => $intent->player?->name ?? 'Gracz',
+            ])
+            ->values()
+            ->all();
     }
 
     private function broadcastLobbyUpdatedById(int $lobbyId): void

@@ -5,6 +5,7 @@ namespace App\Repositories\QuickGame;
 use App\Models\QuickGame\QuickGameLobby;
 use App\Models\QuickGame\QuickGameLobbyPlayer;
 use App\Models\QuickGame\QuickGameLobbyInvitation;
+use App\Models\QuickGame\QuickGameLobbyRematchIntent;
 use Illuminate\Support\Facades\DB;
 
 use App\Domain\GameScoring\MatchFormat;
@@ -192,6 +193,58 @@ class QuickGameLobbyRepository
             'status' => 'finished',
             'quick_game_id' => $quickGameId,
             'updated_at' => now(),
+        ]);
+    }
+
+    public function setRematchLobbyId(int $sourceLobbyId, int $rematchLobbyId): void
+    {
+        DB::table('quick_game_lobbies')->where('id', $sourceLobbyId)->update([
+            'rematch_lobby_id' => $rematchLobbyId,
+            'updated_at' => now(),
+        ]);
+    }
+
+    public function upsertRematchIntent(int $sourceLobbyId, int $playerId): void
+    {
+        QuickGameLobbyRematchIntent::query()->firstOrCreate([
+            'source_lobby_id' => $sourceLobbyId,
+            'player_id' => $playerId,
+        ]);
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, QuickGameLobbyRematchIntent>
+     */
+    public function getRematchIntents(int $sourceLobbyId)
+    {
+        return QuickGameLobbyRematchIntent::query()
+            ->with('player')
+            ->where('source_lobby_id', $sourceLobbyId)
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function getRematchIntentPlayerIds(int $sourceLobbyId): array
+    {
+        return QuickGameLobbyRematchIntent::query()
+            ->where('source_lobby_id', $sourceLobbyId)
+            ->pluck('player_id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
+    public function addPlayerReady(int $lobbyId, ?int $playerId, ?string $tempPlayerName, bool $isRegistered, bool $isReady = false): void
+    {
+        QuickGameLobbyPlayer::create([
+            'lobby_id' => $lobbyId,
+            'player_id' => $playerId,
+            'temp_player_name' => $tempPlayerName,
+            'is_registered' => $isRegistered,
+            'is_ready' => $isReady,
         ]);
     }
 }

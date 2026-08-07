@@ -20,6 +20,7 @@ class QuickGameLobby extends Model
         'game_type',
         'scoring_mode',
         'quick_game_id',
+        'rematch_lobby_id',
         'ffa_session_id',
         'player_order',
         'started_at',
@@ -43,6 +44,16 @@ class QuickGameLobby extends Model
     public function invitations(): HasMany
     {
         return $this->hasMany(QuickGameLobbyInvitation::class, 'lobby_id');
+    }
+
+    public function rematchIntents(): HasMany
+    {
+        return $this->hasMany(QuickGameLobbyRematchIntent::class, 'source_lobby_id');
+    }
+
+    public function rematchLobby(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'rematch_lobby_id');
     }
 
     public function quickGame(): BelongsTo

@@ -168,4 +168,40 @@ class QuickGameLobbyController
             return response()->json(['message' => $e->getMessage()], 400);
         }
     }
+
+    public function expressRematchIntent(Request $request, string $lobbyId): JsonResponse
+    {
+        $userId = $request->user()->id;
+        try {
+            return response()->json(
+                $this->lobbyService->expressRematchIntent((int) $lobbyId, $userId)
+            );
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function createRematch(Request $request, string $lobbyId): JsonResponse
+    {
+        $userId = $request->user()->id;
+        try {
+            return response()->json(
+                $this->lobbyService->createRematch((int) $lobbyId, $userId)
+            );
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
+    public function rematchStatus(Request $request, string $lobbyId): JsonResponse
+    {
+        $userId = $request->user()->id;
+        try {
+            return response()->json(
+                $this->lobbyService->getRematchStatus((int) $lobbyId, $userId)
+            );
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
 }

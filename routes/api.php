@@ -117,6 +117,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{lobbyId}/start', [QuickGameLobbyController::class, 'start']);
         Route::post('/{lobbyId}/invite', [QuickGameLobbyController::class, 'invite']);
         Route::post('/{lobbyId}/add-guest', [QuickGameLobbyController::class, 'addGuest']);
+        Route::post('/{lobbyId}/rematch/intent', [QuickGameLobbyController::class, 'expressRematchIntent']);
+        Route::post('/{lobbyId}/rematch', [QuickGameLobbyController::class, 'createRematch']);
+        Route::get('/{lobbyId}/rematch', [QuickGameLobbyController::class, 'rematchStatus']);
         Route::get('/{lobbyId}/ffa/state', [QuickGameFfaController::class, 'state']);
         Route::post('/{lobbyId}/ffa/presence', [QuickGameFfaController::class, 'updatePresence']);
         Route::post('/{lobbyId}/ffa/visits', [QuickGameFfaController::class, 'recordVisit']);
