@@ -110,7 +110,12 @@ class VisitRecorderTest extends TestCase
         $bust = [
             ['playerId' => 10, 'score' => 0, 'dartsInVisit' => 3, 'bust' => true, 'closedLeg' => false, 'visitNumber' => 1],
         ];
-        $this->assertSame(0, VisitRecorder::currentPlayerIndexFromVisits($bust, $playerIds));
+        $this->assertSame(1, VisitRecorder::currentPlayerIndexFromVisits($bust, $playerIds));
+
+        $bustEarly = [
+            ['playerId' => 10, 'score' => 0, 'dartsInVisit' => 1, 'bust' => true, 'closedLeg' => false, 'visitNumber' => 1],
+        ];
+        $this->assertSame(1, VisitRecorder::currentPlayerIndexFromVisits($bustEarly, $playerIds));
     }
 
     public function test_leg_opener_index_rotates_from_first_match_visit(): void

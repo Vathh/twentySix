@@ -392,16 +392,13 @@ class QuickGameFfaScoringService
         array $playerIds,
         array $leftIds,
     ): void {
-        if ($dto->bust) {
-            return;
-        }
-
         if ($dto->closedLeg) {
             $this->advanceAfterLegClosed($session, $dto->playerId, $playerIds, $leftIds);
 
             return;
         }
 
+        // Kompletna wizyta (w tym bust) — tura przechodzi dalej.
         $session->current_player_index = FfaTurnRotationDomain::nextIndexAfter(
             (int) $session->current_player_index,
             $playerIds,

@@ -144,10 +144,7 @@ final class VisitRecorder
             return (int) $lastIdx;
         }
 
-        if ($last['bust']) {
-            return (int) $lastIdx;
-        }
-
+        // Bust kończy turę (jak pełna wizyta) — kolejka przechodzi do następnego gracza.
         return ((int) $lastIdx + 1) % $n;
     }
 

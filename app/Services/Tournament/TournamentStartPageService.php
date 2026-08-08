@@ -205,6 +205,7 @@ class TournamentStartPageService
     private function participantsList($invitations, $tournamentGuests)
     {
         return $invitations
+            ->toBase()
             ->filter(fn ($inv) => $inv->status === TournamentInvitationStatus::ACCEPTED)
             ->map(fn ($inv) => [
                 'kind' => 'user',
@@ -213,7 +214,7 @@ class TournamentStartPageService
                 'invitationId' => $inv->id,
             ])
             ->merge(
-                $tournamentGuests->map(fn ($guest) => [
+                $tournamentGuests->toBase()->map(fn ($guest) => [
                     'kind' => 'guest',
                     'playerId' => $guest->id,
                     'name' => $guest->name,

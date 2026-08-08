@@ -97,8 +97,11 @@ class PlayerService
         $accepted = $this->tournamentInvitationRepository->getAcceptedPlayers($tournamentId);
         $guests = $this->tournamentGuestParticipantRepository->getPlayersForTournament($tournamentId);
 
+        // toBase(): pusta Eloquent Collection po map(Domain) zostaje Eloquent,
+        // a Eloquent::merge() woła getKey() — PlayerDomain go nie ma.
         return $accepted
-            ->merge($guests)
+            ->toBase()
+            ->merge($guests->toBase())
             ->unique('id')
             ->sortBy('name')
             ->values();

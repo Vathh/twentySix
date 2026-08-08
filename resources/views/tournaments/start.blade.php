@@ -39,9 +39,9 @@
             </div>
         @endif
 
-        {{-- Strefa 1: Uczestnicy turnieju (sticky + przewijana lista) --}}
+        {{-- Strefa 1: Uczestnicy turnieju --}}
         <div
-            class="mb-8 card border-2 border-success/40 lg:sticky lg:top-4 lg:z-20"
+            class="mb-8 card border-2 border-success/40"
             @if($canManageParticipants)
                 x-data
                 x-init="$store.tournamentStartLive.init(@js([

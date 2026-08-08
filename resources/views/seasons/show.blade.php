@@ -21,10 +21,10 @@
                     ✏️ Edytuj sezon
                 </a>
                 <a href="{{ route('seasons.relatedUsers', $season->id) }}" class="admin-sidebar-link">
-                    全家 Powiązani użytkownicy
+                    👥 Powiązani użytkownicy
                 </a>
                 <a href="{{ route('seasons.guests', $season->id) }}" class="admin-sidebar-link">
-                    全家 Goście
+                    👤 Goście
                 </a>
             </nav>
         </aside>

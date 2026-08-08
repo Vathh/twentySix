@@ -56,12 +56,22 @@
                 <div class="overflow-x-auto -mx-1 px-1 mb-8 mt-10">
                     <div class="flex border-b border-border min-w-max">
                     @php
-                        $tabs = [
-                            'results' => 'Wyniki',
-                            'playoff' => 'Playoff',
-                            'groups' => 'Grupy',
-                            'achievements' => 'Osiągnięcia',
-                        ];
+                        $isEliminationOnly = $tournament->format->isEliminationOnly();
+                        if ($isEliminationOnly && $tab === 'groups') {
+                            $tab = 'playoff';
+                        }
+                        $tabs = $isEliminationOnly
+                            ? [
+                                'results' => 'Wyniki',
+                                'playoff' => 'Drabinka',
+                                'achievements' => 'Osiągnięcia',
+                            ]
+                            : [
+                                'results' => 'Wyniki',
+                                'playoff' => 'Playoff',
+                                'groups' => 'Grupy',
+                                'achievements' => 'Osiągnięcia',
+                            ];
                     @endphp
 
                     @foreach($tabs as $key => $label)
@@ -79,9 +89,12 @@
                 @if($tournament->isStarted())
                     @if($tab === 'playoff')
                         @if($tournament->hasPlayoffBracket())
-                            @include('tournaments.tabs.playoff', ['playoffGames' => $playoffGames])
+                            @include('tournaments.tabs.playoff', [
+                                'playoffGames' => $playoffGames,
+                                'bracketHeading' => $isEliminationOnly ? 'Drabinka' : 'Playoff',
+                            ])
                         @endif
-                    @elseif($tab === 'groups')
+                    @elseif($tab === 'groups' && ! $isEliminationOnly)
                         @include('tournaments.tabs.groups', ['groupNumbers' => $groupNumbers,
                                                             'players' => $players,
                                                             'games' => $games,

@@ -7,6 +7,7 @@ use App\Domain\Concerns\AssertsRelationsLoaded;
 use App\Domain\Game\GroupGameDomain;
 use App\Domain\GroupStandingDomain;
 use App\Domain\SeasonDomain;
+use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
 use App\Models\Tournament\Tournament;
 use Carbon\Carbon;
@@ -34,6 +35,7 @@ class TournamentDomain
      * @param int|null $playoffBracketSize
      * @param list<int>|null $groupAdvances
      * @param int|null $tabletsCount
+     * @param TournamentFormat $format
      */
     public function __construct(
         public readonly int                 $id,
@@ -50,6 +52,7 @@ class TournamentDomain
         public readonly ?int                $playoffBracketSize = null,
         public readonly ?array              $groupAdvances = null,
         public readonly ?int                $tabletsCount = null,
+        public readonly TournamentFormat    $format = TournamentFormat::GroupsPlayoff,
     )
     {
     }
@@ -91,6 +94,7 @@ class TournamentDomain
             playoffBracketSize: $tournament->playoff_bracket_size,
             groupAdvances: $tournament->group_advances,
             tabletsCount: $tournament->tablets_count,
+            format: $tournament->format ?? TournamentFormat::GroupsPlayoff,
         );
     }
 

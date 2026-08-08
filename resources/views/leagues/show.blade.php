@@ -21,10 +21,10 @@
                         ✏️ Edytuj ligę
                     </a>
                     <a href="{{ route('leagues.relatedUsers', $league->id) }}" class="admin-sidebar-link">
-                        全家 Powiązani użytkownicy
+                        👥 Powiązani użytkownicy
                     </a>
                     <a href="{{ route('leagues.guests', $league->id) }}" class="admin-sidebar-link">
-                        全家 Goście
+                        👤 Goście
                     </a>
                 </nav>
             </aside>
