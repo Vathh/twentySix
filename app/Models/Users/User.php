@@ -54,7 +54,13 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'can_create_leagues' => 'boolean',
         ];
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        return $this->role === 'admin';
     }
 
     public function player(): HasOne

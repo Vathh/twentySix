@@ -46,6 +46,10 @@
                 <a href='{{ route('settings.index') }}' class="nav-btn {{ request()->routeIs('settings.*') ? 'active' : '' }}" @click="navOpen = false">Ustawienia</a>
             @endauth
 
+            @platformAdmin
+                <a href='{{ route('admin.dashboard') }}' class="nav-btn {{ request()->routeIs('admin.*') ? 'active' : '' }}" @click="navOpen = false">Panel</a>
+            @endplatformAdmin
+
             @guest
                 <a href='{{ route('pages.registerPanel') }}' class="nav-btn" @click="navOpen = false">Zarejestruj się</a>
                 <a href='{{ route('pages.loginPanel') }}' class="nav-btn" @click="navOpen = false">Zaloguj się</a>

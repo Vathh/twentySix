@@ -54,6 +54,10 @@ class AppServiceProvider extends ServiceProvider
             return auth()->check() && auth()->user()->can_create_leagues;
         });
 
+        Blade::if('platformAdmin', function () {
+            return auth()->check() && auth()->user()->isPlatformAdmin();
+        });
+
         Blade::if('leagueAdmin', function ($league) {
             return auth()->check() && in_array(auth()->id(), array_column($league->admins, 'id'));
         });
