@@ -7,6 +7,7 @@ use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
 use App\Events\TournamentFinished;
 use App\Models\PlayoffGame\PlayoffGame;
+use App\Models\Player\Player;
 use App\Models\Tournament\LoginCode;
 use App\Models\Tournament\Tournament;
 use App\Services\Tournament\TournamentFinishService;
@@ -30,10 +31,15 @@ class TournamentFinishServiceTest extends TestCase
             'date' => '2024-06-01',
             'status' => TournamentStatus::PLAYOFF,
             'groups_count' => 2,
-            'playoff_bracket_size' => 2,
+            'playoff_bracket_size' => 4,
             'group_advances' => [1, 1],
-            'tablets_count' => 2,
+            'tablets_count' => 1,
         ]);
+
+        $p1 = Player::create(['name' => 'Finalist A']);
+        $p2 = Player::create(['name' => 'Finalist B']);
+        $p3 = Player::create(['name' => 'Third A']);
+        $p4 = Player::create(['name' => 'Third B']);
 
         $format = MatchFormat::default()->toDatabaseColumns();
 
@@ -41,8 +47,8 @@ class TournamentFinishServiceTest extends TestCase
             'tournament_id' => $tournament->id,
             'round' => GameStage::FINAL,
             'slot' => 'FINAL',
-            'player1_id' => null,
-            'player2_id' => null,
+            'player1_id' => $p1->id,
+            'player2_id' => $p2->id,
             'status' => GameStatus::FINISHED,
             'player1_score' => 2,
             'player2_score' => 0,
@@ -52,15 +58,15 @@ class TournamentFinishServiceTest extends TestCase
             'tournament_id' => $tournament->id,
             'round' => GameStage::THIRD,
             'slot' => 'THIRD',
-            'player1_id' => null,
-            'player2_id' => null,
+            'player1_id' => $p3->id,
+            'player2_id' => $p4->id,
             'status' => GameStatus::FINISHED,
             'player1_score' => 2,
             'player2_score' => 1,
         ], $format));
 
         $code = LoginCode::create([
-            'code' => 'TAB123',
+            'code' => 'TAB12345',
             'tournament_id' => $tournament->id,
             'expires_at' => now()->addYear(),
         ]);

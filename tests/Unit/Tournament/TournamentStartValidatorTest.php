@@ -24,7 +24,6 @@ class TournamentStartValidatorTest extends TestCase
             playerCount: 8,
             groupsCount: 2,
             playoffBracketSize: 4,
-            tabletsCount: 2,
         );
 
         $this->assertTrue(true);
@@ -36,7 +35,6 @@ class TournamentStartValidatorTest extends TestCase
             playerCount: 37,
             groupsCount: 7,
             playoffBracketSize: 16,
-            tabletsCount: 3,
         );
 
         $this->assertTrue(true);
@@ -45,7 +43,7 @@ class TournamentStartValidatorTest extends TestCase
     public function test_rejects_bracket_smaller_than_groups_count(): void
     {
         try {
-            $this->validator->validate(16, 8, 4, 2);
+            $this->validator->validate(16, 8, 4);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('playoffBracketSize', $e->errors());
@@ -55,7 +53,7 @@ class TournamentStartValidatorTest extends TestCase
     public function test_rejects_three_players(): void
     {
         try {
-            $this->validator->validate(3, 2, 4, 1);
+            $this->validator->validate(3, 2, 4);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('selectedPlayers', $e->errors());
@@ -65,7 +63,7 @@ class TournamentStartValidatorTest extends TestCase
     public function test_rejects_seven_groups_for_eight_players(): void
     {
         try {
-            $this->validator->validate(8, 7, 8, 2);
+            $this->validator->validate(8, 7, 8);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('groupsCount', $e->errors());
@@ -75,7 +73,7 @@ class TournamentStartValidatorTest extends TestCase
     public function test_rejects_bracket_above_mvp_cap(): void
     {
         try {
-            $this->validator->validate(64, 16, 64, 2);
+            $this->validator->validate(64, 16, 256);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('playoffBracketSize', $e->errors());
@@ -85,20 +83,10 @@ class TournamentStartValidatorTest extends TestCase
     public function test_rejects_more_groups_than_players(): void
     {
         try {
-            $this->validator->validate(4, 8, 4, 1);
+            $this->validator->validate(4, 8, 4);
             $this->fail('Expected ValidationException');
         } catch (ValidationException $e) {
             $this->assertArrayHasKey('groupsCount', $e->errors());
-        }
-    }
-
-    public function test_rejects_zero_tablets(): void
-    {
-        try {
-            $this->validator->validate(8, 2, 4, 0);
-            $this->fail('Expected ValidationException');
-        } catch (ValidationException $e) {
-            $this->assertArrayHasKey('tabletsCount', $e->errors());
         }
     }
 
@@ -107,9 +95,8 @@ class TournamentStartValidatorTest extends TestCase
         int $players,
         int $groups,
         int $bracketSize,
-        int $tablets,
     ): void {
-        $this->validator->validate($players, $groups, $bracketSize, $tablets);
+        $this->validator->validate($players, $groups, $bracketSize);
 
         $this->assertTrue(true);
     }
@@ -117,11 +104,11 @@ class TournamentStartValidatorTest extends TestCase
     public static function validConfigurationProvider(): array
     {
         return [
-            '8 players 2 groups bracket 4' => [8, 2, 4, 2],
-            '12 players 4 groups bracket 8' => [12, 4, 8, 2],
-            '16 players 4 groups bracket 8' => [16, 4, 8, 4],
-            '32 players 8 groups bracket 32' => [32, 8, 32, 5],
-            '37 players 7 groups bracket 16' => [37, 7, 16, 4],
+            '8 players 2 groups bracket 4' => [8, 2, 4],
+            '12 players 4 groups bracket 8' => [12, 4, 8],
+            '16 players 4 groups bracket 8' => [16, 4, 8],
+            '32 players 8 groups bracket 32' => [32, 8, 32],
+            '37 players 7 groups bracket 16' => [37, 7, 16],
         ];
     }
 }

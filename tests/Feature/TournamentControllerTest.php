@@ -176,6 +176,7 @@ class TournamentControllerTest extends TestCase
         ], $this->adminUser);
 
         $response = $this->post("/tournaments/{$tournament->id}/run", [
+            'tournamentFormat' => 'groups_playoff',
             'groupsCount' => '2',
             'playoffBracketSize' => 4,
         ]);
@@ -188,14 +189,17 @@ class TournamentControllerTest extends TestCase
         $this->assertSame(2, $tournament->groups_count);
         $this->assertSame(4, $tournament->playoff_bracket_size);
         $this->assertSame([2, 2], $tournament->group_advances);
-        $this->assertSame(2, $tournament->tablets_count);
+        $this->assertSame(1, $tournament->tablets_count);
         $this->assertDatabaseHas('games', [
             'tournament_id' => $tournament->id,
         ]);
-        $this->assertSame(2, LoginCode::where('tournament_id', $tournament->id)->count());
+        $this->assertSame(1, LoginCode::where('tournament_id', $tournament->id)->count());
+        $code = LoginCode::where('tournament_id', $tournament->id)->value('code');
+        $this->assertIsString($code);
+        $this->assertSame(8, strlen($code));
     }
 
-    public function test_run_tournament_uses_custom_tablets_count(): void
+    public function test_run_tournament_ignores_legacy_tablets_count_and_creates_one_code(): void
     {
         $this->actingAs($this->adminUser);
         $tournament = Tournament::create([
@@ -214,6 +218,7 @@ class TournamentControllerTest extends TestCase
         ], $this->adminUser);
 
         $response = $this->post("/tournaments/{$tournament->id}/run", [
+            'tournamentFormat' => 'groups_playoff',
             'groupsCount' => 2,
             'playoffBracketSize' => 4,
             'tabletsCount' => 5,
@@ -223,8 +228,8 @@ class TournamentControllerTest extends TestCase
         $response->assertSessionHas('success');
 
         $tournament->refresh();
-        $this->assertSame(5, $tournament->tablets_count);
-        $this->assertSame(5, LoginCode::where('tournament_id', $tournament->id)->count());
+        $this->assertSame(1, $tournament->tablets_count);
+        $this->assertSame(1, LoginCode::where('tournament_id', $tournament->id)->count());
     }
 
     public function test_tournament_cannot_be_started_twice(): void
@@ -247,12 +252,14 @@ class TournamentControllerTest extends TestCase
 
         // Pierwszy start
         $this->post("/tournaments/{$tournament->id}/run", [
+            'tournamentFormat' => 'groups_playoff',
             'groupsCount' => '2',
             'playoffBracketSize' => 4,
         ]);
 
         // Drugi start - powinien się nie powieść
         $response = $this->post("/tournaments/{$tournament->id}/run", [
+            'tournamentFormat' => 'groups_playoff',
             'groupsCount' => '2',
             'playoffBracketSize' => 4,
         ]);
@@ -271,6 +278,7 @@ class TournamentControllerTest extends TestCase
 
         $response = $this->from("/tournaments/{$tournament->id}/start")
             ->post("/tournaments/{$tournament->id}/run", [
+                'tournamentFormat' => 'groups_playoff',
                 'selectedPlayers' => json_encode([]),
                 'groupsCount' => '2',
                 'playoffBracketSize' => 4,
@@ -297,6 +305,7 @@ class TournamentControllerTest extends TestCase
 
         $response = $this->from("/tournaments/{$tournament->id}/start")
             ->post("/tournaments/{$tournament->id}/run", [
+                'tournamentFormat' => 'groups_playoff',
                 'groupsCount' => 3,
                 'playoffBracketSize' => 4,
             ]);
@@ -321,6 +330,7 @@ class TournamentControllerTest extends TestCase
 
         $response = $this->from("/tournaments/{$tournament->id}/start")
             ->post("/tournaments/{$tournament->id}/run", [
+                'tournamentFormat' => 'groups_playoff',
                 'groupsCount' => 2,
                 'playoffBracketSize' => 4,
             ]);
@@ -328,7 +338,7 @@ class TournamentControllerTest extends TestCase
         $response->assertSessionHasErrors('selectedPlayers');
     }
 
-    public function test_admin_sees_login_codes_on_started_tournament(): void
+    public function test_admin_sees_login_code_and_qr_on_started_tournament(): void
     {
         $this->withoutVite();
 
@@ -340,20 +350,18 @@ class TournamentControllerTest extends TestCase
             'groups_count' => 2,
             'playoff_bracket_size' => 4,
             'group_advances' => [2, 2],
-            'tablets_count' => 2,
+            'tablets_count' => 1,
         ]);
 
-        LoginCode::create(['code' => 'ABCD12', 'tournament_id' => $tournament->id]);
-        LoginCode::create(['code' => 'WXYZ34', 'tournament_id' => $tournament->id]);
+        LoginCode::create(['code' => 'ABCD1234', 'tournament_id' => $tournament->id]);
 
         $response = $this->actingAs($this->adminUser)->get("/tournaments/{$tournament->id}");
 
         $response->assertOk();
-        $response->assertSee('Kody logowania na tablety');
-        $response->assertSee('ABCD12');
-        $response->assertSee('WXYZ34');
-        $response->assertSee('Tablet 1');
-        $response->assertSee('Tablet 2');
+        $response->assertSee('Kod logowania na tablety');
+        $response->assertSee('ABCD1234');
+        $response->assertSee('tablet-login/ABCD1234');
+        $response->assertSee('Nowy kod');
     }
 
     public function test_regular_user_does_not_see_login_codes(): void
@@ -371,13 +379,13 @@ class TournamentControllerTest extends TestCase
             'tablets_count' => 1,
         ]);
 
-        LoginCode::create(['code' => 'SECR37', 'tournament_id' => $tournament->id]);
+        LoginCode::create(['code' => 'SECR3789', 'tournament_id' => $tournament->id]);
 
         $response = $this->actingAs($this->regularUser)->get("/tournaments/{$tournament->id}");
 
         $response->assertOk();
-        $response->assertDontSee('Kody logowania na tablety');
-        $response->assertDontSee('SECR37');
+        $response->assertDontSee('Kod logowania na tablety');
+        $response->assertDontSee('SECR3789');
     }
 
     public function test_guest_does_not_see_login_codes(): void
@@ -395,13 +403,13 @@ class TournamentControllerTest extends TestCase
             'tablets_count' => 1,
         ]);
 
-        LoginCode::create(['code' => 'GUES78', 'tournament_id' => $tournament->id]);
+        LoginCode::create(['code' => 'GUES7890', 'tournament_id' => $tournament->id]);
 
         $response = $this->get("/tournaments/{$tournament->id}");
 
         $response->assertOk();
-        $response->assertDontSee('Kody logowania na tablety');
-        $response->assertDontSee('GUES78');
+        $response->assertDontSee('Kod logowania na tablety');
+        $response->assertDontSee('GUES7890');
     }
 
     public function test_run_tournament_saves_match_formats_and_snapshots_group_games(): void
@@ -423,6 +431,7 @@ class TournamentControllerTest extends TestCase
         ], $this->adminUser);
 
         $response = $this->post("/tournaments/{$tournament->id}/run", [
+            'tournamentFormat' => 'groups_playoff',
             'groupsCount' => 2,
             'playoffBracketSize' => 4,
             'matchFormats' => [

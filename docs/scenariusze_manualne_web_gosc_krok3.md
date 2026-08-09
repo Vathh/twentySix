@@ -53,7 +53,7 @@ Wykonuj po kolei. Przy każdym punkcie: **OK?** ☐ / uwagi.
 7. Kliknij sezon **Sezon jesienny 2025**.
 8. **Oczekiwane:** daty sezonu, lista turniejów. **Brak** panelu „Zarządzanie sezonem”.
 9. Kliknij **Turniej 6-osobowy (faza grupowa)** (lub inny wystartowany turniej z seeda).
-10. **Oczekiwane:** nazwa turnieju, data, zakładki **Wyniki / Playoff / Grupy / Osiągnięcia**. **Brak** sekcji „Kody logowania na tablety” i **brak** panelu „Rozpocznij turniej” z boku.
+10. **Oczekiwane:** nazwa turnieju, data, zakładki **Wyniki / Playoff / Grupy / Osiągnięcia**. **Brak** sekcji „Kod logowania na tablety” i **brak** panelu „Rozpocznij turniej” z boku.
 
 ### A3. Zakładki turnieju
 
@@ -124,7 +124,7 @@ W **zwykłym oknie** (zalogowany `demo-admin@twentysix.local`).
 
 35. Utwórz **nowy** turniej w sezonie demo (opcjonalnie) **lub** otwórz turniej ze statusem `created`.
 36. Wejdź w **Rozpocznij turniej** — **oczekiwane:** formularz uczestników, zaproszeń, start — **bez** 403.
-37. Na stronie wystartowanego turnieju jako admin: **oczekiwane:** sekcja **Kody logowania na tablety** (gość tego nie widzi — por. A2 pkt 10).
+37. Na stronie wystartowanego turnieju jako admin: **oczekiwane:** sekcja **Kod logowania na tablety** (QR + kod; gość tego nie widzi — por. A2 pkt 10).
 
 ### B3. Zaproszenie (opcjonalna regresja mobile)
 

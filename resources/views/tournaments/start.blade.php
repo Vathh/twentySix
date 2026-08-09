@@ -494,7 +494,6 @@
                 $tournamentStartConfig = [
                     'groupsCount' => $defaultGroupsCount,
                     'playoffBracketSize' => $defaultPlayoffBracketSize,
-                    'tabletsCount' => (int) old('tabletsCount', $defaultGroupsCount ?: 1),
                     'tournamentFormat' => $defaultTournamentFormat,
                     'grandFinalMode' => (string) old('grandFinalMode', 'reset'),
                     'seBracketSize' => $seBracketSize,
@@ -578,7 +577,7 @@
                             </label>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-2xl"
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl"
                              x-show="tournamentFormat === 'groups_playoff'"
                              x-cloak>
                             <div class="flex flex-col">
@@ -611,12 +610,6 @@
                                     Od tego etapu zaczyna się faza pucharowa
                                 </p>
                             </div>
-                            <div class="flex flex-col">
-                                <label for="tabletsCountGroups" class="text-accent font-semibold mb-2">Liczba tabletów</label>
-                                <input id="tabletsCountGroups" type="number" name="tabletsCount" min="1"
-                                       class="select-field" x-model.number="tabletsCount"
-                                       x-bind:disabled="tournamentFormat !== 'groups_playoff'">
-                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl"
@@ -631,14 +624,8 @@
                                     </template>
                                 </p>
                             </div>
-                            <div class="flex flex-col gap-3">
+                            <div class="flex flex-col gap-3" x-show="tournamentFormat === 'double_elimination'" x-cloak>
                                 <div class="flex flex-col">
-                                    <label for="tabletsCountSe" class="text-accent font-semibold mb-2">Liczba tabletów</label>
-                                    <input id="tabletsCountSe" type="number" min="1"
-                                           class="select-field" x-model.number="tabletsCount"
-                                           x-bind:name="(tournamentFormat === 'single_elimination' || tournamentFormat === 'double_elimination') ? 'tabletsCount' : null">
-                                </div>
-                                <div class="flex flex-col" x-show="tournamentFormat === 'double_elimination'" x-cloak>
                                     <label for="grandFinalMode" class="text-accent font-semibold mb-2">Grand Final</label>
                                     <select id="grandFinalMode" name="grandFinalMode" class="select-field"
                                             x-model="grandFinalMode"
@@ -758,7 +745,6 @@
             return {
                 groupsCount: config.groupsCount ?? 2,
                 playoffBracketSize: config.playoffBracketSize ?? 4,
-                tabletsCount: config.tabletsCount ?? 2,
                 tournamentFormat: config.tournamentFormat ?? 'groups_playoff',
                 grandFinalMode: config.grandFinalMode ?? 'reset',
                 seBracketSize: config.seBracketSize ?? 4,

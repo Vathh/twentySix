@@ -115,9 +115,12 @@ class TournamentController extends Controller
         $tournamentDomain = $viewModel->tournament();
         $canManageTournament = $this->gameAuthorizationService->canManageTournament($tournament);
 
-        $loginCodes = ($canManageTournament && $tournamentDomain->showsTabletLoginCodes())
-            ? $this->loginCodeService->getCodesForTournament($tournament->id)
-            : collect();
+        $loginCode = ($canManageTournament && $tournamentDomain->showsTabletLoginCodes())
+            ? $this->loginCodeService->getCodeForTournament($tournament->id)
+            : null;
+        $loginUrl = $loginCode !== null
+            ? $this->loginCodeService->loginUrl($loginCode)
+            : null;
 
         return view('tournaments.show', [
             'tournament' => $tournamentDomain,
@@ -132,7 +135,8 @@ class TournamentController extends Controller
             'results' => $viewModel->results(),
             'tab' => \request()->get('tab', 'results'),
             'canManageTournament' => $canManageTournament,
-            'loginCodes' => $loginCodes,
+            'loginCode' => $loginCode,
+            'loginUrl' => $loginUrl,
         ]);
     }
 
@@ -278,6 +282,15 @@ class TournamentController extends Controller
         return back()->with('success', 'Wygenerowano nowy kod QR');
     }
 
+    public function regenerateTabletLoginCode(int $tournamentId): RedirectResponse
+    {
+        $this->loadAndAuthorize($tournamentId);
+
+        $this->loginCodeService->regenerateForTournament($tournamentId);
+
+        return back()->with('success', 'Wygenerowano nowy kod logowania tabletu');
+    }
+
     public function toggleJoinCode(Request $request, int $tournamentId): RedirectResponse
     {
         $this->loadAndAuthorize($tournamentId);
@@ -405,7 +418,6 @@ class TournamentController extends Controller
             'tournamentFormat' => ['required', 'string', 'in:groups_playoff,single_elimination,double_elimination'],
             'groupsCount' => ['required_if:tournamentFormat,groups_playoff', 'nullable', 'integer', 'min:2'],
             'playoffBracketSize' => ['required_if:tournamentFormat,groups_playoff', 'nullable', 'integer', 'min:4'],
-            'tabletsCount' => ['sometimes', 'integer', 'min:1'],
             'grandFinalMode' => ['required_if:tournamentFormat,double_elimination', 'nullable', 'string', 'in:single,reset'],
         ]);
 
@@ -415,9 +427,6 @@ class TournamentController extends Controller
             ->all();
 
         $format = \App\Enums\TournamentFormat::from($validated['tournamentFormat']);
-        $tabletsCount = isset($validated['tabletsCount'])
-            ? (int) $validated['tabletsCount']
-            : max(1, (int) ($validated['groupsCount'] ?? 1));
 
         if ($playerIds === []) {
             return back()->with('error', 'Brak uczestników turnieju — dodaj zaakceptowanych zawodników lub gości');
@@ -435,7 +444,6 @@ class TournamentController extends Controller
                 $started = $this->tournamentService->tryStartSingleElimination(
                     $tournamentId,
                     $playerIds,
-                    $tabletsCount,
                     $formatsByStage,
                 );
             } elseif ($format === \App\Enums\TournamentFormat::DoubleElimination) {
@@ -452,7 +460,6 @@ class TournamentController extends Controller
                 $started = $this->tournamentService->tryStartDoubleElimination(
                     $tournamentId,
                     $playerIds,
-                    $tabletsCount,
                     $grandFinalMode,
                     $formatsByStage,
                 );
@@ -469,7 +476,6 @@ class TournamentController extends Controller
                     $playerIds,
                     $groupsCount,
                     $playoffBracketSize,
-                    $tabletsCount,
                     $formatsByStage,
                 );
             }

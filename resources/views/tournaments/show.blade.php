@@ -49,8 +49,12 @@
                     </dl>
                 </div>
 
-                @if($canManageTournament && $tournament->isStarted() && $loginCodes->isNotEmpty())
-                    @include('tournaments.partials.login-codes', ['loginCodes' => $loginCodes])
+                @if($canManageTournament && $tournament->isStarted() && !empty($loginCode))
+                    @include('tournaments.partials.login-codes', [
+                        'loginCode' => $loginCode,
+                        'loginUrl' => $loginUrl,
+                        'tournamentId' => $tournament->id,
+                    ])
                 @endif
 
                 <div class="overflow-x-auto -mx-1 px-1 mb-8 mt-10">

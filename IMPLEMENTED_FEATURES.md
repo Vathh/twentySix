@@ -31,7 +31,7 @@ Szczegóły wymagań: [`docs/product.md`](docs/product.md). Aktywne zadania: [`d
 | Turniej: zaproszenia (wyszukiwarka + akceptacja) | ✅ | Strona startu: wysyłka, masowy invite ze składu (`relatedUsers`); mobile: accept/reject/withdraw |
 | Start turnieju: liczba grup | ✅ | `start.blade.php` — potęgi 2 (2…64), `TournamentStartRules` |
 | Start: walidowany awans z grupy | ✅ | Kreator + `TournamentStartValidator` |
-| Start: liczba kodów tabletów (≠ liczba grup) | ✅ | `tabletsCount` w kreatorze, `LoginCodeService` |
+| Start: jeden kod tabletu 8 znaków + QR | ✅ | `LoginCodeService::generateForTournament`, `/tablet-login/{code}` |
 | Start: tylko zaakceptowani + goście | ✅ | `getTournamentStartPool`, walidacja przy `run` |
 | Publiczny podgląd lig/turniejów | ✅ | Gość bez logowania — [`scenariusze_manualne_web_gosc_krok3.md`](docs/scenariusze_manualne_web_gosc_krok3.md) |
 | Korekta wyniku / walkower na webie | ✅ | `games/show` — formularz admina sezonu, `GameResultCorrectionService` |

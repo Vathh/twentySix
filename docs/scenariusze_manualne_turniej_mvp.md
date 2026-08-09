@@ -37,22 +37,21 @@ Seeder wywołuje `tryCreateGroupGames` — to **od razu startuje** turniej 6-oso
 
 - status → faza grupowa,
 - mecze grupowe `scheduled`,
-- **2 kody tabletów** (domyślnie = liczba grup).
+- **jeden wspólny kod tabletu** (8 znaków) + QR.
 
 **Nie trzeba** ponownie klikać „Start turnieju” na webie dla turnieju z seeda.
 
-Kody widoczne po zalogowaniu jako admin:
+Kod widoczny po zalogowaniu jako admin:
 
-`Ligi` → **twentySix — Liga demonstracyjna** → **Sezon jesienny 2025** → turniej **Turniej 6-osobowy (faza grupowa)** → sekcja **„Kody logowania na tablety”**.
+`Ligi` → **twentySix — Liga demonstracyjna** → **Sezon jesienny 2025** → turniej **Turniej 6-osobowy (faza grupowa)** → sekcja **„Kod logowania na tablety”** (tekst + QR).
 
 ---
 
 ## 1. Faza grupowa — tablet → tabela na webie
 
 1. Web: zaloguj się jako `demo-admin@twentysix.local`.
-2. Otwórz turniej **Turniej 6-osobowy (faza grupowa)** i skopiuj jeden kod tabletu.
-3. Mobile: **Turniej** → wpisz kod → lista meczów.
-4. Wybierz **Grupa 1** lub **Grupa 2** → mecz ze statusem oczekujący (lock).
+2. Otwórz turniej **Turniej 6-osobowy (faza grupowa)** i skopiuj kod tabletu albo pokaż QR.
+3. Mobile: **Turniej** → zeskanuj QR **albo** wpisz kod → lista meczów.4. Wybierz **Grupa 1** lub **Grupa 2** → mecz ze statusem oczekujący (lock).
 5. Rozegraj mecz na tablecie w formacie z kreatora turnieju (domyślnie **501 · do 2 legów**, double out) — jedno urządzenie, H2H.
 6. Po zakończeniu mecz znika z listy tabletu.
 7. Web: zakładka **Grupy** → sprawdź macierz wyników i kolumny W / L / Legi / Pkt / Miejsce.
@@ -154,7 +153,7 @@ Powiązane: web gość — [`scenariusze_manualne_web_gosc_krok3.md`](scenariusz
 Jeśli seed został nadpisany lub chcesz pełny flow organizatora:
 
 1. Web: liga → sezon → utwórz turniej.
-2. `/tournaments/{id}/start` — uczestnicy, goście, **min. 4 graczy**, grupy (potęga 2), awans, liczba tabletów.
+2. `/tournaments/{id}/start` — uczestnicy, goście, **min. 4 graczy**, grupy / SE / DE; po starcie: jeden kod tabletu + QR.
 3. **Start** → kody tabletów + faza grupowa.
 4. Dalej scenariusze 1–4.
 

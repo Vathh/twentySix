@@ -16,7 +16,6 @@ class TournamentStartValidator
         int $playerCount,
         int $groupsCount,
         int $playoffBracketSize,
-        int $tabletsCount,
     ): void {
         $errors = [];
 
@@ -137,13 +136,6 @@ class TournamentStartValidator
             } catch (\InvalidArgumentException $e) {
                 $errors['playoffBracketSize'] = 'Nie udało się rozłożyć miejsc awansujących między grupy.';
             }
-        }
-
-        if ($tabletsCount < TournamentStartRules::MIN_TABLETS) {
-            $errors['tabletsCount'] = sprintf(
-                'Wymagana co najmniej %d tablet.',
-                TournamentStartRules::MIN_TABLETS,
-            );
         }
 
         if ($errors !== []) {

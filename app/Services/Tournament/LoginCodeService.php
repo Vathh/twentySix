@@ -10,22 +10,21 @@ use Illuminate\Support\Collection;
 
 class LoginCodeService
 {
-
     public function __construct(
         private LoginCodeRepository $loginCodeRepository
-    )
-    {
+    ) {
     }
 
-    public function generateCodes(int $amount, int $tournamentId): void
+    /**
+     * Jeden wspólny kod sędziowski na turniej (wszystkie tablety).
+     */
+    public function generateForTournament(int $tournamentId): string
     {
-        $result = collect();
+        $this->loginCodeRepository->revokeForTournament($tournamentId);
+        $code = LoginCode::generate();
+        $this->loginCodeRepository->save(collect([$code]), $tournamentId);
 
-        for ($i = 0; $i < $amount; $i++) {
-            $result->push(LoginCode::generate());
-        }
-
-        $this->loginCodeRepository->save($result, $tournamentId);
+        return $code;
     }
 
     /**
@@ -36,9 +35,29 @@ class LoginCodeService
         return $this->loginCodeRepository->findCodesByTournamentId($tournamentId);
     }
 
+    public function getCodeForTournament(int $tournamentId): ?string
+    {
+        return $this->getCodesForTournament($tournamentId)->first();
+    }
+
+    public function regenerateForTournament(int $tournamentId): string
+    {
+        return $this->generateForTournament($tournamentId);
+    }
+
     public function revokeForTournament(int $tournamentId): void
     {
         $this->loginCodeRepository->revokeForTournament($tournamentId);
+    }
+
+    public function loginUrl(string $code): string
+    {
+        return rtrim((string) config('app.url'), '/').'/tablet-login/'.strtoupper($code);
+    }
+
+    public function findByCode(string $code): ?LoginCode
+    {
+        return $this->loginCodeRepository->findByCodeWithTournament(strtoupper(trim($code)));
     }
 
     /**
@@ -48,7 +67,7 @@ class LoginCodeService
      */
     public function authenticateForTournament(string $code): array
     {
-        $loginCode = $this->loginCodeRepository->findByCodeWithTournament($code);
+        $loginCode = $this->findByCode($code);
 
         if ($loginCode === null || $loginCode->tournament === null) {
             throw new AccountAuthException('Nieprawidłowy kod logowania', 401);
@@ -69,15 +88,3 @@ class LoginCodeService
         ];
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

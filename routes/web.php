@@ -12,12 +12,16 @@ use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TournamentJoinLandingController;
+use App\Http\Controllers\TournamentTabletLoginLandingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PagesController::class, 'showHomePage'])->name('pages.home');
 Route::get('/join-tournament/{code}', [TournamentJoinLandingController::class, 'show'])
     ->where('code', '[A-Za-z0-9]+')
     ->name('tournaments.join-landing');
+Route::get('/tablet-login/{code}', [TournamentTabletLoginLandingController::class, 'show'])
+    ->where('code', '[A-Za-z0-9]+')
+    ->name('tournaments.tablet-login-landing');
 
 Route::get('/games/{type}/{id}', [GameViewController::class, 'show'])
     ->where('type', 'group|playoff|quick')
@@ -57,6 +61,14 @@ Route::post('/email/verification-notification', [EmailVerificationController::cl
 Route::get('/login', [PagesController::class, 'showLoginPage'])->name('pages.loginPanel');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+Route::middleware(['auth', 'platform.admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\PlatformAdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/users', [\App\Http\Controllers\PlatformAdminController::class, 'users'])->name('users');
+    Route::post('/users/{user}/can-create-leagues', [\App\Http\Controllers\PlatformAdminController::class, 'updateCanCreateLeagues'])
+        ->whereNumber('user')
+        ->name('users.can-create-leagues');
+});
 
 Route::middleware('auth')->prefix('settings')->name('settings.')->group(function () {
     Route::get('/', [SettingsController::class, 'index'])->name('index');
@@ -119,6 +131,7 @@ Route::prefix('tournaments/{tournament}')->group(function () {
    Route::post('/invitations/{invitation}/remove', [TournamentController::class, 'removeParticipant'])->name('tournaments.invitations.remove');
    Route::post('/join-code/regenerate', [TournamentController::class, 'regenerateJoinCode'])->name('tournaments.join-code.regenerate');
    Route::post('/join-code/toggle', [TournamentController::class, 'toggleJoinCode'])->name('tournaments.join-code.toggle');
+   Route::post('/tablet-login-code/regenerate', [TournamentController::class, 'regenerateTabletLoginCode'])->name('tournaments.tablet-login-code.regenerate');
    Route::post('/join-requests/{joinRequest}/approve', [TournamentController::class, 'approveJoinRequest'])->name('tournaments.join-requests.approve');
    Route::post('/join-requests/{joinRequest}/reject', [TournamentController::class, 'rejectJoinRequest'])->name('tournaments.join-requests.reject');
    Route::post('/participants/guests/add', [TournamentController::class, 'addGuestParticipant'])->name('tournaments.participants.guests.add');

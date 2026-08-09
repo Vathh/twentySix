@@ -10,6 +10,8 @@ class LoginCode extends Model
 {
     use HasApiTokens;
 
+    public const CODE_LENGTH = 8;
+
     protected $fillable = [
         'code',
         'tournament_id',
@@ -28,16 +30,14 @@ class LoginCode extends Model
     public static function generate(): string
     {
         $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        $code = collect(range(1,6))
-            ->map(fn() => $alphabet[random_int(0, strlen($alphabet)-1)])
+        $code = collect(range(1, self::CODE_LENGTH))
+            ->map(fn () => $alphabet[random_int(0, strlen($alphabet) - 1)])
             ->join('');
 
-        if(LoginCode::where('code', $code)->exists()){
-            $code = self::generate();
+        if (LoginCode::where('code', $code)->exists()) {
+            return self::generate();
         }
 
         return $code;
     }
 }
-
-

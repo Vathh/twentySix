@@ -110,7 +110,7 @@ Wybór → API → `w trakcie` (lock); inne tablety nie widzą meczu; race → b
 
 ### Kody logowania (tablety)
 
-Start turnieju: liczba kodów = liczba tabletów; jeden kod = jeden tablet; bez konta użytkownika.
+Po starcie turnieju: **jeden wspólny kod 8-znakowy** + QR (`/tablet-login/{code}`) dla wszystkich tabletów; bez konta użytkownika. Regeneracja unieważnia poprzedni kod i sesje.
 
 ### Tablet — wybór meczu
 
@@ -191,7 +191,7 @@ Dla **`groups_playoff`:**
    - Maksymalnie **128 awansujących** do drabinki.
    - Awansujących musi być **≥ liczba grup** (minimum 1 z każdej grupy) i **≤ liczba zawodników**.
    - Miejsca awansujące rozkładane **proporcjonalnie** do wielkości grup; nadwyżka trafia do większych (wcześniejszych) grup. Przy starcie zapisywany jest rozkład per grupa (`group_advances`).
-3. **Liczba kodów na tablety** — pole niezależne od logiki grup/drabinki.
+3. **Kod logowania tabletu** — jeden wspólny kod 8-znakowy + QR (niezależnie od grup/drabinki).
 4. Losowy podział puli zawodników do grup (reguła wielkości — patrz niżej).
 5. Round-robin w każdej grupie.
 6. **Podgląd w kreatorze:** dla wybranej liczby grup i etapu drabinki administrator widzi „Grupa N: X graczy → Y awansujących”.
@@ -199,7 +199,7 @@ Dla **`groups_playoff`:**
 Dla **`single_elimination` / `double_elimination`:**
 
 1. Bez liczby grup / awansu — `bracketSize = nextPowerOfTwo(N)`; podgląd „N graczy → drabinka X, Y wolnych losów”.
-2. Liczba kodów na tablety; format meczów per etap (bez etapu `GROUP`).
+2. Jeden kod logowania tabletu + QR; format meczów per etap (bez etapu `GROUP`).
 3. Start → od razu faza pucharowa (mecze R1 widoczne na tablecie).
 
 ### Podział zawodników do grup

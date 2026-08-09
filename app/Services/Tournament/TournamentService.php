@@ -132,16 +132,12 @@ class TournamentService
         array $playerIds,
         int $groupsCount,
         int $playoffBracketSize,
-        ?int $tabletsCount = null,
         array $formatsByStage = [],
     ): bool {
-        $tabletsCount ??= $groupsCount;
-
         $this->startValidator->validate(
             playerCount: count($playerIds),
             groupsCount: $groupsCount,
             playoffBracketSize: $playoffBracketSize,
-            tabletsCount: $tabletsCount,
         );
 
         if ($formatsByStage === []) {
@@ -187,7 +183,6 @@ class TournamentService
                 $groupsCount,
                 $playoffBracketSize,
                 $groupAdvances,
-                $tabletsCount,
                 $formatsByStage,
             ) {
                 if ($this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId)) {
@@ -195,7 +190,7 @@ class TournamentService
                     $this->tournamentRepository->saveStartConfiguration(
                         tournamentId: $tournamentId,
                         playoffBracketSize: $playoffBracketSize,
-                        tabletsCount: $tabletsCount,
+                        tabletsCount: 1,
                         format: \App\Enums\TournamentFormat::GroupsPlayoff,
                         groupsCount: $groupsCount,
                         groupAdvances: $groupAdvances,
@@ -203,7 +198,7 @@ class TournamentService
                     $this->updatePointSchemeId($tournamentId, $playersAmount);
                     $this->groupStandingRepository->createEmptyStandings($tournamentId, $groups);
                     $this->gameRepository->createGames($gamesToInsert);
-                    $this->loginCodeService->generateCodes($tabletsCount, $tournamentId);
+                    $this->loginCodeService->generateForTournament($tournamentId);
                     $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::GROUP);
 
                     return true;
@@ -232,7 +227,6 @@ class TournamentService
     public function tryStartSingleElimination(
         int $tournamentId,
         array $playerIds,
-        int $tabletsCount,
         array $formatsByStage = [],
     ): bool {
         $playerCount = count($playerIds);
@@ -240,12 +234,6 @@ class TournamentService
         if ($playerCount < TournamentStartRules::MIN_PLAYERS) {
             throw ValidationException::withMessages([
                 'players' => 'Do startu potrzeba co najmniej '.TournamentStartRules::MIN_PLAYERS.' zawodników.',
-            ]);
-        }
-
-        if ($tabletsCount < TournamentStartRules::MIN_TABLETS) {
-            throw ValidationException::withMessages([
-                'tabletsCount' => 'Liczba tabletów musi być co najmniej '.TournamentStartRules::MIN_TABLETS.'.',
             ]);
         }
 
@@ -267,7 +255,6 @@ class TournamentService
                 $playerIds,
                 $playerCount,
                 $bracketSize,
-                $tabletsCount,
                 $formatsByStage,
             ) {
                 if (! $this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId)) {
@@ -278,13 +265,13 @@ class TournamentService
                 $this->tournamentRepository->saveStartConfiguration(
                     tournamentId: $tournamentId,
                     playoffBracketSize: $bracketSize,
-                    tabletsCount: $tabletsCount,
+                    tabletsCount: 1,
                     format: \App\Enums\TournamentFormat::SingleElimination,
                     groupsCount: null,
                     groupAdvances: null,
                 );
                 $this->updatePointSchemeId($tournamentId, $playerCount);
-                $this->loginCodeService->generateCodes($tabletsCount, $tournamentId);
+                $this->loginCodeService->generateForTournament($tournamentId);
                 $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::PLAYOFF);
 
                 $this->playoffService->generateSingleEliminationBracket($tournamentId, $playerIds);
@@ -312,7 +299,6 @@ class TournamentService
     public function tryStartDoubleElimination(
         int $tournamentId,
         array $playerIds,
-        int $tabletsCount,
         \App\Enums\GrandFinalMode $grandFinalMode,
         array $formatsByStage = [],
     ): bool {
@@ -321,12 +307,6 @@ class TournamentService
         if ($playerCount < TournamentStartRules::MIN_PLAYERS) {
             throw ValidationException::withMessages([
                 'players' => 'Do startu potrzeba co najmniej '.TournamentStartRules::MIN_PLAYERS.' zawodników.',
-            ]);
-        }
-
-        if ($tabletsCount < TournamentStartRules::MIN_TABLETS) {
-            throw ValidationException::withMessages([
-                'tabletsCount' => 'Liczba tabletów musi być co najmniej '.TournamentStartRules::MIN_TABLETS.'.',
             ]);
         }
 
@@ -348,7 +328,6 @@ class TournamentService
                 $playerIds,
                 $playerCount,
                 $bracketSize,
-                $tabletsCount,
                 $grandFinalMode,
                 $formatsByStage,
             ) {
@@ -360,14 +339,14 @@ class TournamentService
                 $this->tournamentRepository->saveStartConfiguration(
                     tournamentId: $tournamentId,
                     playoffBracketSize: $bracketSize,
-                    tabletsCount: $tabletsCount,
+                    tabletsCount: 1,
                     format: \App\Enums\TournamentFormat::DoubleElimination,
                     groupsCount: null,
                     groupAdvances: null,
                     grandFinalMode: $grandFinalMode,
                 );
                 $this->updatePointSchemeId($tournamentId, $playerCount);
-                $this->loginCodeService->generateCodes($tabletsCount, $tournamentId);
+                $this->loginCodeService->generateForTournament($tournamentId);
                 $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::PLAYOFF);
 
                 $this->playoffService->generateDoubleEliminationBracket($tournamentId, $playerIds);

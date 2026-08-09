@@ -131,9 +131,9 @@ class TournamentFlowTest extends TestCase
         ], $this->adminUser);
 
         $response = $this->post("/tournaments/{$tournament->id}/run", [
+            'tournamentFormat' => 'groups_playoff',
             'groupsCount' => 2,
             'playoffBracketSize' => 4,
-            'tabletsCount' => 3,
         ]);
 
         $response->assertRedirect("/tournaments/{$tournament->id}");
@@ -144,8 +144,9 @@ class TournamentFlowTest extends TestCase
         $this->assertSame(2, $tournament->groups_count);
         $this->assertSame(4, $tournament->playoff_bracket_size);
         $this->assertSame([2, 2], $tournament->group_advances);
-        $this->assertSame(3, $tournament->tablets_count);
-        $this->assertSame(3, LoginCode::where('tournament_id', $tournament->id)->count());
+        $this->assertSame(1, $tournament->tablets_count);
+        $this->assertSame(1, LoginCode::where('tournament_id', $tournament->id)->count());
+        $this->assertSame(8, strlen((string) LoginCode::where('tournament_id', $tournament->id)->value('code')));
 
         $expectedGroupSizes = TournamentGroupDistribution::groupSizes(6, 2);
         $actualGroupSizes = GroupStanding::where('tournament_id', $tournament->id)
