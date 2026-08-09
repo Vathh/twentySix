@@ -2,12 +2,16 @@
 
 **Nowy agent / developer:** zacznij od [`product.md`](product.md) (wizja) i [`NEXT_STEPS.md`](NEXT_STEPS.md) (co robić dalej).
 
+**Przewodnik po aplikacji (dla ludzi / GitHub):** [`przewodnik.md`](przewodnik.md) — flow turnieju, tablety, quick game + miejsca na zrzuty.
+
 ---
 
 ## Źródła prawdy
 
 | Dokument | Rola |
 |----------|------|
+| [`przewodnik.md`](przewodnik.md) | Opis działania aplikacji (flow + screenshoty) |
+| [`plan_platform_admin.md`](plan_platform_admin.md) | Panel właściciela aplikacji (`/admin`) |
 | [`product.md`](product.md) | Wymagania produktowe, reguły gry, MVP vs później |
 | [`../IMPLEMENTED_FEATURES.md`](../IMPLEMENTED_FEATURES.md) | Mapa kod ↔ MVP (backend) |
 | [`../../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../../twentysix-mobile/IMPLEMENTED_FEATURES.md) | Mapa kod ↔ MVP (mobile) |

@@ -1,19 +1,38 @@
-# twentySix — backend i panel webowy
+# twentySix
 
-**twentySix** to system do organizacji lig i turniejów darterskich: panel webowy (Laravel), API i WebSocket dla aplikacji mobilnej.
+System do organizacji **lig i turniejów darterskich** oraz meczów ze znajomymi — panel webowy + aplikacja mobilna.
+
+| | |
+| --- | --- |
+| **Web + API** | ten repozytorium ([twentySix](https://github.com/Vathh/twentySix)) — Laravel |
+| **Mobile** | [twentySix-MobileApp](https://github.com/Vathh/twentySix-MobileApp) — React Native / Expo |
+
+---
+
+## Jak to działa? (przewodnik)
+
+Pełny opis flow gry — od utworzenia turnieju, przez QR i logowanie tabletu, po sędziowanie i szybki mecz:
+
+### → [docs/przewodnik.md](docs/przewodnik.md)
+
+W skrócie:
+
+1. **Web:** liga → turniej → zaproszenia / QR zgłoszeń / goście  
+2. **Web:** start turnieju (grupy+playoff / SE / DE) → powstaje **jeden kod + QR** na tablety  
+3. **Mobile:** Turniej → skan QR lub wpisanie kodu → wybór meczu → sędziowanie  
+4. **Web:** tabele i drabinka aktualizują się na żywo  
+
+Miejsca na zrzuty ekranu są już w przewodniku — wrzuć pliki do [`docs/assets/screenshots/`](docs/assets/screenshots/) (lista nazw: [`README w folderze`](docs/assets/screenshots/README.md)).
+
+---
+
+## Dokumentacja techniczna
 
 - **Wizja produktu i MVP:** [`docs/product.md`](docs/product.md)
 - **Stan implementacji vs MVP:** [`IMPLEMENTED_FEATURES.md`](IMPLEMENTED_FEATURES.md)
 - **Co robić dalej:** [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md)
 - **Indeks dokumentacji:** [`docs/README.md`](docs/README.md)
 - **Logika biznesowa (web + mobile):** [`LOGIKA_BIZNESOWA.md`](LOGIKA_BIZNESOWA.md)
-
-## Repozytoria
-
-| Część | Folder | Stack |
-| ----- | ------ | ----- |
-| Web + API | `twentysix-backend` (ten projekt) | Laravel |
-| Mobile | `twentysix-mobile` | React Native / Expo |
 
 ---
 
@@ -23,6 +42,7 @@
 
 - PHP 8.2+, Composer, Node.js
 - **MySQL** — baza `dartscore` (dev), opcjonalnie `dartscore_test` (testy)
+- Klient CLI `mysql` w PATH (np. `C:\xampp\mysql\bin`) — potrzebny do feature testów ładujących dump schematu
 
 ### Backend — pierwsze uruchomienie
 
@@ -127,14 +147,13 @@ Baza testowa (np. `dartscore_test` w `.env` / `phpunit.xml`):
 php artisan test
 ```
 
-Stan docelowy MVP: **176 passed, 14 skipped** (lipiec 2026). Pominięte testy: widoki wymagające Vite manifest, legacy bulk POST wyniku quick game.
-
 ---
 
 ## Scenariusze manualne (checklisty)
 
 | Obszar | Plik |
 |--------|------|
+| **Przewodnik użytkownika** | [`docs/przewodnik.md`](docs/przewodnik.md) |
 | **Indeks docs** | [`docs/README.md`](docs/README.md) |
 | **Staging / prod** | [`docs/deploy_staging.md`](docs/deploy_staging.md) |
 | **Następne kroki** | [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md) |

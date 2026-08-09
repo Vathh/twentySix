@@ -63,12 +63,13 @@ Gdy użytkownik sam wdraża lub poprosi agenta:
 
 | Temat | Plan |
 |-------|------|
-| **1. Przerobienie kodów logowania na tablety** | 📋 **pierwsze w kolejce** — przeróbka flow kodów logowania tabletu sędziowskiego (gdy wrócimy do tematu) |
+| **1. Zrzuty ekranu do przewodnika** | 📋 **pierwsze w kolejności (Ty)** — wrzucić PNG/JPG `01`–`14` do [`assets/screenshots/`](assets/screenshots/) wg listy w [`assets/screenshots/README.md`](assets/screenshots/README.md); przewodnik: [`przewodnik.md`](przewodnik.md). |
+| **2. Panel platformy (właściciel)** | 🔄 **MVP w kodzie** — [`plan_platform_admin.md`](plan_platform_admin.md): `/admin` KPI + `/admin/users` (toggle `can_create_leagues`); dostęp: `users.role = admin` + middleware. Dalsze: ban, nadawanie roli z UI, aktywność per user. |
+| **3. Awatary graczy** | 📋 zaplanowane (jeszcze bez planu) — upload + wyświetlanie na profilu/listach; przy `Player`; storage `public` → później S3/CDN; MVP: limity + fallback inicjałów, potem crop |
+| **4. Live drabinka / playoff (web WS)** | 📋 później — zakładka Drabinka/Playoff na `tournaments/show` dziś SSR (F5); live WS jest tylko dla macierzy grup + podglądu pojedynczego meczu. Docelowo: event jak `TournamentGroupMatrixUpdated`, update kart (wynik/status/link + awans nazwisk do kolejnej rundy; SE/DE i playoff po grupach jednym mechanizmem). Niski koszt obciążenia; wzorzec: `TournamentGroupMatrixLiveService` + `tournamentGroupsLive.js` |
 | **Warianty turnieju SE / DE** | [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) — ✅ SE + DE w kodzie (testy fabryk + regresja playoff) |
 | **QR zgłoszenia do turnieju** | [`plan_tournament_join_qr.md`](plan_tournament_join_qr.md) — ✅ fazy 1–2 |
 | **Cricket** (trening + quick) | [`plan_cricket.md`](plan_cricket.md) — ✅ fazy 1–3 |
-| **Awatary graczy** | 📋 zaplanowane (jeszcze bez planu) — upload + wyświetlanie na profilu/listach; przy `Player`; storage `public` → później S3/CDN; MVP: limity + fallback inicjałów, potem crop |
-| **Live drabinka / playoff (web WS)** | 📋 później — zakładka Drabinka/Playoff na `tournaments/show` dziś SSR (F5); live WS jest tylko dla macierzy grup + podglądu pojedynczego meczu. Docelowo: event jak `TournamentGroupMatrixUpdated`, update kart (wynik/status/link + awans nazwisk do kolejnej rundy; SE/DE i playoff po grupach jednym mechanizmem). Niski koszt obciążenia; wzorzec: `TournamentGroupMatrixLiveService` + `tournamentGroupsLive.js` |
 
 ### Format gry — pozostałe
 
@@ -80,6 +81,8 @@ Gdy użytkownik sam wdraża lub poprosi agenta:
 
 | Temat | Stan |
 |-------|------|
+| Przerobienie kodów logowania na tablety | ✅ sierpień 2026 — jeden kod 8-znakowy + QR (`/tablet-login/{code}`); skaner na mobile; bez pola liczby tabletów przy starcie |
+| Przewodnik po aplikacji (tekst + placeholdery zrzutów) | ✅ sierpień 2026 — [`przewodnik.md`](przewodnik.md); brakujące: same pliki PNG (pkt 1 backlogu) |
 | Presety formatu gry w lidze | ✅ lipiec 2026 — [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) §5.1 |
 | Push — zaproszenia (znajomi / turniej / quick game) | ✅ lipiec 2026 — [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md) |
 | Konfigurowalny format gry — fazy 1–4 (MatchFormat, quick/trening/turniej, walkower) | ✅ lipiec 2026 — [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) |
