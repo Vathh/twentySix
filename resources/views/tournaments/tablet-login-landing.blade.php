@@ -16,12 +16,19 @@
         @endif
 
         <p class="text-text-secondary text-sm mb-6">
-            Otwórz aplikację twentySix na tablecie i zaloguj się kodem sędziowskim, aby wpisywać wyniki meczów.
+            Sędziuj mecz w przeglądarce (laptop) albo w aplikacji twentySix na tablecie — ten sam kod.
         </p>
 
         <p class="text-accent font-mono text-2xl tracking-widest mb-6">{{ $code }}</p>
 
-        <a href="{{ $appDeepLink }}" class="btn btn-primary inline-block mb-3">
+        <a
+            href="{{ route('referee.login', ['code' => $code, 'auto' => 1]) }}"
+            class="btn btn-primary inline-block mb-3"
+        >
+            Sędziuj w przeglądarce
+        </a>
+
+        <a href="{{ $appDeepLink }}" class="btn btn-secondary inline-block mb-3">
             Otwórz w aplikacji
         </a>
 
@@ -39,7 +46,9 @@
         @endif
 
         <p class="text-text-secondary text-xs mt-4">
-            Jeśli przycisk nie działa: uruchom twentySix → Turniej → wpisz kod <strong>{{ $code }}</strong> albo zeskanuj QR.
+            Aplikacja: twentySix → Turniej → kod <strong>{{ $code }}</strong> albo QR.
+            Web: możesz też wejść na
+            <a href="{{ route('referee.login') }}" class="text-accent hover:underline">/referee/login</a>.
         </p>
     @endif
 </div>

@@ -12,6 +12,7 @@ use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TournamentJoinLandingController;
+use App\Http\Controllers\TournamentRefereeController;
 use App\Http\Controllers\TournamentTabletLoginLandingController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,12 @@ Route::get('/join-tournament/{code}', [TournamentJoinLandingController::class, '
 Route::get('/tablet-login/{code}', [TournamentTabletLoginLandingController::class, 'show'])
     ->where('code', '[A-Za-z0-9]+')
     ->name('tournaments.tablet-login-landing');
+
+Route::prefix('referee')->name('referee.')->group(function () {
+    Route::get('/login', [TournamentRefereeController::class, 'login'])->name('login');
+    Route::get('/games', [TournamentRefereeController::class, 'games'])->name('games');
+    Route::get('/score', [TournamentRefereeController::class, 'score'])->name('score');
+});
 
 Route::get('/games/{type}/{id}', [GameViewController::class, 'show'])
     ->where('type', 'group|playoff|quick')

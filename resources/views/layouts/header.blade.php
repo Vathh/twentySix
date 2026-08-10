@@ -31,15 +31,48 @@
                 && Auth::user()->player
                 && $currentPlayer
                 && (int) $currentPlayer->id === (int) Auth::user()->player->id;
+            $rozgrywkiActive = request()->routeIs('leagues.*', 'seasons.*', 'tournaments.*');
         @endphp
         <nav id="site-nav"
              class="w-full md:w-auto md:flex md:flex-wrap md:items-center md:gap-1"
              :class="navOpen ? 'flex flex-col gap-1 border-t border-border pt-3 mt-1' : 'hidden'">
             <a href="/" class="nav-btn {{ request()->routeIs('pages.home') ? 'active' : '' }}" @click="navOpen = false">Strona główna</a>
 
-            <a href='{{ route('leagues.index') }}' class="nav-btn {{ request()->routeIs('leagues.*') ? 'active' : '' }}" @click="navOpen = false">Ligi</a>
-            <a href='{{ route('seasons.index') }}' class="nav-btn {{ request()->routeIs('seasons.*') ? 'active' : '' }}" @click="navOpen = false">Sezony</a>
-            <a href='{{ route('tournaments.index') }}' class="nav-btn {{ request()->routeIs('tournaments.*') ? 'active' : '' }}" @click="navOpen = false">Turnieje</a>
+            <div class="relative w-full md:w-auto"
+                 x-data="{ open: false }"
+                 @mouseenter="if (window.matchMedia('(min-width: 768px)').matches) open = true"
+                 @mouseleave="if (window.matchMedia('(min-width: 768px)').matches) open = false">
+                <button type="button"
+                        class="nav-btn inline-flex items-center gap-1 w-full md:w-auto {{ $rozgrywkiActive ? 'active' : '' }}"
+                        @click="if (!window.matchMedia('(min-width: 768px)').matches) open = !open"
+                        :aria-expanded="open.toString()"
+                        aria-haspopup="true"
+                        aria-controls="nav-rozgrywki-menu">
+                    <span>Rozgrywki</span>
+                    <span class="text-[0.65rem] opacity-70 leading-none" aria-hidden="true" x-text="open ? '▴' : '▾'"></span>
+                </button>
+                <div id="nav-rozgrywki-menu"
+                     x-show="open"
+                     x-cloak
+                     class="nav-dropdown"
+                     role="menu">
+                    <div class="nav-dropdown-panel">
+                        <a href="{{ route('leagues.index') }}"
+                           class="nav-dropdown-item {{ request()->routeIs('leagues.*') ? 'active' : '' }}"
+                           role="menuitem"
+                           @click="navOpen = false; open = false">Ligi</a>
+                        <a href="{{ route('seasons.index') }}"
+                           class="nav-dropdown-item {{ request()->routeIs('seasons.*') ? 'active' : '' }}"
+                           role="menuitem"
+                           @click="navOpen = false; open = false">Sezony</a>
+                        <a href="{{ route('tournaments.index') }}"
+                           class="nav-dropdown-item {{ request()->routeIs('tournaments.*') ? 'active' : '' }}"
+                           role="menuitem"
+                           @click="navOpen = false; open = false">Turnieje</a>
+                    </div>
+                </div>
+            </div>
+
             <a href='{{ route('players.search') }}' class="nav-btn {{ request()->routeIs('players.*') && ! $isMyProfile ? 'active' : '' }}" @click="navOpen = false">Szukaj graczy</a>
 
             @auth

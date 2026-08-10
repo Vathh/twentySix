@@ -66,6 +66,7 @@ Testy automatyczne backendu: `php artisan test`. Mobile: `npm run test:game-scor
 | [`plan_cricket.md`](plan_cricket.md) | Cricket (standard scoring; trening + quick; bez turnieju) | ✅ |
 | [`plan_tournament_join_qr.md`](plan_tournament_join_qr.md) | Zgłoszenia do turnieju przez QR (admin Dołącz/Odrzuć) | 🔄 |
 | [`plan_quick_game_lobby_lifecycle.md`](plan_quick_game_lobby_lifecycle.md) | Jedno aktywne lobby + TTL cleanup | ✅ |
+| [`plan_web_tournament_refereeing.md`](plan_web_tournament_refereeing.md) | Sędziowanie turnieju w przeglądarce (kod tabletu) | ✅ |
 
 ---
 

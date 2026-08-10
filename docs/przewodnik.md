@@ -14,6 +14,7 @@ Krótki opis, **jak działa aplikacja** — od ligi i turnieju po sędziowanie n
 | ----- | -------- |
 | **Panel webowy** | Ligi, sezony, turnieje, zaproszenia, tabele, wyniki na żywo |
 | **Aplikacja mobilna** | Sędziowanie turnieju (tablet), szybka gra online, trening, znajomi |
+| **Web — sędziowanie** | Ten sam kod tabletu → `/referee` (laptop przy tarczy; suma wizyty) |
 
 Nazwa produktu: **twentySix**. Znak **26** to tylko logo / ikona.
 
@@ -32,7 +33,7 @@ flowchart LR
 
 - **Organizator** — tworzy ligę i turnieje, zaprasza graczy, startuje turniej, pokazuje kod QR tabletom.
 - **Gracz** — akceptuje zaproszenia, gra w turniejach i szybkich meczach, ma historię i znajomych.
-- **Sędzia (tablet)** — loguje się **kodem / QR turnieju** (bez konta użytkownika) i wpisuje wyniki meczów.
+- **Sędzia (tablet / laptop)** — loguje się **kodem / QR turnieju** (bez konta użytkownika) i wpisuje wyniki meczów w aplikacji mobilnej albo w przeglądarce.
 - **Gość web** — może oglądać publiczne ligi i wyniki.
 
 ---
@@ -93,10 +94,12 @@ Ustawia też **format gry** (np. 501, legi / sety) — tablet **nie konfiguruje*
 
 Po **Start** system generuje mecze oraz **jeden wspólny kod logowania na tablety** (8 znaków) + QR.
 
-### 5. Logowanie tabletu (mobile)
+### 5. Logowanie tabletu / sędziego web
 
 Na stronie wystartowanego turnieju admin widzi sekcję **Kod logowania na tablety** (kod + QR).  
-Wszystkie tablety używają **tego samego** kodu.
+Wszystkie urządzenia sędziowskie używają **tego samego** kodu.
+
+Skan QR otwiera `/tablet-login/{code}` — stamtąd: **Sędziuj w przeglądarce** albo deep link do aplikacji.
 
 ![06 — web: kod i QR tabletu](assets/screenshots/06-web-kod-tablet-qr.png)
 
@@ -108,6 +111,8 @@ Na tablecie / telefonie:
 2. **Skanuj QR** albo wpisz kod
 3. Lista meczów do rozegrania
 
+Na laptopie: `/referee/login` (lub CTA z QR) → ten sam kod → lista meczów w przeglądarce.
+
 ![07 — mobile: logowanie kodem / skaner QR](assets/screenshots/07-mobile-logowanie-tablet.png)
 
 <!-- Zrzut: ekran „Kod turnieju” ze skanerem albo polem kodu. -->
@@ -116,10 +121,10 @@ Na tablecie / telefonie:
 
 <!-- Zrzut: lista grup / meczów oczekujących po zalogowaniu. -->
 
-### 6. Sędziowanie meczu (mobile)
+### 6. Sędziowanie meczu (mobile / web)
 
-1. Wybór meczu **oczekującego** → **lock** (mecz „w trakcie”; inne tablety go nie wezmą).
-2. Wpisywanie rzutów (oba zawodnicy na jednym urządzeniu — H2H).
+1. Wybór meczu **oczekującego** → **lock** (mecz „w trakcie”; inne urządzenia go nie wezmą).
+2. Wpisywanie rzutów (oba zawodnicy na jednym urządzeniu — H2H). Na webie MVP: **suma wizyty** (bez per-dart).
 3. Koniec meczu → wynik leci na serwer → aktualizacja tabeli / drabinki na webie (live).
 
 ![09 — mobile: ekran sędziowania](assets/screenshots/09-mobile-scoring.png)
@@ -185,7 +190,7 @@ Live wyników działa, gdy mecz jest w trakcie (WebSocket).
 | Zarządzanie ligą / turniejem | tak | — |
 | Zaproszenia / zgłoszenia QR | tak (admin) | akceptacja / skan |
 | Start turnieju + kody tabletów | tak | — |
-| Sędziowanie turnieju | — | Turniej → kod/QR |
+| Sędziowanie turnieju | `/referee` (kod tabletu) | Turniej → kod/QR |
 | Szybka gra | podgląd live (docelowo) | lobby + scoring |
 | Trening | — | bez konta |
 | Znajomi | podstawowo | pełniej + push |

@@ -154,6 +154,39 @@
         }
     }
 
+    .nav-dropdown {
+        @apply flex flex-col gap-0.5 w-full pl-3 pb-1 md:pl-0 md:pb-0
+            md:absolute md:left-0 md:top-full md:pt-1 md:min-w-[11rem] md:w-auto
+            md:z-50;
+    }
+
+    .nav-dropdown-panel {
+        @apply flex flex-col gap-0.5 w-full
+            md:rounded-lg md:border md:border-border md:bg-bg-deep/95 md:backdrop-blur-md
+            md:py-1.5 md:shadow-lg;
+    }
+
+    .nav-dropdown-item {
+        @apply block px-3 py-2 md:py-1.5 rounded-md text-text-muted hover:text-text hover:bg-bg-elevated/50 transition-colors duration-150;
+    }
+
+    .nav-dropdown-item.active {
+        @apply text-accent font-semibold bg-accent-muted/40 md:bg-transparent;
+    }
+
+    .referee-numpad-key {
+        @apply py-4 rounded-lg text-xl font-bold bg-bg-elevated border border-border text-text
+            hover:bg-bg-elevated-hover hover:border-accent/40 transition disabled:opacity-50;
+    }
+
+    .referee-numpad-key-accent {
+        @apply bg-accent text-on-accent border-accent hover:bg-accent-hover;
+    }
+
+    .referee-numpad-key-muted {
+        @apply text-text-muted;
+    }
+
     /* Pełne logo = logotyp 26 + napis twentySix (proporcje ~2750×580) */
     .brand-logo {
         @apply h-10 sm:h-11 w-auto max-w-[min(100%,14rem)] sm:max-w-[16rem] shrink-0 object-contain;

@@ -4,7 +4,7 @@
 > **Logo / ikona:** znak **26** (żart graczy: 1, 20 i 5) — wyłącznie warstwa wizualna, nie nazwa produktu. Szczegóły: [Marka produktu](#marka-produktu).  
 > Foldery repozytoriów: **`twentysix-backend`**, **`twentysix-mobile`**.
 
-System do organizacji i prowadzenia lig oraz meczów bezpośrednich darterskich: aplikacja webowa do śledzenia i zarządzania ligami wraz z API, aplikacja mobilna do sędziowania meczów. (Porównanie: chess.com, ale dla darta.)
+System do organizacji i prowadzenia lig oraz meczów bezpośrednich darterskich: aplikacja webowa do śledzenia i zarządzania ligami wraz z API, aplikacja mobilna oraz **sędziowanie turnieju w przeglądarce** (ten sam kod tabletu). (Porównanie: chess.com, ale dla darta.)
 
 ## Źródło prawdy i stan kodu
 
@@ -106,11 +106,11 @@ Wybór → API → `w trakcie` (lock); inne tablety nie widzą meczu; race → b
 | Użytkownik             | Quick game, turnieje, znajomi (akceptacja **mobile**; invite/accept także **web**); **push** zaproszeń | + komunikator |
 | **Organizator**        | **Twórca ligi = organizator**; uprawnienia w lidze                  | premium                |
 | **Współadministrator** | Pełne prawa, cała liga (MVP)                                        | granularne uprawnienia |
-| Sędzia (tablet)        | Kod turnieju, wybór meczu                                           | —                      |
+| Sędzia (tablet / web)  | Kod turnieju, wybór meczu (mobile lub `/referee`)                   | —                      |
 
-### Kody logowania (tablety)
+### Kody logowania (tablety / web)
 
-Po starcie turnieju: **jeden wspólny kod 8-znakowy** + QR (`/tablet-login/{code}`) dla wszystkich tabletów; bez konta użytkownika. Regeneracja unieważnia poprzedni kod i sesje.
+Po starcie turnieju: **jeden wspólny kod 8-znakowy** + QR (`/tablet-login/{code}`) dla wszystkich urządzeń sędziowskich; bez konta użytkownika. Ten sam kod otwiera sędziowanie w **aplikacji mobilnej** albo w **przeglądarce** (`/referee/login`, CTA na stronie QR). Regeneracja unieważnia poprzedni kod i sesje.
 
 ### Tablet — wybór meczu
 

@@ -1,8 +1,9 @@
 <div class="mt-6 mb-8 card border-2 border-success/40">
     <h2 class="card-title text-accent">Kod logowania na tablety</h2>
     <p class="card-description">
-        Jeden wspólny kod dla wszystkich tabletów. Zeskanuj QR w aplikacji albo wpisz kod ręcznie —
-        potem możesz sędziować mecze tego turnieju. Widoczne tylko dla administratora.
+        Jeden wspólny kod dla tabletów i sędziowania w przeglądarce (laptop).
+        Zeskanuj QR albo wpisz kod — potem możesz sędziować mecze tego turnieju.
+        Widoczne tylko dla administratora.
     </p>
 
     @if (!empty($loginCode) && !empty($loginUrl))

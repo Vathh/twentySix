@@ -66,7 +66,7 @@ Gdy użytkownik sam wdraża lub poprosi agenta:
 | **1. Usuwanie niepotrzebnych lobby** | ✅ sierpień 2026 — jedno aktywne lobby + TTL prune (`quick-game:prune-lobbies`). Plan: [`plan_quick_game_lobby_lifecycle.md`](plan_quick_game_lobby_lifecycle.md). |
 | **2. Zrzuty ekranu do przewodnika** | 📋 Ty — PNG/JPG `01`–`14` do [`assets/screenshots/`](assets/screenshots/) wg [`assets/screenshots/README.md`](assets/screenshots/README.md); przewodnik: [`przewodnik.md`](przewodnik.md). |
 | **3. Awatary graczy** | 📋 zaplanowane (jeszcze bez planu) — upload + wyświetlanie na profilu/listach; przy `Player`; storage `public` → później S3/CDN; MVP: limity + fallback inicjałów, potem crop |
-| **4. Sędziowanie na webie** | 📋 zaplanowane (jeszcze bez planu) — wpisywanie wyniku meczu turniejowego z przeglądarki (nie tylko tablet mobile); zakres i UX do ustalenia. |
+| **4. Sędziowanie na webie** | ✅ sierpień 2026 — kod tabletu w przeglądarce, lista meczów, suma wizyty X01. Plan: [`plan_web_tournament_refereeing.md`](plan_web_tournament_refereeing.md). |
 | **5. Live drabinka / playoff (web WS)** | 📋 później — zakładka Drabinka/Playoff na `tournaments/show` dziś SSR (F5); live WS jest tylko dla macierzy grup + podglądu pojedynczego meczu. Docelowo: event jak `TournamentGroupMatrixUpdated`, update kart (wynik/status/link + awans nazwisk do kolejnej rundy; SE/DE i playoff po grupach jednym mechanizmem). Niski koszt obciążenia; wzorzec: `TournamentGroupMatrixLiveService` + `tournamentGroupsLive.js` |
 | **6. Prowadzenie ligi typu Apagon** | 📋 później — szersze prowadzenie ligi w stylu Apagon (zakres UX/funkcji do ustalenia przy planie). |
 | **7. Tryby gry (Bob 27, Catch 40, Around the Clock, Gra Kamila, …)** | 📋 później — dodatkowe tryby poza X01 / Cricket; kolejność i MVP per tryb do ustalenia. |
@@ -87,6 +87,7 @@ Gdy użytkownik sam wdraża lub poprosi agenta:
 
 | Temat | Stan |
 |-------|------|
+| Sędziowanie turnieju na webie | ✅ sierpień 2026 — [`plan_web_tournament_refereeing.md`](plan_web_tournament_refereeing.md) |
 | Jedno aktywne lobby + prune TTL | ✅ sierpień 2026 — [`plan_quick_game_lobby_lifecycle.md`](plan_quick_game_lobby_lifecycle.md) |
 | Zabezpieczenie wysyłki rezultatu gry | ✅ sierpień 2026 — [`design_scoring_result_delivery.md`](design_scoring_result_delivery.md) |
 | Panel platformy — ban + aktywność usera | ✅ sierpień 2026 — [`plan_platform_admin.md`](plan_platform_admin.md) |
