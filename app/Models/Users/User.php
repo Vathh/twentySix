@@ -55,12 +55,18 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'can_create_leagues' => 'boolean',
+            'banned_at' => 'datetime',
         ];
     }
 
     public function isPlatformAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function isBanned(): bool
+    {
+        return $this->banned_at !== null;
     }
 
     public function player(): HasOne

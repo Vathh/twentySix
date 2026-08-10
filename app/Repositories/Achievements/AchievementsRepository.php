@@ -13,16 +13,29 @@ class AchievementsRepository
             return;
         }
 
-        $mapped = array_map(fn (GameAchievementDTO $dto) => [
-                                'player_id' => $dto->playerId,
-                                "tournament_id" => $dto->tournamentId, // null dla szybkich meczów
-                                "value" => $dto->value,
-                                "type" => $dto->type,
-                                'created_at' => now(),
-                                'updated_at' => now()
-                            ], $achievements);
+        foreach ($achievements as $dto) {
+            $query = Achievement::query()
+                ->where('player_id', $dto->playerId)
+                ->where('type', $dto->type)
+                ->where('value', $dto->value);
 
-        Achievement::insert($mapped);
+            if ($dto->tournamentId === null) {
+                $query->whereNull('tournament_id');
+            } else {
+                $query->where('tournament_id', $dto->tournamentId);
+            }
+
+            if ($query->exists()) {
+                continue;
+            }
+
+            Achievement::query()->create([
+                'player_id' => $dto->playerId,
+                'tournament_id' => $dto->tournamentId,
+                'value' => $dto->value,
+                'type' => $dto->type,
+            ]);
+        }
     }
 }
 

@@ -35,6 +35,8 @@ class QuickGameLobbyService
      */
     public function create(int $hostUserId): QuickGameLobby
     {
+        $this->assertCanOpenNewLobby($hostUserId);
+
         $lobby = $this->lobbyRepository->create($hostUserId);
 
         $hostPlayer = $this->playerRepository->findByUserId($hostUserId);
@@ -76,6 +78,9 @@ class QuickGameLobbyService
         if (! $this->lobbyRepository->hasPendingInvitation($lobbyId, $player->id)) {
             throw new \RuntimeException('Brak aktywnego zaproszenia do tego lobby');
         }
+
+        $this->releaseUserFromOtherActiveLobbies($userId, $lobbyId);
+        $this->lobbyRepository->rejectOtherPendingInvitationsForPlayer($player->id, $lobbyId);
 
         $this->lobbyRepository->addPlayer($lobby->id, $player->id, null, true);
         $this->lobbyRepository->markInvitationAccepted($lobbyId, $player->id);
@@ -390,6 +395,8 @@ class QuickGameLobbyService
             ];
         }
 
+        $this->releaseUserFromOtherActiveLobbies($hostUserId, null);
+
         $hostPlayer = $this->assertRegisteredParticipant($source, $hostUserId);
         $this->lobbyRepository->upsertRematchIntent($source->id, $hostPlayer->id);
 
@@ -591,6 +598,61 @@ class QuickGameLobbyService
             $displayName = $lp->player?->name ?? $lp->temp_player_name ?? '';
             if (mb_strtolower(trim($displayName)) === $normalized) {
                 throw new \RuntimeException('Gracz o tej nazwie jest już w lobby');
+            }
+        }
+    }
+
+    /**
+     * Create / rematch: nie wolno otworzyć nowego lobby, gdy user ma już aktywne.
+     */
+    private function assertCanOpenNewLobby(int $userId): void
+    {
+        $active = $this->lobbyRepository->findActiveLobbiesForUser($userId);
+        if ($active->isEmpty()) {
+            return;
+        }
+
+        $first = $active->first();
+        throw new ActiveLobbyConflictException(
+            $first->status === 'started'
+                ? 'Masz już mecz w toku.'
+                : 'Masz już aktywne lobby.',
+            existingLobbyId: (int) $first->id,
+            existingStatus: (string) $first->status,
+        );
+    }
+
+    /**
+     * Join / rematch: zwolnij waiting (host → delete, gość → leave).
+     * Przy started → konflikt.
+     */
+    private function releaseUserFromOtherActiveLobbies(int $userId, ?int $exceptLobbyId): void
+    {
+        $active = $this->lobbyRepository->findActiveLobbiesForUser($userId);
+
+        foreach ($active as $lobby) {
+            if ($exceptLobbyId !== null && (int) $lobby->id === $exceptLobbyId) {
+                continue;
+            }
+
+            if ($lobby->status === 'started') {
+                throw new ActiveLobbyConflictException(
+                    'Masz już mecz w toku.',
+                    existingLobbyId: (int) $lobby->id,
+                    existingStatus: 'started',
+                );
+            }
+
+            // waiting
+            if ((int) $lobby->host_id === $userId) {
+                $this->lobbyRepository->delete((int) $lobby->id);
+                continue;
+            }
+
+            $player = $this->playerRepository->findByUserId($userId);
+            if ($player) {
+                $this->lobbyRepository->removePlayer((int) $lobby->id, $player->id, null);
+                $this->broadcastLobbyUpdatedById((int) $lobby->id);
             }
         }
     }

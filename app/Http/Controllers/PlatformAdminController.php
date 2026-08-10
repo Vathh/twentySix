@@ -31,6 +31,17 @@ class PlatformAdminController extends Controller
         ]);
     }
 
+    public function showUser(int $userId): View
+    {
+        $detail = $this->platformAdminService->userDetail($userId);
+
+        return view('admin.user', [
+            'user' => $detail['user'],
+            'activity' => $detail['activity'],
+            'recentGames' => $detail['recentGames'],
+        ]);
+    }
+
     public function updateCanCreateLeagues(Request $request, int $userId): RedirectResponse
     {
         $validated = $request->validate([
@@ -46,5 +57,26 @@ class PlatformAdminController extends Controller
         $state = $user->can_create_leagues ? 'włączone' : 'wyłączone';
 
         return back()->with('success', "Tworzenie lig dla {$label}: {$state}");
+    }
+
+    public function updateBanned(Request $request, int $userId): RedirectResponse
+    {
+        $validated = $request->validate([
+            'banned' => ['required', 'boolean'],
+        ]);
+
+        try {
+            $user = $this->platformAdminService->setBanned(
+                $userId,
+                (bool) $validated['banned'],
+            );
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        $label = $user->player?->name ?? $user->email;
+        $state = $user->isBanned() ? 'zablokowane' : 'odblokowane';
+
+        return back()->with('success', "Konto {$label}: {$state}");
     }
 }

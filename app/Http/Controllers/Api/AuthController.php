@@ -127,6 +127,8 @@ class AuthController
 
         try {
             $payload = $this->mobileAppTokenService->refresh($user, $current);
+        } catch (AccountAuthException $e) {
+            return response()->json(['message' => $e->getMessage()], $e->statusCode);
         } catch (\InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 403);
         }

@@ -8,11 +8,15 @@ use App\Models\League\League;
 use App\Models\QuickGame\QuickGame;
 use App\Models\QuickGame\QuickGameFfaSession;
 use App\Models\QuickGame\QuickGameLobby;
+use App\Models\QuickGame\QuickGameLobbyPlayer;
+use App\Models\QuickGame\QuickGameResult;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
+use App\Models\Tournament\TournamentResult;
 use App\Models\Users\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class PlatformAdminRepository
 {
@@ -100,5 +104,123 @@ class PlatformAdminRepository
     public function setCanCreateLeagues(User $user, bool $enabled): void
     {
         $user->forceFill(['can_create_leagues' => $enabled])->save();
+    }
+
+    public function setBanned(User $user, bool $banned): void
+    {
+        $user->forceFill([
+            'banned_at' => $banned ? now() : null,
+        ])->save();
+    }
+
+    /**
+     * @return array{
+     *     leaguesAdmin: list<array{id: int, name: string}>,
+     *     leaguesMember: list<array{id: int, name: string}>,
+     *     friendsCount: int,
+     *     friends: list<string>,
+     *     tournamentResultsCount: int,
+     *     tournamentResults: list<array{tournament: string, place: int|null, points: int|null, date: string|null}>,
+     *     lobbiesHostedCount: int,
+     *     lobbiesAsPlayerCount: int,
+     *     quickGameResultsCount: int,
+     *     lastApiUsedAt: string|null,
+     *     lastTokenCreatedAt: string|null,
+     *     activeTokensCount: int
+     * }
+     */
+    public function userActivity(User $user): array
+    {
+        $user->loadMissing('player');
+        $playerId = $user->player?->id;
+
+        $leaguesAdmin = $user->adminLeagues()
+            ->orderBy('name')
+            ->get(['leagues.id', 'leagues.name'])
+            ->map(fn ($league) => ['id' => (int) $league->id, 'name' => (string) $league->name])
+            ->all();
+
+        $leaguesMember = $user->relatedLeagues()
+            ->orderBy('name')
+            ->get(['leagues.id', 'leagues.name'])
+            ->map(fn ($league) => ['id' => (int) $league->id, 'name' => (string) $league->name])
+            ->all();
+
+        $friendIds = DB::table('friendships')
+            ->where('user_id', $user->id)
+            ->pluck('friend_id')
+            ->merge(
+                DB::table('friendships')->where('friend_id', $user->id)->pluck('user_id')
+            )
+            ->unique()
+            ->values();
+
+        $friendNames = [];
+        if ($friendIds->isNotEmpty()) {
+            $friendNames = User::query()
+                ->with('player')
+                ->whereIn('id', $friendIds)
+                ->get()
+                ->map(fn (User $friend) => $friend->player?->name ?? $friend->email)
+                ->sort()
+                ->values()
+                ->take(30)
+                ->all();
+        }
+
+        $tournamentResults = [];
+        $tournamentResultsCount = 0;
+        $lobbiesAsPlayerCount = 0;
+        $quickGameResultsCount = 0;
+
+        if ($playerId !== null) {
+            $tournamentResultsCount = TournamentResult::query()
+                ->where('player_id', $playerId)
+                ->count();
+
+            $tournamentResults = TournamentResult::query()
+                ->with('tournament:id,name')
+                ->where('player_id', $playerId)
+                ->orderByDesc('id')
+                ->limit(10)
+                ->get()
+                ->map(fn (TournamentResult $row) => [
+                    'tournament' => (string) ($row->tournament?->name ?? '—'),
+                    'place' => $row->place !== null ? (int) $row->place : null,
+                    'points' => $row->points !== null ? (int) $row->points : null,
+                    'date' => $row->created_at?->format('Y-m-d H:i'),
+                ])
+                ->all();
+
+            $lobbiesAsPlayerCount = QuickGameLobbyPlayer::query()
+                ->where('player_id', $playerId)
+                ->count();
+
+            $quickGameResultsCount = QuickGameResult::query()
+                ->where('player_id', $playerId)
+                ->count();
+        }
+
+        $lastApiUsedAt = $user->tokens()->max('last_used_at');
+        $lastTokenCreatedAt = $user->tokens()->max('created_at');
+
+        return [
+            'leaguesAdmin' => $leaguesAdmin,
+            'leaguesMember' => $leaguesMember,
+            'friendsCount' => $friendIds->count(),
+            'friends' => $friendNames,
+            'tournamentResultsCount' => $tournamentResultsCount,
+            'tournamentResults' => $tournamentResults,
+            'lobbiesHostedCount' => QuickGameLobby::query()->where('host_id', $user->id)->count(),
+            'lobbiesAsPlayerCount' => $lobbiesAsPlayerCount,
+            'quickGameResultsCount' => $quickGameResultsCount,
+            'lastApiUsedAt' => $lastApiUsedAt
+                ? Carbon::parse($lastApiUsedAt)->format('Y-m-d H:i')
+                : null,
+            'lastTokenCreatedAt' => $lastTokenCreatedAt
+                ? Carbon::parse($lastTokenCreatedAt)->format('Y-m-d H:i')
+                : null,
+            'activeTokensCount' => $user->tokens()->count(),
+        ];
     }
 }

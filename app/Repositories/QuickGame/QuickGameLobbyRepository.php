@@ -63,6 +63,52 @@ class QuickGameLobbyRepository
         QuickGameLobby::destroy($lobbyId);
     }
 
+    /**
+     * Lobby waiting|started, w których user jest hostem lub zarejestrowanym graczem.
+     *
+     * @return \Illuminate\Support\Collection<int, QuickGameLobby>
+     */
+    public function findActiveLobbiesForUser(int $userId): \Illuminate\Support\Collection
+    {
+        return QuickGameLobby::query()
+            ->whereIn('status', ['waiting', 'started'])
+            ->where(function ($q) use ($userId) {
+                $q->where('host_id', $userId)
+                    ->orWhereHas('players.player', function ($pq) use ($userId) {
+                        $pq->where('user_id', $userId);
+                    });
+            })
+            ->with(['host.player', 'players.player'])
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * @return int liczba usuniętych lobby
+     */
+    public function pruneWaitingOlderThan(\DateTimeInterface $olderThan): int
+    {
+        $ids = QuickGameLobby::query()
+            ->where('status', 'waiting')
+            ->where('updated_at', '<', $olderThan)
+            ->pluck('id');
+
+        foreach ($ids as $id) {
+            $this->delete((int) $id);
+        }
+
+        return $ids->count();
+    }
+
+    public function rejectOtherPendingInvitationsForPlayer(int $playerId, int $exceptLobbyId): void
+    {
+        QuickGameLobbyInvitation::query()
+            ->where('invited_player_id', $playerId)
+            ->where('status', 'pending')
+            ->where('lobby_id', '!=', $exceptLobbyId)
+            ->update(['status' => 'rejected']);
+    }
+
     public function setPlayerReady(int $lobbyId, int $playerId, bool $isReady): void
     {
         QuickGameLobbyPlayer::where('lobby_id', $lobbyId)

@@ -198,4 +198,122 @@ class QuickGameLobbyMvpTest extends TestCase
         $join->assertOk()
             ->assertJsonCount(2, 'players');
     }
+
+    public function test_cannot_create_second_active_lobby(): void
+    {
+        $firstId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+
+        $second = $this->postJson('/api/quick-game/lobby/create');
+
+        $second->assertStatus(409)
+            ->assertJsonPath('existingLobbyId', $firstId)
+            ->assertJsonPath('status', 'waiting')
+            ->assertJsonPath('message', 'Masz już aktywne lobby.');
+
+        $this->assertSame(1, QuickGameLobby::query()->where('host_id', $this->host->id)->count());
+    }
+
+    public function test_join_deletes_own_waiting_lobby(): void
+    {
+        $ownLobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+
+        Sanctum::actingAs($this->friend);
+        $friendLobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+        $this->postJson("/api/quick-game/lobby/{$friendLobbyId}/invite", [
+            'playerId' => $this->hostPlayer->id,
+        ])->assertOk();
+
+        Sanctum::actingAs($this->host);
+        $this->postJson("/api/quick-game/lobby/{$friendLobbyId}/join")
+            ->assertOk()
+            ->assertJsonPath('id', $friendLobbyId);
+
+        $this->assertDatabaseMissing('quick_game_lobbies', ['id' => $ownLobbyId]);
+        $this->assertDatabaseHas('quick_game_lobbies', ['id' => $friendLobbyId]);
+    }
+
+    public function test_join_leaves_other_waiting_as_guest(): void
+    {
+        Sanctum::actingAs($this->friend);
+        $friendLobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+        $this->postJson("/api/quick-game/lobby/{$friendLobbyId}/invite", [
+            'playerId' => $this->hostPlayer->id,
+        ])->assertOk();
+
+        Sanctum::actingAs($this->host);
+        $this->postJson("/api/quick-game/lobby/{$friendLobbyId}/join")->assertOk();
+
+        $otherHost = User::factory()->create(['email' => 'lobby-other@test.com']);
+        app(PlayerService::class)->create('Other', $otherHost->id);
+        $otherPlayer = Player::where('user_id', $otherHost->id)->first();
+
+        Sanctum::actingAs($this->host);
+        $this->postJson('/api/friends/add', ['friendId' => $otherHost->id])->assertCreated();
+
+        Sanctum::actingAs($otherHost);
+        $otherLobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+        $this->postJson("/api/quick-game/lobby/{$otherLobbyId}/invite", [
+            'playerId' => $this->hostPlayer->id,
+        ])->assertOk();
+
+        Sanctum::actingAs($this->host);
+        $this->postJson("/api/quick-game/lobby/{$otherLobbyId}/join")->assertOk();
+
+        $this->assertDatabaseMissing('quick_game_lobby_players', [
+            'lobby_id' => $friendLobbyId,
+            'player_id' => $this->hostPlayer->id,
+        ]);
+        $this->assertDatabaseHas('quick_game_lobby_players', [
+            'lobby_id' => $otherLobbyId,
+            'player_id' => $this->hostPlayer->id,
+        ]);
+        $this->assertDatabaseHas('quick_game_lobbies', ['id' => $friendLobbyId]);
+    }
+
+    public function test_cannot_join_while_in_started_match(): void
+    {
+        $lobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+        QuickGameLobby::query()->where('id', $lobbyId)->update(['status' => 'started']);
+
+        Sanctum::actingAs($this->friend);
+        $friendLobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+        $this->postJson("/api/quick-game/lobby/{$friendLobbyId}/invite", [
+            'playerId' => $this->hostPlayer->id,
+        ])->assertOk();
+
+        Sanctum::actingAs($this->host);
+        $this->postJson("/api/quick-game/lobby/{$friendLobbyId}/join")
+            ->assertStatus(409)
+            ->assertJsonPath('status', 'started')
+            ->assertJsonPath('existingLobbyId', $lobbyId);
+    }
+
+    public function test_prune_removes_stale_waiting_lobbies(): void
+    {
+        $freshId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+
+        $stale = QuickGameLobby::create([
+            'host_id' => $this->friend->id,
+            'status' => 'waiting',
+            'legs_to_win_set' => 2,
+            'sets_to_win_match' => 1,
+            'starting_score' => 501,
+        ]);
+        QuickGameLobbyPlayer::create([
+            'lobby_id' => $stale->id,
+            'player_id' => $this->friendPlayer->id,
+            'is_registered' => true,
+            'is_ready' => false,
+        ]);
+        QuickGameLobby::query()->where('id', $stale->id)->update([
+            'updated_at' => now()->subHours(7),
+            'created_at' => now()->subHours(7),
+        ]);
+
+        $this->artisan('quick-game:prune-lobbies', ['--hours' => 6])
+            ->assertSuccessful();
+
+        $this->assertDatabaseMissing('quick_game_lobbies', ['id' => $stale->id]);
+        $this->assertDatabaseHas('quick_game_lobbies', ['id' => $freshId]);
+    }
 }

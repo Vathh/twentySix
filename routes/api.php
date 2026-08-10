@@ -23,7 +23,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail'])
     ->middleware('throttle:6,1');
 
-Route::middleware('auth:sanctum')->prefix('account')->group(function () {
+Route::middleware(['auth:sanctum', 'not.banned'])->prefix('account')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/session/refresh', [AuthController::class, 'refreshSession']);
     Route::put('/password', [AuthController::class, 'changePassword']);
@@ -31,7 +31,7 @@ Route::middleware('auth:sanctum')->prefix('account')->group(function () {
 
 // Wynik quick game online finalizuje silnik FFA; ten endpoint tylko dla achievementów po meczu.
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
 
     Route::put('/push-tokens', [PushTokenController::class, 'upsert']);
     Route::delete('/push-tokens', [PushTokenController::class, 'destroy']);

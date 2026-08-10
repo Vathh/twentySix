@@ -19,9 +19,9 @@ Później (opcjonalnie): 2FA, allowlista IP, osobne hasło — nie w MVP.
 | Dashboard `/admin` | Liczby: użytkownicy, zweryfikowani, z `can_create_leagues`, ligi, sezony, turnieje (wg statusu), lobby quick game (waiting / in progress / finished-ish) |
 | Użytkownicy `/admin/users` | Lista (email, nick, data, flagi) + wyszukiwanie; przełącznik **can_create_leagues** |
 
-## Poza MVP
+## Poza MVP (kolejne kroki — sierpień 2026)
 
-- Nadawanie `role=admin` z UI (świadomie ręczne / tinker — unikamy przypadkowego „drugiego właściciela”)
-- Ban / soft-delete
-- Szczegóły aktywności per user
-- Pulse / Sentry / analityka produktowa
+1. ~~**Ban / soft-delete**~~ ✅ — `users.banned_at`; blokada logowania web + API; revoke tokenów Sanctum; kolumna Status na `/admin/users`; nie można zablokować platform admina.
+2. ~~**Szczegóły aktywności per user**~~ ✅ — `/admin/users/{id}`: konto, API (tokeny), ligi, znajomi, quick game, wyniki turniejowe, ostatnie mecze.
+3. ~~Nadawanie `role=admin` z UI~~ — **odpuszczone**; tylko tinker / ręcznie (jeden właściciel).
+4. Pulse / Sentry / analityka produktowa — później.

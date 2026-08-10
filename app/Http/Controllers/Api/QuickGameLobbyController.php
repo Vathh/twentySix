@@ -19,9 +19,17 @@ class QuickGameLobbyController
     public function create(Request $request): JsonResponse
     {
         $userId = $request->user()->id;
-        $lobby = $this->lobbyService->create($userId);
+        try {
+            $lobby = $this->lobbyService->create($userId);
 
-        return response()->json(QuickGameLobbyPayload::fromLobby($lobby, $userId));
+            return response()->json(QuickGameLobbyPayload::fromLobby($lobby, $userId));
+        } catch (\App\Services\QuickGame\ActiveLobbyConflictException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'existingLobbyId' => $e->existingLobbyId,
+                'status' => $e->existingStatus,
+            ], 409);
+        }
     }
 
     public function get(Request $request, string $lobbyId): JsonResponse
@@ -39,6 +47,12 @@ class QuickGameLobbyController
             $lobby = $this->lobbyService->joinById((int) $lobbyId, $userId);
 
             return response()->json(QuickGameLobbyPayload::fromLobby($lobby, $userId));
+        } catch (\App\Services\QuickGame\ActiveLobbyConflictException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'existingLobbyId' => $e->existingLobbyId,
+                'status' => $e->existingStatus,
+            ], 409);
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }
@@ -188,6 +202,12 @@ class QuickGameLobbyController
             return response()->json(
                 $this->lobbyService->createRematch((int) $lobbyId, $userId)
             );
+        } catch (\App\Services\QuickGame\ActiveLobbyConflictException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'existingLobbyId' => $e->existingLobbyId,
+                'status' => $e->existingStatus,
+            ], 409);
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }

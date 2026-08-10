@@ -225,7 +225,10 @@ class GameScoringService
         $leg = $this->resolveLegForContext($context, $legId);
 
         if (! $leg->isOpen()) {
-            throw new DomainException('Leg jest już zamknięty.');
+            // Idempotent retry (tablet stracił odpowiedź) — bez ponownego finish/finalize.
+            $freshGame = $game->fresh(['player1', 'player2']);
+
+            return $this->broadcastState($context, $freshGame);
         }
 
         if (! in_array($winnerId, [$context->player1Id, $context->player2Id], true)) {

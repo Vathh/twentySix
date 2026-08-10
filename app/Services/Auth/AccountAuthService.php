@@ -32,6 +32,14 @@ class AccountAuthService
             ]);
         }
 
+        if ($user !== null
+            && Hash::check($password, $user->password)
+            && $user->isBanned()) {
+            throw ValidationException::withMessages([
+                'email' => 'Konto zostało zablokowane.',
+            ]);
+        }
+
         if (! Auth::attempt(['email' => $email, 'password' => $password])) {
             throw ValidationException::withMessages([
                 'credentials' => __('validation.auth.failed'),
@@ -57,6 +65,10 @@ class AccountAuthService
                 'Potwierdź adres email — sprawdź skrzynkę (link z rejestracji).',
                 403,
             );
+        }
+
+        if ($user->isBanned()) {
+            throw new AccountAuthException('Konto zostało zablokowane.', 403);
         }
 
         return $this->mobileAppTokenService->issueForUser($user);

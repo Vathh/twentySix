@@ -49,6 +49,11 @@ class MobileAppTokenService
      */
     public function refresh(User $user, PersonalAccessToken $currentToken): array
     {
+        if ($user->isBanned()) {
+            $currentToken->delete();
+            throw new AccountAuthException('Konto zostało zablokowane.', 403);
+        }
+
         if ($currentToken->name !== $this->tokenName()) {
             throw new \InvalidArgumentException('Token nie obsługuje odświeżenia sesji.');
         }
@@ -64,6 +69,11 @@ class MobileAppTokenService
         if ($token !== null) {
             $token->delete();
         }
+    }
+
+    public function revokeAll(User $user): void
+    {
+        $user->tokens()->delete();
     }
 
     /**

@@ -91,6 +91,31 @@ class QuickGameFfaScoringApiTest extends TestCase
             ->assertJsonPath('session.currentPlayerIndex', 0);
     }
 
+    public function test_ffa_complete_visit_retry_does_not_advance_turn_twice(): void
+    {
+        $lobbyId = $this->startTwoPlayerLobby();
+        $clientVisitId = (string) Str::uuid();
+
+        $payload = [
+            'playerId' => $this->hostPlayer->id,
+            'score' => 60,
+            'remainingBefore' => 501,
+            'remainingAfter' => 441,
+            'dartsInVisit' => 3,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => $clientVisitId,
+        ];
+
+        $first = $this->postJson("/api/quick-game/lobby/{$lobbyId}/ffa/visits", $payload);
+        $first->assertOk()->assertJsonPath('session.currentPlayerIndex', 1);
+
+        $second = $this->postJson("/api/quick-game/lobby/{$lobbyId}/ffa/visits", $payload);
+        $second->assertOk()->assertJsonPath('session.currentPlayerIndex', 1);
+
+        $this->assertDatabaseCount('quick_game_ffa_visits', 1);
+    }
+
     public function test_ffa_finish_creates_quick_game_result(): void
     {
         $lobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');

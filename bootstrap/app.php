@@ -18,7 +18,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'platform.admin' => \App\Http\Middleware\EnsurePlatformAdmin::class,
+            'not.banned' => \App\Http\Middleware\EnsureUserNotBanned::class,
         ]);
+
+        $middleware->appendToGroup('web', [
+            \App\Http\Middleware\EnsureUserNotBanned::class,
+        ]);
+    })
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule): void {
+        $schedule->command('quick-game:prune-lobbies')->hourly();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (TokenMismatchException $e, $request) {

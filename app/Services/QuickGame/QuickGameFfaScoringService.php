@@ -243,6 +243,28 @@ class QuickGameFfaScoringService
                 throw new DomainException('Ten gracz opuścił mecz.');
             }
 
+            $existing = $this->visitRepository->findByClientVisitId($dto->clientVisitId);
+            if ($existing !== null) {
+                if ($existing->is_voided) {
+                    throw new DomainException('Ta wizyta została już cofnięta.');
+                }
+                if ((int) $existing->ffa_session_id !== (int) $session->id) {
+                    throw new DomainException('Nieprawidłowa wizyta.');
+                }
+
+                $alreadyComplete = VisitRecorder::isVisitComplete(
+                    (bool) $existing->bust,
+                    (bool) $existing->closed_leg,
+                    (int) $existing->darts_in_visit,
+                );
+
+                if ($alreadyComplete) {
+                    // Idempotentny retry kompletnej wizyty — bez ponownego awansu tury
+                    // i bez walidacji „czyja tura” (tablet mógł stracić odpowiedź).
+                    return $this->broadcastStateForSession($session->fresh(), $userId);
+                }
+            }
+
             $this->normalizeTurnIndicesForLeftPlayers($session, $playerIds, $leftIds);
 
             $currentPlayerId = (int) $playerIds[$session->current_player_index];
@@ -254,14 +276,7 @@ class QuickGameFfaScoringService
 
             VisitRecorder::validateDto($dto, (int) $session->starting_score);
 
-            $existing = $this->visitRepository->findByClientVisitId($dto->clientVisitId);
             if ($existing !== null) {
-                if ($existing->is_voided) {
-                    throw new DomainException('Ta wizyta została już cofnięta.');
-                }
-                if ((int) $existing->ffa_session_id !== (int) $session->id) {
-                    throw new DomainException('Nieprawidłowa wizyta.');
-                }
                 $this->visitRepository->updateFromDto($existing, $dto);
                 if (VisitRecorder::isVisitComplete($dto->bust, $dto->closedLeg, $dto->dartsInVisit)) {
                     $this->applyTurnAfterVisit($session, $dto, $playerIds, $leftIds);

@@ -92,6 +92,88 @@ class PlatformAdminTest extends TestCase
         $this->assertFalse((bool) $target->fresh()->can_create_leagues);
     }
 
+    public function test_platform_admin_can_ban_and_unban_user(): void
+    {
+        $admin = $this->makePlatformAdmin();
+        $target = $this->makeRegularUser();
+
+        $this->actingAs($admin)
+            ->from('/admin/users')
+            ->post("/admin/users/{$target->id}/ban", ['banned' => 1])
+            ->assertRedirect('/admin/users')
+            ->assertSessionHas('success');
+
+        $this->assertTrue($target->fresh()->isBanned());
+
+        $this->actingAs($admin)
+            ->from('/admin/users')
+            ->post("/admin/users/{$target->id}/ban", ['banned' => 0])
+            ->assertRedirect('/admin/users')
+            ->assertSessionHas('success');
+
+        $this->assertFalse($target->fresh()->isBanned());
+    }
+
+    public function test_platform_admin_cannot_ban_another_platform_admin(): void
+    {
+        $admin = $this->makePlatformAdmin();
+        $otherAdmin = User::factory()->create(['email' => 'other-admin@test.com']);
+        $otherAdmin->forceFill(['role' => 'admin'])->save();
+        Player::create(['user_id' => $otherAdmin->id, 'name' => 'Other Admin']);
+
+        $this->actingAs($admin)
+            ->from('/admin/users')
+            ->post("/admin/users/{$otherAdmin->id}/ban", ['banned' => 1])
+            ->assertRedirect('/admin/users')
+            ->assertSessionHas('error');
+
+        $this->assertFalse($otherAdmin->fresh()->isBanned());
+    }
+
+    public function test_banned_user_cannot_login_via_api(): void
+    {
+        $user = $this->makeRegularUser('banned@test.com');
+        $user->forceFill([
+            'email_verified_at' => now(),
+            'banned_at' => now(),
+        ])->save();
+
+        $this->postJson('/api/account/login', [
+            'email' => 'banned@test.com',
+            'password' => 'password',
+        ])
+            ->assertForbidden()
+            ->assertJson(['message' => 'Konto zostało zablokowane.']);
+    }
+
+    public function test_ban_revokes_api_tokens(): void
+    {
+        $admin = $this->makePlatformAdmin();
+        $target = $this->makeRegularUser();
+        $target->forceFill(['email_verified_at' => now()])->save();
+
+        $token = $target->createToken('mobile-app')->plainTextToken;
+        $this->assertSame(1, $target->tokens()->count());
+
+        $this->withToken($token)
+            ->getJson('/api/friends')
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->post("/admin/users/{$target->id}/ban", ['banned' => 1])
+            ->assertRedirect();
+
+        $this->assertTrue($target->fresh()->isBanned());
+        $this->assertSame(0, $target->fresh()->tokens()->count());
+
+        $this->flushSession();
+        $this->app['auth']->forgetGuards();
+
+        $this->withToken($token)
+            ->getJson('/api/friends')
+            ->assertUnauthorized();
+    }
+
     public function test_platform_admin_users_search_by_email(): void
     {
         $this->withoutVite();
@@ -104,5 +186,20 @@ class PlatformAdminTest extends TestCase
             ->assertOk()
             ->assertSee('szukany@example.com')
             ->assertDontSee('inny@example.com');
+    }
+
+    public function test_platform_admin_sees_user_detail(): void
+    {
+        $this->withoutVite();
+        $admin = $this->makePlatformAdmin();
+        $target = $this->makeRegularUser('detail@example.com');
+
+        $this->actingAs($admin)
+            ->get("/admin/users/{$target->id}")
+            ->assertOk()
+            ->assertSee('detail@example.com')
+            ->assertSee('Regular Player')
+            ->assertSee('Aktywność API')
+            ->assertSee('Ostatnie mecze');
     }
 }

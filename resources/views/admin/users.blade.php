@@ -35,15 +35,24 @@
                     <th class="text-left py-3 px-3 font-semibold">Rola</th>
                     <th class="text-left py-3 px-3 font-semibold">Weryfikacja</th>
                     <th class="text-left py-3 px-3 font-semibold">Tworzenie lig</th>
+                    <th class="text-left py-3 px-3 font-semibold">Status</th>
                     <th class="text-left py-3 px-3 font-semibold">Rejestracja</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($users as $user)
-                    <tr class="border-t border-border/60">
+                    <tr class="border-t border-border/60 {{ $user->isBanned() ? 'opacity-60' : '' }}">
                         <td class="py-3 px-3 text-text-muted">{{ $user->id }}</td>
-                        <td class="py-3 px-3 text-text">{{ $user->player?->name ?? '—' }}</td>
-                        <td class="py-3 px-3 break-all">{{ $user->email }}</td>
+                        <td class="py-3 px-3 text-text">
+                            <a href="{{ route('admin.users.show', $user->id) }}" class="hover:text-accent">
+                                {{ $user->player?->name ?? '—' }}
+                            </a>
+                        </td>
+                        <td class="py-3 px-3 break-all">
+                            <a href="{{ route('admin.users.show', $user->id) }}" class="hover:text-accent">
+                                {{ $user->email }}
+                            </a>
+                        </td>
                         <td class="py-3 px-3">
                             @if($user->isPlatformAdmin())
                                 <span class="text-accent font-semibold">admin</span>
@@ -62,10 +71,31 @@
                             <form method="POST" action="{{ route('admin.users.can-create-leagues', $user->id) }}" class="inline">
                                 @csrf
                                 <input type="hidden" name="can_create_leagues" value="{{ $user->can_create_leagues ? 0 : 1 }}">
-                                <button type="submit" class="btn-mini">
+                                <button type="submit" class="btn-mini" @if($user->isBanned()) disabled @endif>
                                     {{ $user->can_create_leagues ? 'Wyłącz' : 'Włącz' }}
                                 </button>
                             </form>
+                        </td>
+                        <td class="py-3 px-3">
+                            @if($user->isPlatformAdmin())
+                                <span class="text-text-muted">—</span>
+                            @elseif($user->isBanned())
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-danger font-semibold">zablokowany</span>
+                                    <form method="POST" action="{{ route('admin.users.ban', $user->id) }}" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="banned" value="0">
+                                        <button type="submit" class="btn-mini">Odblokuj</button>
+                                    </form>
+                                </div>
+                            @else
+                                <form method="POST" action="{{ route('admin.users.ban', $user->id) }}" class="inline"
+                                      onsubmit="return confirm('Zablokować konto tego użytkownika?');">
+                                    @csrf
+                                    <input type="hidden" name="banned" value="1">
+                                    <button type="submit" class="btn-mini">Zablokuj</button>
+                                </form>
+                            @endif
                         </td>
                         <td class="py-3 px-3 whitespace-nowrap">
                             {{ $user->created_at?->format('Y-m-d H:i') ?? '—' }}
@@ -73,7 +103,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="py-8 px-3 text-center text-text-muted">Brak użytkowników.</td>
+                        <td colspan="8" class="py-8 px-3 text-center text-text-muted">Brak użytkowników.</td>
                     </tr>
                 @endforelse
             </tbody>

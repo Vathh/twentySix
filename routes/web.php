@@ -65,9 +65,15 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth', 'platform.admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [\App\Http\Controllers\PlatformAdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/users', [\App\Http\Controllers\PlatformAdminController::class, 'users'])->name('users');
+    Route::get('/users/{user}', [\App\Http\Controllers\PlatformAdminController::class, 'showUser'])
+        ->whereNumber('user')
+        ->name('users.show');
     Route::post('/users/{user}/can-create-leagues', [\App\Http\Controllers\PlatformAdminController::class, 'updateCanCreateLeagues'])
         ->whereNumber('user')
         ->name('users.can-create-leagues');
+    Route::post('/users/{user}/ban', [\App\Http\Controllers\PlatformAdminController::class, 'updateBanned'])
+        ->whereNumber('user')
+        ->name('users.ban');
 });
 
 Route::middleware('auth')->prefix('settings')->name('settings.')->group(function () {

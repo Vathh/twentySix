@@ -63,11 +63,17 @@ Gdy użytkownik sam wdraża lub poprosi agenta:
 
 | Temat | Plan |
 |-------|------|
-| **1. Zrzuty ekranu do przewodnika** | 📋 **pierwsze w kolejności (Ty)** — wrzucić PNG/JPG `01`–`14` do [`assets/screenshots/`](assets/screenshots/) wg listy w [`assets/screenshots/README.md`](assets/screenshots/README.md); przewodnik: [`przewodnik.md`](przewodnik.md). |
-| **2. Panel platformy (właściciel)** | 🔄 **MVP w kodzie** — [`plan_platform_admin.md`](plan_platform_admin.md): `/admin` KPI + `/admin/users` (toggle `can_create_leagues`); dostęp: `users.role = admin` + middleware. Dalsze: ban, nadawanie roli z UI, aktywność per user. |
+| **1. Usuwanie niepotrzebnych lobby** | ✅ sierpień 2026 — jedno aktywne lobby + TTL prune (`quick-game:prune-lobbies`). Plan: [`plan_quick_game_lobby_lifecycle.md`](plan_quick_game_lobby_lifecycle.md). |
+| **2. Zrzuty ekranu do przewodnika** | 📋 Ty — PNG/JPG `01`–`14` do [`assets/screenshots/`](assets/screenshots/) wg [`assets/screenshots/README.md`](assets/screenshots/README.md); przewodnik: [`przewodnik.md`](przewodnik.md). |
 | **3. Awatary graczy** | 📋 zaplanowane (jeszcze bez planu) — upload + wyświetlanie na profilu/listach; przy `Player`; storage `public` → później S3/CDN; MVP: limity + fallback inicjałów, potem crop |
-| **4. Live drabinka / playoff (web WS)** | 📋 później — zakładka Drabinka/Playoff na `tournaments/show` dziś SSR (F5); live WS jest tylko dla macierzy grup + podglądu pojedynczego meczu. Docelowo: event jak `TournamentGroupMatrixUpdated`, update kart (wynik/status/link + awans nazwisk do kolejnej rundy; SE/DE i playoff po grupach jednym mechanizmem). Niski koszt obciążenia; wzorzec: `TournamentGroupMatrixLiveService` + `tournamentGroupsLive.js` |
-| **Warianty turnieju SE / DE** | [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) — ✅ SE + DE w kodzie (testy fabryk + regresja playoff) |
+| **4. Sędziowanie na webie** | 📋 zaplanowane (jeszcze bez planu) — wpisywanie wyniku meczu turniejowego z przeglądarki (nie tylko tablet mobile); zakres i UX do ustalenia. |
+| **5. Live drabinka / playoff (web WS)** | 📋 później — zakładka Drabinka/Playoff na `tournaments/show` dziś SSR (F5); live WS jest tylko dla macierzy grup + podglądu pojedynczego meczu. Docelowo: event jak `TournamentGroupMatrixUpdated`, update kart (wynik/status/link + awans nazwisk do kolejnej rundy; SE/DE i playoff po grupach jednym mechanizmem). Niski koszt obciążenia; wzorzec: `TournamentGroupMatrixLiveService` + `tournamentGroupsLive.js` |
+| **6. Prowadzenie ligi typu Apagon** | 📋 później — szersze prowadzenie ligi w stylu Apagon (zakres UX/funkcji do ustalenia przy planie). |
+| **7. Tryby gry (Bob 27, Catch 40, Around the Clock, Gra Kamila, …)** | 📋 później — dodatkowe tryby poza X01 / Cricket; kolejność i MVP per tryb do ustalenia. |
+| **8. Autoryzacja scoringu / anty-nadużycia** | 📋 **daleka przyszłość** — kto może `recordVisit` / `closeLeg` (tablet vs konto vs host); twardsze reguły serwera; audyt. To nie to samo co outbox ([`design_scoring_result_delivery.md`](design_scoring_result_delivery.md)). Na turniej klubowy nieblocker MVP. |
+| **Panel platformy (właściciel)** | ✅ ban + aktywność per user. Plan: [`plan_platform_admin.md`](plan_platform_admin.md). |
+| **Zabezpieczenie wysyłki rezultatu gry** | ✅ [`design_scoring_result_delivery.md`](design_scoring_result_delivery.md) |
+| **Warianty turnieju SE / DE** | [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) — ✅ SE + DE w kodzie |
 | **QR zgłoszenia do turnieju** | [`plan_tournament_join_qr.md`](plan_tournament_join_qr.md) — ✅ fazy 1–2 |
 | **Cricket** (trening + quick) | [`plan_cricket.md`](plan_cricket.md) — ✅ fazy 1–3 |
 
@@ -81,8 +87,11 @@ Gdy użytkownik sam wdraża lub poprosi agenta:
 
 | Temat | Stan |
 |-------|------|
+| Jedno aktywne lobby + prune TTL | ✅ sierpień 2026 — [`plan_quick_game_lobby_lifecycle.md`](plan_quick_game_lobby_lifecycle.md) |
+| Zabezpieczenie wysyłki rezultatu gry | ✅ sierpień 2026 — [`design_scoring_result_delivery.md`](design_scoring_result_delivery.md) |
+| Panel platformy — ban + aktywność usera | ✅ sierpień 2026 — [`plan_platform_admin.md`](plan_platform_admin.md) |
 | Przerobienie kodów logowania na tablety | ✅ sierpień 2026 — jeden kod 8-znakowy + QR (`/tablet-login/{code}`); skaner na mobile; bez pola liczby tabletów przy starcie |
-| Przewodnik po aplikacji (tekst + placeholdery zrzutów) | ✅ sierpień 2026 — [`przewodnik.md`](przewodnik.md); brakujące: same pliki PNG (pkt 1 backlogu) |
+| Przewodnik po aplikacji (tekst + placeholdery zrzutów) | ✅ sierpień 2026 — [`przewodnik.md`](przewodnik.md); brakujące: same pliki PNG (pkt 2 backlogu) |
 | Presety formatu gry w lidze | ✅ lipiec 2026 — [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) §5.1 |
 | Push — zaproszenia (znajomi / turniej / quick game) | ✅ lipiec 2026 — [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md) |
 | Konfigurowalny format gry — fazy 1–4 (MatchFormat, quick/trening/turniej, walkower) | ✅ lipiec 2026 — [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) |

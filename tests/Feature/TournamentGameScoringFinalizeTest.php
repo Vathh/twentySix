@@ -477,4 +477,53 @@ class TournamentGameScoringFinalizeTest extends TestCase
             'remaining_after' => 401,
         ]);
     }
+
+    public function test_group_scoring_close_leg_is_idempotent(): void
+    {
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+            'player1_score' => 0,
+            'player2_score' => 0,
+        ]);
+
+        $start = $this->postJson("/api/group-games/{$game->id}/legs", [
+            'player1DoubleTracked' => false,
+            'player2DoubleTracked' => false,
+        ]);
+        $start->assertOk();
+        $legId = $start->json('currentLeg.id');
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits", [
+            'playerId' => $this->player1->id,
+            'score' => 60,
+            'remainingBefore' => 501,
+            'remainingAfter' => 441,
+            'dartsInVisit' => 3,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => (string) Str::uuid(),
+        ])->assertOk();
+
+        $closePayload = [
+            'winnerId' => $this->player1->id,
+            'players' => [
+                ['playerId' => $this->player1->id, 'doubleTracked' => false],
+                ['playerId' => $this->player2->id, 'doubleTracked' => false],
+            ],
+        ];
+
+        $first = $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/close", $closePayload);
+        $first->assertOk();
+
+        $second = $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/close", $closePayload);
+        $second->assertOk();
+
+        $this->assertNotNull(GameLeg::query()->find($legId)?->finished_at);
+        $this->assertSame(1, GameLeg::query()->where('id', $legId)->whereNotNull('finished_at')->count());
+        $this->assertSame(1, (int) $game->fresh()->player1_score);
+    }
 }

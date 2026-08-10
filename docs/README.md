@@ -51,6 +51,7 @@ Testy automatyczne backendu: `php artisan test`. Mobile: `npm run test:game-scor
 | Dokument | Rola |
 |----------|------|
 | [`design_quick_game_ffa_sync_4c2.md`](design_quick_game_ffa_sync_4c2.md) | Design sync FFA 3–8 (`each_own`) — przed zmianami w lobby/scoring |
+| [`design_scoring_result_delivery.md`](design_scoring_result_delivery.md) | Odporność dostarczenia wyniku (outbox + idempotentne closeLeg / FFA visit) |
 | [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) | Warianty turnieju SE/DE + generyczny bracket (max 128) — przed implementacją |
 | [`game-scoring-unification.md`](game-scoring-unification.md) | Architektura `useGameScoring` + transporty (refaktor ✅ 2026) |
 
@@ -64,6 +65,7 @@ Testy automatyczne backendu: `php artisan test`. Mobile: `npm run test:game-scor
 | [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md) | Konfigurowalny format X01 (fazy 1–4 + presety ligi ✅) | ✅ core |
 | [`plan_cricket.md`](plan_cricket.md) | Cricket (standard scoring; trening + quick; bez turnieju) | ✅ |
 | [`plan_tournament_join_qr.md`](plan_tournament_join_qr.md) | Zgłoszenia do turnieju przez QR (admin Dołącz/Odrzuć) | 🔄 |
+| [`plan_quick_game_lobby_lifecycle.md`](plan_quick_game_lobby_lifecycle.md) | Jedno aktywne lobby + TTL cleanup | ✅ |
 
 ---
 
