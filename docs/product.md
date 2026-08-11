@@ -147,7 +147,7 @@ Wybór **tylko przy starcie** (kreator) — po wystartowaniu bez zmiany typu.
 
 **Rozmiar drabinki:** potęgi 2, **max 128**. Model slotów: **generyczny** (`round` + `index` + kierunki awansu), nie rozrost enumów `PlayoffSlot` / `WinnerDestinationSlot`.
 
-**Kolejność wdrożenia:** najpierw SE, potem DE. Design i plan: [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md).
+**Kolejność wdrożenia:** najpierw SE, potem DE. Reguły i model: [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md).
 
 #### `groups_playoff` (bez zmian reguł względem MVP v1)
 
@@ -248,7 +248,7 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - Wysyłka: admin na **webie** — **na stronie startu turnieju** (bez osobnej podstrony): wyszukiwarka + lista zaproszonych + masowe zaproszenia ze składu ligi.
 - Akceptacja / wycofanie udziału: **mobile**.
 - Goście (nazwa od admina): edycja puli gości na ekranach sezonu/ligi; na stronie startu admin **dodaje gościa do turnieju** z listy powiązanych.
-- **Zgłoszenia przez QR** (plan): gracz skanuje QR na starcie turnieju → admin Dołącz/Odrzuć — [`plan_tournament_join_qr.md`](plan_tournament_join_qr.md).
+- **Zgłoszenia przez QR** (✅): gracz skanuje QR na starcie turnieju → admin Dołącz/Odrzuć.
 
 #### Stały skład ligi (`relatedUsers`)
 
@@ -294,7 +294,7 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 #### Mobile — ekran zaproszeń
 
 - **Jeden ekran** z zakładkami: **Turniej** | **Pojedynek** (quick game / lobby) | **Znajomi**.
-- Pull-to-refresh na liście. **Push** przy nowym zaproszeniu (znajomi / turniej / lobby) — [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md).
+- Pull-to-refresh na liście. **Push** przy nowym zaproszeniu (znajomi / turniej / lobby) — ✅.
 
 ## Liga i punktacja (MVP)
 
@@ -308,7 +308,7 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - **Mobile:** zaproszenie + akceptacja (główny flow akceptacji zaproszeń turniejowych i lobby).
 - **Web (od lipca 2026):** invite → accept na profilu gracza i w panelu bocznym — **bez** komunikatora.
 - **Docelowo:** pełny komunikator.
-- **Push** przy zaproszeniach (znajomi / turniej / quick game): ✅ — [`plan_push_notifications_zaproszenia.md`](plan_push_notifications_zaproszenia.md).
+- **Push** przy zaproszeniach (znajomi / turniej / quick game): ✅.
 
 ### Quick game online (MVP)
 
@@ -423,7 +423,7 @@ Już istniejący wybór w lobby mobilnym:
 - **`setsToWinMatch === 1`:** wynik w legach (np. 2:0 przy „do 2 legów”).
 - **`setsToWinMatch > 1`:** wynik w setach (np. 2:0); szczegóły legów w secie opcjonalnie w UI korekty.
 
-Plan implementacji (fazy 1–4 ✅, presety ligi ✅; BO5/BO7 odpuszczone): [`plan_konfigurowalny_format_gry.md`](plan_konfigurowalny_format_gry.md). Cricket (trening + quick, bez turnieju): [`plan_cricket.md`](plan_cricket.md).
+Konfigurowalny format X01 (fazy 1–4 + presety ligi): ✅. Cricket: trening + quick (bez turnieju) — ✅; szczegóły reguł w kodzie / `product.md` (sekcja Cricket).
 
 ### Format gry — podsumowanie kontekstów
 
@@ -501,7 +501,7 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 - Granularne uprawnienia współadmina
 - Quick game z dowolnym zalogowanym
 - ~~**Drabinka playoff > 32**~~ — decyzja sierpień 2026: generyczny model slotów + **max 128** w ramach wariantów SE/DE ([`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md)); `groups_playoff` na tym samym silniku.
-- **Warianty SE / DE** — zaplanowane; wdrożenie: najpierw SE, potem DE.
+- **Warianty SE / DE** — ✅ w kodzie; reguły: [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md).
 
 ## Czego nie robimy (na razie)
 
@@ -551,7 +551,7 @@ Historyczne rozbieżności z czasów przed `product.md` — **domknięte w MVP v
 | Awans z grupy | Etap drabinki + rozkład per grupa | ✅ `playoff_bracket_size`, `group_advances`, `PlayoffService` |
 | Losowanie playoff | Bez par z tej samej grupy (runda 1) | ✅ `PlayoffFirstRoundPairing` |
 | Rozmiar drabinki | Wybór etapu (`playoff_bracket_size`; **docelowo max 128**, dziś w kodzie jeszcze 32) | ⚠️ `PlayoffBracketFactory::create` (enumy) → generyczny silnik w planie SE/DE |
-| Warianty SE / DE | Typ przy starcie; bye; miejsca; GF | 📋 [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) |
+| Warianty SE / DE | Typ przy starcie; bye; miejsca; GF | ✅ [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) |
 | Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile; `relatedUsers` = tylko masowy invite | ✅ `TournamentInvitation`, API, `InvitationsScreen` |
 | Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ |
 | FFA 2–8 oba tryby urządzeń | `one_device` i `each_own` | ✅ unified FFA |
