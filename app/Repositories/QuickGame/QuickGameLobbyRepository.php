@@ -199,6 +199,30 @@ class QuickGameLobbyRepository
         ]);
     }
 
+    /**
+     * Nowe pending albo ponowne otwarcie odrzuconego/zaakceptowanego wiersza
+     * (unikalny klucz lobby_id + invited_player_id).
+     */
+    public function createOrReinvite(int $lobbyId, int $invitedPlayerId): QuickGameLobbyInvitation
+    {
+        $existing = QuickGameLobbyInvitation::query()
+            ->where('lobby_id', $lobbyId)
+            ->where('invited_player_id', $invitedPlayerId)
+            ->first();
+
+        if ($existing === null) {
+            return $this->createInvitation($lobbyId, $invitedPlayerId);
+        }
+
+        if ($existing->status === 'pending') {
+            return $existing;
+        }
+
+        $existing->update(['status' => 'pending']);
+
+        return $existing->fresh();
+    }
+
     public function getPendingInvitationsForPlayer(int $playerId): \Illuminate\Database\Eloquent\Collection
     {
         return QuickGameLobbyInvitation::with(['lobby.host.player'])

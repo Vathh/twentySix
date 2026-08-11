@@ -199,6 +199,50 @@ class QuickGameLobbyMvpTest extends TestCase
             ->assertJsonCount(2, 'players');
     }
 
+    public function test_can_reinvite_after_rejection(): void
+    {
+        $lobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/invite", [
+            'playerId' => $this->friendPlayer->id,
+        ])->assertOk();
+
+        Sanctum::actingAs($this->friend);
+        $invitationId = $this->getJson('/api/quick-game/lobby/invitations')
+            ->assertOk()
+            ->json('invitations.0.id');
+
+        $this->postJson("/api/quick-game/lobby/invitations/{$invitationId}/reject")
+            ->assertOk();
+
+        Sanctum::actingAs($this->host);
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/invite", [
+            'playerId' => $this->friendPlayer->id,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('quick_game_lobby_invitations', [
+            'lobby_id' => $lobbyId,
+            'invited_player_id' => $this->friendPlayer->id,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseCount('quick_game_lobby_invitations', 1);
+    }
+
+    public function test_host_leave_deletes_waiting_lobby(): void
+    {
+        $lobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/leave")
+            ->assertOk();
+
+        $this->assertDatabaseMissing('quick_game_lobbies', ['id' => $lobbyId]);
+        $this->assertDatabaseMissing('quick_game_lobby_players', ['lobby_id' => $lobbyId]);
+
+        $createAgain = $this->postJson('/api/quick-game/lobby/create');
+        $createAgain->assertOk();
+        $this->assertNotSame($lobbyId, $createAgain->json('id'));
+    }
+
     public function test_cannot_create_second_active_lobby(): void
     {
         $firstId = $this->postJson('/api/quick-game/lobby/create')->json('id');

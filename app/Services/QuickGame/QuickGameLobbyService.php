@@ -122,7 +122,7 @@ class QuickGameLobbyService
             throw new \RuntimeException('Do quick game można zapraszać tylko znajomych');
         }
 
-        $invitation = $this->lobbyRepository->createInvitation($lobbyId, $invitedPlayerId);
+        $invitation = $this->lobbyRepository->createOrReinvite($lobbyId, $invitedPlayerId);
         $this->broadcastLobbyUpdatedById($lobbyId);
 
         $lobby->loadMissing('host.player');
