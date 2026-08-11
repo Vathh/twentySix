@@ -196,6 +196,30 @@ class TournamentStartPageService
     }
 
     /**
+     * Snapshot uczestników + pipeline zaproszeń (API / WS na stronie startu).
+     *
+     * @return array{
+     *     tournamentId: int,
+     *     participants: list<array<string, mixed>>,
+     *     participantCount: int,
+     *     invitationPipeline: list<array<string, mixed>>,
+     *     minPlayers: int
+     * }
+     */
+    public function rosterLiveSnapshot(int $tournamentId): array
+    {
+        $participants = $this->buildParticipantsLive($tournamentId);
+
+        return [
+            'tournamentId' => $tournamentId,
+            'participants' => $participants,
+            'participantCount' => count($participants),
+            'invitationPipeline' => $this->buildInvitationPipelineLive($tournamentId),
+            'minPlayers' => TournamentStartRules::MIN_PLAYERS,
+        ];
+    }
+
+    /**
      * Zaakceptowani uczestnicy (użytkownicy + goście), posortowani po nazwie.
      *
      * @param  \Illuminate\Support\Collection  $invitations

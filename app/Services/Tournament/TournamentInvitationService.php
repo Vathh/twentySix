@@ -5,6 +5,7 @@ namespace App\Services\Tournament;
 use App\Domain\Tournament\TournamentInvitationDomain;
 use App\Enums\TournamentInvitationStatus;
 use App\Enums\TournamentStatus;
+use App\Events\TournamentStartRosterUpdated;
 use App\Repositories\Tournament\TournamentInvitationRepository;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Services\Push\InvitationPushService;
@@ -60,6 +61,10 @@ class TournamentInvitationService
             }
         }
 
+        if ($sent > 0) {
+            $this->broadcastStartRoster($tournamentId);
+        }
+
         return ['sent' => $sent, 'skipped' => $skipped];
     }
 
@@ -69,6 +74,7 @@ class TournamentInvitationService
 
         $invitation = $this->invitationRepository->createOrReinvite($tournamentId, $userId, $invitedBy);
         $this->dispatchTournamentPush($invitation);
+        $this->broadcastStartRoster($tournamentId);
 
         return $invitation;
     }
@@ -77,12 +83,14 @@ class TournamentInvitationService
     {
         $this->assertTournamentAcceptsInvitations($tournamentId);
         $this->invitationRepository->cancelPending($invitationId, $tournamentId);
+        $this->broadcastStartRoster($tournamentId);
     }
 
     public function removeParticipant(int $tournamentId, int $invitationId): void
     {
         $this->assertTournamentAcceptsInvitations($tournamentId);
         $this->invitationRepository->removeAccepted($invitationId, $tournamentId);
+        $this->broadcastStartRoster($tournamentId);
     }
 
     public function accept(int $invitationId, int $userId): void
@@ -95,6 +103,7 @@ class TournamentInvitationService
 
         $this->assertTournamentAcceptsInvitations($invitation->tournamentId);
         $this->invitationRepository->accept($invitationId, $userId);
+        $this->broadcastStartRoster($invitation->tournamentId);
     }
 
     public function reject(int $invitationId, int $userId): void
@@ -110,6 +119,7 @@ class TournamentInvitationService
         }
 
         $this->invitationRepository->reject($invitationId, $userId);
+        $this->broadcastStartRoster($invitation->tournamentId);
     }
 
     public function withdraw(int $invitationId, int $userId): void
@@ -122,6 +132,7 @@ class TournamentInvitationService
 
         $this->assertTournamentAcceptsInvitations($invitation->tournamentId);
         $this->invitationRepository->withdraw($invitationId, $userId);
+        $this->broadcastStartRoster($invitation->tournamentId);
     }
 
     /**
@@ -148,5 +159,15 @@ class TournamentInvitationService
             invitationId: $invitation->id,
             tournamentName: $invitation->tournamentName,
         );
+    }
+
+    /**
+     * Lazy resolve — StartPageService zależy od tego serwisu (bez cyklu w konstruktorze).
+     */
+    private function broadcastStartRoster(int $tournamentId): void
+    {
+        $snapshot = app(TournamentStartPageService::class)->rosterLiveSnapshot($tournamentId);
+
+        broadcast(new TournamentStartRosterUpdated($tournamentId, $snapshot));
     }
 }

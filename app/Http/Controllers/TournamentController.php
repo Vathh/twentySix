@@ -151,9 +151,10 @@ class TournamentController extends Controller
     {
         $this->loadAndAuthorize($tournament->id);
 
-        return response()->json(
+        return response()->json(array_merge(
             $this->joinRequestService->pendingSnapshot($tournament->id),
-        );
+            $this->startPageService->rosterLiveSnapshot($tournament->id),
+        ));
     }
 
     public function edit(Tournament $tournament)
@@ -336,7 +337,7 @@ class TournamentController extends Controller
         );
     }
 
-    public function addGuestParticipant(Request $request, int $tournamentId): RedirectResponse
+    public function addGuestParticipant(Request $request, int $tournamentId): RedirectResponse|JsonResponse
     {
         $tournament = $this->loadAndAuthorize($tournamentId);
 
@@ -344,26 +345,29 @@ class TournamentController extends Controller
             'player_id' => 'required|integer|exists:players,id',
         ]);
 
-        try {
-            if ($tournament->season === null) {
-                return back()->with('error', 'Ten turniej nie jest powiązany z sezonem — dodawaj uczestników przez wyszukiwanie użytkowników.');
+        if ($tournament->season === null) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'message' => 'Ten turniej nie jest powiązany z sezonem — dodawaj uczestników przez wyszukiwanie użytkowników.',
+                ], 422);
             }
 
-            $this->guestParticipantService->addFromRelatedPool(
+            return back()->with('error', 'Ten turniej nie jest powiązany z sezonem — dodawaj uczestników przez wyszukiwanie użytkowników.');
+        }
+
+        return $this->respondToAction(
+            $request,
+            fn () => $this->guestParticipantService->addFromRelatedPool(
                 $tournamentId,
                 (int) $validated['player_id'],
                 $tournament->season->id,
-            );
-        } catch (\RuntimeException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return redirect()
-            ->route('tournaments.start', ['tournament' => $tournamentId, 'tab' => 'guests'])
-            ->with('success', 'Gość dodany do turnieju');
+            ),
+            'Gość dodany do turnieju',
+            fn () => $this->joinActionPayload($tournamentId, 'Gość dodany do turnieju'),
+        );
     }
 
-    public function createGuestParticipant(Request $request, int $tournamentId): RedirectResponse
+    public function createGuestParticipant(Request $request, int $tournamentId): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($tournamentId);
 
@@ -371,13 +375,12 @@ class TournamentController extends Controller
             'name' => 'required|string|max:20',
         ]);
 
-        try {
-            $this->guestParticipantService->createAndAdd($tournamentId, $validated['name']);
-        } catch (\RuntimeException $e) {
-            return back()->with('error', $e->getMessage())->withInput();
-        }
-
-        return back()->with('success', 'Gość dodany do turnieju');
+        return $this->respondToAction(
+            $request,
+            fn () => $this->guestParticipantService->createAndAdd($tournamentId, $validated['name']),
+            'Gość dodany do turnieju',
+            fn () => $this->joinActionPayload($tournamentId, 'Gość dodany do turnieju'),
+        );
     }
 
     public function removeGuestParticipant(Request $request, int $tournamentId): RedirectResponse|JsonResponse

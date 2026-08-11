@@ -1,6 +1,7 @@
 import Pusher from 'pusher-js';
 
 const JOIN_EVENTS = ['join.requests.updated', '.join.requests.updated'];
+const ROSTER_EVENTS = ['start.roster.updated', '.start.roster.updated'];
 
 function normalizePayload(payload) {
 	if (payload == null) {
@@ -38,11 +39,16 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 		canManage: true,
 		csrfToken: '',
 		inviteUrl: '',
+		createGuestUrl: '',
+		addGuestUrl: '',
 		flash: null,
 		flashTimer: null,
 		busyKey: null,
 		invitationPipeline: [],
 		inviteBusyKey: null,
+		relatedGuests: [],
+		guestName: '',
+		guestBusy: false,
 
 		init(config = {}) {
 			this.participants = Array.isArray(config.participants) ? [...config.participants] : [];
@@ -51,8 +57,13 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 			this.canManage = config.canManage !== false;
 			this.csrfToken = config.csrfToken || this.csrfToken || '';
 			this.inviteUrl = config.inviteUrl || this.inviteUrl || '';
+			this.createGuestUrl = config.createGuestUrl || this.createGuestUrl || '';
+			this.addGuestUrl = config.addGuestUrl || this.addGuestUrl || '';
 			if (Array.isArray(config.invitationPipeline)) {
 				this.invitationPipeline = [...config.invitationPipeline];
+			}
+			if (Array.isArray(config.relatedGuests)) {
+				this.relatedGuests = config.relatedGuests.map((g) => ({ ...g }));
 			}
 		},
 
@@ -63,6 +74,7 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 			this.participants = payload.participants;
 			this.participantCount =
 				Number(payload.participantCount ?? payload.participants.length) || 0;
+			this.syncRelatedGuestsFromParticipants();
 			window.dispatchEvent(
 				new CustomEvent('tournament-participant-count', {
 					detail: { participantCount: this.participantCount },
@@ -70,11 +82,34 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 			);
 		},
 
+		syncRelatedGuestsFromParticipants() {
+			if (!Array.isArray(this.relatedGuests) || this.relatedGuests.length === 0) {
+				return;
+			}
+			const ids = new Set(
+				this.participants
+					.filter((p) => p.kind === 'guest')
+					.map((p) => Number(p.playerId)),
+			);
+			this.relatedGuests = this.relatedGuests.map((g) => ({
+				...g,
+				inTournament: ids.has(Number(g.playerId)),
+			}));
+		},
+
 		applyInvitationPipeline(payload) {
 			if (!payload || !Array.isArray(payload.invitationPipeline)) {
 				return;
 			}
 			this.invitationPipeline = payload.invitationPipeline;
+		},
+
+		applyRoster(payload) {
+			this.applyParticipants(payload);
+			this.applyInvitationPipeline(payload);
+			if (payload && payload.minPlayers != null) {
+				this.minPlayers = Number(payload.minPlayers) || this.minPlayers;
+			}
 		},
 
 		showFlash(message, type = 'success') {
@@ -115,6 +150,9 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 					return;
 				}
 				this.applyParticipants(data);
+				if (Array.isArray(data.invitationPipeline)) {
+					this.applyInvitationPipeline(data);
+				}
 				this.showFlash(
 					data.message || (isGuest ? 'Gość usunięty z turnieju' : 'Uczestnik usunięty z turnieju'),
 					'success',
@@ -192,6 +230,76 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 			if (!inv?.userId) return;
 			await this.sendInvite(inv.userId, `reinvite-${inv.id}`);
 		},
+
+		async createGuest() {
+			const name = String(this.guestName || '').trim();
+			if (!this.createGuestUrl || !name || this.guestBusy) {
+				if (!name) {
+					this.showFlash('Podaj imię gościa.', 'error');
+				}
+				return;
+			}
+			this.guestBusy = true;
+			try {
+				const res = await fetch(toSameOriginUrl(this.createGuestUrl), {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						Accept: 'application/json',
+						'Content-Type': 'application/json',
+						'X-CSRF-TOKEN': this.csrfToken,
+						'X-Requested-With': 'XMLHttpRequest',
+					},
+					body: JSON.stringify({ name }),
+				});
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) {
+					const validation =
+						data.errors?.name?.[0] || data.message || 'Nie udało się dodać gościa.';
+					this.showFlash(validation, 'error');
+					return;
+				}
+				this.applyRoster(data);
+				this.guestName = '';
+				this.showFlash(data.message || 'Gość dodany do turnieju', 'success');
+			} catch {
+				this.showFlash('Błąd sieci — spróbuj ponownie.', 'error');
+			} finally {
+				this.guestBusy = false;
+			}
+		},
+
+		async addRelatedGuest(guest) {
+			if (!guest?.playerId || !this.addGuestUrl || this.busyKey) {
+				return;
+			}
+			const key = `related-${guest.playerId}`;
+			this.busyKey = key;
+			try {
+				const res = await fetch(toSameOriginUrl(this.addGuestUrl), {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						Accept: 'application/json',
+						'Content-Type': 'application/json',
+						'X-CSRF-TOKEN': this.csrfToken,
+						'X-Requested-With': 'XMLHttpRequest',
+					},
+					body: JSON.stringify({ player_id: guest.playerId }),
+				});
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) {
+					this.showFlash(data.message || 'Nie udało się dodać gościa.', 'error');
+					return;
+				}
+				this.applyRoster(data);
+				this.showFlash(data.message || 'Gość dodany do turnieju', 'success');
+			} catch {
+				this.showFlash('Błąd sieci — spróbuj ponownie.', 'error');
+			} finally {
+				this.busyKey = null;
+			}
+		},
 	});
 
 	Alpine.data('tournamentUserSearch', (config) => ({
@@ -263,7 +371,10 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 				canManage: config.canManage,
 				csrfToken: config.csrfToken,
 				inviteUrl: config.inviteUrl,
+				createGuestUrl: config.createGuestUrl,
+				addGuestUrl: config.addGuestUrl,
 				invitationPipeline: config.invitationPipeline,
+				relatedGuests: config.relatedGuests,
 			});
 			this.connectWebSocket(config);
 			this.pollTimer = setInterval(() => this.fetchSnapshot(), 20000);
@@ -286,6 +397,18 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 			if (this.connection === 'reconnecting') return 'Ponowne łączenie…';
 			if (this.connection === 'error' || this.connection === 'offline') return 'Offline';
 			return 'Łączenie…';
+		},
+
+		applyLivePayload(payload) {
+			const next = normalizePayload(payload);
+			if (!next) {
+				return;
+			}
+			if (Array.isArray(next.requests)) {
+				this.requests = next.requests;
+			}
+			this.$store.tournamentStartLive.applyRoster(next);
+			this.connection = 'live';
 		},
 
 		connectWebSocket(cfg) {
@@ -316,11 +439,13 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 
 			JOIN_EVENTS.forEach((eventName) => {
 				channel.bind(eventName, (payload) => {
-					const next = normalizePayload(payload);
-					if (next && Array.isArray(next.requests)) {
-						this.requests = next.requests;
-						this.connection = 'live';
-					}
+					this.applyLivePayload(payload);
+				});
+			});
+
+			ROSTER_EVENTS.forEach((eventName) => {
+				channel.bind(eventName, (payload) => {
+					this.applyLivePayload(payload);
 				});
 			});
 
@@ -340,9 +465,7 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 				});
 				if (!res.ok) return;
 				const data = await res.json();
-				if (Array.isArray(data.requests)) {
-					this.requests = data.requests;
-				}
+				this.applyLivePayload(data);
 			} catch {
 				// ignore poll errors
 			}
@@ -381,7 +504,7 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 				} else {
 					this.requests = this.requests.filter((r) => r.id !== req.id);
 				}
-				this.$store.tournamentStartLive.applyParticipants(data);
+				this.$store.tournamentStartLive.applyRoster(data);
 				this.$store.tournamentStartLive.showFlash(
 					data.message || (action === 'approve' ? 'Dołączono' : 'Odrzucono'),
 					'success',

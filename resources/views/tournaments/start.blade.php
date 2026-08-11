@@ -141,30 +141,33 @@
         </div>
 
         @if($canManageParticipants)
-            {{-- Strefa 2: Dodaj uczestników --}}
-            <div class="mb-8 card overflow-hidden">
+            {{-- Strefa 2: Dodaj uczestników — live WS zawsze (nie tylko przy QR) --}}
+            <div
+                class="mb-8 card overflow-hidden"
+                x-data="tournamentJoinRequestsLive(@js([
+                    'channel' => 'tournament.'.$tournament->id,
+                    'snapshotUrl' => route('tournaments.join-requests-live', $tournament->id),
+                    'csrfToken' => csrf_token(),
+                    'inviteUrl' => route('tournaments.invitations.send', $tournament->id),
+                    'createGuestUrl' => route('tournaments.participants.guests.create', $tournament->id),
+                    'addGuestUrl' => route('tournaments.participants.guests.add', $tournament->id),
+                    'invitationPipeline' => $invitationPipelineLive ?? [],
+                    'relatedGuests' => ($relatedGuests ?? collect())->values()->all(),
+                    'initialRequests' => $pendingJoinRequestsLive ?? [],
+                    'initialParticipants' => $participantsLive ?? [],
+                    'participantCount' => $participantCount,
+                    'minPlayers' => $minPlayers,
+                    'canManage' => true,
+                    'reverb' => \App\Support\Broadcasting\ReverbClientConfig::forWeb(),
+                ]))"
+                x-init="init()"
+            >
                 <div class="border-b border-border px-6 pt-6 pb-4">
                     <h2 class="text-xl font-semibold text-accent mb-4">Dodaj uczestników</h2>
 
                     {{-- QR zgłoszenia --}}
                     @if(!empty($joinCode) && !empty($joinUrl))
-                        <div
-                            class="mb-6 p-4 rounded-lg border border-border bg-bg/40"
-                            x-data="tournamentJoinRequestsLive(@js([
-                                'channel' => 'tournament.'.$tournament->id,
-                                'snapshotUrl' => route('tournaments.join-requests-live', $tournament->id),
-                                'csrfToken' => csrf_token(),
-                                'inviteUrl' => route('tournaments.invitations.send', $tournament->id),
-                                'invitationPipeline' => $invitationPipelineLive ?? [],
-                                'initialRequests' => $pendingJoinRequestsLive ?? [],
-                                'initialParticipants' => $participantsLive ?? [],
-                                'participantCount' => $participantCount,
-                                'minPlayers' => $minPlayers,
-                                'canManage' => true,
-                                'reverb' => \App\Support\Broadcasting\ReverbClientConfig::forWeb(),
-                            ]))"
-                            x-init="init()"
-                        >
+                        <div class="mb-6 p-4 rounded-lg border border-border bg-bg/40">
                             <div class="flex flex-wrap items-center gap-2 mb-2">
                                 <h3 class="text-accent font-semibold mb-0">Dołącz przez QR</h3>
                                 <span
@@ -309,16 +312,23 @@
                         <p class="text-text-secondary text-sm mb-3">
                             Gracz niezarejestrowany w aplikacji — trafi od razu na listę uczestników turnieju.
                         </p>
-                        <form action="{{ route('tournaments.participants.guests.create', $tournament->id) }}" method="POST" class="flex flex-wrap items-center gap-4">
-                            @csrf
+                        <form
+                            @submit.prevent="$store.tournamentStartLive.createGuest()"
+                            class="flex flex-wrap items-center gap-4"
+                        >
                             <input type="text"
-                                   name="name"
+                                   x-model="$store.tournamentStartLive.guestName"
                                    placeholder="Imię gościa..."
-                                   value="{{ old('name') }}"
                                    maxlength="20"
                                    class="input-field flex-1 min-w-[200px]"
                                    required>
-                            <button type="submit" class="btn btn-primary">Dodaj gościa</button>
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                                :disabled="$store.tournamentStartLive.guestBusy"
+                            >
+                                <span x-text="$store.tournamentStartLive.guestBusy ? 'Dodaję…' : 'Dodaj gościa'"></span>
+                            </button>
                         </form>
                     </div>
 
@@ -455,31 +465,40 @@
                             <h3 class="text-accent font-semibold mb-2">Powiązani goście</h3>
                             <p class="text-text-secondary text-sm mb-4">Dodaj gości z puli ligi/sezonu do tego turnieju.</p>
 
-                            @if($relatedGuests->isEmpty())
-                                <p class="text-text-secondary text-sm">
-                                    Brak powiązanych gości.
-                                    <a href="{{ route('seasons.guests', $tournament->season->id) }}" class="text-accent underline">Sezon</a>
-                                    ·
-                                    <a href="{{ route('leagues.guests', $tournament->season->league->id) }}" class="text-accent underline">Liga</a>
-                                </p>
-                            @else
-                                <div class="flex flex-wrap gap-3">
-                                    @foreach($relatedGuests as $guest)
-                                        <div class="flex flex-col items-center bg-bg rounded-lg p-4 min-w-[110px]">
-                                            <span class="text-text-secondary text-sm text-center mb-2">{{ $guest['name'] }}</span>
-                                            @if($guest['inTournament'])
-                                                <span class="text-xs text-accent font-semibold">W turnieju</span>
-                                            @else
-                                                <form action="{{ route('tournaments.participants.guests.add', $tournament->id) }}" method="POST">
-                                                    @csrf
-                                                    <input type="hidden" name="player_id" value="{{ $guest['playerId'] }}">
-                                                    <button type="submit" class="btn-mini">Dodaj</button>
-                                                </form>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @endif
+                            <p
+                                class="text-text-secondary text-sm"
+                                x-show="$store.tournamentStartLive.relatedGuests.length === 0"
+                            >
+                                Brak powiązanych gości.
+                                <a href="{{ route('seasons.guests', $tournament->season->id) }}" class="text-accent underline">Sezon</a>
+                                ·
+                                <a href="{{ route('leagues.guests', $tournament->season->league->id) }}" class="text-accent underline">Liga</a>
+                            </p>
+                            <div
+                                class="flex flex-wrap gap-3"
+                                x-show="$store.tournamentStartLive.relatedGuests.length > 0"
+                                x-cloak
+                            >
+                                <template
+                                    x-for="guest in $store.tournamentStartLive.relatedGuests"
+                                    :key="guest.playerId"
+                                >
+                                    <div class="flex flex-col items-center bg-bg rounded-lg p-4 min-w-[110px]">
+                                        <span class="text-text-secondary text-sm text-center mb-2" x-text="guest.name"></span>
+                                        <span
+                                            class="text-xs text-accent font-semibold"
+                                            x-show="guest.inTournament"
+                                        >W turnieju</span>
+                                        <button
+                                            type="button"
+                                            class="btn-mini"
+                                            x-show="!guest.inTournament"
+                                            :disabled="$store.tournamentStartLive.busyKey === ('related-' + guest.playerId)"
+                                            @click="$store.tournamentStartLive.addRelatedGuest(guest)"
+                                        >Dodaj</button>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -535,20 +554,27 @@
 
                         <div class="w-full max-w-2xl flex flex-col gap-3">
                             <p class="text-accent font-semibold">Rodzaj turnieju</p>
-                            <label class="flex items-start gap-3 cursor-pointer">
+                            <label
+                                class="flex items-start gap-3"
+                                :class="canUseGroupsPlayoff ? 'cursor-pointer' : 'cursor-help'"
+                                :title="groupsPlayoffDisabledReason"
+                            >
                                 <input type="radio" name="tournamentFormat" value="groups_playoff"
                                        class="mt-1"
                                        x-model="tournamentFormat"
                                        @change="onFormatChange()"
-                                       @disabled($groupCountOptions === [])>
+                                       x-bind:disabled="!canUseGroupsPlayoff">
                                 <span>
                                     <span class="font-medium text-text-primary">Grupy + drabinka</span>
-                                    <span class="block text-text-secondary/70 text-xs mt-0.5">
+                                    <span class="block text-text-secondary/70 text-xs mt-0.5" x-show="canUseGroupsPlayoff">
                                         Faza grupowa, potem playoff
-                                        @if($groupCountOptions === [])
-                                            — niedostępne przy {{ $participantCount }} graczach (min. {{ $minPlayersPerGroup * 2 }} do grup)
-                                        @endif
                                     </span>
+                                    <span
+                                        class="block text-accent/90 text-xs mt-0.5"
+                                        x-show="!canUseGroupsPlayoff"
+                                        x-cloak
+                                        x-text="groupsPlayoffDisabledReason"
+                                    ></span>
                                 </span>
                             </label>
                             <label class="flex items-start gap-3 cursor-pointer">
@@ -762,18 +788,21 @@
                 matchFormats: {},
                 minPlayers: config.minPlayers ?? 4,
                 minPlayersPerGroup: config.minPlayersPerGroup ?? 3,
+                minGroups: 2,
                 participantCount: config.participantCount ?? 0,
                 init() {
-                    if (this.tournamentFormat === 'groups_playoff' && this.groupCountOptions.length === 0) {
-                        this.tournamentFormat = 'single_elimination';
-                    }
+                    this.refreshGroupAvailability();
                     window.addEventListener('tournament-participant-count', (e) => {
                         const next = Number(e.detail?.participantCount);
                         if (!Number.isNaN(next)) {
                             this.participantCount = next;
                             this.refreshSeBracket();
+                            this.refreshGroupAvailability();
+                            this.syncMatchFormats();
                         }
                     });
+                    // Po zamontowaniu <select> Alpine potrafi nadpisać model pierwszą opcją (101/1/1).
+                    this.$nextTick(() => this.syncMatchFormats({ preserveUserEdits: false }));
                 },
                 refreshSeBracket() {
                     let power = 1;
@@ -782,6 +811,43 @@
                     }
                     this.seBracketSize = Math.max(4, power);
                     this.seByeCount = Math.max(0, this.seBracketSize - this.participantCount);
+                },
+                allowedGroupCountsForPlayers(playerCount) {
+                    const minPer = this.minPlayersPerGroup;
+                    const minGroups = this.minGroups;
+                    const maxGroups = Math.floor(Math.max(0, playerCount) / minPer);
+                    if (maxGroups < minGroups) {
+                        return [];
+                    }
+                    const options = [];
+                    for (let groups = minGroups; groups <= maxGroups; groups++) {
+                        if (groups <= playerCount && Math.floor(playerCount / groups) >= minPer) {
+                            options.push(groups);
+                        }
+                    }
+                    return options;
+                },
+                refreshGroupAvailability() {
+                    this.groupCountOptions = this.allowedGroupCountsForPlayers(this.participantCount);
+                    if (this.tournamentFormat === 'groups_playoff' && !this.canUseGroupsPlayoff) {
+                        this.tournamentFormat = 'single_elimination';
+                    }
+                    this.syncGroupsCount();
+                    this.syncBracketSelect();
+                },
+                get minPlayersForGroups() {
+                    return this.minPlayersPerGroup * this.minGroups;
+                },
+                get canUseGroupsPlayoff() {
+                    return this.groupCountOptions.length > 0;
+                },
+                get groupsPlayoffDisabledReason() {
+                    if (this.canUseGroupsPlayoff) {
+                        return '';
+                    }
+                    return `Za mało zawodników do utworzenia grup — potrzeba min. ${this.minPlayersForGroups} graczy `
+                        + `(${this.minGroups} grupy po co najmniej ${this.minPlayersPerGroup}). `
+                        + `Obecnie: ${this.participantCount}.`;
                 },
                 get bracketOptions() {
                     const opts = this.bracketOptionsByGroupCount[this.groupsCount]
@@ -809,7 +875,7 @@
                         ?? this.matchFormatStagesByBracket[String(this.playoffBracketSize)]
                         ?? [];
                 },
-                syncMatchFormats() {
+                syncMatchFormats({ preserveUserEdits = true } = {}) {
                     const stages = this.activeFormatStages;
                     const next = {};
                     for (const stage of stages) {
@@ -817,7 +883,7 @@
                             ...this.defaultMatchFormat,
                             ...(this.defaultMatchFormatsByStage[stage.value] ?? {}),
                             ...(this.oldMatchFormats[stage.value] ?? {}),
-                            ...(this.matchFormats[stage.value] ?? {}),
+                            ...(preserveUserEdits ? (this.matchFormats[stage.value] ?? {}) : {}),
                         };
                     }
                     this.matchFormats = next;
@@ -846,7 +912,7 @@
                     sel.value = String(this.playoffBracketSize);
                 },
                 onFormatChange() {
-                    this.syncMatchFormats();
+                    this.syncMatchFormats({ preserveUserEdits: false });
                 },
                 onGroupsChange() {
                     this.syncBracketSelect();

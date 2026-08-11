@@ -6,6 +6,7 @@ use App\Enums\TournamentInvitationStatus;
 use App\Enums\TournamentJoinRequestStatus;
 use App\Enums\TournamentStatus;
 use App\Events\TournamentJoinRequestsUpdated;
+use App\Events\TournamentStartRosterUpdated;
 use App\Models\League\League;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
@@ -208,7 +209,9 @@ class TournamentJoinRequestTest extends TestCase
             ->assertOk()
             ->assertJsonPath('tournamentId', $this->tournament->id)
             ->assertJsonCount(1, 'requests')
-            ->assertJsonPath('requests.0.playerName', 'Player One');
+            ->assertJsonPath('requests.0.playerName', 'Player One')
+            ->assertJsonPath('participantCount', 0)
+            ->assertJsonPath('invitationPipeline', []);
     }
 
     public function test_invitation_search_and_send_via_json(): void
@@ -232,5 +235,46 @@ class TournamentJoinRequestTest extends TestCase
             'user_id' => $this->player->id,
             'status' => TournamentInvitationStatus::PENDING->value,
         ]);
+    }
+
+    public function test_accepting_invitation_broadcasts_start_roster(): void
+    {
+        Event::fake([TournamentStartRosterUpdated::class]);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('tournaments.invitations.send', $this->tournament->id), [
+                'user_id' => $this->player->id,
+            ])
+            ->assertOk();
+
+        $invitation = TournamentInvitation::where('tournament_id', $this->tournament->id)
+            ->where('user_id', $this->player->id)
+            ->firstOrFail();
+
+        Event::fake([TournamentStartRosterUpdated::class]);
+
+        Sanctum::actingAs($this->player);
+        $this->postJson("/api/tournaments/invitations/{$invitation->id}/accept")
+            ->assertOk();
+
+        Event::assertDispatched(TournamentStartRosterUpdated::class, function (TournamentStartRosterUpdated $event) {
+            return $event->tournamentId === $this->tournament->id
+                && ($event->payload['participantCount'] ?? 0) === 1
+                && ($event->payload['participants'][0]['name'] ?? null) === 'Player One'
+                && count($event->payload['invitationPipeline'] ?? ['x']) === 0;
+        });
+    }
+
+    public function test_create_guest_via_json_returns_participants(): void
+    {
+        $this->actingAs($this->admin)
+            ->postJson(route('tournaments.participants.guests.create', $this->tournament->id), [
+                'name' => 'Guest Ace',
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Gość dodany do turnieju')
+            ->assertJsonPath('participantCount', 1)
+            ->assertJsonPath('participants.0.name', 'Guest Ace')
+            ->assertJsonPath('participants.0.kind', 'guest');
     }
 }

@@ -163,7 +163,7 @@
     .nav-dropdown-panel {
         @apply flex flex-col gap-0.5 w-full
             md:rounded-lg md:border md:border-border md:bg-bg-deep/95 md:backdrop-blur-md
-            md:py-1.5 md:shadow-lg;
+            md:py-1.5 md:shadow-lg md:origin-top;
     }
 
     .nav-dropdown-item {

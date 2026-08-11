@@ -3,6 +3,7 @@
 namespace App\Services\Tournament;
 
 use App\Enums\TournamentStatus;
+use App\Events\TournamentStartRosterUpdated;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\Tournament\TournamentGuestParticipantRepository;
 use App\Repositories\Tournament\TournamentInvitationRepository;
@@ -31,6 +32,7 @@ class TournamentGuestParticipantService
         }
 
         $this->repository->add($tournamentId, $playerId);
+        $this->broadcastStartRoster($tournamentId);
     }
 
     /**
@@ -50,12 +52,14 @@ class TournamentGuestParticipantService
         $player = $this->playerRepository->createGuestPlayer($trimmed);
 
         $this->repository->add($tournamentId, $player->id);
+        $this->broadcastStartRoster($tournamentId);
     }
 
     public function remove(int $tournamentId, int $playerId): void
     {
         $this->assertTournamentOpen($tournamentId);
         $this->repository->remove($tournamentId, $playerId);
+        $this->broadcastStartRoster($tournamentId);
     }
 
     private function assertTournamentOpen(int $tournamentId): void
@@ -80,5 +84,12 @@ class TournamentGuestParticipantService
                 throw new \RuntimeException('Uczestnik o tej nazwie jest już w turnieju.');
             }
         }
+    }
+
+    private function broadcastStartRoster(int $tournamentId): void
+    {
+        $snapshot = app(TournamentStartPageService::class)->rosterLiveSnapshot($tournamentId);
+
+        broadcast(new TournamentStartRosterUpdated($tournamentId, $snapshot));
     }
 }

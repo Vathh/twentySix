@@ -49,6 +49,16 @@ class TournamentStartRulesTest extends TestCase
         $this->assertSame([], TournamentStartRules::allowedGroupCountsForPlayers(4));
     }
 
+    public function test_allowed_group_counts_for_five_players_is_empty(): void
+    {
+        $this->assertSame([], TournamentStartRules::allowedGroupCountsForPlayers(5));
+    }
+
+    public function test_allowed_group_counts_for_six_players_allows_two_groups(): void
+    {
+        $this->assertSame([2], TournamentStartRules::allowedGroupCountsForPlayers(6));
+    }
+
     public function test_max_players_in_largest_group(): void
     {
         $this->assertSame(4, TournamentStartRules::maxPlayersInLargestGroup(8, 2));
