@@ -142,6 +142,8 @@ class CompetitionShowSerializer
         $season = $viewModel->season();
         $league = $season?->league;
 
+        $showStageInResults = $tournament->format !== \App\Enums\TournamentFormat::DoubleElimination;
+
         return [
             'tournament' => [
                 'id' => $tournament->id,
@@ -153,6 +155,8 @@ class CompetitionShowSerializer
                 'isStarted' => $tournament->isStarted(),
                 'hasPlayoff' => $tournament->hasPlayoffBracket(),
                 'tracksLeaguePoints' => $tournament->tracksLeaguePoints(),
+                'format' => $tournament->format->value,
+                'showStageInResults' => $showStageInResults,
             ],
             'league' => $league
                 ? ['id' => $league->id, 'name' => $league->name]
@@ -161,7 +165,7 @@ class CompetitionShowSerializer
                 ? ['id' => $season->id, 'name' => $season->name]
                 : null,
             'availableTabs' => $this->availableTabs($tournament),
-            'results' => $this->mapResults($viewModel->results()),
+            'results' => $this->mapResults($viewModel->results(), $showStageInResults),
             'groups' => $this->mapGroups($viewModel),
             'playoff' => $this->mapPlayoff($viewModel->playoffGames()),
             'achievements' => $this->mapAchievements($viewModel->achievements()),
@@ -189,9 +193,9 @@ class CompetitionShowSerializer
      * @param  Collection<int, array{player: mixed, place: mixed, points: mixed, stage: mixed}>  $results
      * @return list<array<string, mixed>>
      */
-    private function mapResults(Collection $results): array
+    private function mapResults(Collection $results, bool $showStageInResults = true): array
     {
-        return $results->map(function (array $result) {
+        return $results->map(function (array $result) use ($showStageInResults) {
             $player = $result['player'];
             $stage = $result['stage'] ?? null;
 
@@ -201,7 +205,9 @@ class CompetitionShowSerializer
                 'playerName' => $player?->name ?? '—',
                 'userId' => $player?->userId,
                 'points' => $result['points'] ?? null,
-                'stageLabel' => $stage instanceof GameStage ? $stage->label() : null,
+                'stageLabel' => ($showStageInResults && $stage instanceof GameStage)
+                    ? $stage->label()
+                    : null,
             ];
         })->values()->all();
     }

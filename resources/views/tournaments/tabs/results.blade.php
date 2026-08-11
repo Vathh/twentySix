@@ -8,11 +8,18 @@
             @if($showPointsColumn ?? false)
                 <th class="px-2 py-2 text-center">Punkty</th>
             @endif
-            <th class="px-2 py-2 text-center">Etap</th>
+            @if($showStageColumn ?? true)
+                <th class="px-2 py-2 text-center">Etap</th>
+            @endif
         </tr>
         </thead>
 
         <tbody class="divide-y divide-border">
+        @php
+            $colCount = 2
+                + (($showPointsColumn ?? false) ? 1 : 0)
+                + (($showStageColumn ?? true) ? 1 : 0);
+        @endphp
         @forelse($results as $index => $result)
             <tr class="hover:bg-bg-elevated-hover transition">
                 <td class="px-2 py-2 text-center tabular-nums">
@@ -32,11 +39,13 @@
                 @if($showPointsColumn ?? false)
                     <td class="px-2 py-2 text-center tabular-nums">{{ $result['points'] ?? '—' }}</td>
                 @endif
-                <td class="px-2 py-2 text-center flex-wrap">{{ $result['stage']?->label() ?? '—' }}</td>
+                @if($showStageColumn ?? true)
+                    <td class="px-2 py-2 text-center flex-wrap">{{ $result['stage']?->label() ?? '—' }}</td>
+                @endif
             </tr>
         @empty
             <tr>
-                <td colspan="{{ ($showPointsColumn ?? false) ? 4 : 3 }}"
+                <td colspan="{{ $colCount }}"
                     class="px-3 py-4 text-center text-text-muted">
                     Brak wyników — pojawią się po odpadnięciu zawodników z turnieju.
                 </td>

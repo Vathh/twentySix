@@ -199,6 +199,8 @@ class CompetitionShowApiTest extends TestCase
                     'isStarted',
                     'hasPlayoff',
                     'tracksLeaguePoints',
+                    'format',
+                    'showStageInResults',
                 ],
                 'league',
                 'season',
@@ -208,6 +210,70 @@ class CompetitionShowApiTest extends TestCase
                 'playoff',
                 'achievements',
             ]);
+    }
+
+    public function test_tournament_show_de_hides_stage_in_results(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $tournament = Tournament::create([
+            'name' => 'DE Cup',
+            'season_id' => null,
+            'date' => '2024-06-01',
+            'status' => \App\Enums\TournamentStatus::PLAYOFF,
+            'format' => \App\Enums\TournamentFormat::DoubleElimination,
+            'playoff_bracket_size' => 8,
+            'tablets_count' => 1,
+        ]);
+
+        $player = Player::create(['name' => 'Eliminated', 'user_id' => null]);
+        TournamentResult::create([
+            'season_id' => null,
+            'tournament_id' => $tournament->id,
+            'player_id' => $player->id,
+            'points' => null,
+            'place' => 11,
+            'elimination_stage' => \App\Enums\GameStage::SEMI->value,
+        ]);
+
+        $this->getJson('/api/tournaments/'.$tournament->id)
+            ->assertOk()
+            ->assertJsonPath('tournament.format', 'double_elimination')
+            ->assertJsonPath('tournament.showStageInResults', false)
+            ->assertJsonPath('results.0.place', 11)
+            ->assertJsonPath('results.0.playerName', 'Eliminated')
+            ->assertJsonPath('results.0.stageLabel', null);
+    }
+
+    public function test_tournament_show_se_keeps_stage_in_results(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $tournament = Tournament::create([
+            'name' => 'SE Cup',
+            'season_id' => null,
+            'date' => '2024-06-01',
+            'status' => \App\Enums\TournamentStatus::PLAYOFF,
+            'format' => \App\Enums\TournamentFormat::SingleElimination,
+            'playoff_bracket_size' => 8,
+            'tablets_count' => 1,
+        ]);
+
+        $player = Player::create(['name' => 'Quarter out', 'user_id' => null]);
+        TournamentResult::create([
+            'season_id' => null,
+            'tournament_id' => $tournament->id,
+            'player_id' => $player->id,
+            'points' => null,
+            'place' => 5,
+            'elimination_stage' => \App\Enums\GameStage::QUARTER->value,
+        ]);
+
+        $this->getJson('/api/tournaments/'.$tournament->id)
+            ->assertOk()
+            ->assertJsonPath('tournament.format', 'single_elimination')
+            ->assertJsonPath('tournament.showStageInResults', true)
+            ->assertJsonPath('results.0.stageLabel', 'Ćwierćfinał');
     }
 
     public function test_tournament_show_404(): void

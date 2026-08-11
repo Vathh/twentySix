@@ -3,7 +3,8 @@
 namespace App\Support\Tournament;
 
 /**
- * Losowe pary R1 z bye (uzupełnienie do potęgi 2).
+ * Losowe pary R1: gracze i bye w jednej puli (bez rozkładania bye).
+ * Dwa bye w jednej parze są dozwolone — w następnej rundzie zostaje wolny los.
  */
 final class PlayoffByePairing
 {
@@ -25,45 +26,30 @@ final class PlayoffByePairing
             throw new \InvalidArgumentException("Rozmiar drabinki musi być potęgą 2 (otrzymano {$bracketSize}).");
         }
 
-        $players = $playerIds;
-        shuffle($players);
-
         $byeCount = $bracketSize - $playerCount;
-        $byePositions = self::byePositions($bracketSize, $byeCount);
+        $pool = array_merge(array_values($playerIds), array_fill(0, $byeCount, null));
+        shuffle($pool);
 
-        $slots = array_fill(0, $bracketSize, null);
-        $queue = $players;
-
-        for ($i = 0; $i < $bracketSize; $i++) {
-            if (isset($byePositions[$i])) {
-                continue;
-            }
-            $slots[$i] = array_shift($queue);
-        }
-
-        $pairs = [];
-        for ($i = 0; $i < $bracketSize; $i += 2) {
-            $pairs[] = [$slots[$i], $slots[$i + 1]];
-        }
-
-        return $pairs;
+        return self::chunkPairs($pool);
     }
 
     /**
-     * @return array<int, true> pozycje slotów z bye
+     * @param  list<int|null>  $orderedPool
+     * @return list<array{0: int|null, 1: int|null}>
      */
-    private static function byePositions(int $bracketSize, int $byeCount): array
+    public static function chunkPairs(array $orderedPool): array
     {
-        $positions = [];
-
-        for ($i = 0; $i < $bracketSize && count($positions) < $byeCount; $i += 2) {
-            $positions[$i] = true;
-        }
-        for ($i = 1; $i < $bracketSize && count($positions) < $byeCount; $i += 2) {
-            $positions[$i] = true;
+        $count = count($orderedPool);
+        if ($count === 0 || $count % 2 !== 0) {
+            throw new \InvalidArgumentException('Pula slotów musi mieć parzystą długość.');
         }
 
-        return $positions;
+        $pairs = [];
+        for ($i = 0; $i < $count; $i += 2) {
+            $pairs[] = [$orderedPool[$i], $orderedPool[$i + 1]];
+        }
+
+        return $pairs;
     }
 
     public static function nextPowerOfTwo(int $n): int

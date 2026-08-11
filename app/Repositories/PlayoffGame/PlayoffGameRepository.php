@@ -51,6 +51,27 @@ class PlayoffGameRepository
             ]);
     }
 
+    /**
+     * Bye vs bye — zamyka mecz bez zwycięzcy (w następnej rundzie zostaje wolny los).
+     */
+    public function finishEmptyByeMatch(int $gameId): void
+    {
+        DB::table('playoff_games')
+            ->where('id', $gameId)
+            ->where('status', GameStatus::SCHEDULED)
+            ->whereNull('player1_id')
+            ->whereNull('player2_id')
+            ->update([
+                'player1_score' => 0,
+                'player2_score' => 0,
+                'player1_legs_in_set' => 0,
+                'player2_legs_in_set' => 0,
+                'current_set_number' => 1,
+                'winner_id' => null,
+                'status' => GameStatus::FINISHED,
+            ]);
+    }
+
     public function tryLockScheduled(int $gameId): bool
     {
         return DB::table('playoff_games')
@@ -190,6 +211,22 @@ class PlayoffGameRepository
                     $inner->whereNull('player1_id')->whereNotNull('player2_id');
                 });
             })
+            ->orderBy('id')
+            ->get()
+            ->map(fn (PlayoffGame $game) => PlayoffGameDomain::fromEloquent($game));
+    }
+
+    /**
+     * @return Collection<int, PlayoffGameDomain>
+     */
+    public function getScheduledDoubleByes(int $tournamentId): Collection
+    {
+        return PlayoffGame::query()
+            ->where('tournament_id', $tournamentId)
+            ->where('status', GameStatus::SCHEDULED)
+            ->whereNull('player1_id')
+            ->whereNull('player2_id')
+            ->orderBy('id')
             ->get()
             ->map(fn (PlayoffGame $game) => PlayoffGameDomain::fromEloquent($game));
     }

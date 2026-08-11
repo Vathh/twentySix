@@ -8,7 +8,6 @@ use App\DTO\GameResultDTO;
 use App\Enums\GameType;
 use App\Enums\GrandFinalMode;
 use App\Enums\PlayerSlot;
-use App\Enums\TournamentFormat;
 use App\Factories\DoubleEliminationBracketFactory;
 use App\Factories\PlayoffBracketFactory;
 use App\Repositories\GroupStanding\GroupStandingRepository;
@@ -22,6 +21,8 @@ use App\Models\Tournament\Tournament;
 
 class PlayoffService
 {
+    private bool $resolvingByes = false;
+
     public function __construct(
         private PlayoffBracketFactory $bracketFactory,
         private DoubleEliminationBracketFactory $doubleElimFactory,
@@ -96,29 +97,58 @@ class PlayoffService
         $this->resolveScheduledByes($tournamentId);
     }
 
+    /**
+     * Zamyka mecze bye (gracz vs wolny los oraz bye vs bye) i kaskaduje awanse.
+     * Wołane po generacji drabinki oraz po każdym wpisaniu gracza w slot.
+     */
     public function resolveScheduledByes(int $tournamentId): void
     {
-        $byes = $this->gameRepository->getScheduledByes($tournamentId);
+        if ($this->resolvingByes) {
+            return;
+        }
 
-        foreach ($byes as $game) {
-            $winnerId = $game->byeWinnerId();
-            if ($winnerId === null || $game->id === null) {
-                continue;
+        $this->resolvingByes = true;
+
+        try {
+            for ($guard = 0; $guard < 128; $guard++) {
+                $progress = false;
+
+                foreach ($this->gameRepository->getScheduledDoubleByes($tournamentId) as $game) {
+                    if ($game->id === null) {
+                        continue;
+                    }
+                    $this->gameRepository->finishEmptyByeMatch($game->id);
+                    $progress = true;
+                }
+
+                foreach ($this->gameRepository->getScheduledByes($tournamentId) as $game) {
+                    $winnerId = $game->byeWinnerId();
+                    if ($winnerId === null || $game->id === null) {
+                        continue;
+                    }
+
+                    $dto = new GameResultDTO(
+                        gameId: $game->id,
+                        type: GameType::PLAYOFF,
+                        player1Id: $game->player1Id ?? 0,
+                        player2Id: $game->player2Id ?? 0,
+                        player1Score: $game->player1Id !== null ? 1 : 0,
+                        player2Score: $game->player2Id !== null ? 1 : 0,
+                        winnerId: $winnerId,
+                        tournamentId: $tournamentId,
+                    );
+
+                    $this->gameRepository->finish($dto);
+                    $this->propagateResult($dto, $game);
+                    $progress = true;
+                }
+
+                if (! $progress) {
+                    break;
+                }
             }
-
-            $dto = new GameResultDTO(
-                gameId: $game->id,
-                type: GameType::PLAYOFF,
-                player1Id: $game->player1Id ?? 0,
-                player2Id: $game->player2Id ?? 0,
-                player1Score: $game->player1Id !== null ? 1 : 0,
-                player2Score: $game->player2Id !== null ? 1 : 0,
-                winnerId: $winnerId,
-                tournamentId: $tournamentId,
-            );
-
-            $this->gameRepository->finish($dto);
-            $this->applyWinnerAdvancement($dto, $game);
+        } finally {
+            $this->resolvingByes = false;
         }
     }
 
@@ -129,6 +159,12 @@ class PlayoffService
     }
 
     public function applyWinnerAdvancement(GameResultDTO $dto, PlayoffGameDomain $gameToUpdate): void
+    {
+        $this->propagateResult($dto, $gameToUpdate);
+        $this->resolveScheduledByes($gameToUpdate->tournamentId);
+    }
+
+    private function propagateResult(GameResultDTO $dto, PlayoffGameDomain $gameToUpdate): void
     {
         if ($gameToUpdate->slot === 'GF1') {
             $this->advanceGrandFinal($dto, $gameToUpdate);

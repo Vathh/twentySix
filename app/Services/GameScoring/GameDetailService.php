@@ -16,6 +16,7 @@ use App\Repositories\QuickGame\QuickGameRepository;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameLegsSetGrouper;
 use App\Support\GameScoring\GameStatisticsCalculator;
+use App\Support\Tournament\PlayoffRoundLabel;
 use DomainException;
 use Illuminate\Support\Collection;
 
@@ -78,7 +79,7 @@ class GameDetailService
         return $this->assemble(
             $context,
             $game,
-            label: 'Turniejowy — '.$game->roundLabel(),
+            label: 'Turniejowy — '.PlayoffRoundLabel::label((string) $game->round),
             subtitle: $game->tournament?->name,
             backUrl: $game->tournament
                 ? route('tournaments.show', ['tournament' => $game->tournament_id, 'tab' => 'playoff'])
