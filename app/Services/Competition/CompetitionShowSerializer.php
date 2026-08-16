@@ -4,6 +4,7 @@ namespace App\Services\Competition;
 
 use App\Domain\Game\GroupGameDomain;
 use App\Domain\Game\PlayoffGameDomain;
+use App\Domain\Game\WinnerDestination;
 use App\Domain\GroupStandingDomain;
 use App\Domain\LeagueDomain;
 use App\Domain\SeasonDomain;
@@ -280,23 +281,77 @@ class CompetitionShowSerializer
             GameStage::FINAL->value,
         ];
 
+        $bySlot = [];
+        foreach ($playoffGames as $games) {
+            foreach ($games as $game) {
+                if ($game instanceof PlayoffGameDomain && $game->slot !== '') {
+                    $bySlot[$game->slot] = $game;
+                }
+            }
+        }
+
         $rounds = [];
         foreach ($order as $roundValue) {
             if (! isset($playoffGames[$roundValue]) || $playoffGames[$roundValue] === []) {
                 continue;
             }
             $stage = GameStage::from($roundValue);
+            $sorted = collect($playoffGames[$roundValue])
+                ->sortBy(fn (PlayoffGameDomain $game) => $this->slotSortKey($game->slot))
+                ->values()
+                ->all();
             $rounds[] = [
                 'round' => $roundValue,
                 'roundLabel' => $stage->label(),
                 'games' => array_map(
-                    fn (PlayoffGameDomain $game) => $this->mapGame($game),
-                    $playoffGames[$roundValue],
+                    fn (PlayoffGameDomain $game) => $this->mapPlayoffGame($game, $bySlot),
+                    $sorted,
                 ),
             ];
         }
 
         return $rounds;
+    }
+
+    /**
+     * @param  array<string, PlayoffGameDomain>  $bySlot
+     * @return array<string, mixed>
+     */
+    private function mapPlayoffGame(PlayoffGameDomain $game, array $bySlot): array
+    {
+        $row = $this->mapGame($game);
+        $row['slot'] = $game->slot;
+        $row['round'] = $game->round;
+
+        $nextSlot = $this->nextSlotFromDestination($game->winnerDestinationSlot);
+        $next = $nextSlot !== null ? ($bySlot[$nextSlot] ?? null) : null;
+        $row['nextSlot'] = $nextSlot;
+        $row['nextGameId'] = $next?->id;
+        $row['nextRound'] = $next?->round;
+
+        return $row;
+    }
+
+    private function nextSlotFromDestination(?string $destination): ?string
+    {
+        if ($destination === null || $destination === '') {
+            return null;
+        }
+
+        try {
+            return WinnerDestination::parse($destination)->playoffSlot;
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
+    }
+
+    private function slotSortKey(string $slot): int
+    {
+        if (preg_match('/_(\d+)$/', $slot, $matches) === 1) {
+            return (int) $matches[1];
+        }
+
+        return 0;
     }
 
     /**
@@ -350,6 +405,7 @@ class CompetitionShowSerializer
             ],
             'score1' => $game->player1Score,
             'score2' => $game->player2Score,
+            'winnerId' => $game->winner?->id,
             'status' => $game->status->value,
         ];
     }
