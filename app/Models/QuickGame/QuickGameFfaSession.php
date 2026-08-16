@@ -32,6 +32,7 @@ class QuickGameFfaSession extends Model
         'started_at',
         'finished_at',
         'cricket_state',
+        'bob27_state',
     ];
 
     protected $casts = [
@@ -39,6 +40,7 @@ class QuickGameFfaSession extends Model
         'legs_won_in_set' => 'array',
         'sets_won' => 'array',
         'cricket_state' => 'array',
+        'bob27_state' => 'array',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];

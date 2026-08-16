@@ -107,7 +107,11 @@ class QuickGameFfaLiveService
     {
         $format = MatchFormat::fromRecord($session);
         $gameType = strtolower((string) $session->game_type);
-        $prefix = $gameType === 'cricket' ? 'Krykiet' : ((int) $session->starting_score).' · FFA';
+        $prefix = match ($gameType) {
+            'cricket' => 'Krykiet',
+            'bob27' => "Bob's 27",
+            default => ((int) $session->starting_score).' · FFA',
+        };
 
         if ($format->isSingleSet()) {
             return $prefix.' · do '.$format->legsToWinSet.' legów';

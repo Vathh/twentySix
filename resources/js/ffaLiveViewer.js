@@ -162,6 +162,16 @@ export function registerFfaLiveViewer(Alpine) {
             return String(this.state?.session?.gameType ?? '').toLowerCase() === 'cricket';
         },
 
+        get isBob27() {
+            return String(this.state?.session?.gameType ?? '').toLowerCase() === 'bob27';
+        },
+
+        get currentTargetLabel() {
+            return this.state?.session?.currentTargetLabel
+                ?? this.state?.turn?.currentTargetLabel
+                ?? '—';
+        },
+
         get players() {
             return this.state?.players ?? [];
         },

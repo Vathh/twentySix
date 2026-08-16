@@ -35,14 +35,15 @@
 | **Awatary graczy** | Zaplanowane (jeszcze bez planu) — upload + profil/listy; limity + fallback inicjałów; później crop/CDN |
 | **Live drabinka / playoff (web WS)** | Później — zakładka Playoff dziś SSR (F5); live WS jest dla macierzy grup + pojedynczego meczu. Wzorzec: `TournamentGroupMatrixLiveService` |
 | **Prowadzenie ligi typu Apagon** | Później — zakres UX do ustalenia przy planie |
-| **Tryby gry** (Bob 27, Catch 40, Around the Clock, …) | Później — poza X01 / Cricket |
+| **Tryby gry** (Catch 40, Around the Clock, …) | Później — Bob's 27 jest w treningu + quick |
 | **Autoryzacja scoringu / anty-nadużycia** | Daleka przyszłość — kto może `recordVisit` / `closeLeg`; audyt. Nieblocker turnieju klubowego |
+| **Aktualizacja APK w apce (self-update)** | Później — przy starcie komunikat „nowa wersja” → pobranie APK → instalator Androida (systemowy dialog Zainstaluj). Nie OTA (`expo-updates` — tylko JS). Na czas testów: endpoint `latestVersion` + URL APK + to samo podpisywanie keystore. Po wejściu do Play: In-App Updates. iOS: tylko TestFlight / App Store. **Nie implementować teraz.** |
 
 ---
 
 ## Niedawno domknięte (skrót)
 
-Lobby prune TTL · sędziowanie web (kod tabletu) · SE/DE · QR zgłoszenia · Cricket (trening + quick) · panel platformy · outbox scoringu · push zaproszeń · format gry X01 + presety ligi · Arena Dark · przewodnik (tekst; brak PNG).
+Lobby prune TTL · sędziowanie web (kod tabletu) · SE/DE · QR zgłoszenia · Cricket (trening + quick) · **Bob's 27 (trening + quick)** · panel platformy · outbox scoringu · push zaproszeń · format gry X01 + presety ligi · Arena Dark · przewodnik (tekst; brak PNG).
 
 Szczegóły w kodzie / [`../IMPLEMENTED_FEATURES.md`](../IMPLEMENTED_FEATURES.md). Designy SE/DE i FFA: [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md), [`design_quick_game_ffa_sync_4c2.md`](design_quick_game_ffa_sync_4c2.md).
 
@@ -53,6 +54,7 @@ Szczegóły w kodzie / [`../IMPLEMENTED_FEATURES.md`](../IMPLEMENTED_FEATURES.md
 - Deploy VPS, `migrate`, EAS — po stronie właściciela (chyba że poprosi)
 - Komunikator, premium, E2E mobile (Maestro/Detox)
 - Krykiet w turnieju — poza zakresem (jest trening + quick)
+- Bob's 27 w turnieju — poza zakresem (jest trening + quick)
 
 Reguły: `.cursor/rules/` + [`product.md`](product.md).
 

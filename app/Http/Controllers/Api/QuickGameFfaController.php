@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\DTO\QuickGameFfa\RecordFfaVisitDTO;
+use App\Services\QuickGame\QuickGameFfaBob27ScoringService;
 use App\Services\QuickGame\QuickGameFfaCricketScoringService;
 use App\Services\QuickGame\QuickGameFfaPresenceService;
 use App\Services\QuickGame\QuickGameFfaScoringService;
@@ -16,6 +17,7 @@ class QuickGameFfaController
     public function __construct(
         private QuickGameFfaScoringService $ffaScoringService,
         private QuickGameFfaCricketScoringService $cricketScoringService,
+        private QuickGameFfaBob27ScoringService $bob27ScoringService,
         private QuickGameFfaPresenceService $presenceService,
         private QuickGameLobbyService $lobbyService,
     ) {
@@ -146,6 +148,44 @@ class QuickGameFfaController
 
             return response()->json(
                 $this->cricketScoringService->undoLastDart((int) $lobbyId, $request->user()->id)
+            );
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function recordBob27Dart(Request $request, string $lobbyId): JsonResponse
+    {
+        $validated = $request->validate([
+            'playerId' => 'required|integer|exists:players,id',
+            'kind' => 'required|string|in:hit,miss',
+            'clientDartId' => 'required|uuid',
+        ]);
+
+        try {
+            $this->assertLobbyParticipant((int) $lobbyId, $request->user()->id);
+
+            return response()->json(
+                $this->bob27ScoringService->recordDart(
+                    (int) $lobbyId,
+                    $request->user()->id,
+                    (int) $validated['playerId'],
+                    $validated['kind'],
+                    $validated['clientDartId'],
+                )
+            );
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    public function undoBob27Dart(Request $request, string $lobbyId): JsonResponse
+    {
+        try {
+            $this->assertLobbyParticipant((int) $lobbyId, $request->user()->id);
+
+            return response()->json(
+                $this->bob27ScoringService->undoLastDart((int) $lobbyId, $request->user()->id)
             );
         } catch (DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 422);

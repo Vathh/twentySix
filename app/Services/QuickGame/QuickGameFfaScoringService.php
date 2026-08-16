@@ -17,6 +17,8 @@ use App\Repositories\QuickGame\QuickGameLobbyRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 use App\Support\QuickGameFfa\QuickGameFfaStateBuilder;
 use App\Domain\GameScoring\MatchFormat;
+use App\Domain\QuickGame\Bob27Rules;
+use App\Support\QuickGameFfa\CricketRules;
 use App\Domain\GameScoring\MatchFormatScoring;
 use App\Domain\GameScoring\VisitRecorder;
 use App\Support\QuickGameLobbyPlayerOrder;
@@ -34,6 +36,7 @@ class QuickGameFfaScoringService
         private QuickGameRepository $quickGameRepository,
         private QuickGameLobbyRepository $lobbyRepository,
         private QuickGameFfaCricketScoringService $cricketScoringService,
+        private QuickGameFfaBob27ScoringService $bob27ScoringService,
     ) {
     }
 
@@ -69,14 +72,18 @@ class QuickGameFfaScoringService
         $matchFormat->validate();
         $emptyScores = array_fill_keys($playerIds, 0);
 
-        $isCricket = strtolower($matchFormat->gameType) === 'cricket';
-        $setsToWin = $isCricket ? 1 : $matchFormat->setsToWinMatch;
+        $isCricket = $matchFormat->isCricket();
+        $isBob27 = $matchFormat->isBob27();
+        $setsToWin = ($isCricket || $isBob27) ? 1 : $matchFormat->setsToWinMatch;
+        $gameType = $isCricket
+            ? MatchFormat::GAME_TYPE_CRICKET
+            : ($isBob27 ? MatchFormat::GAME_TYPE_BOB27 : $matchFormat->gameType);
 
         $session = $this->sessionRepository->create([
             'lobby_id' => $lobby->id,
             'legs_to_win_set' => $matchFormat->legsToWinSet,
             'sets_to_win_match' => $setsToWin,
-            'game_type' => $isCricket ? 'cricket' : $matchFormat->gameType,
+            'game_type' => $gameType,
             'scoring_mode' => $scoringMode,
             'starting_score' => $matchFormat->startingScore,
             'status' => \App\Models\QuickGame\QuickGameFfaSession::STATUS_IN_PROGRESS,
@@ -84,7 +91,10 @@ class QuickGameFfaScoringService
             'legs_won_in_set' => $emptyScores,
             'sets_won' => $emptyScores,
             'cricket_state' => $isCricket
-                ? \App\Support\QuickGameFfa\CricketRules::initialState($playerIds)
+                ? CricketRules::initialState($playerIds)
+                : null,
+            'bob27_state' => $isBob27
+                ? Bob27Rules::initialState($playerIds, $matchFormat->bob27Mode)
                 : null,
             'leg_opener_index' => 0,
             'current_player_index' => 0,
@@ -107,8 +117,11 @@ class QuickGameFfaScoringService
         $session = $this->sessionRepository->findOrFailForLobby($lobbyId);
         $session->loadMissing('lobby');
 
-        if (strtolower((string) $session->game_type) === 'cricket') {
+        if (strtolower((string) $session->game_type) === MatchFormat::GAME_TYPE_CRICKET) {
             return $this->cricketScoringService->getState($lobbyId, $userId);
+        }
+        if (strtolower((string) $session->game_type) === MatchFormat::GAME_TYPE_BOB27) {
+            return $this->bob27ScoringService->getState($lobbyId, $userId);
         }
 
         $this->syncStalePresence($session);
@@ -223,8 +236,12 @@ class QuickGameFfaScoringService
                 throw new DomainException('Mecz jest już zakończony.');
             }
 
-            if (strtolower((string) $session->game_type) === 'cricket') {
+            $gameType = strtolower((string) $session->game_type);
+            if ($gameType === MatchFormat::GAME_TYPE_CRICKET) {
                 throw new DomainException('Sesja cricket — użyj endpointu /ffa/cricket/darts.');
+            }
+            if ($gameType === MatchFormat::GAME_TYPE_BOB27) {
+                throw new DomainException('Sesja Bob\'s 27 — użyj endpointu /ffa/bob27/darts.');
             }
 
             $playerIds = array_map('intval', $session->player_order ?? []);
@@ -597,6 +614,20 @@ class QuickGameFfaScoringService
     private function broadcastStateForSession(\App\Models\QuickGame\QuickGameFfaSession $session, ?int $userId): array
     {
         $session->loadMissing('lobby');
+        $gameType = strtolower((string) $session->game_type);
+        if ($gameType === MatchFormat::GAME_TYPE_CRICKET) {
+            $state = $this->cricketScoringService->getState((int) $session->lobby_id, $userId);
+            broadcast(new QuickGameFfaStateUpdated($session->lobby_id, $state));
+
+            return $state;
+        }
+        if ($gameType === MatchFormat::GAME_TYPE_BOB27) {
+            $state = $this->bob27ScoringService->getState((int) $session->lobby_id, $userId);
+            broadcast(new QuickGameFfaStateUpdated($session->lobby_id, $state));
+
+            return $state;
+        }
+
         $this->syncStalePresence($session);
         $visits = $this->visitRepository->getActiveForSession($session);
         $presence = $this->buildPresencePayload($session);

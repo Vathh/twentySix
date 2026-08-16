@@ -344,14 +344,14 @@ Przeznaczenie: grupa znajomych przy tarczy (np. w klubie bez Wi‑Fi) albo szybk
 | Konto | nie wymagane | wymagane |
 | Internet | nie wymagany | wymagany (sync) |
 | Zapis wyniku | **nie** — dane znikają po zamknięciu meczu | tak (`quick_games`, statystyki) |
-| Gracze | 2–8, **imiona wpisane lokalnie** (bez kont) | 2–8, tylko **znajomi** z kont |
+| Gracze | 2–8, **imiona wpisane lokalnie** (bez kont); **Bob's 27: także solo (1)** | 2–8, tylko **znajomi** z kont |
 | Format | Konfigurowalny (host); domyślnie 501 / 1 set / 2 legi | j.w. |
 | Tryb urządzeń | **`one_device`** — jeden telefon wpisuje wszystkich | `one_device` lub `each_own` + sync |
 | Reguły FFA | ta sama rotacja openera i kolejność tur co online | j.w. |
 
 **Implementacja:** scoring wyłącznie w aplikacji (`GameScoringScreen`, lokalne reducery). Backend **nie uczestniczy** w treningu. Wyniki quick game online zapisuje `QuickGameFfaScoringService` → `quick_games`; achievementy opcjonalnie przez `POST /api/quick-game/update`.
 
-**Poza MVP treningu:** sync wielu telefonów bez konta, zapis opcjonalny, krykiet.
+**Poza MVP treningu:** sync wielu telefonów bez konta, zapis opcjonalny.
 
 ### FFA 3–8 graczy — oba tryby urządzeń (quick game online, MVP)
 
@@ -396,8 +396,9 @@ Już istniejący wybór w lobby mobilnym:
 | `startingScore` | Punkty startowe lega (X01) | **501** |
 | `legsToWinSet` | Legi do wygrania **seta** („pierwszy do N”) | **2** |
 | `setsToWinMatch` | Sety do wygrania **meczu** | **1** |
-| `gameType` | `x01` (501/301…) | `x01` |
-| `outRule` | `double_out` | `double_out` |
+| `gameType` | `x01` (501/301…), `cricket`, `bob27` | `x01` |
+| `outRule` | `double_out` (X01) | `double_out` |
+| `bob27Mode` | `hard` / `easy` (tylko Bob's 27) | `hard` |
 
 **Preset domyślny:** 501 · 1 set · 2 legi (= dotychczasowe BO3).
 
@@ -423,18 +424,29 @@ Już istniejący wybór w lobby mobilnym:
 - **`setsToWinMatch === 1`:** wynik w legach (np. 2:0 przy „do 2 legów”).
 - **`setsToWinMatch > 1`:** wynik w setach (np. 2:0); szczegóły legów w secie opcjonalnie w UI korekty.
 
-Konfigurowalny format X01 (fazy 1–4 + presety ligi): ✅. Cricket: trening + quick (bez turnieju) — ✅; szczegóły reguł w kodzie / `product.md` (sekcja Cricket).
+Konfigurowalny format X01 (fazy 1–4 + presety ligi): ✅. Cricket: trening + quick (bez turnieju) — ✅. **Bob's 27:** trening + quick (bez turnieju) — ✅; szczegóły poniżej.
 
 ### Format gry — podsumowanie kontekstów
 
 | Kontekst            | Gra                 | Format |
 | ------------------- | ------------------- | ------ |
 | Turniej (tablet)    | 501 head-to-head    | Z rekordu meczu (admin ustawił przy starcie turnieju) |
-| Quick game online   | 501 multi FFA       | Host w lobby; sync w sesji FFA |
-| Trening (mobile)    | 501 multi FFA       | Host lokalnie; **bez zapisu** w bazie |
-| Krykiet             | —                   | poza MVP |
+| Quick game online   | X01 / Cricket / Bob's 27 FFA | Host w lobby; sync w sesji FFA |
+| Trening (mobile)    | X01 / Cricket / Bob's 27 | Host lokalnie; **bez zapisu** w bazie |
+| Krykiet / Bob's 27 w turnieju | —            | poza zakresem |
 
 Ten sam silnik liczenia (leg → set → mecz) i kontrakt API (`meta.matchFormat`, `setsWon`, `legsWonInSet`).
+
+### Bob's 27 (trening + quick game)
+
+Trening dubli Boba Andersona. **Nie ma w turnieju.**
+
+- Start: **27 punktów**. Kolejność celów: **D1 → D2 → … → D20 → inner bull (50)**. Outer bull **nie** liczy się.
+- Zawsze **3 lotki** na cel, potem następny gracz / następny dubl. Trafienie dodaje wartość dubla **za każdą lotkę**; trzy pudła odejmują **jedną** wartość (D6: hit +12, trzy pudła −12).
+- **Hard** (domyślnie): wynik ≤ 0 = wypadasz z lega. Ostatni ocalały wygrywa lega; po Bull wygrywa najwyższy wynik (remis = runda od nowa).
+- **Easy:** gra trwa przy ujemnym wyniku; po Bull wygrywa najwyższy wynik.
+- Perfekcyjna gra: **1437**.
+- Quick: FFA 2–8, oba tryby urządzeń, API `/ffa/bob27/darts`. Trening: także **solo**.
 
 ### Statystyki w trakcie meczu (mobile — licznik i zakładka „Statystyki”)
 
@@ -498,6 +510,7 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 - Krykiet
 - Komunikator, odznaczenia, stream, premium
 - **Awatary graczy** — upload zdjęcia profilowego (web + mobile); przy `Player`; limity pliku, fallback inicjałów; crop / CDN później. Backlog: [`NEXT_STEPS.md`](NEXT_STEPS.md).
+- **Aktualizacja APK w apce** — komunikat przy starcie i instalacja nowej wersji (Android self-update / później Play In-App Updates; nie OTA JS). Backlog: [`NEXT_STEPS.md`](NEXT_STEPS.md). **Nie teraz.**
 - Granularne uprawnienia współadmina
 - Quick game z dowolnym zalogowanym
 - ~~**Drabinka playoff > 32**~~ — decyzja sierpień 2026: generyczny model slotów + **max 128** w ramach wariantów SE/DE ([`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md)); `groups_playoff` na tym samym silniku.

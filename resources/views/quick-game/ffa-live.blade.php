@@ -109,7 +109,7 @@
                             </div>
                             <p class="text-2xl font-bold text-text score-num shrink-0" x-text="matchScore(player)"></p>
                         </div>
-                        <template x-if="!isCricket">
+                        <template x-if="!isCricket && !isBob27">
                             <div>
                                 <p class="text-xs text-text-muted mb-1">Pozostało</p>
                                 <p class="text-4xl font-bold text-text-secondary score-num" x-text="player.remaining ?? '—'"></p>
@@ -120,6 +120,15 @@
                                 <p class="text-xs text-text-muted mb-1">Punkty (krykiet)</p>
                                 <p class="text-4xl font-bold text-text-secondary score-num"
                                    x-text="player.points ?? player.cricketPoints ?? '—'"></p>
+                            </div>
+                        </template>
+                        <template x-if="isBob27">
+                            <div>
+                                <p class="text-xs text-text-muted mb-1">Bob's 27</p>
+                                <p class="text-4xl font-bold text-text-secondary score-num"
+                                   x-text="player.score ?? '—'"></p>
+                                <p class="text-xs text-text-muted mt-1"
+                                   x-text="player.eliminated ? 'Wypadł' : currentTargetLabel"></p>
                             </div>
                         </template>
                     </div>
@@ -137,10 +146,13 @@
                 <template x-if="isCricket">
                     <p class="text-text-muted text-sm">Dla krykieta lista wizyt X01 nie jest dostępna w tym widoku.</p>
                 </template>
-                <template x-if="!isCricket && visits.length === 0">
+                <template x-if="isBob27">
+                    <p class="text-text-muted text-sm">Dla Bob's 27 lista wizyt X01 nie jest dostępna w tym widoku.</p>
+                </template>
+                <template x-if="!isCricket && !isBob27 && visits.length === 0">
                     <p class="text-text-muted text-sm">Brak wizyt w tym legu.</p>
                 </template>
-                <div class="grid sm:grid-cols-2 gap-4" x-show="!isCricket && visits.length > 0">
+                <div class="grid sm:grid-cols-2 gap-4" x-show="!isCricket && !isBob27 && visits.length > 0">
                     <template x-for="player in players" :key="'v-'+player.playerId">
                         <div>
                             <h3 class="text-sm font-semibold text-accent mb-2" x-text="player.name"></h3>

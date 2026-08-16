@@ -126,6 +126,8 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::post('/{lobbyId}/ffa/visits/undo', [QuickGameFfaController::class, 'undoVisit']);
         Route::post('/{lobbyId}/ffa/cricket/darts', [QuickGameFfaController::class, 'recordCricketDart']);
         Route::post('/{lobbyId}/ffa/cricket/darts/undo', [QuickGameFfaController::class, 'undoCricketDart']);
+        Route::post('/{lobbyId}/ffa/bob27/darts', [QuickGameFfaController::class, 'recordBob27Dart']);
+        Route::post('/{lobbyId}/ffa/bob27/darts/undo', [QuickGameFfaController::class, 'undoBob27Dart']);
     });
 
 });

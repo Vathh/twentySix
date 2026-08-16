@@ -131,7 +131,7 @@ class QuickGameLobbyRepository
         if ($matchFormat !== null) {
             $matchFormat->validate();
             DB::table('quick_game_lobbies')->where('id', $lobbyId)->update(array_merge(
-                $matchFormat->toDatabaseColumns(),
+                $this->formatDatabaseColumns($matchFormat),
                 ['updated_at' => now()],
             ));
         }
@@ -169,7 +169,7 @@ class QuickGameLobbyRepository
         ];
         if ($matchFormat !== null) {
             $matchFormat->validate();
-            $updates = array_merge($updates, $matchFormat->toDatabaseColumns());
+            $updates = array_merge($updates, $this->formatDatabaseColumns($matchFormat));
         }
         if ($scoringMode !== null && in_array($scoringMode, ['one_device', 'each_own'], true)) {
             $updates['scoring_mode'] = $scoringMode;
@@ -316,6 +316,17 @@ class QuickGameLobbyRepository
             'is_registered' => $isRegistered,
             'is_ready' => $isReady,
         ]);
+    }
+
+    /**
+     * @return array<string, int|string|null>
+     */
+    private function formatDatabaseColumns(MatchFormat $format): array
+    {
+        $cols = $format->toDatabaseColumns();
+        $cols['bob27_mode'] = $format->isBob27() ? $format->bob27Mode : null;
+
+        return $cols;
     }
 }
 

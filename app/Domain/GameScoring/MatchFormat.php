@@ -15,7 +15,15 @@ readonly class MatchFormat
 
     public const DEFAULT_GAME_TYPE = 'x01';
 
+    public const GAME_TYPE_CRICKET = 'cricket';
+
+    public const GAME_TYPE_BOB27 = 'bob27';
+
     public const DEFAULT_OUT_RULE = 'double_out';
+
+    public const BOB27_MODE_EASY = 'easy';
+
+    public const BOB27_MODE_HARD = 'hard';
 
     /** @var list<int> */
     public const ALLOWED_STARTING_SCORES = [101, 201, 301, 401, 501, 601, 701, 801, 901, 1001];
@@ -26,6 +34,7 @@ readonly class MatchFormat
         public int $setsToWinMatch = self::DEFAULT_SETS_TO_WIN_MATCH,
         public string $gameType = self::DEFAULT_GAME_TYPE,
         public string $outRule = self::DEFAULT_OUT_RULE,
+        public string $bob27Mode = self::BOB27_MODE_HARD,
     ) {
     }
 
@@ -45,6 +54,7 @@ readonly class MatchFormat
             setsToWinMatch: (int) ($data['setsToWinMatch'] ?? $data['sets_to_win_match'] ?? self::DEFAULT_SETS_TO_WIN_MATCH),
             gameType: self::normalizeGameType((string) ($data['gameType'] ?? $data['game_type'] ?? self::DEFAULT_GAME_TYPE)),
             outRule: (string) ($data['outRule'] ?? $data['out_rule'] ?? self::DEFAULT_OUT_RULE),
+            bob27Mode: self::normalizeBob27Mode((string) ($data['bob27Mode'] ?? $data['bob27_mode'] ?? self::BOB27_MODE_HARD)),
         );
     }
 
@@ -56,6 +66,11 @@ readonly class MatchFormat
             setsToWinMatch: (int) ($record->sets_to_win_match ?? self::DEFAULT_SETS_TO_WIN_MATCH),
             gameType: self::normalizeGameType((string) ($record->game_type ?? self::DEFAULT_GAME_TYPE)),
             outRule: self::DEFAULT_OUT_RULE,
+            bob27Mode: self::normalizeBob27Mode((string) (
+                (isset($record->bob27_mode) && $record->bob27_mode !== null)
+                    ? $record->bob27_mode
+                    : self::BOB27_MODE_HARD
+            )),
         );
     }
 
@@ -66,6 +81,28 @@ readonly class MatchFormat
         }
 
         return $gameType !== '' ? $gameType : self::DEFAULT_GAME_TYPE;
+    }
+
+    public static function normalizeBob27Mode(string $mode): string
+    {
+        return strtolower($mode) === self::BOB27_MODE_EASY
+            ? self::BOB27_MODE_EASY
+            : self::BOB27_MODE_HARD;
+    }
+
+    public function isX01(): bool
+    {
+        return $this->gameType === self::DEFAULT_GAME_TYPE;
+    }
+
+    public function isCricket(): bool
+    {
+        return $this->gameType === self::GAME_TYPE_CRICKET;
+    }
+
+    public function isBob27(): bool
+    {
+        return $this->gameType === self::GAME_TYPE_BOB27;
     }
 
     /**
@@ -79,6 +116,7 @@ readonly class MatchFormat
             'setsToWinMatch' => $this->setsToWinMatch,
             'gameType' => $this->gameType,
             'outRule' => $this->outRule,
+            'bob27Mode' => $this->bob27Mode,
         ];
     }
 
@@ -119,6 +157,12 @@ readonly class MatchFormat
 
     public function formatLabel(): string
     {
+        if ($this->isCricket()) {
+            return sprintf('Cricket · do %d legów', $this->legsToWinSet);
+        }
+        if ($this->isBob27()) {
+            return sprintf("Bob's 27 · %s · do %d legów", $this->bob27Mode, $this->legsToWinSet);
+        }
         if ($this->isSingleSet()) {
             return sprintf('%d · do %d legów', $this->startingScore, $this->legsToWinSet);
         }
@@ -155,6 +199,10 @@ readonly class MatchFormat
 
     public function validateForStage(GameStage $stage): void
     {
+        if (! $this->isX01()) {
+            throw new DomainException('W turnieju dostępny jest tylko format X01.');
+        }
+
         $this->validate();
     }
 }
