@@ -74,7 +74,8 @@ class TournamentRefereeWebTest extends TestCase
         $this->get(route('referee.login'))
             ->assertOk()
             ->assertSee('Sędziowanie w przeglądarce', false)
-            ->assertSee('Kod', false);
+            ->assertSee('Kod', false)
+            ->assertSee('href="'.route('pages.home').'"', false);
     }
 
     public function test_referee_games_and_score_pages_render(): void

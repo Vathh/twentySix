@@ -13,16 +13,18 @@
 
     <header class="border-b border-border bg-bg-deep/90 backdrop-blur-md sticky top-0 z-40">
         <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-            <a href="{{ route('referee.games') }}" class="flex items-center gap-2 no-underline hover:opacity-95 min-w-0">
-                <img
-                    class="h-8 w-auto"
-                    src="{{ asset('images/logo.svg') }}"
-                    alt="twentySix"
-                    width="160"
-                    height="34"
-                >
+            <div class="flex items-center gap-2 min-w-0">
+                <a href="{{ route('pages.home') }}" class="flex items-center no-underline hover:opacity-95">
+                    <img
+                        class="h-8 w-auto"
+                        src="{{ asset('images/logo.svg') }}"
+                        alt="twentySix"
+                        width="160"
+                        height="34"
+                    >
+                </a>
                 <span class="text-text-muted text-sm font-semibold truncate">Sędziowanie</span>
-            </a>
+            </div>
             @hasSection('headerActions')
                 <div class="flex items-center gap-2 shrink-0">
                     @yield('headerActions')
