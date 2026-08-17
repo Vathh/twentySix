@@ -19,6 +19,7 @@ class QuickGameLobby extends Model
         'sets_to_win_match',
         'game_type',
         'bob27_mode',
+        'bob27_bull',
         'scoring_mode',
         'quick_game_id',
         'rematch_lobby_id',

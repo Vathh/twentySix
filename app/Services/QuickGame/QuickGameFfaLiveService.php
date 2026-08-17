@@ -110,6 +110,9 @@ class QuickGameFfaLiveService
         $prefix = match ($gameType) {
             'cricket' => 'Krykiet',
             'bob27' => "Bob's 27",
+            'atc' => 'Around the Clock',
+            'catch40' => 'Catch 40',
+            'cricket56' => 'Cricket 60',
             default => ((int) $session->starting_score).' · FFA',
         };
 

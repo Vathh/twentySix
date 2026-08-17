@@ -7,9 +7,15 @@ use PHPUnit\Framework\TestCase;
 
 class Bob27RulesTest extends TestCase
 {
-    public function test_perfect_score_is_1437(): void
+    public function test_perfect_score_is_1437_with_bull(): void
     {
         $this->assertSame(1437, Bob27Rules::perfectScore());
+        $this->assertSame(1437, Bob27Rules::perfectScore(true));
+    }
+
+    public function test_perfect_score_without_bull_is_1287(): void
+    {
+        $this->assertSame(1287, Bob27Rules::perfectScore(false));
     }
 
     public function test_miss_subtracts_one_double_value(): void
@@ -95,6 +101,34 @@ class Bob27RulesTest extends TestCase
         $this->assertSame(Bob27Rules::KIND_TIE_RESET, $result['kind']);
     }
 
+    public function test_board_complete_without_bull_after_d20(): void
+    {
+        $boards = [
+            ['score' => 80, 'eliminated' => false],
+            ['score' => 40, 'eliminated' => false],
+        ];
+        $result = Bob27Rules::resolveAfterCompletedVisit(
+            $boards,
+            Bob27Rules::MODE_EASY,
+            Bob27Rules::LAST_TARGET_INDEX_NO_BULL,
+            [0 => true, 1 => true],
+            [],
+            false,
+        );
+        $this->assertSame(Bob27Rules::KIND_WIN, $result['kind']);
+        $this->assertSame(0, $result['winnerIndex']);
+
+        $continueOnD20WithBull = Bob27Rules::resolveAfterCompletedVisit(
+            $boards,
+            Bob27Rules::MODE_EASY,
+            Bob27Rules::LAST_TARGET_INDEX_NO_BULL,
+            [0 => true, 1 => true],
+            [],
+            true,
+        );
+        $this->assertSame(Bob27Rules::KIND_CONTINUE, $continueOnD20WithBull['kind']);
+    }
+
     public function test_mid_board_waits_for_other_players(): void
     {
         $boards = [
@@ -118,5 +152,9 @@ class Bob27RulesTest extends TestCase
         $this->assertSame(40, Bob27Rules::targetValue(19));
         $this->assertSame('Bull', Bob27Rules::targetLabel(20));
         $this->assertSame(50, Bob27Rules::targetValue(20));
+        $this->assertSame('D20', Bob27Rules::targetLabel(19, false));
+        $this->assertSame(40, Bob27Rules::targetValue(19, false));
+        $this->assertSame(19, Bob27Rules::lastTargetIndex(false));
+        $this->assertSame(20, Bob27Rules::lastTargetIndex(true));
     }
 }

@@ -4,7 +4,8 @@ namespace App\Services\QuickGame;
 
 use App\DTO\QuickGame\PlayerResultDTO;
 use App\Domain\GameScoring\MatchFormat;
-use App\Domain\QuickGame\Bob27Rules;
+use App\Domain\GameScoring\VisitRecorder;
+use App\Domain\QuickGame\Catch40Rules;
 use App\Domain\QuickGame\FfaTurnRotationDomain;
 use App\Events\QuickGameFfaStateUpdated;
 use App\Models\QuickGame\QuickGameFfaSession;
@@ -17,9 +18,9 @@ use DomainException;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Scoring Bob's 27 FFA — osobny kontrakt od wizyt X01 i cricket.
+ * Scoring Catch 40 FFA — wizyty jak X01 (remaining / bust / checkout), outy 61–100.
  */
-class QuickGameFfaBob27ScoringService
+class QuickGameFfaCatch40ScoringService
 {
     public function __construct(
         private QuickGameFfaSessionRepository $sessionRepository,
@@ -37,7 +38,7 @@ class QuickGameFfaBob27ScoringService
     {
         $session = $this->sessionRepository->findOrFailForLobby($lobbyId);
         $session->loadMissing('lobby');
-        $this->assertBob27Session($session);
+        $this->assertCatch40Session($session);
 
         return $this->buildState($session, $userId);
     }
@@ -49,19 +50,34 @@ class QuickGameFfaBob27ScoringService
         int $lobbyId,
         int $userId,
         int $playerId,
-        int $hits,
+        int $score,
+        int $remainingBefore,
+        int $remainingAfter,
+        int $dartsInVisit,
+        bool $bust,
+        bool $checkout,
         string $clientVisitId,
     ): array {
-        return DB::transaction(function () use ($lobbyId, $userId, $playerId, $hits, $clientVisitId) {
+        return DB::transaction(function () use (
+            $lobbyId,
+            $userId,
+            $playerId,
+            $score,
+            $remainingBefore,
+            $remainingAfter,
+            $dartsInVisit,
+            $bust,
+            $checkout,
+            $clientVisitId,
+        ) {
             $session = $this->sessionRepository->findOrFailForLobby($lobbyId);
             $session->loadMissing('lobby');
-            $this->assertBob27Session($session);
+            $this->assertCatch40Session($session);
 
             if (! $session->isInProgress()) {
                 throw new DomainException('Mecz jest już zakończony.');
             }
 
-            $hits = max(0, min(3, $hits));
             $playerIds = array_map('intval', $session->player_order ?? []);
             $leftIds = $this->presenceRepository->getLeftPlayerIds($session);
             $state = $this->normalizeState($session, $playerIds);
@@ -90,28 +106,72 @@ class QuickGameFfaBob27ScoringService
             }
 
             $playerIndex = (int) array_search($playerId, $playerIds, true);
+            $pidKey = (string) $playerId;
+            $board = Catch40Rules::normalizeBoard($state['boards'][$pidKey] ?? Catch40Rules::emptyBoard());
+
+            if ((int) $board['remaining'] !== $remainingBefore) {
+                throw new DomainException('Nieprawidłowy wynik przed wizytą.');
+            }
+
+            VisitRecorder::validate(
+                remainingBefore: $remainingBefore,
+                score: $score,
+                remainingAfter: $remainingAfter,
+                dartsInVisit: $dartsInVisit,
+                closedLeg: $checkout,
+                bust: $bust,
+                startingScore: (int) $board['outNumber'],
+            );
 
             $state['dartLog'][] = [
                 'playerId' => $playerId,
                 'kind' => 'visit',
-                'hits' => $hits,
-                'dartsInVisitBefore' => (int) $state['dartsInVisit'],
-                'hitsInVisitBefore' => (int) $state['hitsInVisit'],
+                'score' => $score,
+                'remainingBefore' => $remainingBefore,
+                'remainingAfter' => $remainingAfter,
+                'dartsInVisit' => $dartsInVisit,
+                'bust' => $bust,
+                'checkout' => $checkout,
                 'clientDartId' => $clientVisitId,
                 'clientVisitId' => $clientVisitId,
                 'legNumber' => (int) $session->current_leg_number,
                 'legOpenerIndex' => (int) $session->leg_opener_index,
                 'currentPlayerIndex' => (int) $session->current_player_index,
-                'currentTargetIndex' => (int) $state['currentTargetIndex'],
-                'thrownThisTarget' => $state['thrownThisTarget'],
                 'boardsSnapshot' => $state['boards'],
                 'legsWonSnapshot' => $session->legs_won_in_set,
             ];
 
-            $state['hitsInVisit'] = $hits;
-            $this->applyCompletedVisit($session, $state, $playerIds, $leftIds, $playerIndex);
+            $state['boards'][$pidKey] = Catch40Rules::applyVisit(
+                $board,
+                $score,
+                $remainingAfter,
+                $dartsInVisit,
+                $bust,
+                $checkout,
+            );
 
-            $session->bob27_state = $state;
+            $boardsList = $this->boardsList($state, $playerIds);
+            $leftIndices = $this->leftIndices($playerIds, $leftIds);
+            $outcome = Catch40Rules::resolveAfterVisit($boardsList, $leftIndices);
+
+            if ($outcome['kind'] === Catch40Rules::KIND_WIN) {
+                $this->closeLeg($session, $state, $playerIds, $leftIds, (int) $outcome['winnerIndex']);
+            } elseif ($outcome['kind'] === Catch40Rules::KIND_TIE_RESET) {
+                $this->resetBoard($state, $playerIds);
+                $session->current_player_index = FfaTurnRotationDomain::normalizeIndexAt(
+                    (int) $session->leg_opener_index,
+                    $playerIds,
+                    $this->skipIds($playerIds, $leftIds, $state),
+                );
+            } else {
+                $session->current_player_index = FfaTurnRotationDomain::nextIndexAfter(
+                    (int) $session->current_player_index,
+                    $playerIds,
+                    $this->skipIds($playerIds, $leftIds, $state),
+                );
+            }
+
+            $session->catch40_state = $state;
             $this->sessionRepository->incrementVersion($session);
             $this->sessionRepository->save($session);
 
@@ -122,12 +182,12 @@ class QuickGameFfaBob27ScoringService
     /**
      * @return array<string, mixed>
      */
-    public function undoLastDart(int $lobbyId, int $userId): array
+    public function undoLastVisit(int $lobbyId, int $userId): array
     {
         return DB::transaction(function () use ($lobbyId, $userId) {
             $session = $this->sessionRepository->findOrFailForLobby($lobbyId);
             $session->loadMissing('lobby');
-            $this->assertBob27Session($session);
+            $this->assertCatch40Session($session);
 
             if (! $session->isInProgress()) {
                 throw new DomainException('Mecz jest już zakończony.');
@@ -143,108 +203,17 @@ class QuickGameFfaBob27ScoringService
 
             $last = array_pop($state['dartLog']);
             $state['boards'] = $last['boardsSnapshot'] ?? $state['boards'];
-            $state['dartsInVisit'] = (int) ($last['dartsInVisitBefore'] ?? 0);
-            $state['hitsInVisit'] = (int) ($last['hitsInVisitBefore'] ?? 0);
-            $state['currentTargetIndex'] = (int) ($last['currentTargetIndex'] ?? 0);
-            $state['thrownThisTarget'] = is_array($last['thrownThisTarget'] ?? null)
-                ? $last['thrownThisTarget']
-                : [];
             $session->legs_won_in_set = $last['legsWonSnapshot'] ?? $session->legs_won_in_set;
             $session->current_leg_number = (int) ($last['legNumber'] ?? $session->current_leg_number);
             $session->leg_opener_index = (int) ($last['legOpenerIndex'] ?? $session->leg_opener_index);
             $session->current_player_index = (int) ($last['currentPlayerIndex'] ?? $session->current_player_index);
-            $session->bob27_state = $state;
+            $session->catch40_state = $state;
 
             $this->sessionRepository->incrementVersion($session);
             $this->sessionRepository->save($session);
 
             return $this->broadcastState($session->fresh(), $userId);
         });
-    }
-
-    /**
-     * @param  array<string, mixed>  $state
-     * @param  list<int>  $playerIds
-     * @param  list<int>  $leftIds
-     */
-    private function applyCompletedVisit(
-        QuickGameFfaSession $session,
-        array &$state,
-        array $playerIds,
-        array $leftIds,
-        int $playerIndex,
-    ): void {
-        $pidKey = (string) $playerIds[$playerIndex];
-        $board = $state['boards'][$pidKey] ?? Bob27Rules::emptyBoard();
-        $scoreAfter = Bob27Rules::applyVisit(
-            (int) ($board['score'] ?? Bob27Rules::STARTING_SCORE),
-            (int) $state['hitsInVisit'],
-            (int) $state['currentTargetIndex'],
-            $this->includeBull($state),
-        );
-        $eliminated = Bob27Rules::shouldEliminate($scoreAfter, (string) $state['mode']);
-        $state['boards'][$pidKey] = [
-            'score' => $scoreAfter,
-            'eliminated' => $eliminated,
-        ];
-
-        $thrown = $state['thrownThisTarget'];
-        $thrown[$playerIndex] = true;
-        $state['thrownThisTarget'] = $thrown;
-
-        $boardsList = $this->boardsList($state, $playerIds);
-        $leftIndices = $this->leftIndices($playerIds, $leftIds);
-        $outcome = Bob27Rules::resolveAfterCompletedVisit(
-            $boardsList,
-            (string) $state['mode'],
-            (int) $state['currentTargetIndex'],
-            $thrown,
-            $leftIndices,
-            $this->includeBull($state),
-        );
-
-        if ($outcome['kind'] === Bob27Rules::KIND_WIN) {
-            $this->closeLeg($session, $state, $playerIds, $leftIds, (int) $outcome['winnerIndex']);
-
-            return;
-        }
-
-        if ($outcome['kind'] === Bob27Rules::KIND_BUST) {
-            $this->finishMatch($session, $session->legs_won_in_set ?? [], MatchFormat::fromRecord($session), $state);
-            $state['dartsInVisit'] = 0;
-            $state['hitsInVisit'] = 0;
-            $state['dartLog'] = [];
-
-            return;
-        }
-
-        if ($outcome['kind'] === Bob27Rules::KIND_TIE_RESET) {
-            $this->resetBoard($state, $playerIds);
-            $state['dartsInVisit'] = 0;
-            $state['hitsInVisit'] = 0;
-            $session->current_player_index = FfaTurnRotationDomain::normalizeIndexAt(
-                (int) $session->leg_opener_index,
-                $playerIds,
-                $this->skipIds($playerIds, $leftIds, $state),
-            );
-
-            return;
-        }
-
-        $allThrown = Bob27Rules::allActiveHaveThrown($boardsList, $thrown, $leftIndices);
-        if ($allThrown) {
-            $state['currentTargetIndex'] = (int) $state['currentTargetIndex'] + 1;
-            $state['thrownThisTarget'] = [];
-        }
-
-        $state['dartsInVisit'] = 0;
-        $state['hitsInVisit'] = 0;
-        $skipIds = $this->skipIds($playerIds, $leftIds, $state);
-        $session->current_player_index = FfaTurnRotationDomain::nextIndexAfter(
-            (int) $session->current_player_index,
-            $playerIds,
-            $skipIds,
-        );
     }
 
     /**
@@ -269,16 +238,10 @@ class QuickGameFfaBob27ScoringService
 
         $format = MatchFormat::fromArray(array_merge(
             MatchFormat::fromRecord($session)->toArray(),
-            [
-                'gameType' => MatchFormat::GAME_TYPE_BOB27,
-                'bob27Mode' => $state['mode'],
-                'bob27Bull' => $this->bob27BullValue($state),
-            ],
+            ['gameType' => MatchFormat::GAME_TYPE_CATCH40, 'setsToWinMatch' => 1],
         ));
         if ((int) $legsWon[$winnerId] >= $format->legsToWinSet) {
             $this->finishMatch($session, $legsWon, $format, $state);
-            $state['dartsInVisit'] = 0;
-            $state['hitsInVisit'] = 0;
             $state['dartLog'] = [];
 
             return;
@@ -286,7 +249,6 @@ class QuickGameFfaBob27ScoringService
 
         $this->resetBoard($state, $playerIds);
         $state['dartLog'] = [];
-        $skipIds = $this->skipIds($playerIds, $leftIds, $state);
         $session->leg_opener_index = FfaTurnRotationDomain::nextIndexAfter(
             (int) $session->leg_opener_index,
             $playerIds,
@@ -295,7 +257,7 @@ class QuickGameFfaBob27ScoringService
         $session->current_player_index = FfaTurnRotationDomain::normalizeIndexAt(
             (int) $session->leg_opener_index,
             $playerIds,
-            $skipIds,
+            $leftIds,
         );
         $session->current_leg_number = (int) $session->current_leg_number + 1;
     }
@@ -306,16 +268,8 @@ class QuickGameFfaBob27ScoringService
      */
     private function resetBoard(array &$state, array $playerIds): void
     {
-        $fresh = Bob27Rules::initialState(
-            $playerIds,
-            (string) $state['mode'],
-            $this->includeBull($state),
-        );
+        $fresh = Catch40Rules::initialState($playerIds);
         $state['boards'] = $fresh['boards'];
-        $state['currentTargetIndex'] = 0;
-        $state['dartsInVisit'] = 0;
-        $state['hitsInVisit'] = 0;
-        $state['thrownThisTarget'] = [];
     }
 
     /**
@@ -343,20 +297,20 @@ class QuickGameFfaBob27ScoringService
             if (! isset($dartCounts[$pid])) {
                 continue;
             }
-            $dartCounts[$pid] += ($entry['kind'] ?? '') === 'visit' ? 3 : 1;
+            $dartCounts[$pid] += (int) ($entry['dartsInVisit'] ?? 3);
         }
 
         $results = [];
         foreach ($ranked as $i => $row) {
             $pid = $row['playerId'];
-            $pts = (int) ($state['boards'][(string) $pid]['score'] ?? 0);
+            $points = (int) ($state['boards'][(string) $pid]['catch40Score'] ?? 0);
             $results[] = new PlayerResultDTO(
                 playerId: $pid,
                 score: $row['score'],
                 place: $i + 1,
                 average: null,
                 dartsThrown: $dartCounts[$pid] ?: null,
-                pointsEarned: max(0, $pts),
+                pointsEarned: max(0, $points),
             );
         }
 
@@ -405,31 +359,38 @@ class QuickGameFfaBob27ScoringService
     public function buildState(QuickGameFfaSession $session, ?int $userId): array
     {
         $playerIds = array_map('intval', $session->player_order ?? []);
-        $bob = $this->normalizeState($session, $playerIds);
+        $catch40 = $this->normalizeState($session, $playerIds);
         $players = $this->playerRepository->findManyByIds($playerIds)->keyBy('id');
         $format = MatchFormat::fromArray(array_merge(
             MatchFormat::fromRecord($session)->toArray(),
             [
-                'gameType' => MatchFormat::GAME_TYPE_BOB27,
-                'bob27Mode' => $bob['mode'],
-                'bob27Bull' => $this->bob27BullValue($bob),
+                'gameType' => MatchFormat::GAME_TYPE_CATCH40,
                 'setsToWinMatch' => 1,
             ],
         ));
         $legsWon = $session->legs_won_in_set ?? [];
-        $targetIndex = (int) $bob['currentTargetIndex'];
+        $currentIdx = (int) $session->current_player_index;
+        $currentPid = (string) ($playerIds[$currentIdx] ?? '');
+        $currentBoard = Catch40Rules::normalizeBoard(
+            $catch40['boards'][$currentPid] ?? Catch40Rules::emptyBoard(),
+        );
 
         $playerStates = [];
         foreach ($playerIds as $orderIndex => $playerId) {
-            $board = $bob['boards'][(string) $playerId] ?? Bob27Rules::emptyBoard();
+            $board = Catch40Rules::normalizeBoard(
+                $catch40['boards'][(string) $playerId] ?? Catch40Rules::emptyBoard(),
+            );
             $player = $players->get($playerId);
             $playerStates[] = [
                 'playerId' => (int) $playerId,
                 'name' => $player?->name ?? 'Gracz',
                 'orderIndex' => $orderIndex,
                 'legsWon' => (int) ($legsWon[$playerId] ?? 0),
-                'score' => (int) ($board['score'] ?? Bob27Rules::STARTING_SCORE),
-                'eliminated' => (bool) ($board['eliminated'] ?? false),
+                'outNumber' => (int) $board['outNumber'],
+                'remaining' => (int) $board['remaining'],
+                'dartsUsed' => (int) $board['dartsUsed'],
+                'catch40Score' => (int) $board['catch40Score'],
+                'finished' => (bool) $board['finished'],
             ];
         }
 
@@ -456,9 +417,9 @@ class QuickGameFfaBob27ScoringService
         }
 
         return [
-            'format' => 'ffa_bob27',
+            'format' => 'ffa_catch40',
             'meta' => [
-                'kind' => 'quick_ffa_bob27',
+                'kind' => 'quick_ffa_catch40',
                 'lobbyId' => (int) $session->lobby_id,
             ],
             'session' => [
@@ -468,19 +429,13 @@ class QuickGameFfaBob27ScoringService
                 'legsToWinSet' => $format->legsToWinSet,
                 'setsToWinMatch' => 1,
                 'matchFormat' => $format->toArray(),
-                'gameType' => MatchFormat::GAME_TYPE_BOB27,
-                'bob27Mode' => $bob['mode'],
-                'bob27Bull' => $this->bob27BullValue($bob),
-                'includeBull' => $this->includeBull($bob),
+                'gameType' => MatchFormat::GAME_TYPE_CATCH40,
                 'scoringMode' => $session->scoring_mode,
                 'currentLegNumber' => (int) $session->current_leg_number,
                 'legOpenerIndex' => (int) $session->leg_opener_index,
                 'currentPlayerIndex' => (int) $session->current_player_index,
-                'currentTargetIndex' => $targetIndex,
-                'currentTargetLabel' => Bob27Rules::targetLabel($targetIndex, $this->includeBull($bob)),
-                'currentTargetValue' => Bob27Rules::targetValue($targetIndex, $this->includeBull($bob)),
-                'dartsInVisit' => (int) ($bob['dartsInVisit'] ?? 0),
-                'hitsInVisit' => (int) ($bob['hitsInVisit'] ?? 0),
+                'currentOutNumber' => (int) $currentBoard['outNumber'],
+                'currentRemaining' => (int) $currentBoard['remaining'],
                 'stateVersion' => (int) $session->state_version,
                 'quickGameId' => $session->quick_game_id,
             ],
@@ -488,9 +443,9 @@ class QuickGameFfaBob27ScoringService
             'turn' => [
                 'currentPlayerIndex' => (int) $session->current_player_index,
                 'legOpenerIndex' => (int) $session->leg_opener_index,
-                'dartsInVisit' => (int) ($bob['dartsInVisit'] ?? 0),
-                'hitsInVisit' => (int) ($bob['hitsInVisit'] ?? 0),
-                'currentTargetIndex' => $targetIndex,
+                'outNumber' => (int) $currentBoard['outNumber'],
+                'remaining' => (int) $currentBoard['remaining'],
+                'dartsUsed' => (int) $currentBoard['dartsUsed'],
             ],
             'you' => [
                 'canInput' => $canInput && $session->isInProgress(),
@@ -504,10 +459,10 @@ class QuickGameFfaBob27ScoringService
         ];
     }
 
-    private function assertBob27Session(QuickGameFfaSession $session): void
+    private function assertCatch40Session(QuickGameFfaSession $session): void
     {
-        if (strtolower((string) $session->game_type) !== MatchFormat::GAME_TYPE_BOB27) {
-            throw new DomainException('To nie jest sesja Bob\'s 27.');
+        if (strtolower((string) $session->game_type) !== MatchFormat::GAME_TYPE_CATCH40) {
+            throw new DomainException('To nie jest sesja Catch 40.');
         }
     }
 
@@ -517,28 +472,22 @@ class QuickGameFfaBob27ScoringService
      */
     private function normalizeState(QuickGameFfaSession $session, array $playerIds): array
     {
-        $raw = $session->bob27_state;
-        $mode = is_array($raw) ? Bob27Rules::normalizeMode((string) ($raw['mode'] ?? Bob27Rules::MODE_HARD)) : Bob27Rules::MODE_HARD;
-        $includeBull = is_array($raw) ? (bool) ($raw['includeBull'] ?? true) : true;
+        $raw = $session->catch40_state;
         if (! is_array($raw) || ! isset($raw['boards'])) {
-            return Bob27Rules::initialState($playerIds, $mode, $includeBull);
+            return Catch40Rules::initialState($playerIds);
         }
 
         $boards = $raw['boards'];
         foreach ($playerIds as $pid) {
             $key = (string) $pid;
             if (! isset($boards[$key])) {
-                $boards[$key] = Bob27Rules::emptyBoard();
+                $boards[$key] = Catch40Rules::emptyBoard();
+            } else {
+                $boards[$key] = Catch40Rules::normalizeBoard($boards[$key]);
             }
         }
 
         return [
-            'mode' => $mode,
-            'includeBull' => $includeBull,
-            'currentTargetIndex' => (int) ($raw['currentTargetIndex'] ?? 0),
-            'dartsInVisit' => (int) ($raw['dartsInVisit'] ?? 0),
-            'hitsInVisit' => (int) ($raw['hitsInVisit'] ?? 0),
-            'thrownThisTarget' => is_array($raw['thrownThisTarget'] ?? null) ? $raw['thrownThisTarget'] : [],
             'boards' => $boards,
             'dartLog' => is_array($raw['dartLog'] ?? null) ? $raw['dartLog'] : [],
         ];
@@ -546,36 +495,14 @@ class QuickGameFfaBob27ScoringService
 
     /**
      * @param  array<string, mixed>  $state
-     */
-    private function includeBull(array $state): bool
-    {
-        return (bool) ($state['includeBull'] ?? true);
-    }
-
-    /**
-     * @param  array<string, mixed>  $state
-     */
-    private function bob27BullValue(array $state): string
-    {
-        return $this->includeBull($state)
-            ? MatchFormat::BOB27_BULL_WITH
-            : MatchFormat::BOB27_BULL_WITHOUT;
-    }
-
-    /**
-     * @param  array<string, mixed>  $state
      * @param  list<int>  $playerIds
-     * @return list<array{score: int, eliminated: bool}>
+     * @return list<array{catch40Score: int, finished: bool}>
      */
     private function boardsList(array $state, array $playerIds): array
     {
         $list = [];
         foreach ($playerIds as $pid) {
-            $b = $state['boards'][(string) $pid] ?? Bob27Rules::emptyBoard();
-            $list[] = [
-                'score' => (int) ($b['score'] ?? Bob27Rules::STARTING_SCORE),
-                'eliminated' => (bool) ($b['eliminated'] ?? false),
-            ];
+            $list[] = Catch40Rules::normalizeBoard($state['boards'][(string) $pid] ?? Catch40Rules::emptyBoard());
         }
 
         return $list;
@@ -609,7 +536,7 @@ class QuickGameFfaBob27ScoringService
         $skip = $leftIds;
         foreach ($playerIds as $pid) {
             $board = $state['boards'][(string) $pid] ?? null;
-            if (! empty($board['eliminated'])) {
+            if (! empty($board['finished'])) {
                 $skip[] = (int) $pid;
             }
         }

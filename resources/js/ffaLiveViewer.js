@@ -166,6 +166,18 @@ export function registerFfaLiveViewer(Alpine) {
             return String(this.state?.session?.gameType ?? '').toLowerCase() === 'bob27';
         },
 
+        get isAtc() {
+            return String(this.state?.session?.gameType ?? '').toLowerCase() === 'atc';
+        },
+
+        get isCatch40() {
+            return String(this.state?.session?.gameType ?? '').toLowerCase() === 'catch40';
+        },
+
+        get isCricket56() {
+            return String(this.state?.session?.gameType ?? '').toLowerCase() === 'cricket56';
+        },
+
         get currentTargetLabel() {
             return this.state?.session?.currentTargetLabel
                 ?? this.state?.turn?.currentTargetLabel

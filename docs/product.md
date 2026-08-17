@@ -344,7 +344,7 @@ Przeznaczenie: grupa znajomych przy tarczy (np. w klubie bez Wi‑Fi) albo szybk
 | Konto | nie wymagane | wymagane |
 | Internet | nie wymagany | wymagany (sync) |
 | Zapis wyniku | **nie** — dane znikają po zamknięciu meczu | tak (`quick_games`, statystyki) |
-| Gracze | 2–8, **imiona wpisane lokalnie** (bez kont); **Bob's 27: także solo (1)** | 2–8, tylko **znajomi** z kont |
+| Gracze | **1–8**, **imiona wpisane lokalnie** (bez kont); **solo dozwolone** we wszystkich trybach | 2–8, tylko **znajomi** z kont |
 | Format | Konfigurowalny (host); domyślnie 501 / 1 set / 2 legi | j.w. |
 | Tryb urządzeń | **`one_device`** — jeden telefon wpisuje wszystkich | `one_device` lub `each_own` + sync |
 | Reguły FFA | ta sama rotacja openera i kolejność tur co online | j.w. |
@@ -396,9 +396,10 @@ Już istniejący wybór w lobby mobilnym:
 | `startingScore` | Punkty startowe lega (X01) | **501** |
 | `legsToWinSet` | Legi do wygrania **seta** („pierwszy do N”) | **2** |
 | `setsToWinMatch` | Sety do wygrania **meczu** | **1** |
-| `gameType` | `x01` (501/301…), `cricket`, `bob27` | `x01` |
+| `gameType` | `x01` (501/301…), `cricket`, `bob27`, `atc`, `catch40`, `cricket56` | `x01` |
 | `outRule` | `double_out` (X01) | `double_out` |
 | `bob27Mode` | `hard` / `easy` (tylko Bob's 27) | `hard` |
+| `bob27Bull` | `with` / `without` (tylko Bob's 27; czy gra się inner bull po D20) | `with` |
 
 **Preset domyślny:** 501 · 1 set · 2 legi (= dotychczasowe BO3).
 
@@ -424,16 +425,16 @@ Już istniejący wybór w lobby mobilnym:
 - **`setsToWinMatch === 1`:** wynik w legach (np. 2:0 przy „do 2 legów”).
 - **`setsToWinMatch > 1`:** wynik w setach (np. 2:0); szczegóły legów w secie opcjonalnie w UI korekty.
 
-Konfigurowalny format X01 (fazy 1–4 + presety ligi): ✅. Cricket: trening + quick (bez turnieju) — ✅. **Bob's 27:** trening + quick (bez turnieju) — ✅; szczegóły poniżej.
+Konfigurowalny format X01 (fazy 1–4 + presety ligi): ✅. Cricket: trening + quick (bez turnieju) — ✅. **Bob's 27**, **Around the Clock**, **Catch 40** i **Cricket 60:** trening + quick (bez turnieju) — ✅; szczegóły poniżej.
 
 ### Format gry — podsumowanie kontekstów
 
 | Kontekst            | Gra                 | Format |
 | ------------------- | ------------------- | ------ |
 | Turniej (tablet)    | 501 head-to-head    | Z rekordu meczu (admin ustawił przy starcie turnieju) |
-| Quick game online   | X01 / Cricket / Bob's 27 FFA | Host w lobby; sync w sesji FFA |
-| Trening (mobile)    | X01 / Cricket / Bob's 27 | Host lokalnie; **bez zapisu** w bazie |
-| Krykiet / Bob's 27 w turnieju | —            | poza zakresem |
+| Quick game online   | X01 / Cricket / Bob's 27 / Around the Clock / Catch 40 / Cricket 60 FFA | Host w lobby; sync w sesji FFA |
+| Trening (mobile)    | X01 / Cricket / Bob's 27 / Around the Clock / Catch 40 / Cricket 60 | Host lokalnie; **bez zapisu** w bazie |
+| Krykiet / Bob's 27 / Around the Clock / Catch 40 / Cricket 60 w turnieju | —            | poza zakresem |
 
 Ten sam silnik liczenia (leg → set → mecz) i kontrakt API (`meta.matchFormat`, `setsWon`, `legsWonInSet`).
 
@@ -441,12 +442,45 @@ Ten sam silnik liczenia (leg → set → mecz) i kontrakt API (`meta.matchFormat
 
 Trening dubli Boba Andersona. **Nie ma w turnieju.**
 
-- Start: **27 punktów**. Kolejność celów: **D1 → D2 → … → D20 → inner bull (50)**. Outer bull **nie** liczy się.
-- Zawsze **3 lotki** na cel, potem następny gracz / następny dubl. Trafienie dodaje wartość dubla **za każdą lotkę**; trzy pudła odejmują **jedną** wartość (D6: hit +12, trzy pudła −12).
-- **Hard** (domyślnie): wynik ≤ 0 = wypadasz z lega. Ostatni ocalały wygrywa lega; po Bull wygrywa najwyższy wynik (remis = runda od nowa).
-- **Easy:** gra trwa przy ujemnym wyniku; po Bull wygrywa najwyższy wynik.
-- Perfekcyjna gra: **1437**.
+- Start: **27 punktów**. Kolejność celów: **D1 → D20**, opcjonalnie **inner bull (50)** — wybór w lobby jak Hard/Easy. Domyślnie **z bullem**. Outer bull **nie** liczy się.
+- Zawsze **3 lotki** na cel, potem następny gracz / następny dubl. Wpisywanie: **ile lotek trafiło celu (0–3)** — jedno kliknięcie na wizytę. Trafienie dodaje wartość dubla **za każdą lotkę**; trzy pudła odejmują **jedną** wartość (D6: hit +12, trzy pudła −12).
+- **Hard** (domyślnie): wynik ≤ 0 = wypadasz z lega. Ostatni ocalały wygrywa lega; po ostatnim celu wygrywa najwyższy wynik (remis = runda od nowa).
+- **Easy:** gra trwa przy ujemnym wyniku; po ostatnim celu wygrywa najwyższy wynik.
+- **Z bullem** (domyślnie): ostatni cel = inner bull. **Bez bulla:** ostatni cel = D20.
+- Perfekcyjna gra: **1437** (z bullem) / **1287** (bez bulla).
 - Quick: FFA 2–8, oba tryby urządzeń, API `/ffa/bob27/darts`. Trening: także **solo**.
+
+### Around the Clock (trening + quick game)
+
+Wyścig po tarczy. **Nie ma w turnieju.**
+
+- Kolejność celów: **1 → 2 → … → 20 → bull** (outer albo inner — oba liczą się).
+- Każdy gracz ma **własny** aktualny numer. Lotka zalicza tylko ten numer (dowolny segment S/D/T); **bez przeskoków**.
+- 3 lotki na wizytę; w jednym podejściu można iść dalej, jeśli kolejne lotki trafiają kolejne numery. Wpisywanie: **ile kolejnych numerów (0–3)** — jedno kliknięcie.
+- Trafienie ostatniego celu **od razu zamyka lega** (nawet na 1. lotce).
+- Quick: FFA 2–8, oba tryby urządzeń, API `/ffa/atc/visits`. Trening: **solo** albo 2–8.
+
+### Catch 40 (trening + quick game)
+
+Trening checkoutów Johna Parta. **Nie ma w turnieju.**
+
+- Kolejno outy **61 → 100** (40 checkoutów). Każdy gracz ma **własny** numer.
+- Max **6 lotek** na out (2 wizyty). Double out jak w X01 (bust / pozostałe 1).
+- Punkty: **2 lotki = 3**, **3 lotki = 2**, **4–6 lotek = 1**, pudło w 6 lotek = 0.
+- Wyjątek: **99 w 3 lotki = 3**. Max **120**.
+- Leg zamyka się dopiero gdy **wszyscy** skończą 40 outów — wygrywa najwyższy wynik (remis = runda od nowa).
+- Klawiatura **X01** (suma trzech / każdy rzut osobno).
+- Quick: FFA 2–8, oba tryby urządzeń, API `/ffa/catch40/visits`. Trening: także **solo**.
+
+### Cricket 60 (trening + quick game)
+
+Siedem rund po tarczy cricketowej. **Nie ma w turnieju.** Nazwa od wyniku perfect **60** (żeby nie mylić ze zwykłym Cricket). W kodzie `gameType`: `cricket56`.
+
+- Rundy: **15 → 16 → 17 → 18 → 19 → 20 → bull**. Wszyscy rzucają w ten sam cel w danej rundzie, potem następna.
+- 3 lotki na rundę. Punkty tylko za aktualny cel: **S=1, D=2, T=3**. Bull: **outer=1, inner=2**. Inny sektor = 0.
+- Po 7. rundzie wygrywa najwyższy wynik (remis = runda od nowa). Max **60** (6×9 + 3×2).
+- Wpisywanie: **0 / S / D / T** per lotka (T wyłączone na bullu); po 3. lotce wizyta idzie dalej.
+- Quick: FFA 2–8, oba tryby urządzeń, API `/ffa/cricket56/visits`. Trening: także **solo**.
 
 ### Statystyki w trakcie meczu (mobile — licznik i zakładka „Statystyki”)
 

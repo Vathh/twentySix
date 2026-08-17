@@ -3,11 +3,11 @@
 namespace App\Domain\QuickGame;
 
 /**
- * Bob's 27 — trening dubli (D1–D20 + inner bull).
+ * Bob's 27 — trening dubli (D1–D20, opcjonalnie inner bull).
  *
  * Trafienie dodaje wartość dubla za każdą lotkę; trzy pudła odejmują jedną wartość.
  * Hard: wynik ≤ 0 eliminuje gracza. Easy: gra trwa przy ujemnym wyniku.
- * Bull: tylko inner (50).
+ * Bull (gdy włączony): tylko inner (50).
  */
 final class Bob27Rules
 {
@@ -20,6 +20,8 @@ final class Bob27Rules
     public const TARGET_COUNT = 21;
 
     public const LAST_TARGET_INDEX = 20;
+
+    public const LAST_TARGET_INDEX_NO_BULL = 19;
 
     public const BULL_VALUE = 50;
 
@@ -34,34 +36,46 @@ final class Bob27Rules
     /**
      * @return list<int|string>
      */
-    public static function targets(): array
+    public static function targets(bool $includeBull = true): array
     {
         $out = [];
         for ($n = 1; $n <= 20; $n++) {
             $out[] = $n;
         }
-        $out[] = 'bull';
+        if ($includeBull) {
+            $out[] = 'bull';
+        }
 
         return $out;
     }
 
-    public static function targetAt(int $index): int|string
+    public static function lastTargetIndex(bool $includeBull = true): int
     {
-        $targets = self::targets();
-
-        return $targets[$index] ?? 'bull';
+        return $includeBull ? self::LAST_TARGET_INDEX : self::LAST_TARGET_INDEX_NO_BULL;
     }
 
-    public static function targetValue(int $index): int
+    public static function targetCount(bool $includeBull = true): int
     {
-        $target = self::targetAt($index);
+        return $includeBull ? self::TARGET_COUNT : 20;
+    }
+
+    public static function targetAt(int $index, bool $includeBull = true): int|string
+    {
+        $targets = self::targets($includeBull);
+
+        return $targets[$index] ?? ($includeBull ? 'bull' : 20);
+    }
+
+    public static function targetValue(int $index, bool $includeBull = true): int
+    {
+        $target = self::targetAt($index, $includeBull);
 
         return $target === 'bull' ? self::BULL_VALUE : ((int) $target) * 2;
     }
 
-    public static function targetLabel(int $index): string
+    public static function targetLabel(int $index, bool $includeBull = true): string
     {
-        $target = self::targetAt($index);
+        $target = self::targetAt($index, $includeBull);
 
         return $target === 'bull' ? 'Bull' : 'D'.$target;
     }
@@ -71,9 +85,9 @@ final class Bob27Rules
         return strtolower($mode) === self::MODE_EASY ? self::MODE_EASY : self::MODE_HARD;
     }
 
-    public static function applyVisit(int $scoreBefore, int $hits, int $targetIndex): int
+    public static function applyVisit(int $scoreBefore, int $hits, int $targetIndex, bool $includeBull = true): int
     {
-        $value = self::targetValue($targetIndex);
+        $value = self::targetValue($targetIndex, $includeBull);
         $hits = max(0, min(3, $hits));
 
         if ($hits === 0) {
@@ -89,13 +103,13 @@ final class Bob27Rules
     }
 
     /**
-     * Perfect game: start 27 + 3×(D1…D20) + 3×50.
+     * Perfect game: start 27 + 3×(D1…D20) [+ 3×50 gdy bull].
      */
-    public static function perfectScore(): int
+    public static function perfectScore(bool $includeBull = true): int
     {
         $sum = self::STARTING_SCORE;
-        for ($i = 0; $i < self::TARGET_COUNT; $i++) {
-            $sum += 3 * self::targetValue($i);
+        for ($i = 0; $i < self::targetCount($includeBull); $i++) {
+            $sum += 3 * self::targetValue($i, $includeBull);
         }
 
         return $sum;
@@ -116,8 +130,11 @@ final class Bob27Rules
      * @param  list<int>  $playerIds
      * @return array<string, mixed>
      */
-    public static function initialState(array $playerIds, string $mode = self::MODE_HARD): array
-    {
+    public static function initialState(
+        array $playerIds,
+        string $mode = self::MODE_HARD,
+        bool $includeBull = true,
+    ): array {
         $boards = [];
         foreach ($playerIds as $pid) {
             $boards[(string) $pid] = self::emptyBoard();
@@ -125,6 +142,7 @@ final class Bob27Rules
 
         return [
             'mode' => self::normalizeMode($mode),
+            'includeBull' => $includeBull,
             'currentTargetIndex' => 0,
             'dartsInVisit' => 0,
             'hitsInVisit' => 0,
@@ -227,6 +245,7 @@ final class Bob27Rules
         int $currentTargetIndex,
         array $thrownThisTarget,
         array $leftIndices = [],
+        bool $includeBull = true,
     ): array {
         $mode = self::normalizeMode($mode);
         $active = self::activeIndices($boards, $leftIndices);
@@ -244,7 +263,7 @@ final class Bob27Rules
             return ['kind' => self::KIND_CONTINUE];
         }
 
-        if ($currentTargetIndex >= self::LAST_TARGET_INDEX) {
+        if ($currentTargetIndex >= self::lastTargetIndex($includeBull)) {
             $winner = self::highestScoreIndex($boards, $leftIndices);
             if ($winner === null) {
                 return ['kind' => self::KIND_TIE_RESET];

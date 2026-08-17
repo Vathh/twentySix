@@ -109,7 +109,7 @@
                             </div>
                             <p class="text-2xl font-bold text-text score-num shrink-0" x-text="matchScore(player)"></p>
                         </div>
-                        <template x-if="!isCricket && !isBob27">
+                        <template x-if="!isCricket && !isBob27 && !isAtc && !isCatch40 && !isCricket56">
                             <div>
                                 <p class="text-xs text-text-muted mb-1">Pozostało</p>
                                 <p class="text-4xl font-bold text-text-secondary score-num" x-text="player.remaining ?? '—'"></p>
@@ -131,6 +131,31 @@
                                    x-text="player.eliminated ? 'Wypadł' : currentTargetLabel"></p>
                             </div>
                         </template>
+                        <template x-if="isAtc">
+                            <div>
+                                <p class="text-xs text-text-muted mb-1">Around the Clock</p>
+                                <p class="text-4xl font-bold text-text-secondary score-num"
+                                   x-text="player.targetLabel ?? '—'"></p>
+                            </div>
+                        </template>
+                        <template x-if="isCatch40">
+                            <div>
+                                <p class="text-xs text-text-muted mb-1">Catch 40</p>
+                                <p class="text-4xl font-bold text-text-secondary score-num"
+                                   x-text="player.catch40Score ?? 0"></p>
+                                <p class="text-xs text-text-muted mt-1"
+                                   x-text="player.finished ? 'Gotowe' : ('Out ' + (player.outNumber ?? '—') + ' · ' + (player.remaining ?? '—'))"></p>
+                            </div>
+                        </template>
+                        <template x-if="isCricket56">
+                            <div>
+                                <p class="text-xs text-text-muted mb-1">Cricket 60</p>
+                                <p class="text-4xl font-bold text-text-secondary score-num"
+                                   x-text="player.score ?? 0"></p>
+                                <p class="text-xs text-text-muted mt-1"
+                                   x-text="currentTargetLabel"></p>
+                            </div>
+                        </template>
                     </div>
                 </template>
             </div>
@@ -149,10 +174,19 @@
                 <template x-if="isBob27">
                     <p class="text-text-muted text-sm">Dla Bob's 27 lista wizyt X01 nie jest dostępna w tym widoku.</p>
                 </template>
-                <template x-if="!isCricket && !isBob27 && visits.length === 0">
+                <template x-if="isAtc">
+                    <p class="text-text-muted text-sm">Dla Around the Clock lista wizyt X01 nie jest dostępna w tym widoku.</p>
+                </template>
+                <template x-if="isCatch40">
+                    <p class="text-text-muted text-sm">Dla Catch 40 lista wizyt X01 nie jest dostępna w tym widoku.</p>
+                </template>
+                <template x-if="isCricket56">
+                    <p class="text-text-muted text-sm">Dla Cricket 60 lista wizyt X01 nie jest dostępna w tym widoku.</p>
+                </template>
+                <template x-if="!isCricket && !isBob27 && !isAtc && !isCatch40 && !isCricket56 && visits.length === 0">
                     <p class="text-text-muted text-sm">Brak wizyt w tym legu.</p>
                 </template>
-                <div class="grid sm:grid-cols-2 gap-4" x-show="!isCricket && !isBob27 && visits.length > 0">
+                <div class="grid sm:grid-cols-2 gap-4" x-show="!isCricket && !isBob27 && !isAtc && !isCatch40 && !isCricket56 && visits.length > 0">
                     <template x-for="player in players" :key="'v-'+player.playerId">
                         <div>
                             <h3 class="text-sm font-semibold text-accent mb-2" x-text="player.name"></h3>

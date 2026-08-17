@@ -128,6 +128,12 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::post('/{lobbyId}/ffa/cricket/darts/undo', [QuickGameFfaController::class, 'undoCricketDart']);
         Route::post('/{lobbyId}/ffa/bob27/darts', [QuickGameFfaController::class, 'recordBob27Dart']);
         Route::post('/{lobbyId}/ffa/bob27/darts/undo', [QuickGameFfaController::class, 'undoBob27Dart']);
+        Route::post('/{lobbyId}/ffa/atc/visits', [QuickGameFfaController::class, 'recordAtcVisit']);
+        Route::post('/{lobbyId}/ffa/atc/visits/undo', [QuickGameFfaController::class, 'undoAtcVisit']);
+        Route::post('/{lobbyId}/ffa/catch40/visits', [QuickGameFfaController::class, 'recordCatch40Visit']);
+        Route::post('/{lobbyId}/ffa/catch40/visits/undo', [QuickGameFfaController::class, 'undoCatch40Visit']);
+        Route::post('/{lobbyId}/ffa/cricket56/visits', [QuickGameFfaController::class, 'recordCricket56Visit']);
+        Route::post('/{lobbyId}/ffa/cricket56/visits/undo', [QuickGameFfaController::class, 'undoCricket56Visit']);
     });
 
 });

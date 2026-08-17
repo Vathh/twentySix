@@ -17,7 +17,10 @@ use App\Repositories\QuickGame\QuickGameLobbyRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 use App\Support\QuickGameFfa\QuickGameFfaStateBuilder;
 use App\Domain\GameScoring\MatchFormat;
+use App\Domain\QuickGame\AroundTheClockRules;
 use App\Domain\QuickGame\Bob27Rules;
+use App\Domain\QuickGame\Catch40Rules;
+use App\Domain\QuickGame\Cricket56Rules;
 use App\Support\QuickGameFfa\CricketRules;
 use App\Domain\GameScoring\MatchFormatScoring;
 use App\Domain\GameScoring\VisitRecorder;
@@ -37,6 +40,9 @@ class QuickGameFfaScoringService
         private QuickGameLobbyRepository $lobbyRepository,
         private QuickGameFfaCricketScoringService $cricketScoringService,
         private QuickGameFfaBob27ScoringService $bob27ScoringService,
+        private QuickGameFfaAtcScoringService $atcScoringService,
+        private QuickGameFfaCatch40ScoringService $catch40ScoringService,
+        private QuickGameFfaCricket56ScoringService $cricket56ScoringService,
     ) {
     }
 
@@ -74,10 +80,18 @@ class QuickGameFfaScoringService
 
         $isCricket = $matchFormat->isCricket();
         $isBob27 = $matchFormat->isBob27();
-        $setsToWin = ($isCricket || $isBob27) ? 1 : $matchFormat->setsToWinMatch;
-        $gameType = $isCricket
-            ? MatchFormat::GAME_TYPE_CRICKET
-            : ($isBob27 ? MatchFormat::GAME_TYPE_BOB27 : $matchFormat->gameType);
+        $isAtc = $matchFormat->isAtc();
+        $isCatch40 = $matchFormat->isCatch40();
+        $isCricket56 = $matchFormat->isCricket56();
+        $setsToWin = ($isCricket || $isBob27 || $isAtc || $isCatch40 || $isCricket56) ? 1 : $matchFormat->setsToWinMatch;
+        $gameType = match (true) {
+            $isCricket => MatchFormat::GAME_TYPE_CRICKET,
+            $isBob27 => MatchFormat::GAME_TYPE_BOB27,
+            $isAtc => MatchFormat::GAME_TYPE_ATC,
+            $isCatch40 => MatchFormat::GAME_TYPE_CATCH40,
+            $isCricket56 => MatchFormat::GAME_TYPE_CRICKET56,
+            default => $matchFormat->gameType,
+        };
 
         $session = $this->sessionRepository->create([
             'lobby_id' => $lobby->id,
@@ -94,7 +108,20 @@ class QuickGameFfaScoringService
                 ? CricketRules::initialState($playerIds)
                 : null,
             'bob27_state' => $isBob27
-                ? Bob27Rules::initialState($playerIds, $matchFormat->bob27Mode)
+                ? Bob27Rules::initialState(
+                    $playerIds,
+                    $matchFormat->bob27Mode,
+                    $matchFormat->includesBob27Bull(),
+                )
+                : null,
+            'atc_state' => $isAtc
+                ? AroundTheClockRules::initialState($playerIds)
+                : null,
+            'catch40_state' => $isCatch40
+                ? Catch40Rules::initialState($playerIds)
+                : null,
+            'cricket56_state' => $isCricket56
+                ? Cricket56Rules::initialState($playerIds)
                 : null,
             'leg_opener_index' => 0,
             'current_player_index' => 0,
@@ -122,6 +149,15 @@ class QuickGameFfaScoringService
         }
         if (strtolower((string) $session->game_type) === MatchFormat::GAME_TYPE_BOB27) {
             return $this->bob27ScoringService->getState($lobbyId, $userId);
+        }
+        if (strtolower((string) $session->game_type) === MatchFormat::GAME_TYPE_ATC) {
+            return $this->atcScoringService->getState($lobbyId, $userId);
+        }
+        if (strtolower((string) $session->game_type) === MatchFormat::GAME_TYPE_CATCH40) {
+            return $this->catch40ScoringService->getState($lobbyId, $userId);
+        }
+        if (strtolower((string) $session->game_type) === MatchFormat::GAME_TYPE_CRICKET56) {
+            return $this->cricket56ScoringService->getState($lobbyId, $userId);
         }
 
         $this->syncStalePresence($session);
@@ -242,6 +278,15 @@ class QuickGameFfaScoringService
             }
             if ($gameType === MatchFormat::GAME_TYPE_BOB27) {
                 throw new DomainException('Sesja Bob\'s 27 — użyj endpointu /ffa/bob27/darts.');
+            }
+            if ($gameType === MatchFormat::GAME_TYPE_ATC) {
+                throw new DomainException('Sesja Around the Clock — użyj endpointu /ffa/atc/visits.');
+            }
+            if ($gameType === MatchFormat::GAME_TYPE_CATCH40) {
+                throw new DomainException('Sesja Catch 40 — użyj endpointu /ffa/catch40/visits.');
+            }
+            if ($gameType === MatchFormat::GAME_TYPE_CRICKET56) {
+                throw new DomainException('Sesja Cricket 60 — użyj endpointu /ffa/cricket56/visits.');
             }
 
             $playerIds = array_map('intval', $session->player_order ?? []);
@@ -623,6 +668,24 @@ class QuickGameFfaScoringService
         }
         if ($gameType === MatchFormat::GAME_TYPE_BOB27) {
             $state = $this->bob27ScoringService->getState((int) $session->lobby_id, $userId);
+            broadcast(new QuickGameFfaStateUpdated($session->lobby_id, $state));
+
+            return $state;
+        }
+        if ($gameType === MatchFormat::GAME_TYPE_ATC) {
+            $state = $this->atcScoringService->getState((int) $session->lobby_id, $userId);
+            broadcast(new QuickGameFfaStateUpdated($session->lobby_id, $state));
+
+            return $state;
+        }
+        if ($gameType === MatchFormat::GAME_TYPE_CATCH40) {
+            $state = $this->catch40ScoringService->getState((int) $session->lobby_id, $userId);
+            broadcast(new QuickGameFfaStateUpdated($session->lobby_id, $state));
+
+            return $state;
+        }
+        if ($gameType === MatchFormat::GAME_TYPE_CRICKET56) {
+            $state = $this->cricket56ScoringService->getState((int) $session->lobby_id, $userId);
             broadcast(new QuickGameFfaStateUpdated($session->lobby_id, $state));
 
             return $state;

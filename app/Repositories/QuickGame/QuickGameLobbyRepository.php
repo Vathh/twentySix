@@ -325,6 +325,7 @@ class QuickGameLobbyRepository
     {
         $cols = $format->toDatabaseColumns();
         $cols['bob27_mode'] = $format->isBob27() ? $format->bob27Mode : null;
+        $cols['bob27_bull'] = $format->isBob27() ? $format->bob27Bull : null;
 
         return $cols;
     }

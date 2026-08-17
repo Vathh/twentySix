@@ -26,6 +26,7 @@ final class MatchFormatRequestParser
             && ! $hasField('startingScore')
             && ! $hasField('gameType')
             && ! $hasField('bob27Mode')
+            && ! $hasField('bob27Bull')
         ) {
             return null;
         }
@@ -50,6 +51,9 @@ final class MatchFormatRequestParser
         }
         if ($hasField('bob27Mode')) {
             $base['bob27Mode'] = (string) $input['bob27Mode'];
+        }
+        if ($hasField('bob27Bull')) {
+            $base['bob27Bull'] = (string) $input['bob27Bull'];
         }
 
         $format = MatchFormat::fromArray($base);
