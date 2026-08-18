@@ -27,7 +27,7 @@ class GameAuthorizationService
 
     /**
      * Admin turnieju (pivot) albo — dla turnieju w sezonie — admin sezonu.
-     * Nie używamy can_create_leagues: to tylko prawo tworzenia lig/turniejów.
+     * Nie używamy can_create_organizations: to tylko prawo tworzenia organizacji/turniejów.
      */
     public function canManageTournament(?Tournament $tournament): bool
     {

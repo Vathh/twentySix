@@ -62,7 +62,7 @@ class DemoPlayersSeeder extends Seeder
                 ['user_id' => $user->id],
                 [
                     'name' => $row['name'],
-                    'league_id' => null,
+                    'organization_id' => null,
                     'season_id' => null,
                 ],
             );

@@ -40,10 +40,10 @@ class GameDetailService
     {
         return match ($kind) {
             GameKind::GROUP => $this->buildFromGroupGame(
-                $this->gameRepository->findModel($id, ['player1', 'player2', 'tournament.season.league']),
+                $this->gameRepository->findModel($id, ['player1', 'player2', 'tournament.season.organization']),
             ),
             GameKind::PLAYOFF => $this->buildFromPlayoffGame(
-                $this->playoffGameRepository->findModel($id, ['player1', 'player2', 'tournament.season.league']),
+                $this->playoffGameRepository->findModel($id, ['player1', 'player2', 'tournament.season.organization']),
             ),
             GameKind::QUICK => $this->buildFromQuickGame(
                 $this->quickGameRepository->findModel($id, ['player1', 'player2']),

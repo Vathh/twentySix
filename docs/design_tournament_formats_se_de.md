@@ -187,7 +187,7 @@ product.md (✅) → generyczny bracket max 128 → SE end-to-end → macierz DE
 
 ## 8. Poza zakresem tej pracy
 
-- Seeding z rankingu ligowego
+- Seeding z rankingu sezonowego
 - Bye w playoffie po grupach
 - Zmiana scoringu H2H / FFA
 - Deploy / EAS (po stronie właściciela)

@@ -180,7 +180,7 @@ Prefix: **`/api/quick-game/lobby/{lobbyId}/ffa`** (auth: sanctum, uczestnik lobb
 **Tworzenie sesji:** nie osobny endpoint — **`QuickGameLobbyService::startGame`** gdy `players.count >= 3`:
 
 - tworzy `quick_game_ffa_sessions`,
-- **nie** wywołuje `createLiveQuickGameIfEligible`,
+- **nie** wywołuje `createLiveQuickGameIfEorganizacjible`,
 - w payloadzie startu: `ffaSessionId`, brak `quickGameId`.
 
 **Leg 1 — bull:** opcjonalny `POST /ffa/start-leg` z `{ "firstPlayerId" }` tylko gdy `currentLegNumber=1` i brak wizyt — ustawia `leg_opener_index` / `current_player_index`. Mobile: modal bull tylko offline dziś → ten sam UX online dla FFA.

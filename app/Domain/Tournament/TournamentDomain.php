@@ -71,7 +71,7 @@ class TournamentDomain
             name: $tournament->name,
             date: $tournament->date,
             season: in_array('season', $with) && $tournament->season
-                ? SeasonDomain::fromEloquent($tournament->season, ['league'])
+                ? SeasonDomain::fromEloquent($tournament->season, ['organization'])
                 : null,
             updatedAt: $tournament->updated_at,
             achievements: in_array('achievements', $with)
@@ -101,7 +101,7 @@ class TournamentDomain
     /**
      * Ścieżki Eloquent do eager-load w Repository przed `fromEloquent($tournament, $with)`.
      * Metoda czysta (bez I/O) — tylko tłumaczy $with na relacje wymagane wewnętrznie
-     * (np. `season` → `season.league`, bo `SeasonDomain::fromEloquent` zawsze dociąga `league`).
+     * (np. `season` → `season.organization`, bo `SeasonDomain::fromEloquent` zawsze dociąga `organization`).
      *
      * @param  array<int, string>  $with
      * @return list<string>
@@ -111,7 +111,7 @@ class TournamentDomain
         $relations = array_intersect($with, self::RELATIONS);
 
         return array_values(array_map(
-            fn (string $relation) => $relation === 'season' ? 'season.league' : $relation,
+            fn (string $relation) => $relation === 'season' ? 'season.organization' : $relation,
             $relations,
         ));
     }
@@ -136,12 +136,12 @@ class TournamentDomain
         return $this->date?->format('Y-m-d');
     }
 
-    /** Nagłówek listy: „Liga – nazwa turnieju”, jeśli znana jest liga sezonu. */
+    /** Nagłówek listy: „Organizacja – nazwa turnieju”, jeśli znana jest organizacja sezonu. */
     public function displayTitle(): string
     {
-        $leagueName = $this->season?->league?->name;
-        if (is_string($leagueName) && $leagueName !== '') {
-            return $leagueName.' - '.$this->name;
+        $organizationName = $this->season?->organization?->name;
+        if (is_string($organizationName) && $organizationName !== '') {
+            return $organizationName.' - '.$this->name;
         }
 
         return $this->name;
@@ -176,7 +176,7 @@ class TournamentDomain
         return in_array($this->status, [TournamentStatus::PLAYOFF, TournamentStatus::FINISHED]);
     }
 
-    public function tracksLeaguePoints(): bool
+    public function tracksSeasonPoints(): bool
     {
         return $this->season !== null && $this->pointScheme !== null;
     }

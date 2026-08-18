@@ -7,19 +7,19 @@ use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Translation\PotentiallyTranslatedString;
 
-class UniquePlayerInSeasonAndLeague implements ValidationRule
+class UniquePlayerInSeasonAndOrganization implements ValidationRule
 {
     private int $seasonId;
-    private int $leagueId;
+    private int $organizationId;
 
     /**
      * @param int $seasonId
-     * @param int $leagueId
+     * @param int $organizationId
      */
-    public function __construct(int $seasonId, int $leagueId)
+    public function __construct(int $seasonId, int $organizationId)
     {
         $this->seasonId = $seasonId;
-        $this->leagueId = $leagueId;
+        $this->organizationId = $organizationId;
     }
 
 
@@ -33,7 +33,7 @@ class UniquePlayerInSeasonAndLeague implements ValidationRule
         $exists = Player::where('name', $value)
             ->where(function($query) {
                 $query->where('season_id', $this->seasonId)
-                    ->orWhere('league_id', $this->leagueId);
+                    ->orWhere('organization_id', $this->organizationId);
             })
             ->exists();
 

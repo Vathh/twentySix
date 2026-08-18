@@ -18,7 +18,7 @@ class PlatformAdminTest extends TestCase
         ]);
         $user->forceFill([
             'role' => 'admin',
-            'can_create_leagues' => true,
+            'can_create_organizations' => true,
         ])->save();
 
         Player::create([
@@ -65,31 +65,31 @@ class PlatformAdminTest extends TestCase
             ->assertSee('Użytkownicy');
     }
 
-    public function test_platform_admin_can_toggle_can_create_leagues(): void
+    public function test_platform_admin_can_toggle_can_create_organizations(): void
     {
         $admin = $this->makePlatformAdmin();
         $target = $this->makeRegularUser();
 
-        $this->assertFalse((bool) $target->can_create_leagues);
+        $this->assertFalse((bool) $target->can_create_organizations);
 
         $this->actingAs($admin)
             ->from('/admin/users')
-            ->post("/admin/users/{$target->id}/can-create-leagues", [
-                'can_create_leagues' => 1,
+            ->post("/admin/users/{$target->id}/can-create-organizations", [
+                'can_create_organizations' => 1,
             ])
             ->assertRedirect('/admin/users')
             ->assertSessionHas('success');
 
-        $this->assertTrue((bool) $target->fresh()->can_create_leagues);
+        $this->assertTrue((bool) $target->fresh()->can_create_organizations);
 
         $this->actingAs($admin)
             ->from('/admin/users')
-            ->post("/admin/users/{$target->id}/can-create-leagues", [
-                'can_create_leagues' => 0,
+            ->post("/admin/users/{$target->id}/can-create-organizations", [
+                'can_create_organizations' => 0,
             ])
             ->assertRedirect('/admin/users');
 
-        $this->assertFalse((bool) $target->fresh()->can_create_leagues);
+        $this->assertFalse((bool) $target->fresh()->can_create_organizations);
     }
 
     public function test_platform_admin_can_ban_and_unban_user(): void

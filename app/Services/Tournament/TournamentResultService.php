@@ -38,7 +38,7 @@ class TournamentResultService
             return;
         }
 
-        $results = $this->tracksLeaguePoints($tournament)
+        $results = $this->tracksSeasonPoints($tournament)
             ? $this->factory->createManyForGroup($standings, $tournament)
             : $this->factory->createManyForGroupWithoutPoints($standings, $tournament);
 
@@ -58,7 +58,7 @@ class TournamentResultService
     {
         $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
 
-        if ($this->tracksLeaguePoints($tournament)) {
+        if ($this->tracksSeasonPoints($tournament)) {
             $rule = $this->pointSchemeRuleRepository->find($tournament->pointScheme->id, $stage, $place);
 
             $result = $this->factory->createForPlayoff(
@@ -121,7 +121,7 @@ class TournamentResultService
     {
         $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
 
-        if ($this->tracksLeaguePoints($tournament)) {
+        if ($this->tracksSeasonPoints($tournament)) {
             $rule = $this->pointSchemeRuleRepository->find($tournament->pointScheme->id, $stage, $place);
 
             $this->resultRepository->upsertForPlayer(
@@ -150,7 +150,7 @@ class TournamentResultService
         $this->overallPlaceService->recalculateOverallPlaces($tournamentId);
     }
 
-    private function tracksLeaguePoints(TournamentDomain $tournament): bool
+    private function tracksSeasonPoints(TournamentDomain $tournament): bool
     {
         return $tournament->season !== null && $tournament->pointScheme !== null;
     }

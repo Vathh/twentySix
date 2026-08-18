@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
 use App\Models\Game\Game;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
@@ -32,10 +32,10 @@ class PlayerLiveGameOnProfileTest extends TestCase
         $playerService->create('Opponent', $user2->id);
         $player2 = Player::where('user_id', $user2->id)->firstOrFail();
 
-        $league = League::create(['name' => 'Liga', 'description' => '']);
+        $organization = Organization::create(['name' => 'Organizacja', 'description' => '']);
         $season = Season::create([
             'name' => 'Sezon',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);

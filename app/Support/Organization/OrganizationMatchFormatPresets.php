@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Support\League;
+namespace App\Support\Organization;
 
 use App\Enums\GameStage;
 use App\Domain\GameScoring\MatchFormat;
 use Illuminate\Validation\ValidationException;
 
-final class LeagueMatchFormatPresets
+final class OrganizationMatchFormatPresets
 {
     /**
-     * Waliduje input formularza ligi i zwraca mapę stage => format (toArray).
+     * Waliduje input formularza organizacji i zwraca mapę stage => format (toArray).
      *
      * @param  array<string, mixed>  $raw
      * @return array<string, array<string, int|string>>
@@ -42,19 +42,19 @@ final class LeagueMatchFormatPresets
     }
 
     /**
-     * Domyślne formaty per etap: MatchFormat::default() nadpisane presetami ligi.
+     * Domyślne formaty per etap: MatchFormat::default() nadpisane presetami organizacji.
      *
-     * @param  array<string, mixed>|null  $leaguePresets
+     * @param  array<string, mixed>|null  $organizationPresets
      * @return array<string, array<string, int|string>>
      */
-    public static function defaultsByStage(?array $leaguePresets): array
+    public static function defaultsByStage(?array $organizationPresets): array
     {
         $fallback = MatchFormat::default()->toArray();
         $out = [];
 
         foreach (GameStage::cases() as $stage) {
-            $stagePreset = is_array($leaguePresets[$stage->value] ?? null)
-                ? $leaguePresets[$stage->value]
+            $stagePreset = is_array($organizationPresets[$stage->value] ?? null)
+                ? $organizationPresets[$stage->value]
                 : null;
 
             if ($stagePreset === null) {
@@ -76,14 +76,14 @@ final class LeagueMatchFormatPresets
     }
 
     /**
-     * Wartości do formularza edycji ligi (presety lub domyślne).
+     * Wartości do formularza edycji organizacji (presety lub domyślne).
      *
-     * @param  array<string, mixed>|null  $leaguePresets
+     * @param  array<string, mixed>|null  $organizationPresets
      * @return array<string, array<string, int|string>>
      */
-    public static function forEditForm(?array $leaguePresets): array
+    public static function forEditForm(?array $organizationPresets): array
     {
-        return self::defaultsByStage($leaguePresets);
+        return self::defaultsByStage($organizationPresets);
     }
 
     /**

@@ -10,7 +10,7 @@ use App\Enums\GameType;
 use App\Enums\TournamentStatus;
 use App\Models\Game\Game;
 use App\Models\GroupStanding\GroupStanding;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\PointScheme\PointScheme;
@@ -33,7 +33,7 @@ class TournamentFlowTest extends TestCase
     use SeedsTournamentParticipants;
 
     private User $adminUser;
-    private League $league;
+    private Organization $organization;
     private Season $season;
     private Player $player1;
     private Player $player2;
@@ -48,15 +48,15 @@ class TournamentFlowTest extends TestCase
 
         $this->adminUser = User::factory()->create([
             'email' => 'admin@test.com',
-            'can_create_leagues' => true,
+            'can_create_organizations' => true,
         ]);
 
-        $this->league = League::create(['name' => 'Test League', 'description' => 'Test']);
-        $this->league->admins()->attach($this->adminUser->id);
+        $this->organization = Organization::create(['name' => 'Test Organization', 'description' => 'Test']);
+        $this->organization->admins()->attach($this->adminUser->id);
 
         $this->season = Season::create([
             'name' => 'Test Season',
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -66,32 +66,32 @@ class TournamentFlowTest extends TestCase
         $playerService->create('Admin', $this->adminUser->id);
 
         $this->player1 = Player::where('user_id', $this->adminUser->id)->first();
-        $this->player1->update(['season_id' => $this->season->id, 'league_id' => $this->league->id]);
+        $this->player1->update(['season_id' => $this->season->id, 'organization_id' => $this->organization->id]);
 
         $this->player2 = Player::create([
             'name' => 'Player2',
             'season_id' => $this->season->id,
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
         ]);
         $this->player3 = Player::create([
             'name' => 'Player3',
             'season_id' => $this->season->id,
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
         ]);
         $this->player4 = Player::create([
             'name' => 'Player4',
             'season_id' => $this->season->id,
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
         ]);
         $this->player5 = Player::create([
             'name' => 'Player5',
             'season_id' => $this->season->id,
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
         ]);
         $this->player6 = Player::create([
             'name' => 'Player6',
             'season_id' => $this->season->id,
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
         ]);
 
         $smallScheme = PointScheme::create([

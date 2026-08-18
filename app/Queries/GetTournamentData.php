@@ -10,7 +10,7 @@ class GetTournamentData
     public function get(int $tournamentId): TournamentDataViewModel
     {
         $tournament = Tournament::with([
-            'season.league',
+            'season.organization',
             'season.admins',
             'groupStandings.player',
             'games.player1',

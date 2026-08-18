@@ -5,7 +5,7 @@
 @section('content')
 
     <div class="flex justify-center items-center min-h-[70vh] px-4">
-        <form class="form-card" action="{{ route('seasons.store') }}?leagueId={{ $leagueId }}" method="POST">
+        <form class="form-card" action="{{ route('seasons.store') }}?organizationId={{ $organizationId }}" method="POST">
             @csrf
             <div class="flex flex-col items-stretch">
                 <h1 class="page-title text-center">Tworzenie nowego sezonu</h1>
@@ -36,7 +36,7 @@
                        required>
 
                 <button class="btn btn-primary mt-2" type="submit" name="loginBtn">Stwórz sezon</button>
-                <a href="{{ route('leagues.show', ['league' => $leagueId]) }}" class="btn btn-secondary mt-4 text-center">Powrót</a>
+                <a href="{{ route('organizations.show', ['organization' => $organizationId]) }}" class="btn btn-secondary mt-4 text-center">Powrót</a>
 
                 <x-errors/>
             </div>

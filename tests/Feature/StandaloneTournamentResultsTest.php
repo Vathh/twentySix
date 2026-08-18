@@ -34,7 +34,7 @@ class StandaloneTournamentResultsTest extends TestCase
         $players = collect(range(1, 2))->map(fn (int $i) => Player::create([
             'name' => "P{$i}",
             'season_id' => null,
-            'league_id' => null,
+            'organization_id' => null,
         ]));
 
         app(TournamentResultService::class)->createForPlayoff(
@@ -69,7 +69,7 @@ class StandaloneTournamentResultsTest extends TestCase
         $players = collect(range(1, 4))->map(fn (int $i) => Player::create([
             'name' => "P{$i}",
             'season_id' => null,
-            'league_id' => null,
+            'organization_id' => null,
         ]));
 
         foreach ($players as $index => $player) {

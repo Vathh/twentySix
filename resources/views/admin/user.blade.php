@@ -26,11 +26,11 @@
                     @endif
                 </form>
             @endunless
-            <form method="POST" action="{{ route('admin.users.can-create-leagues', $user->id) }}">
+            <form method="POST" action="{{ route('admin.users.can-create-organizations', $user->id) }}">
                 @csrf
-                <input type="hidden" name="can_create_leagues" value="{{ $user->can_create_leagues ? 0 : 1 }}">
+                <input type="hidden" name="can_create_organizations" value="{{ $user->can_create_organizations ? 0 : 1 }}">
                 <button type="submit" class="btn btn-mini" @if($user->isBanned()) disabled @endif>
-                    Tworzenie lig: {{ $user->can_create_leagues ? 'wyłącz' : 'włącz' }}
+                    Tworzenie organizacji: {{ $user->can_create_organizations ? 'wyłącz' : 'włącz' }}
                 </button>
             </form>
         </div>
@@ -104,16 +104,16 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div class="card p-5">
-            <h2 class="text-accent font-semibold mb-4">Ligi</h2>
-            <p class="text-text-secondary text-xs mb-2">Admin ({{ count($activity['leaguesAdmin']) }})</p>
-            @forelse($activity['leaguesAdmin'] as $league)
-                <p class="text-sm text-text border-b border-border/40 py-1">{{ $league['name'] }}</p>
+            <h2 class="text-accent font-semibold mb-4">Organizacje</h2>
+            <p class="text-text-secondary text-xs mb-2">Admin ({{ count($activity['organizationsAdmin']) }})</p>
+            @forelse($activity['organizationsAdmin'] as $organization)
+                <p class="text-sm text-text border-b border-border/40 py-1">{{ $organization['name'] }}</p>
             @empty
                 <p class="text-text-muted text-sm mb-3">—</p>
             @endforelse
-            <p class="text-text-secondary text-xs mt-4 mb-2">Członek ({{ count($activity['leaguesMember']) }})</p>
-            @forelse($activity['leaguesMember'] as $league)
-                <p class="text-sm text-text border-b border-border/40 py-1">{{ $league['name'] }}</p>
+            <p class="text-text-secondary text-xs mt-4 mb-2">Członek ({{ count($activity['organizationsMember']) }})</p>
+            @forelse($activity['organizationsMember'] as $organization)
+                <p class="text-sm text-text border-b border-border/40 py-1">{{ $organization['name'] }}</p>
             @empty
                 <p class="text-text-muted text-sm">—</p>
             @endforelse

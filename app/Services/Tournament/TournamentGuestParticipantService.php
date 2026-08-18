@@ -28,7 +28,7 @@ class TournamentGuestParticipantService
             ->pluck('id');
 
         if (! $relatedGuestIds->contains($playerId)) {
-            throw new \RuntimeException('Gość nie należy do puli powiązanych gości ligi/sezonu');
+            throw new \RuntimeException('Gość nie należy do puli powiązanych gości organizacji/sezonu');
         }
 
         $this->repository->add($tournamentId, $playerId);

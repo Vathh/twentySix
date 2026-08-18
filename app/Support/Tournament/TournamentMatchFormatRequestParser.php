@@ -51,12 +51,12 @@ final class TournamentMatchFormatRequestParser
     }
 
     /**
-     * @param  array<string, array<string, int|string>>|null  $leaguePresets
+     * @param  array<string, array<string, int|string>>|null  $organizationPresets
      * @return array<string, array<string, int|string>>
      */
-    public static function defaultsForBracketSize(int $playoffBracketSize, ?array $leaguePresets = null): array
+    public static function defaultsForBracketSize(int $playoffBracketSize, ?array $organizationPresets = null): array
     {
-        $byStage = \App\Support\League\LeagueMatchFormatPresets::defaultsByStage($leaguePresets);
+        $byStage = \App\Support\Organization\OrganizationMatchFormatPresets::defaultsByStage($organizationPresets);
         $formatsByStage = [];
 
         foreach (GameStage::forPlayoffBracketSize($playoffBracketSize) as $stage) {
@@ -68,12 +68,12 @@ final class TournamentMatchFormatRequestParser
     }
 
     /**
-     * @param  array<string, array<string, int|string>>|null  $leaguePresets
+     * @param  array<string, array<string, int|string>>|null  $organizationPresets
      * @return array<string, array<string, int|string>>
      */
-    public static function defaultsForEliminationBracketSize(int $bracketSize, ?array $leaguePresets = null): array
+    public static function defaultsForEliminationBracketSize(int $bracketSize, ?array $organizationPresets = null): array
     {
-        $byStage = \App\Support\League\LeagueMatchFormatPresets::defaultsByStage($leaguePresets);
+        $byStage = \App\Support\Organization\OrganizationMatchFormatPresets::defaultsByStage($organizationPresets);
         $formatsByStage = [];
 
         foreach (GameStage::forEliminationBracketSize($bracketSize) as $stage) {

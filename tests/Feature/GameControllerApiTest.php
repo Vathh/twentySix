@@ -10,7 +10,7 @@ use App\Enums\TournamentStatus;
 use App\Enums\WinnerDestinationSlot;
 use App\Models\Game\Game;
 use App\Models\GroupStanding\GroupStanding;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\PointScheme\PointScheme;
@@ -28,7 +28,7 @@ class GameControllerApiTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
-    private League $league;
+    private Organization $organization;
     private Season $season;
     private Tournament $tournament;
     private Player $player1;
@@ -44,12 +44,12 @@ class GameControllerApiTest extends TestCase
         $playerService = app(PlayerService::class);
         $playerService->create('User', $this->user->id);
 
-        $this->league = League::create(['name' => 'Test League', 'description' => 'Test']);
-        $this->league->admins()->attach($this->user->id);
+        $this->organization = Organization::create(['name' => 'Test Organization', 'description' => 'Test']);
+        $this->organization->admins()->attach($this->user->id);
 
         $this->season = Season::create([
             'name' => 'Test Season',
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -80,21 +80,21 @@ class GameControllerApiTest extends TestCase
 
         // Pobierz gracza utworzonego przez PlayerService i zaktualizuj go
         $this->player1 = Player::where('user_id', $this->user->id)->first();
-        $this->player1->update(['season_id' => $this->season->id, 'league_id' => $this->league->id]);
+        $this->player1->update(['season_id' => $this->season->id, 'organization_id' => $this->organization->id]);
         $this->player2 = Player::create([
             'name' => 'Player2',
             'season_id' => $this->season->id,
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
         ]);
         $this->player3 = Player::create([
             'name' => 'Player3',
             'season_id' => $this->season->id,
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
         ]);
         $this->player4 = Player::create([
             'name' => 'Player4',
             'season_id' => $this->season->id,
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
         ]);
     }
 

@@ -35,7 +35,7 @@
 
                 <header class="entity-header">
                     <nav class="entity-breadcrumb" aria-label="Okruszki">
-                        <a href="{{ route('leagues.show', $season->league->id) }}">{{ $season->league->name }}</a>
+                        <a href="{{ route('organizations.show', $season->organization->id) }}">{{ $season->organization->name }}</a>
                         <span class="entity-breadcrumb-sep">/</span>
                         <span class="text-text-secondary">Sezon</span>
                     </nav>

@@ -16,7 +16,7 @@
                     @foreach($relatedUsers as $user)
                         <div class="tile flex items-center justify-center flex-col">
                             <span class="card-title mb-4 text-wrap text-center">{{ $user->player->name }}</span>
-                            <form action="{{ route('leagues.relatedUsers.remove', $season->id) }}" method="POST">
+                            <form action="{{ route('seasons.relatedUsers.remove', $season->id) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
                                 <input type="hidden" name="user_id" value="{{ $user->id }}">
@@ -30,7 +30,7 @@
 
         <h2 class="section-title text-center">Dodawanie użytkowników</h2>
 
-        <form action="{{ route('leagues.relatedUsers', $season->id) }}" method="GET" class="mb-6 flex flex-wrap items-center gap-4">
+        <form action="{{ route('seasons.relatedUsers', $season->id) }}" method="GET" class="mb-6 flex flex-wrap items-center gap-4">
             <input type="text" name="search" placeholder="Szukaj użytkownika..."
                    value="{{ request('search') }}" class="input-field flex-1 min-w-[200px]">
             <button type="submit" class="btn btn-primary">Szukaj</button>
@@ -45,7 +45,7 @@
                 @foreach($users as $user)
                     <div class="tile flex items-center justify-center flex-col bg-bg-elevated">
                         <span class="card-title mb-4 text-wrap text-center">{{ $user->player->name }}</span>
-                        <form action="{{ route('leagues.relatedUsers.add', $season->id) }}" method="POST">
+                        <form action="{{ route('seasons.relatedUsers.add', $season->id) }}" method="POST">
                             @csrf
                             <input type="hidden" name="user_id" value="{{ $user->id }}">
                             <button type="submit" class="btn btn-mini">Dodaj</button>

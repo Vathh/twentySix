@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Enums\GameStatus;
 use App\Models\Game\Game;
 use App\Models\GroupStanding\GroupStanding;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
@@ -88,7 +88,7 @@ class GameResultCorrectionTest extends TestCase
         $players = collect(range(1, 6))->map(fn (int $i) => Player::create([
             'name' => "P{$i}",
             'season_id' => null,
-            'league_id' => null,
+            'organization_id' => null,
         ]));
 
         foreach ($players as $index => $player) {
@@ -166,12 +166,12 @@ class GameResultCorrectionTest extends TestCase
 
     private function createGroupGame(MatchFormat $format): Game
     {
-        $user = User::factory()->create(['can_create_leagues' => true]);
-        $league = League::create(['name' => 'Liga', 'description' => '']);
-        $league->admins()->attach($user->id);
+        $user = User::factory()->create(['can_create_organizations' => true]);
+        $organization = Organization::create(['name' => 'Organizacja', 'description' => '']);
+        $organization->admins()->attach($user->id);
         $season = Season::create([
             'name' => 'Sezon',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -183,8 +183,8 @@ class GameResultCorrectionTest extends TestCase
             'status' => \App\Enums\TournamentStatus::GROUP,
         ]);
 
-        $p1 = Player::create(['name' => 'A', 'season_id' => $season->id, 'league_id' => $league->id]);
-        $p2 = Player::create(['name' => 'B', 'season_id' => $season->id, 'league_id' => $league->id]);
+        $p1 = Player::create(['name' => 'A', 'season_id' => $season->id, 'organization_id' => $organization->id]);
+        $p2 = Player::create(['name' => 'B', 'season_id' => $season->id, 'organization_id' => $organization->id]);
 
         GroupStanding::create([
             'tournament_id' => $tournament->id,

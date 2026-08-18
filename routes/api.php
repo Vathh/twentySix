@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FriendshipController;
 use App\Http\Controllers\Api\GameController;
-use App\Http\Controllers\Api\LeagueController;
+use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\PlayerProfileController;
 use App\Http\Controllers\Api\PushTokenController;
 use App\Http\Controllers\Api\QuickGameController;
@@ -84,8 +84,8 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::post('/update', [QuickGameController::class, 'update']);
     });
 
-    Route::get('/leagues', [LeagueController::class, 'index']);
-    Route::get('/leagues/{league}', [LeagueController::class, 'show'])->whereNumber('league');
+    Route::get('/organizations', [OrganizationController::class, 'index']);
+    Route::get('/organizations/{organization}', [OrganizationController::class, 'show'])->whereNumber('organization');
     Route::get('/seasons', [SeasonController::class, 'index']);
     Route::get('/seasons/{season}', [SeasonController::class, 'show'])->whereNumber('season');
     Route::get('/seasons/{season}/standings', [SeasonController::class, 'standings'])->whereNumber('season');

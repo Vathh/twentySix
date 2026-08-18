@@ -7,7 +7,7 @@ use App\Enums\TournamentStatus;
 use App\Models\Game\Game;
 use App\Models\Game\GameLeg;
 use App\Models\Game\GameLegPlayerStat;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
@@ -26,10 +26,10 @@ class TournamentAchievementsQfFromScoringTest extends TestCase
         $user = User::factory()->create(['email' => 'qf-achievements@test.com']);
         app(PlayerService::class)->create('Jan', $user->id);
 
-        $league = League::create(['name' => 'L', 'description' => '']);
+        $organization = Organization::create(['name' => 'L', 'description' => '']);
         $season = Season::create([
             'name' => 'S',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -44,7 +44,7 @@ class TournamentAchievementsQfFromScoringTest extends TestCase
         $player2 = Player::create([
             'name' => 'Opponent',
             'season_id' => $season->id,
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
         ]);
 
         $game = Game::create([

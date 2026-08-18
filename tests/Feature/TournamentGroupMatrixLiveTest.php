@@ -7,7 +7,7 @@ use App\Enums\TournamentStatus;
 use App\Events\TournamentGroupMatrixUpdated;
 use App\Models\Game\Game;
 use App\Models\GroupStanding\GroupStanding;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
@@ -93,10 +93,10 @@ class TournamentGroupMatrixLiveTest extends TestCase
         $user = User::factory()->create(['email' => 'groups-live@test.com']);
         app(PlayerService::class)->create('Host', $user->id);
 
-        $league = League::create(['name' => 'L', 'description' => '']);
+        $organization = Organization::create(['name' => 'L', 'description' => '']);
         $season = Season::create([
             'name' => 'S',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -111,7 +111,7 @@ class TournamentGroupMatrixLiveTest extends TestCase
         $p2 = Player::create([
             'name' => 'P2',
             'season_id' => $season->id,
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
         ]);
 
         $game = Game::create([

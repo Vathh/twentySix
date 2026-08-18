@@ -126,16 +126,16 @@ namespace App\Models{
  * @property-read int|null $related_users_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Season> $seasons
  * @property-read int|null $seasons_count
- * @method static \Illuminate\Database\Eloquent\Builder<static>|League newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|League newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|League query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|League whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|League whereDescription($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|League whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|League whereName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|League whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Organization newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Organization newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Organization query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Organization whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Organization whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Organization whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Organization whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Organization whereUpdatedAt($value)
  */
-	class League extends \Eloquent {}
+	class Organization extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -169,11 +169,11 @@ namespace App\Models{
  * @property string $name
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property int|null $league_id
+ * @property int|null $organization_id
  * @property int|null $season_id
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Achievement> $achievements
  * @property-read int|null $achievements_count
- * @property-read \App\Models\League|null $league
+ * @property-read \App\Models\Organization|null $organization
  * @property-read \App\Models\Season|null $season
  * @property-read \App\Models\User|null $user
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Player newModelQuery()
@@ -181,7 +181,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Player query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Player whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Player whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Player whereLeagueId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Player whereOrganizationId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Player whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Player whereSeasonId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Player whereUpdatedAt($value)
@@ -193,7 +193,7 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $id
- * @property int|null $league_id
+ * @property int|null $organization_id
  * @property string $name
  * @property \Illuminate\Support\Carbon|null $start_date
  * @property \Illuminate\Support\Carbon|null $end_date
@@ -203,7 +203,7 @@ namespace App\Models{
  * @property-read int|null $admins_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Player> $guests
  * @property-read int|null $guests_count
- * @property-read \App\Models\League|null $league
+ * @property-read \App\Models\Organization|null $organization
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $relatedUsers
  * @property-read int|null $related_users_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Tournament> $tournaments
@@ -214,7 +214,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season whereEndDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Season whereLeagueId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Season whereOrganizationId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season whereStartDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season whereUpdatedAt($value)
@@ -262,19 +262,19 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property string $role
- * @property int $can_create_leagues
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\League> $adminLeagues
- * @property-read int|null $admin_leagues_count
+ * @property int $can_create_organizations
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Organization> $adminOrganizations
+ * @property-read int|null $admin_organizations_count
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
  * @property-read \App\Models\Player|null $player
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\League> $relatedLeagues
- * @property-read int|null $related_leagues_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Organization> $relatedOrganizations
+ * @property-read int|null $related_organizations_count
  * @method static \Database\Factories\UserFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCanCreateLeagues($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCanCreateOrganizations($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmail($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmailVerifiedAt($value)

@@ -218,6 +218,10 @@
         @apply flex items-center gap-3 bg-bg-elevated/35 hover:bg-bg-elevated-hover/80 px-4 py-3 rounded-lg transition text-text-secondary hover:text-text border border-transparent hover:border-border-subtle;
     }
 
+    .admin-sidebar-link-disabled {
+        @apply opacity-40 cursor-not-allowed pointer-events-none text-text-muted hover:bg-bg-elevated/35 hover:text-text-muted hover:border-transparent;
+    }
+
     /* Strony szczegółów — treść na gradiencie app-shell, bez płaskiej podkładki */
     .detail-layout {
         @apply flex flex-col lg:flex-row min-h-[calc(100vh-8rem)] text-text-secondary -mx-4 sm:mx-0;
@@ -315,7 +319,7 @@
     }
 
     /*
-     | Nagłówek szczegółów (liga / sezon / turniej):
+     | Nagłówek szczegółów (organizacja / sezon / turniej):
      | eyebrow → tytuł → cienka kreska accent → dystans do meta.
      */
     .entity-header {
@@ -396,7 +400,7 @@
     }
 
     .table-surface thead th {
-        @apply px-3 py-2 font-medium;
+        @apply px-3 py-2 font-medium text-left;
     }
 
     .table-surface tbody {

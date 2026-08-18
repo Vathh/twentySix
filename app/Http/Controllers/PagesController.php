@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Response;

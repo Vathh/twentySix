@@ -185,7 +185,7 @@ class TournamentDataViewModel
             return null;
         }
 
-        return SeasonDomain::fromEloquent($this->tournament->season, ['league', 'admins']);
+        return SeasonDomain::fromEloquent($this->tournament->season, ['organization', 'admins']);
     }
 
     /**

@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\InvitationPushType;
 use App\Jobs\SendInvitationPushJob;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
@@ -33,9 +33,9 @@ class TournamentInvitationPushTest extends TestCase
         $playerService->create('PlayerA', $userA->id);
         $playerService->create('PlayerB', $userB->id);
 
-        $league = League::create(['name' => 'L', 'description' => '']);
+        $organization = Organization::create(['name' => 'L', 'description' => '']);
         $season = Season::create([
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'name' => 'S1',
             'start_date' => now(),
             'end_date' => now()->addMonth(),

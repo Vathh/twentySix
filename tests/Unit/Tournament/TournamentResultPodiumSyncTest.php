@@ -3,7 +3,7 @@
 namespace Tests\Unit\Tournament;
 
 use App\Enums\GameStage;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\PointScheme\PointScheme;
 use App\Models\PointScheme\PointSchemeRule;
@@ -29,13 +29,13 @@ class TournamentResultPodiumSyncTest extends TestCase
     {
         parent::setUp();
 
-        $user = User::factory()->create(['can_create_leagues' => true]);
-        $league = League::create(['name' => 'Liga test', 'description' => '']);
-        $league->admins()->attach($user->id);
+        $user = User::factory()->create(['can_create_organizations' => true]);
+        $organization = Organization::create(['name' => 'Organizacja test', 'description' => '']);
+        $organization->admins()->attach($user->id);
 
         $season = Season::create([
             'name' => 'Sezon test',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -55,8 +55,8 @@ class TournamentResultPodiumSyncTest extends TestCase
             'point_scheme_id' => $scheme->id,
         ]);
 
-        $this->player1 = Player::create(['name' => 'P1', 'season_id' => $season->id, 'league_id' => $league->id]);
-        $this->player2 = Player::create(['name' => 'P2', 'season_id' => $season->id, 'league_id' => $league->id]);
+        $this->player1 = Player::create(['name' => 'P1', 'season_id' => $season->id, 'organization_id' => $organization->id]);
+        $this->player2 = Player::create(['name' => 'P2', 'season_id' => $season->id, 'organization_id' => $organization->id]);
     }
 
     public function test_sync_final_podium_swaps_places_on_correction(): void

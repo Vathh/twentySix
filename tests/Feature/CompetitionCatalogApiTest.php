@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
-use App\Repositories\League\LeagueRepository;
+use App\Repositories\Organization\OrganizationRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -15,9 +15,9 @@ class CompetitionCatalogApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_cannot_list_leagues(): void
+    public function test_guest_cannot_list_organizations(): void
     {
-        $this->getJson('/api/leagues')->assertUnauthorized();
+        $this->getJson('/api/organizations')->assertUnauthorized();
     }
 
     public function test_guest_cannot_list_seasons(): void
@@ -30,13 +30,13 @@ class CompetitionCatalogApiTest extends TestCase
         $this->getJson('/api/tournaments')->assertUnauthorized();
     }
 
-    public function test_leagues_index_returns_items_without_url(): void
+    public function test_organizations_index_returns_items_without_url(): void
     {
         Sanctum::actingAs(User::factory()->create());
 
-        League::create(['name' => 'Liga Test', 'description' => 'Opis']);
+        Organization::create(['name' => 'Organizacja Test', 'description' => 'Opis']);
 
-        $this->getJson('/api/leagues?page=1')
+        $this->getJson('/api/organizations?page=1')
             ->assertOk()
             ->assertJsonStructure([
                 'items' => [
@@ -45,24 +45,24 @@ class CompetitionCatalogApiTest extends TestCase
                 'has_more',
             ])
             ->assertJsonPath('has_more', false)
-            ->assertJsonPath('items.0.title', 'Liga Test')
+            ->assertJsonPath('items.0.title', 'Organizacja Test')
             ->assertJsonMissingPath('items.0.url');
     }
 
-    public function test_leagues_index_paginates(): void
+    public function test_organizations_index_paginates(): void
     {
         Sanctum::actingAs(User::factory()->create());
 
-        for ($i = 1; $i <= LeagueRepository::INDEX_PER_PAGE + 3; $i++) {
-            League::create(['name' => "Liga {$i}", 'description' => '']);
+        for ($i = 1; $i <= OrganizationRepository::INDEX_PER_PAGE + 3; $i++) {
+            Organization::create(['name' => "Organizacja {$i}", 'description' => '']);
         }
 
-        $this->getJson('/api/leagues?page=1')
+        $this->getJson('/api/organizations?page=1')
             ->assertOk()
             ->assertJsonPath('has_more', true)
-            ->assertJsonCount(LeagueRepository::INDEX_PER_PAGE, 'items');
+            ->assertJsonCount(OrganizationRepository::INDEX_PER_PAGE, 'items');
 
-        $this->getJson('/api/leagues?page=2')
+        $this->getJson('/api/organizations?page=2')
             ->assertOk()
             ->assertJsonPath('has_more', false)
             ->assertJsonCount(3, 'items');
@@ -72,10 +72,10 @@ class CompetitionCatalogApiTest extends TestCase
     {
         Sanctum::actingAs(User::factory()->create());
 
-        $league = League::create(['name' => 'L', 'description' => '']);
+        $organization = Organization::create(['name' => 'L', 'description' => '']);
         $season = Season::create([
             'name' => 'Sezon 1',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);

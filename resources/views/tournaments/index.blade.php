@@ -16,7 +16,7 @@
             <div>
                 <x-empty-state
                     title="Brak turniejów"
-                    description="Gdy pojawią się turnieje w ligach lub jednorazowe, zobaczysz je tutaj."
+                    description="Gdy pojawią się turnieje w organizacjach lub jednorazowe, zobaczysz je tutaj."
                 />
             </div>
         </template>
@@ -62,10 +62,10 @@
         </div>
     </div>
 
-    @canCreateLeagues
+    @canCreateOrganizations
     <a href="{{ route('tournaments.create') }}" class="btn-fab">
         Stwórz nowy turniej
     </a>
-    @endcanCreateLeagues
+    @endcanCreateOrganizations
 
 @endsection

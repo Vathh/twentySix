@@ -3,7 +3,7 @@
 namespace App\Models\Player;
 
 use App\Models\Achievements\Achievement;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Season\Season;
 use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Model;
@@ -12,16 +12,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Player extends Model
 {
-    protected $fillable = ['name', 'description', 'user_id', 'league_id', 'season_id'];
+    protected $fillable = ['name', 'description', 'user_id', 'organization_id', 'season_id'];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function league(): BelongsTo
+    public function organization(): BelongsTo
     {
-        return $this->belongsTo(League::class);
+        return $this->belongsTo(Organization::class);
     }
 
     public function season(): BelongsTo

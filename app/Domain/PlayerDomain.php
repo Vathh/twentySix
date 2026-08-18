@@ -3,7 +3,7 @@
 namespace App\Domain;
 
 use App\Domain\Concerns\AssertsRelationsLoaded;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;

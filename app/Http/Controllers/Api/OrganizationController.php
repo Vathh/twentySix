@@ -3,39 +3,39 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Api\Concerns\MapsIndexPageForApi;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Services\Competition\CompetitionShowSerializer;
-use App\Services\League\LeagueService;
+use App\Services\Organization\OrganizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class LeagueController
+class OrganizationController
 {
     use MapsIndexPageForApi;
 
     public function __construct(
-        private LeagueService $leagueService,
+        private OrganizationService $organizationService,
         private CompetitionShowSerializer $showSerializer,
     ) {
     }
 
     /**
-     * GET /api/leagues?page=
+     * GET /api/organizations?page=
      */
     public function index(Request $request): JsonResponse
     {
         $page = max(1, (int) $request->query('page', 1));
 
         return response()->json(
-            $this->indexPageWithoutUrls($this->leagueService->getIndexPage($page)),
+            $this->indexPageWithoutUrls($this->organizationService->getIndexPage($page)),
         );
     }
 
     /**
-     * GET /api/leagues/{league}
+     * GET /api/organizations/{organization}
      */
-    public function show(League $league): JsonResponse
+    public function show(Organization $organization): JsonResponse
     {
-        return response()->json($this->showSerializer->league($league));
+        return response()->json($this->showSerializer->organization($organization));
     }
 }

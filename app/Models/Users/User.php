@@ -2,7 +2,7 @@
 
 namespace App\Models\Users;
 
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Notifications\VerifyEmailNotification;
 use Database\Factories\UserFactory;
@@ -54,7 +54,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'can_create_leagues' => 'boolean',
+            'can_create_organizations' => 'boolean',
             'banned_at' => 'datetime',
         ];
     }
@@ -74,14 +74,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(Player::class);
     }
 
-    public function adminLeagues(): BelongsToMany
+    public function adminOrganizations(): BelongsToMany
     {
-        return $this->belongsToMany(League::class, 'league_user_admin');
+        return $this->belongsToMany(Organization::class, 'organization_user_admin');
     }
 
-    public function relatedLeagues(): BelongsToMany
+    public function relatedOrganizations(): BelongsToMany
     {
-        return $this->belongsToMany(League::class, 'league_user');
+        return $this->belongsToMany(Organization::class, 'organization_user');
     }
 
     public function sendEmailVerificationNotification(): void

@@ -37,7 +37,7 @@ Backend staging: `https://dartscore.studiokam.pl`
 
 ### 2. Web gość
 
-- Przeglądarka **bez logowania**: ligi, turnieje, tabele.
+- Przeglądarka **bez logowania**: organizacji, turnieje, tabele.
 - Wejdź w **live** trwającego meczu turniejowego (jeśli jest).
 
 ### 3. Turniej (tablet + web)

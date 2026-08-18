@@ -42,21 +42,21 @@ class PlatformAdminController extends Controller
         ]);
     }
 
-    public function updateCanCreateLeagues(Request $request, int $userId): RedirectResponse
+    public function updateCanCreateOrganizations(Request $request, int $userId): RedirectResponse
     {
         $validated = $request->validate([
-            'can_create_leagues' => ['required', 'boolean'],
+            'can_create_organizations' => ['required', 'boolean'],
         ]);
 
-        $user = $this->platformAdminService->setCanCreateLeagues(
+        $user = $this->platformAdminService->setCanCreateOrganizations(
             $userId,
-            (bool) $validated['can_create_leagues'],
+            (bool) $validated['can_create_organizations'],
         );
 
         $label = $user->player?->name ?? $user->email;
-        $state = $user->can_create_leagues ? 'włączone' : 'wyłączone';
+        $state = $user->can_create_organizations ? 'włączone' : 'wyłączone';
 
-        return back()->with('success', "Tworzenie lig dla {$label}: {$state}");
+        return back()->with('success', "Tworzenie organizacji dla {$label}: {$state}");
     }
 
     public function updateBanned(Request $request, int $userId): RedirectResponse

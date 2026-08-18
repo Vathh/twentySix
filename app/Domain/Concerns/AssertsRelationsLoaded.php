@@ -24,7 +24,7 @@ trait AssertsRelationsLoaded
     }
 
     /**
-     * Sprawdza pojedynczą relację, w tym zagnieżdżoną (`"season.league"`).
+     * Sprawdza pojedynczą relację, w tym zagnieżdżoną (`"season.organization"`).
      */
     private static function assertRelationLoaded(Model $model, string $relation): void
     {

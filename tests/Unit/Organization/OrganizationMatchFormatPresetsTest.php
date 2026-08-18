@@ -1,27 +1,27 @@
 <?php
 
-namespace Tests\Unit\League;
+namespace Tests\Unit\Organization;
 
 use App\Enums\GameStage;
 use App\Domain\GameScoring\MatchFormat;
-use App\Support\League\LeagueMatchFormatPresets;
+use App\Support\Organization\OrganizationMatchFormatPresets;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
-class LeagueMatchFormatPresetsTest extends TestCase
+class OrganizationMatchFormatPresetsTest extends TestCase
 {
     public function test_defaults_by_stage_without_presets_uses_match_format_default(): void
     {
-        $defaults = LeagueMatchFormatPresets::defaultsByStage(null);
+        $defaults = OrganizationMatchFormatPresets::defaultsByStage(null);
         $expected = MatchFormat::default()->toArray();
 
         $this->assertSame($expected, $defaults[GameStage::GROUP->value]);
         $this->assertSame($expected, $defaults[GameStage::FINAL->value]);
     }
 
-    public function test_defaults_by_stage_merges_league_presets(): void
+    public function test_defaults_by_stage_merges_organization_presets(): void
     {
-        $defaults = LeagueMatchFormatPresets::defaultsByStage([
+        $defaults = OrganizationMatchFormatPresets::defaultsByStage([
             GameStage::GROUP->value => [
                 'startingScore' => 301,
                 'legsToWinSet' => 2,
@@ -52,6 +52,6 @@ class LeagueMatchFormatPresetsTest extends TestCase
         }
         $input[GameStage::GROUP->value]['startingScore'] = 999;
 
-        LeagueMatchFormatPresets::fromFormInput($input);
+        OrganizationMatchFormatPresets::fromFormInput($input);
     }
 }

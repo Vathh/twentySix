@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\GameStage;
 use App\Models\GroupStanding\GroupStanding;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\Season\Season;
@@ -23,12 +23,12 @@ class PlayoffAdvanceTest extends TestCase
 
     public function test_playoff_uses_group_advances_from_tournament(): void
     {
-        $admin = User::factory()->create(['can_create_leagues' => true]);
-        $league = League::create(['name' => 'Liga', 'description' => '']);
-        $league->admins()->attach($admin->id);
+        $admin = User::factory()->create(['can_create_organizations' => true]);
+        $organization = Organization::create(['name' => 'Organizacja', 'description' => '']);
+        $organization->admins()->attach($admin->id);
         $season = Season::create([
             'name' => 'Sezon',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -46,7 +46,7 @@ class PlayoffAdvanceTest extends TestCase
         $players = collect(range(1, 4))->map(fn (int $i) => Player::create([
             'name' => "Gracz {$i}",
             'season_id' => $season->id,
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
         ]));
 
         foreach ($players as $index => $player) {
@@ -89,11 +89,11 @@ class PlayoffAdvanceTest extends TestCase
 
     public function test_playoff_first_round_respects_group_constraint_for_four_group_bracket(): void
     {
-        $admin = User::factory()->create(['can_create_leagues' => true]);
-        $league = League::create(['name' => 'Liga', 'description' => '']);
+        $admin = User::factory()->create(['can_create_organizations' => true]);
+        $organization = Organization::create(['name' => 'Organizacja', 'description' => '']);
         $season = Season::create([
             'name' => 'Sezon',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -111,7 +111,7 @@ class PlayoffAdvanceTest extends TestCase
         $players = collect(range(1, 8))->map(fn (int $i) => Player::create([
             'name' => "Gracz {$i}",
             'season_id' => $season->id,
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
         ]));
 
         foreach ($players as $index => $player) {

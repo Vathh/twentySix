@@ -16,7 +16,7 @@ Aplikacja mobilna służy na ten moment do **dwóch odrębnych rzeczy**:
 | # | Funkcjonalność | Opis |
 |---|----------------|------|
 | 1 | **Szybki mecz** | Rozgrywanie szybkich gier użytkownika (sparingi, mecze towarzyskie). |
-| 2 | **Sędziowanie turniejów** | Sędziowanie meczów w ramach turnieju organizowanego przez ligę (np. w klubie). |
+| 2 | **Sędziowanie turniejów** | Sędziowanie meczów w ramach turnieju organizowanego przez organizację (np. w klubie). |
 
 Każda z nich ma **inny sposób uwierzytelnienia** i **inny cel** – nie mieszamy ich ze sobą.
 
@@ -46,11 +46,11 @@ Każda z nich ma **inny sposób uwierzytelnienia** i **inny cel** – nie miesza
 
 ## Kontekst: dlaczego rozdzielamy te dwie rzeczy
 
-- **Marcin** (Olsztyn) gra w Olsztyńskiej Lidze Darta. Z **Kubą** (też z ligi) gra sparingi – sędziują je w aplikacji w sekcji **Szybki mecz** (logowanie na konto, zaproszenia, lobby).
-- W sobotę w klubie Marcin **uruchamia turniej** w ramach Olsztyńskiej Ligi (panel webowy). System generuje **kody logowania do turnieju**. Marcin rozdaje je osobom sędziującym (m.in. Kubie).
-- **Kuba** przy tarczy wpisuje w aplikacji kod w sekcji **Turniej** i dostaje listę **tylko meczów tego turnieju** (Olsztyńska Liga).
-- **Grzegorz** (inna liga w twentySix) prowadzi własną ligę. Uruchamia swój turniej – system generuje **jego** kody. Sędziowie wpisują **jego** kod i widzą **tylko mecze tego turnieju**.
-- Dzięki temu: **kod Marcina ≠ kod Grzegorza** → sędziowie widzą tylko turniej, który ich dotyczy. Nie ma mieszania lig/turniejów.
+- **Marcin** (Olsztyn) gra w Olsztyńskiej Organizacji Darta. Z **Kubą** (też z organizacji) gra sparingi – sędziują je w aplikacji w sekcji **Szybki mecz** (logowanie na konto, zaproszenia, lobby).
+- W sobotę w klubie Marcin **uruchamia turniej** w ramach Olsztyńskiej Organizacji (panel webowy). System generuje **kody logowania do turnieju**. Marcin rozdaje je osobom sędziującym (m.in. Kubie).
+- **Kuba** przy tarczy wpisuje w aplikacji kod w sekcji **Turniej** i dostaje listę **tylko meczów tego turnieju** (Olsztyńska Organizacja).
+- **Grzegorz** (inna organizacja w twentySix) prowadzi własną organizację. Uruchamia swój turniej – system generuje **jego** kody. Sędziowie wpisują **jego** kod i widzą **tylko mecze tego turnieju**.
+- Dzięki temu: **kod Marcina ≠ kod Grzegorza** → sędziowie widzą tylko turniej, który ich dotyczy. Nie ma mieszania organizacji/turniejów.
 
 ---
 
@@ -140,11 +140,11 @@ Po uruchomieniu **`php artisan migrate:fresh --seed`** (lub sam `DemoDataSeeder`
 - **Oczekujące zaproszenia:** Jan→Tomasz (5), Anna→Katarzyna (6), Marcin→Jan (1), Maria→Magdalena (8).
 - **Odrzucone:** Piotr→Magdalena (3→8).
 
-**Konto z aktualnego `DemoDataSeeder`** (po `php artisan migrate:fresh --seed`) — logowanie w **panelu WWW** (zarządzanie ligą, sezonem, turniejami demo):
+**Konto z aktualnego `DemoDataSeeder`** (po `php artisan migrate:fresh --seed`) — logowanie w **panelu WWW** (zarządzanie organizacją, sezonem, turniejami demo):
 
 | Kontekst | Email | Hasło |
 |----------|-------|-------|
-| Administrator demo (liga „twentySix — Liga demonstracyjna”, sezon, turnieje) | `demo-admin@twentysix.local` | `password` |
+| Administrator demo (organizacja „twentySix — Organizacja demonstracyjna”, sezon, turnieje) | `demo-admin@twentysix.local` | `password` |
 
 - **Logowanie na konto (Szybki mecz):** konta `gracz1@test.pl` … `gracz8@test.pl` (hasło `password`) tworzy **`DemoPlayersSeeder`** — znajomi i zaproszenia (pending / rejected) między nimi. Administrator turniejów: `demo-admin@twentysix.local` / `password`.
 - **Kod turnieju:** kody powstają **przy starcie turnieju** w panelu. Turniej demo **„Mistrzostwa 32 — pełny bracket (demo)”** startuje już w seedzie — gotowe kody sędziowskie są w tabeli `login_codes` (pole `tournament_id` wskazuje ten turniej). Dla nowego turnieju uruchomionego ręcznie w panelu kody pojawią się tak samo po starcie.

@@ -4,7 +4,7 @@ Wklej tutaj pliki PNG/JPG o **dokładnie tych nazwach**. Przewodnik: [`../przewo
 
 | Plik | Co sfotografować |
 | ---- | ---------------- |
-| `01-web-liga-sezon.png` | Web: lista lig lub sezon z turniejami |
+| `01-web-organizacja-sezon.png` | Web: lista organizacji lub sezon z turniejami |
 | `02-web-nowy-turniej.png` | Web: tworzenie turnieju / wejście na start |
 | `03-web-start-uczestnicy-qr.png` | Web: uczestnicy + QR zgłoszeń na stronie startu |
 | `04-mobile-zaproszenie-lub-zgloszenie.png` | Mobile: zaproszenie do turnieju albo „Dołącz do turnieju” |

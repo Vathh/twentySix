@@ -2,274 +2,155 @@
 
 namespace App\Http\Controllers;
 
-use App\Domain\LeagueDomain;
-use App\Enums\AssignableEntityType;
 use App\Models\League\League;
-use App\Models\Users\User;
+use App\Models\Organization\Organization;
 use App\Services\League\LeagueService;
-use App\Services\Player\PlayerService;
-use App\Services\User\UserService;
-use App\Domain\GameScoring\MatchFormat;
-use App\Support\League\LeagueMatchFormatPresets;
+use DomainException;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class LeagueController extends Controller
 {
     public function __construct(
         private LeagueService $leagueService,
-        private UserService $userService,
-        private PlayerService $playerService
     ) {
-        $this->authorizeResource(League::class, 'league');
     }
 
-    public function index(Request $request): Factory|View|JsonResponse
+    public function create(Organization $organization): Factory|View
     {
-        $page = max(1, (int) $request->query('page', 1));
-        $data = $this->leagueService->getIndexPage($page);
+        $organization->loadMissing('admins');
+        $this->authorize('createLeague', $organization);
 
-        if ($request->wantsJson()) {
-            return response()->json($data);
-        }
-
-        return view('leagues.index', [
-            'items' => $data['items'],
-            'hasMore' => $data['has_more'],
+        return view('leagues.create', [
+            'organization' => $organization,
+            'startingScores' => [101, 201, 301, 401, 501, 601, 701, 801, 901, 1001],
+            'defaultDivisions' => [
+                ['name' => 'Ekstraklasa', 'capacity' => 8, 'startingScore' => 501, 'legsToWinSet' => 2, 'setsToWinMatch' => 1, 'promoteDirect' => 0, 'promotePlayoff' => 0],
+                ['name' => '1. liga', 'capacity' => 8, 'startingScore' => 501, 'legsToWinSet' => 2, 'setsToWinMatch' => 1, 'promoteDirect' => 2, 'promotePlayoff' => 0],
+            ],
         ]);
     }
 
-    public function create(): Factory|View
+    public function store(Request $request, Organization $organization): RedirectResponse
     {
-        return view('leagues.create');
-    }
+        $organization->loadMissing('admins');
+        $this->authorize('createLeague', $organization);
 
-    public function store(Request $request)
-    {
         $validated = $request->validate([
-            'leagueName' => 'required|string|max:255|unique:leagues,name',
-            'description' => 'string|max:500',
+            'leagueName' => 'required|string|max:80',
+            'description' => 'nullable|string|max:500',
+            'divisions' => 'required|array|min:1',
+            'divisions.*.name' => 'required|string|max:40',
+            'divisions.*.capacity' => 'required|integer|min:2|max:16',
+            'divisions.*.startingScore' => 'required|integer',
+            'divisions.*.legsToWinSet' => 'required|integer|min:1|max:15',
+            'divisions.*.setsToWinMatch' => 'required|integer|min:1|max:5',
+            'divisions.*.promoteDirect' => 'nullable|integer|min:0|max:8',
+            'divisions.*.promotePlayoff' => 'nullable|integer|min:0|max:8',
         ]);
 
-        $this->leagueService->create($validated['leagueName'], $validated['description'], Auth::id());
+        $league = $this->leagueService->create(
+            $organization->id,
+            $validated['leagueName'],
+            $validated['description'] ?? null,
+            $validated['divisions'],
+        );
 
         return redirect()
-                    ->route('leagues.index')
-                    ->with('success', 'Pomyślnie stworzono ligę!');
+            ->route('leagues.show', $league)
+            ->with('success', 'Utworzono ligę. Ustaw skład szczebli, potem wystartuj sezon.');
     }
 
     public function show(League $league): Factory|View
     {
-        $league->loadMissing(['admins', 'seasons']);
-        $leagueDomain = LeagueDomain::fromEloquent($league, ['admins', 'seasons']);
-        $seasons = collect($leagueDomain->seasons)
-            ->sortByDesc(fn($season) => $season->updatedAt)
-            ->values();
+        $this->authorize('view', $league);
 
-        return view('leagues.show', [
-            'league' => $leagueDomain,
-            'seasons' => $seasons,
-        ]);
+        return view('leagues.show', $this->leagueService->showData($league->id));
     }
 
     public function edit(League $league): Factory|View
     {
-        $league->loadMissing(['admins']);
-        $leagueDomain = LeagueDomain::fromEloquent($league, ['admins']);
+        $this->authorize('update', $this->leagueService->getForPolicy($league->id));
+
+        $data = $this->leagueService->showData($league->id);
 
         return view('leagues.edit', [
-            'league' => $leagueDomain,
-            'startingScoreOptions' => MatchFormat::ALLOWED_STARTING_SCORES,
-            'matchFormatStages' => LeagueMatchFormatPresets::stageOptions(),
-            'matchFormats' => old(
-                'matchFormats',
-                LeagueMatchFormatPresets::forEditForm($leagueDomain->matchFormatPresets),
-            ),
+            ...$data,
+            'startingScores' => [101, 201, 301, 401, 501, 601, 701, 801, 901, 1001],
         ]);
     }
 
-    public function update(Request $request, League $league)
+    public function update(Request $request, League $league): RedirectResponse
     {
-        $validated = $request->validate([
-            'leagueName' => 'required|string|max:255',
-            'description' => 'required|string|max:500',
-            'matchFormats' => 'nullable|array',
-        ]);
-
-        $presets = LeagueMatchFormatPresets::fromFormInput(
-            is_array($validated['matchFormats'] ?? null) ? $validated['matchFormats'] : [],
-        );
-
-        $this->leagueService->update(
-            $league->id,
-            $validated['leagueName'],
-            $validated['description'],
-            $presets,
-        );
-
-        return redirect()
-            ->route('leagues.show', $league->id)
-            ->with('success', 'Pomyślnie zaktualizowano ligę');
-    }
-
-    public function relatedUsers(Request $request, int $leagueId): Factory|View
-    {
-        $league = $this->loadAndAuthorize($leagueId, ['relatedUsers']);
-
-        $search = $request->input('search');
-
-        $users = $this->userService->search($league->relatedUsers, $search);
-
-        $relatedUsers = $this->userService->sortByName($league->relatedUsers);
-
-        return view('leagues.relatedUsers', [
-            'league' => $league,
-            'relatedUsers' => $relatedUsers,
-            'users' => $users
-        ]);
-    }
-
-    public function addRelatedUser(Request $request, int $leagueId)
-    {
-        $this->loadAndAuthorize($leagueId);
+        $this->authorize('update', $this->leagueService->getForPolicy($league->id));
 
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'leagueName' => 'required|string|max:80',
+            'description' => 'nullable|string|max:500',
+            'divisions' => 'required|array|min:1',
+            'divisions.*.id' => 'nullable|integer',
+            'divisions.*.name' => 'required|string|max:40',
+            'divisions.*.capacity' => 'required|integer|min:2|max:16',
+            'divisions.*.startingScore' => 'required|integer',
+            'divisions.*.legsToWinSet' => 'required|integer|min:1|max:15',
+            'divisions.*.setsToWinMatch' => 'required|integer|min:1|max:5',
+            'divisions.*.promoteDirect' => 'nullable|integer|min:0|max:8',
+            'divisions.*.promotePlayoff' => 'nullable|integer|min:0|max:8',
         ]);
 
-        $this->leagueService->addRelatedUser($leagueId, $validated['user_id']);
+        try {
+            $this->leagueService->update($league->id, $validated['leagueName'], $validated['description'] ?? null);
+            $this->leagueService->updateDivisions($league->id, $validated['divisions']);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()
-                    ->route('leagues.relatedUsers', $leagueId)
-                    ->with('success', 'Użytkownik dodany do ligi');
+            ->route('leagues.show', $league)
+            ->with('success', 'Zapisano ligę.');
     }
 
-    public function removeRelatedUser(Request $request, int $leagueId)
+    public function roster(League $league): Factory|View
     {
-        $this->loadAndAuthorize($leagueId);
+        $this->authorize('update', $this->leagueService->getForPolicy($league->id));
+
+        return view('leagues.roster', $this->leagueService->rosterData($league->id));
+    }
+
+    public function assignPlayer(Request $request, League $league): RedirectResponse
+    {
+        $this->authorize('update', $this->leagueService->getForPolicy($league->id));
 
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'division_id' => 'required|integer',
+            'player_id' => 'required|integer',
         ]);
 
-        $this->leagueService->removeRelatedUser($leagueId, $validated['user_id']);
+        try {
+            $this->leagueService->assignPlayer($league->id, (int) $validated['division_id'], (int) $validated['player_id']);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
-        return redirect()
-                    ->route('leagues.relatedUsers', $leagueId)
-                    ->with('success', 'Użytkownik usunięty z ligi');
+        return back()->with('success', 'Dodano zawodnika do szczebla.');
     }
 
-    public function admins(int $leagueId): Factory|View
+    public function removePlayer(Request $request, League $league): RedirectResponse
     {
-        $league = $this->loadAndAuthorize($leagueId, ['relatedUsers']);
-        $admins = $league->admins;
-        $relatedUsers = $this->userService->sortByNameAndRejectAdmins($league->relatedUsers, $league->admins);
-
-        return view('leagues.admins', [
-            'league' => $league,
-            'admins' => $admins,
-            'relatedUsers' => $relatedUsers
-        ]);
-    }
-
-    public function addAdmin(Request $request, int $leagueId)
-    {
-        $this->loadAndAuthorize($leagueId);
+        $this->authorize('update', $this->leagueService->getForPolicy($league->id));
 
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'player_id' => 'required|integer',
         ]);
 
-        $this->leagueService->addAdmin($leagueId, $validated['user_id']);
+        try {
+            $this->leagueService->removePlayer($league->id, (int) $validated['player_id']);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
-        return redirect()
-                    ->route('leagues.admins', $leagueId)
-                    ->with('success', 'Uprawnienie administratora nadano pomyślnie');
-    }
-
-    public function removeAdmin(Request $request, int $leagueId)
-    {
-        $this->loadAndAuthorize($leagueId);
-
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-        ]);
-
-        $this->leagueService->removeAdmin($leagueId, $validated['user_id']);
-
-        return redirect()
-                    ->route('leagues.admins', $leagueId)
-                    ->with('success', 'Uprawnienie administratora usunięto pomyślnie');
-    }
-
-    public function guests(int $leagueId): Factory|View
-    {
-        $league = $this->loadAndAuthorize($leagueId, ['guests']);
-
-        $guests = $this->userService->sortByName($league->guests);
-
-        return view('leagues.guests', [
-            'league' => $league,
-            'guests' => $guests
-        ]);
-    }
-
-    public function addGuest(Request $request, int $leagueId)
-    {
-        $this->loadAndAuthorize($leagueId);
-
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:20',
-                new \App\Rules\UniquePlayerNameInLeague($leagueId),
-            ],
-        ]);
-
-        $this->playerService->createGuest($validated['name'], $leagueId, AssignableEntityType::LEAGUE);
-
-        return redirect()
-                    ->route('leagues.guests', $leagueId)
-                    ->with('success', 'Pomyślnie dodano gościa');
-    }
-
-    public function removeGuest(Request $request, int $leagueId)
-    {
-        $this->loadAndAuthorize($leagueId);
-
-        $validated = $request->validate([
-            'player_id' => 'required|exists:players,id',
-        ]);
-
-        $this->playerService->removeGuest($validated['player_id']);
-
-        return redirect()
-            ->route('leagues.guests', $leagueId)
-            ->with('success', 'Pomyślnie usunięto gościa');
-    }
-
-    public function loadAndAuthorize(int $leagueId, array $additionalRelations = []): LeagueDomain
-    {
-        $allRelations = array_merge($additionalRelations, ['admins']);
-        $league = League::with($allRelations)->findOrFail($leagueId);
-        $this->authorize('update', $league);
-
-        return LeagueDomain::fromEloquent($league, $allRelations);
+        return back()->with('success', 'Usunięto zawodnika ze składu ligi.');
     }
 }
-
-
-
-
-
-
-
-
-
-

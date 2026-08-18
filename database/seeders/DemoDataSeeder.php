@@ -12,7 +12,7 @@ use App\Enums\GameType;
 use App\Enums\TournamentStatus;
 use App\Models\Game\Game;
 use App\Models\GroupStanding\GroupStanding;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
@@ -26,8 +26,8 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 
 /**
- * 3 ligi × 2 sezony × 2 turnieje.
- * Pełny cykl (32 graczy, grupy, playoff, finished) + turniej 6-osobowy w fazie grupowej tylko w pierwszej lidze / pierwszym sezonie.
+ * 3 organizacje × 2 sezony × 2 turnieje.
+ * Pełny cykl (32 graczy, grupy, playoff, finished) + turniej 6-osobowy w fazie grupowej tylko w pierwszej organizacji / pierwszym sezonie.
  */
 class DemoDataSeeder extends Seeder
 {
@@ -37,13 +37,13 @@ class DemoDataSeeder extends Seeder
 
     private const SMALL_TOURNAMENT = 'Turniej 6-osobowy (faza grupowa)';
 
-    /** Marker pełnego seeda (3 ligi). */
-    private const IDEMPOTENCY_LEAGUE_NAME = 'Białystok — Podlaska Liga Darta';
+    /** Marker pełnego seeda (3 organizacje). */
+    private const IDEMPOTENCY_ORGANIZATION_NAME = 'Białystok — Podlaska Organizacja Darta';
 
-    private const LEAGUE_NAMES = [
-        'twentySix — Liga demonstracyjna',
-        'Olsztyn — Warmińsko-Mazurska Liga',
-        self::IDEMPOTENCY_LEAGUE_NAME,
+    private const ORGANIZATION_NAMES = [
+        'twentySix — Organizacja demonstracyjna',
+        'Olsztyn — Warmińsko-Mazurska Organizacja',
+        self::IDEMPOTENCY_ORGANIZATION_NAME,
     ];
 
     /**
@@ -88,13 +88,13 @@ class DemoDataSeeder extends Seeder
 
     public function run(): void
     {
-        if (League::where('name', self::IDEMPOTENCY_LEAGUE_NAME)->exists()) {
+        if (Organization::where('name', self::IDEMPOTENCY_ORGANIZATION_NAME)->exists()) {
             return;
         }
 
-        if (League::where('name', self::LEAGUE_NAMES[0])->exists()) {
+        if (Organization::where('name', self::ORGANIZATION_NAMES[0])->exists()) {
             $this->command?->warn(
-                'Wykryto starą wersję danych demo. Aby załadować 3 ligi × 2 sezony × 2 turnieje, uruchom: php artisan migrate:fresh --seed'
+                'Wykryto starą wersję danych demo. Aby załadować 3 organizacje × 2 sezony × 2 turnieje, uruchom: php artisan migrate:fresh --seed'
             );
 
             return;
@@ -107,7 +107,7 @@ class DemoDataSeeder extends Seeder
                 'password' => 'password',
             ]);
             $admin->forceFill([
-                'can_create_leagues' => 1,
+                'can_create_organizations' => 1,
                 'role' => 'admin',
             ])->save();
         }
@@ -116,7 +116,7 @@ class DemoDataSeeder extends Seeder
             ['user_id' => $admin->id],
             [
                 'name' => 'Administrator demo',
-                'league_id' => null,
+                'organization_id' => null,
                 'season_id' => null,
             ]
         );
@@ -124,29 +124,29 @@ class DemoDataSeeder extends Seeder
         $tournamentService = app(TournamentService::class);
         $gameService = app(GameService::class);
 
-        $this->seedLeagueSuwalki($admin, $tournamentService, $gameService);
-        $this->seedLeagueOlsztyn($admin);
-        $this->seedLeagueBialystok($admin);
+        $this->seedOrganizationSuwalki($admin, $tournamentService, $gameService);
+        $this->seedOrganizationOlsztyn($admin);
+        $this->seedOrganizationBialystok($admin);
     }
 
-    private function seedLeagueSuwalki(User $admin, TournamentService $tournamentService, GameService $gameService): void
+    private function seedOrganizationSuwalki(User $admin, TournamentService $tournamentService, GameService $gameService): void
     {
-        $league = League::create([
-            'name' => 'twentySix — Liga demonstracyjna',
+        $organization = Organization::create([
+            'name' => 'twentySix — Organizacja demonstracyjna',
             'description' => 'Dane wygenerowane przez DemoDataSeeder (m.in. pełny bracket 32).',
         ]);
-        $league->admins()->sync([$admin->id]);
-        $league->relatedUsers()->sync([$admin->id]);
+        $organization->admins()->sync([$admin->id]);
+        $organization->relatedUsers()->sync([$admin->id]);
 
         $seasonA = $this->createSeason(
-            $league,
+            $organization,
             $admin,
             'Sezon jesienny 2025',
             now()->subMonths(5)->startOfMonth(),
             now()->addMonth()->endOfMonth(),
         );
 
-        $players = $this->createGuestPlayers(32, $seasonA, $league);
+        $players = $this->createGuestPlayers(32, $seasonA, $organization);
 
         $big = Tournament::create([
             'season_id' => $seasonA->id,
@@ -180,27 +180,27 @@ class DemoDataSeeder extends Seeder
         $tournamentService->tryCreateGroupGames($small->id, $sixIds, 2, 4);
 
         $seasonB = $this->createSeason(
-            $league,
+            $organization,
             $admin,
             'Sezon wiosenny 2026',
             now()->addMonths(2)->startOfMonth(),
             now()->addMonths(8)->endOfMonth(),
         );
-        $this->createPlannedTournament($seasonB, 'Liga klubowa — runda wiosenna', now()->addMonths(3));
+        $this->createPlannedTournament($seasonB, 'Organizacja klubowa — runda wiosenna', now()->addMonths(3));
         $this->createPlannedTournament($seasonB, 'Puchar miasta — finały', now()->addMonths(5));
     }
 
-    private function seedLeagueOlsztyn(User $admin): void
+    private function seedOrganizationOlsztyn(User $admin): void
     {
-        $league = League::create([
-            'name' => 'Olsztyn — Warmińsko-Mazurska Liga',
-            'description' => 'Druga liga demo (turnieje zaplanowane, bez rozgrywek).',
+        $organization = Organization::create([
+            'name' => 'Olsztyn — Warmińsko-Mazurska Organizacja',
+            'description' => 'Druga organizacja demo (turnieje zaplanowane, bez rozgrywek).',
         ]);
-        $league->admins()->sync([$admin->id]);
-        $league->relatedUsers()->sync([$admin->id]);
+        $organization->admins()->sync([$admin->id]);
+        $organization->relatedUsers()->sync([$admin->id]);
 
         $s1 = $this->createSeason(
-            $league,
+            $organization,
             $admin,
             'Sezon 2025',
             now()->subYear()->startOfMonth(),
@@ -210,7 +210,7 @@ class DemoDataSeeder extends Seeder
         $this->createPlannedTournament($s1, 'Turniej towarzyski — styczeń', now()->addWeeks(6));
 
         $s2 = $this->createSeason(
-            $league,
+            $organization,
             $admin,
             'Sezon 2026',
             now()->addMonths(4)->startOfMonth(),
@@ -220,27 +220,27 @@ class DemoDataSeeder extends Seeder
         $this->createPlannedTournament($s2, 'Mistrzostwa województwa (eliminacje)', now()->addMonths(7));
     }
 
-    private function seedLeagueBialystok(User $admin): void
+    private function seedOrganizationBialystok(User $admin): void
     {
-        $league = League::create([
-            'name' => self::IDEMPOTENCY_LEAGUE_NAME,
-            'description' => 'Trzecia liga demo (turnieje zaplanowane, bez rozgrywek).',
+        $organization = Organization::create([
+            'name' => self::IDEMPOTENCY_ORGANIZATION_NAME,
+            'description' => 'Trzecia organizacja demo (turnieje zaplanowane, bez rozgrywek).',
         ]);
-        $league->admins()->sync([$admin->id]);
-        $league->relatedUsers()->sync([$admin->id]);
+        $organization->admins()->sync([$admin->id]);
+        $organization->relatedUsers()->sync([$admin->id]);
 
         $s1 = $this->createSeason(
-            $league,
+            $organization,
             $admin,
             'Sezon zimowy',
             now()->subMonths(3)->startOfMonth(),
             now()->addMonths(2)->endOfMonth(),
         );
-        $this->createPlannedTournament($s1, 'Liga klubowa — kolejka 1', now()->addDays(10));
+        $this->createPlannedTournament($s1, 'Organizacja klubowa — kolejka 1', now()->addDays(10));
         $this->createPlannedTournament($s1, 'Weekend z dartem', now()->addDays(24));
 
         $s2 = $this->createSeason(
-            $league,
+            $organization,
             $admin,
             'Sezon letni',
             now()->addMonths(3)->startOfMonth(),
@@ -250,10 +250,10 @@ class DemoDataSeeder extends Seeder
         $this->createPlannedTournament($s2, 'Turniej otwarty — lipiec', now()->addMonths(6));
     }
 
-    private function createSeason(League $league, User $admin, string $name, Carbon $start, Carbon $end): Season
+    private function createSeason(Organization $organization, User $admin, string $name, Carbon $start, Carbon $end): Season
     {
         $season = Season::create([
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'name' => $name,
             'start_date' => $start,
             'end_date' => $end,
@@ -283,7 +283,7 @@ class DemoDataSeeder extends Seeder
     /**
      * @return Collection<int, Player>
      */
-    private function createGuestPlayers(int $count, Season $season, League $league): Collection
+    private function createGuestPlayers(int $count, Season $season, Organization $organization): Collection
     {
         if ($count > count(self::DEMO_GUEST_PLAYER_NAMES)) {
             throw new \InvalidArgumentException(
@@ -297,7 +297,7 @@ class DemoDataSeeder extends Seeder
                 'name' => self::DEMO_GUEST_PLAYER_NAMES[$i - 1],
                 'user_id' => null,
                 'season_id' => $season->id,
-                'league_id' => $league->id,
+                'organization_id' => $organization->id,
             ]));
         }
 

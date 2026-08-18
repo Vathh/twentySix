@@ -20,9 +20,9 @@ class SeasonRepository
     public function getAll(): Collection
     {
         return Season::query()
-            ->with('league')
+            ->with('organization')
             ->get()
-            ->map(fn (Season $season) => SeasonDomain::fromEloquent($season, ['league']));
+            ->map(fn (Season $season) => SeasonDomain::fromEloquent($season, ['organization']));
     }
 
     /**
@@ -34,14 +34,14 @@ class SeasonRepository
     {
         $page = max(1, $page);
         $paginator = Season::query()
-            ->with('league')
+            ->with('organization')
             ->orderByRaw('COALESCE(start_date, end_date, ?) DESC', ['1970-01-01'])
             ->orderByDesc('id')
             ->paginate(self::INDEX_PER_PAGE, ['*'], 'page', $page);
 
         return [
             'items' => $paginator->getCollection()
-                ->map(fn (Season $season) => SeasonDomain::fromEloquent($season, ['league']))
+                ->map(fn (Season $season) => SeasonDomain::fromEloquent($season, ['organization']))
                 ->values(),
             'has_more' => $paginator->hasMorePages(),
         ];
@@ -51,17 +51,17 @@ class SeasonRepository
      * @throws Throwable
      */
     public function create(
-        ?int     $leagueId,
+        ?int     $organizationId,
         string  $name,
         array   $adminsIds = [],
         ?string $startDate = null,
         ?string $endDate = null)
     : void
     {
-        DB::transaction(function () use ($leagueId, $name, $adminsIds, $startDate, $endDate) {
+        DB::transaction(function () use ($organizationId, $name, $adminsIds, $startDate, $endDate) {
 
             $season = Season::create([
-                'league_id' => $leagueId,
+                'organization_id' => $organizationId,
                 'name' => $name,
                 'start_date' => $startDate,
                 'end_date' => $endDate
@@ -79,12 +79,12 @@ class SeasonRepository
      */
     public function getRelatedUsers(int $seasonId): Collection
     {
-        $season = Season::with(['league.relatedUsers.player', 'relatedUsers.player'])->findOrFail($seasonId);
+        $season = Season::with(['organization.relatedUsers.player', 'relatedUsers.player'])->findOrFail($seasonId);
         $seasonRelatedUsers = $season->relatedUsers;
-        $leagueRelatedUsers = $season->league->relatedUsers;
+        $organizationRelatedUsers = $season->organization->relatedUsers;
 
         return $seasonRelatedUsers
-                    ->merge($leagueRelatedUsers)
+                    ->merge($organizationRelatedUsers)
                     ->unique('id')
                     ->values();
     }
@@ -117,10 +117,10 @@ class SeasonRepository
      * @param int $seasonId
      * @return SeasonDomain
      */
-    public function findByIdWithLeagueAndGuests(int $seasonId): SeasonDomain
+    public function findByIdWithOrganizationAndGuests(int $seasonId): SeasonDomain
     {
-        $season = Season::with(['league', 'guests'])->findOrFail($seasonId);
-        return SeasonDomain::fromEloquent($season, ['league', 'guests']);
+        $season = Season::with(['organization', 'guests'])->findOrFail($seasonId);
+        return SeasonDomain::fromEloquent($season, ['organization', 'guests']);
     }
 
     /**

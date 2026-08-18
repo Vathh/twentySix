@@ -12,7 +12,7 @@ use App\Models\Game\Game;
 use App\Models\Game\GameLeg;
 use App\Models\Game\GameLegPlayerStat;
 use App\Models\GroupStanding\GroupStanding;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\PointScheme\PointScheme;
@@ -50,12 +50,12 @@ class TournamentGameScoringFinalizeTest extends TestCase
         $playerService = app(PlayerService::class);
         $playerService->create('User', $this->user->id);
 
-        $league = League::create(['name' => 'Test League', 'description' => 'Test']);
-        $league->admins()->attach($this->user->id);
+        $organization = Organization::create(['name' => 'Test Organization', 'description' => 'Test']);
+        $organization->admins()->attach($this->user->id);
 
         $season = Season::create([
             'name' => 'Test Season',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -81,21 +81,21 @@ class TournamentGameScoringFinalizeTest extends TestCase
         $this->tournament->update(['point_scheme_id' => $smallScheme->id]);
 
         $this->player1 = Player::where('user_id', $this->user->id)->first();
-        $this->player1->update(['season_id' => $season->id, 'league_id' => $league->id]);
+        $this->player1->update(['season_id' => $season->id, 'organization_id' => $organization->id]);
         $this->player2 = Player::create([
             'name' => 'Player2',
             'season_id' => $season->id,
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
         ]);
         $this->player3 = Player::create([
             'name' => 'Player3',
             'season_id' => $season->id,
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
         ]);
         $this->player4 = Player::create([
             'name' => 'Player4',
             'season_id' => $season->id,
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
         ]);
 
         Sanctum::actingAs($this->user);

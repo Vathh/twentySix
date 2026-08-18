@@ -16,7 +16,7 @@
                 <header class="entity-header">
                     @if($season)
                         <nav class="entity-breadcrumb" aria-label="Okruszki">
-                            <a href="{{ route('leagues.show', $season->league->id) }}">{{ $season->league->name }}</a>
+                            <a href="{{ route('organizations.show', $season->organization->id) }}">{{ $season->organization->name }}</a>
                             <span class="entity-breadcrumb-sep">/</span>
                             <a href="{{ route('seasons.show', $season->id) }}">{{ $season->name }}</a>
                             <span class="entity-breadcrumb-sep">/</span>
@@ -106,7 +106,7 @@
                                                             'groupPlayoffHighlights' => $groupPlayoffHighlights])
                     @elseif($tab === 'results')
                         @include('tournaments.tabs.results', [
-                            'showPointsColumn' => $tournament->tracksLeaguePoints(),
+                            'showPointsColumn' => $tournament->tracksSeasonPoints(),
                             'showStageColumn' => $tournament->format !== \App\Enums\TournamentFormat::DoubleElimination,
                         ])
                     @elseif($tab === 'achievements')

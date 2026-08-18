@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
 use App\Models\Game\Game;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
 use App\Models\Tournament\LoginCode;
@@ -32,12 +32,12 @@ class TournamentRefereeWebTest extends TestCase
         parent::setUp();
         $this->withoutVite();
 
-        $admin = User::factory()->create(['can_create_leagues' => true]);
-        $league = League::create(['name' => 'League', 'description' => 't']);
-        $league->admins()->attach($admin->id);
+        $admin = User::factory()->create(['can_create_organizations' => true]);
+        $organization = Organization::create(['name' => 'Organization', 'description' => 't']);
+        $organization->admins()->attach($admin->id);
         $season = Season::create([
             'name' => 'Season',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -45,11 +45,11 @@ class TournamentRefereeWebTest extends TestCase
         $playerService = app(PlayerService::class);
         $playerService->create('RefP1', $admin->id);
         $this->player1 = Player::where('user_id', $admin->id)->first();
-        $this->player1->update(['season_id' => $season->id, 'league_id' => $league->id]);
+        $this->player1->update(['season_id' => $season->id, 'organization_id' => $organization->id]);
         $this->player2 = Player::create([
             'name' => 'RefP2',
             'season_id' => $season->id,
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
         ]);
 
         $this->tournament = Tournament::create([

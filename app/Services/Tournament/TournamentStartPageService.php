@@ -9,7 +9,7 @@ use App\Enums\TournamentStatus;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Services\Player\PlayerService;
 use App\Domain\GameScoring\MatchFormat;
-use App\Support\League\LeagueMatchFormatPresets;
+use App\Support\Organization\OrganizationMatchFormatPresets;
 use App\Support\Tournament\TournamentStartRules;
 use Illuminate\Http\Request;
 
@@ -121,11 +121,11 @@ class TournamentStartPageService
             : 4;
         $seByeCount = max(0, $seBracketSize - $participantCount);
 
-        $leaguePresets = $tournament->season?->league?->matchFormatPresets;
-        $defaultMatchFormatsByStage = LeagueMatchFormatPresets::defaultsByStage(
-            $leaguePresets !== [] ? $leaguePresets : null,
+        $organizationPresets = $tournament->season?->organization?->matchFormatPresets;
+        $defaultMatchFormatsByStage = OrganizationMatchFormatPresets::defaultsByStage(
+            $organizationPresets !== [] ? $organizationPresets : null,
         );
-        $hasLeagueFormatPresets = is_array($leaguePresets) && $leaguePresets !== [];
+        $hasOrganizationFormatPresets = is_array($organizationPresets) && $organizationPresets !== [];
 
         $pendingJoinRequests = $tournament->status === TournamentStatus::CREATED
             ? $this->joinRequestService->getPendingForTournament($tournamentId)
@@ -166,7 +166,7 @@ class TournamentStartPageService
             'startingScoreOptions' => MatchFormat::ALLOWED_STARTING_SCORES,
             'defaultMatchFormat' => MatchFormat::default()->toArray(),
             'defaultMatchFormatsByStage' => $defaultMatchFormatsByStage,
-            'hasLeagueFormatPresets' => $hasLeagueFormatPresets,
+            'hasOrganizationFormatPresets' => $hasOrganizationFormatPresets,
             'matchFormatStagesByBracket' => $matchFormatStagesByBracket,
             'matchFormatStagesByBracketSe' => $matchFormatStagesByBracketSe,
             'oldMatchFormats' => old('matchFormats', []),

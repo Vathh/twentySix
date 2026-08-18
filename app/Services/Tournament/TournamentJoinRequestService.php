@@ -64,7 +64,7 @@ class TournamentJoinRequestService
     }
 
     /**
-     * @return array{tournamentName: string, leagueName: ?string, canApply: bool, reason: ?string, alreadyParticipant: bool, alreadyPending: bool}
+     * @return array{tournamentName: string, organizationName: ?string, canApply: bool, reason: ?string, alreadyParticipant: bool, alreadyPending: bool}
      */
     public function previewForUser(string $code, ?int $userId): array
     {
@@ -103,7 +103,7 @@ class TournamentJoinRequestService
         return [
             'tournamentId' => $tournament->id,
             'tournamentName' => $tournament->name,
-            'leagueName' => $tournament->season?->league?->name,
+            'organizationName' => $tournament->season?->organization?->name,
             'canApply' => $canApply,
             'reason' => $reason,
             'alreadyParticipant' => $alreadyParticipant,

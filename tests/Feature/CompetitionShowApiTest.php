@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
@@ -16,31 +16,31 @@ class CompetitionShowApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_cannot_view_league_show(): void
+    public function test_guest_cannot_view_organization_show(): void
     {
-        $league = League::create(['name' => 'L', 'description' => '']);
+        $organization = Organization::create(['name' => 'L', 'description' => '']);
 
-        $this->getJson('/api/leagues/'.$league->id)->assertUnauthorized();
+        $this->getJson('/api/organizations/'.$organization->id)->assertUnauthorized();
     }
 
-    public function test_league_show_returns_meta_and_seasons_without_standings(): void
+    public function test_organization_show_returns_meta_and_seasons_without_standings(): void
     {
         Sanctum::actingAs(User::factory()->create());
 
-        $league = League::create(['name' => 'Liga A', 'description' => 'Opis ligi']);
+        $organization = Organization::create(['name' => 'Organizacja A', 'description' => 'Opis organizacji']);
         Season::create([
             'name' => 'Sezon 1',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
 
-        $this->getJson('/api/leagues/'.$league->id)
+        $this->getJson('/api/organizations/'.$organization->id)
             ->assertOk()
-            ->assertJsonPath('league.name', 'Liga A')
-            ->assertJsonPath('league.description', 'Opis ligi')
+            ->assertJsonPath('organization.name', 'Organizacja A')
+            ->assertJsonPath('organization.description', 'Opis organizacji')
             ->assertJsonStructure([
-                'league' => ['id', 'name', 'description', 'createdAt', 'updatedAt'],
+                'organization' => ['id', 'name', 'description', 'createdAt', 'updatedAt'],
                 'seasons' => [['id', 'name']],
             ])
             ->assertJsonMissingPath('standings')
@@ -48,21 +48,21 @@ class CompetitionShowApiTest extends TestCase
             ->assertJsonPath('seasons.0.name', 'Sezon 1');
     }
 
-    public function test_league_show_404(): void
+    public function test_organization_show_404(): void
     {
         Sanctum::actingAs(User::factory()->create());
 
-        $this->getJson('/api/leagues/999999')->assertNotFound();
+        $this->getJson('/api/organizations/999999')->assertNotFound();
     }
 
-    public function test_season_show_returns_league_tournaments_and_standings(): void
+    public function test_season_show_returns_organization_tournaments_and_standings(): void
     {
         Sanctum::actingAs(User::factory()->create());
 
-        $league = League::create(['name' => 'Liga B', 'description' => '']);
+        $organization = Organization::create(['name' => 'Organizacja B', 'description' => '']);
         $season = Season::create([
             'name' => 'Sezon X',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-06-30',
         ]);
@@ -91,10 +91,10 @@ class CompetitionShowApiTest extends TestCase
         $this->getJson('/api/seasons/'.$season->id)
             ->assertOk()
             ->assertJsonPath('season.name', 'Sezon X')
-            ->assertJsonPath('league.name', 'Liga B')
+            ->assertJsonPath('organization.name', 'Organizacja B')
             ->assertJsonStructure([
                 'season' => ['id', 'name', 'startDate', 'endDate', 'updatedAt'],
-                'league' => ['id', 'name'],
+                'organization' => ['id', 'name'],
                 'tournaments' => [['id', 'name', 'date', 'statusLabel', 'statusVariant']],
                 'standings' => [[
                     'place',
@@ -124,10 +124,10 @@ class CompetitionShowApiTest extends TestCase
     {
         Sanctum::actingAs(User::factory()->create());
 
-        $league = League::create(['name' => 'Liga P', 'description' => '']);
+        $organization = Organization::create(['name' => 'Organizacja P', 'description' => '']);
         $season = Season::create([
             'name' => 'Sezon P',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -168,10 +168,10 @@ class CompetitionShowApiTest extends TestCase
     {
         Sanctum::actingAs(User::factory()->create());
 
-        $league = League::create(['name' => 'Liga C', 'description' => '']);
+        $organization = Organization::create(['name' => 'Organizacja C', 'description' => '']);
         $season = Season::create([
             'name' => 'Sezon Y',
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -185,7 +185,7 @@ class CompetitionShowApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('tournament.name', 'Turniej B')
             ->assertJsonPath('tournament.isStarted', false)
-            ->assertJsonPath('league.name', 'Liga C')
+            ->assertJsonPath('organization.name', 'Organizacja C')
             ->assertJsonPath('season.name', 'Sezon Y')
             ->assertJsonPath('availableTabs', [])
             ->assertJsonStructure([
@@ -198,11 +198,11 @@ class CompetitionShowApiTest extends TestCase
                     'statusVariant',
                     'isStarted',
                     'hasPlayoff',
-                    'tracksLeaguePoints',
+                    'tracksSeasonPoints',
                     'format',
                     'showStageInResults',
                 ],
-                'league',
+                'organization',
                 'season',
                 'availableTabs',
                 'results',

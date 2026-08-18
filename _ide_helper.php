@@ -19633,7 +19633,7 @@ namespace Illuminate\Support\Facades {
     /**
      * @method static bool has(string $location)
      * @method static string read(string $location)
-     * @method static \League\Flysystem\DirectoryListing listContents(string $location, bool $deep = false)
+     * @method static \Organization\Flysystem\DirectoryListing listContents(string $location, bool $deep = false)
      * @method static int fileSize(string $path)
      * @method static string visibility(string $path)
      * @method static void write(string $location, string $contents, array $config = [])
@@ -20502,7 +20502,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the Flysystem driver.
          *
-         * @return \League\Flysystem\FilesystemOperator
+         * @return \Organization\Flysystem\FilesystemOperator
          * @static
          */
         public static function getDriver()
@@ -20515,7 +20515,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the Flysystem adapter.
          *
-         * @return \League\Flysystem\FilesystemAdapter
+         * @return \Organization\Flysystem\FilesystemAdapter
          * @static
          */
         public static function getAdapter()

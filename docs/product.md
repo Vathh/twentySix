@@ -4,7 +4,7 @@
 > **Logo / ikona:** znak **26** (żart graczy: 1, 20 i 5) — wyłącznie warstwa wizualna, nie nazwa produktu. Szczegóły: [Marka produktu](#marka-produktu).  
 > Foldery repozytoriów: **`twentysix-backend`**, **`twentysix-mobile`**.
 
-System do organizacji i prowadzenia lig oraz meczów bezpośrednich darterskich: aplikacja webowa do śledzenia i zarządzania ligami wraz z API, aplikacja mobilna oraz **sędziowanie turnieju w przeglądarce** (ten sam kod tabletu). (Porównanie: chess.com, ale dla darta.)
+System do prowadzenia rozgrywek darterskich: aplikacja webowa do śledzenia i zarządzania organizacjami wraz z API, aplikacja mobilna oraz **sędziowanie turnieju w przeglądarce** (ten sam kod tabletu). (Porównanie: chess.com, ale dla darta.)
 
 ## Źródło prawdy i stan kodu
 
@@ -16,7 +16,7 @@ Część kodu powstała przed `product.md` — historyczne rozbieżności zosta�
 
 ## Dla kogo
 
-- Organizatorzy turniejów/lig darterskich
+- Organizatorzy turniejów/organizacji darterskich
 - Gracze rywalizujący w turniejach oraz bezpośrednich starciach
 - Kibice/zainteresowani wynikami
 
@@ -26,7 +26,7 @@ Istnieje podobny system: [n01darts.com](https://n01darts.com/n01/). Brakuje w ni
 
 - stałego konta gracza i „postaci” ze statystykami,
 - udziału w turniejach zawsze jako ten sam użytkownik,
-- lig jako serii turniejów z tabelą ligową.
+- organizacji jako serii turniejów z tabelą sezonu.
 
 W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i historii poza danym turniejem.
 
@@ -34,7 +34,7 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 
 ### Niezarejestrowany
 
-- **Web:** przeglądanie publicznych lig, turniejów, wyników, tabel i statystyk (docelowo także pojedynczych meczów).
+- **Web:** przeglądanie publicznych organizacji, turniejów, wyników, tabel i statystyk (docelowo także pojedynczych meczów).
 - **Mobile:** mecze **treningowe** bez zapisu do bazy (offline lub z internetem — wynik znika po meczu); quick game online wymaga konta i sieci.
 
 ### Zarejestrowany
@@ -48,7 +48,7 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 ### Premium (docelowo)
 
 - Wszystko, co użytkownik zarejestrowany.
-- Tworzenie lig/turniejów (w MVP: rola **organizatora w lidze**).
+- Tworzenie organizacji/turniejów (w MVP: rola **organizatora w organizacji**).
 
 ### Publiczność vs uczestnik turnieju
 
@@ -58,12 +58,12 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 ### Gracz tymczasowy (gość turniejowy)
 
 - Brak powiązania z kontem i brak merge statystyk.
-- Statystyki tylko w meczu/turnieju/lidze — nigdy w profilu.
+- Statystyki tylko w meczu/turnieju/organizacji — nigdy w profilu.
 - Dodawanie: **nazwa** wpisana przez admina.
 
 ### Cykl życia (skrót)
 
-Rejestracja → znajomi (mobile) → quick game → twórca ligi = organizator → turniej → zaproszenia (akceptacja mobile) → start (wybór wariantu: grupy+drabinka / SE / DE) → … → punkty ligowe.
+Rejestracja → znajomi (mobile) → quick game → twórca organizacji = organizator → turniej → zaproszenia (akceptacja mobile) → start (wybór wariantu: grupy+drabinka / SE / DE) → … → punkty sezonu.
 
 ### Rozgrywka turniejowa
 
@@ -101,11 +101,11 @@ Wybór → API → `w trakcie` (lock); inne tablety nie widzą meczu; race → b
 
 | Rola                   | MVP                                                                 | Docelowo               |
 | ---------------------- | ------------------------------------------------------------------- | ---------------------- |
-| Gość (web)             | Podgląd lig/turniejów                                               | + pojedyncze mecze     |
+| Gość (web)             | Podgląd organizacji/turniejów                                               | + pojedyncze mecze     |
 | Gość (mobile)          | Trening (bez konta), turniej kodem tabletu                          | bez zmian              |
 | Użytkownik             | Quick game, turnieje, znajomi (akceptacja **mobile**; invite/accept także **web**); **push** zaproszeń | + komunikator |
-| **Organizator**        | **Twórca ligi = organizator**; uprawnienia w lidze                  | premium                |
-| **Współadministrator** | Pełne prawa, cała liga (MVP)                                        | granularne uprawnienia |
+| **Organizator**        | **Twórca organizacji = organizator**; uprawnienia w organizacji                  | premium                |
+| **Współadministrator** | Pełne prawa, cała organizacja (MVP)                                        | granularne uprawnienia |
 | Sędzia (tablet / web)  | Kod turnieju, wybór meczu (mobile lub `/referee`)                   | —                      |
 
 ### Kody logowania (tablety / web)
@@ -143,7 +143,7 @@ Wybór **tylko przy starcie** (kreator) — po wystartowaniu bez zmiany typu.
 | `single_elimination` | Single elimination | Tylko drabinka SE (bez grup) |
 | `double_elimination` | Double elimination | Tylko drabinka DE (bez grup); WB + LB |
 
-**Wspólne dla wszystkich wariantów:** min. 4 graczy; format meczu (501/legi/sety) jak dziś; tablet H2H; walkower/korekta → auto przeliczenie; punkty ligowe po zakończeniu.
+**Wspólne dla wszystkich wariantów:** min. 4 graczy; format meczu (501/legi/sety) jak dziś; tablet H2H; walkower/korekta → auto przeliczenie; punkty sezonu po zakończeniu.
 
 **Rozmiar drabinki:** potęgi 2, **max 128**. Model slotów: **generyczny** (`round` + `index` + kierunki awansu), nie rozrost enumów `PlayoffSlot` / `WinnerDestinationSlot`.
 
@@ -245,24 +245,24 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 
 ### Zaproszenia do turnieju
 
-- Wysyłka: admin na **webie** — **na stronie startu turnieju** (bez osobnej podstrony): wyszukiwarka + lista zaproszonych + masowe zaproszenia ze składu ligi.
+- Wysyłka: admin na **webie** — **na stronie startu turnieju** (bez osobnej podstrony): wyszukiwarka + lista zaproszonych + masowe zaproszenia ze składu organizacji.
 - Akceptacja / wycofanie udziału: **mobile**.
-- Goście (nazwa od admina): edycja puli gości na ekranach sezonu/ligi; na stronie startu admin **dodaje gościa do turnieju** z listy powiązanych.
+- Goście (nazwa od admina): edycja puli gości na ekranach sezonu/organizacji; na stronie startu admin **dodaje gościa do turnieju** z listy powiązanych.
 - **Zgłoszenia przez QR** (✅): gracz skanuje QR na starcie turnieju → admin Dołącz/Odrzuć.
 
-#### Stały skład ligi (`relatedUsers`)
+#### Stały skład organizacji (`relatedUsers`)
 
-- Liga (i opcjonalnie sezon) utrzymuje listę **powiązanych użytkowników** — **stali bywalcy**, którzy regularnie grają w turniejach tej ligi.
+- Organizacja (i opcjonalnie sezon) utrzymuje listę **powiązanych użytkowników** — **stali bywalcy**, którzy regularnie grają w turniejach tej organizacji.
 - Lista **nie wpisuje** nikogo automatycznie do turnieju — służy do **szybkiego masowego wysyłania zaproszeń** (zaznaczenie wielu osób → wyślij zaproszenia).
-- Na stronie startu turnieju skład do masowego invite = **suma `league.relatedUsers` + `season.relatedUsers` bez duplikatów** (jak dziś `getRelatedPlayers`, ale tylko użytkownicy z kontem — bez gości).
-- Zarządzanie składem (dodawanie/usuwanie osób z listy ligi/sezonu) pozostaje na dotychczasowych ekranach `relatedUsers`.
+- Na stronie startu turnieju skład do masowego invite = **suma `organization.relatedUsers` + `season.relatedUsers` bez duplikatów** (jak dziś `getRelatedPlayers`, ale tylko użytkownicy z kontem — bez gości).
+- Zarządzanie składem (dodawanie/usuwanie osób z listy organizacji/sezonu) pozostaje na dotychczasowych ekranach `relatedUsers`.
 
 #### Strona startu turnieju (web) — układ B
 
 1. **Uczestnicy turnieju** (na górze; na desktopie sticky z ograniczoną wysokością listy i przewijaniem) — skład startowy; licznik min. graczy; usuwanie (×).
 2. **Dodaj uczestników** — jedna sekcja z zakładkami:
-   - **Zarejestrowani:** wyszukiwarka, zaproszenia w toku (bez accepted), stały skład ligi (masowy invite).
-   - **Goście:** powiązani goście ligi/sezonu → „Dodaj” do turnieju.
+   - **Zarejestrowani:** wyszukiwarka, zaproszenia w toku (bez accepted), stały skład organizacji (masowy invite).
+   - **Goście:** powiązani goście organizacji/sezonu → „Dodaj” do turnieju.
 3. **Start turnieju** — grupy / awans / tablety (wszyscy z segmentu uczestników).
 
 #### Statusy zaproszenia turniejowego
@@ -296,10 +296,55 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - **Jeden ekran** z zakładkami: **Turniej** | **Pojedynek** (quick game / lobby) | **Znajomi**.
 - Pull-to-refresh na liście. **Push** przy nowym zaproszeniu (znajomi / turniej / lobby) — ✅.
 
-## Liga i punktacja (MVP)
+## Organizacja i punktacja (MVP)
 
-- Liga = seria turniejów + tabela ligowa + tabele per turniej.
+- Organizacja = seria turniejów + tabela sezonu + tabele per turniej.
 - **Point scheme** narzucany przez system według **liczby graczy w turnieju** (schematy w kodzie).
+- Organizacja może mieć **wiele lig** (piramid) — osobny byt, patrz niżej.
+
+## Liga (piramida)
+
+Liga **nie** jest synonimem organizacji. To piramida szczebli indywidualnych wewnątrz organizacji (jak Ekstraklasa / 1. liga), z awansami, spadkami i barażami.
+
+```
+Organizacja
+├── Sezon turniejowy     ← Season + Tournament (jak dotychczas)
+└── Liga (wiele na organizację)
+      ├── Szczebel (pozycja 0 = najwyższa)
+      ├── Trwały skład piramidy
+      └── Sezony ligowe (zamrożone zdjęcie + mecze + tabela)
+```
+
+- Tylko **indywidualna**; format **X01** per szczebel (501 / legi / sety), zamrażany na start sezonu.
+- Sezon ligowy i sezon turniejowy to **osobne byty**.
+- Kalendarz przy starcie sezonu ligowego:
+  - **Kolejki:** albo **długość kolejki + data startu** (koniec sezonu wyliczany ze składu), albo **start i koniec sezonu** (długość kolejki = równy podział tego okresu).
+  - albo **pula meczów z jednym deadline’em**.
+- Mecze: pełny round-robin, 1 albo 2 spotkania każdy z każdym (rewanż bez przewagi gospodarza).
+- Gra **na miejscu, sędzia, jedno urządzenie** (jak turniej). Wpis wyniku / walkower na **webie**; scoring tabletem — później.
+
+### Cykl życia
+
+1. **Poza sezonem** — admin rusza strukturę, składy, dopisuje/wypisuje ludzi na szczebel.
+2. **Start sezonu** — zdjęcie składu i reguł, generacja meczów, zamrożenie piramidy.
+3. **W sezonie** — bez nowych szczebli i bez przesuwania ludzi. Wolno: rezygnacja; przy zaległym meczu: WO jednostronny / obustronny / przedłużenie. Admin może **anulować sezon** (hasło + wpisanie nazwy) — wraca skład sprzed startu, mecze giną.
+4. **Koniec** — tabele → auto awans/spadek/baraż → łatanie dziur z dołu → piramida zaktualizowana.
+
+### Tabela i baraże
+
+Kolejność: **zwycięstwa → różnica legów (jednostek meczu) → bilans bezpośredni → dogrywka → losowanie**.
+
+- 2 osoby w remisie na linii awansu/spadku: jeden mecz (deathmatch).
+- 3–4: mini-drabinka SE (bye jeśli trzeba), mecz o 3. miejsce przy 4 osobach.
+- Losowanie tylko gdy sportowo się nie da (albo remis w środku tabeli, bez wpływu na awans/spadek).
+
+Admin ustawia per szczebel (na niższym): ile miejsc awansuje **bezpośrednio**, ile idzie do **barażu**. `0` baraży = czysty awans/spadek. Parowanie: najlepszy barażowicz z dołu vs najsłabszy zagrożony z góry. Format **wyższego** szczebla, jeden mecz.
+
+### Rezygnacja
+
+Nie mylić z WO pojedynczego meczu. Rezygnacja: **wszystkie** mecze tej osoby anulowane (także zagrane), sezon jakby jej nie było, wypada z piramidy. W trakcie sezonu nikt z niższej ligi nie wskakuje. Po sezonie: najpierw sportowe awanse/spadki/baraże, potem dziury łata kolejka z dołu — spadków się nie anuluje, żeby załatać dziurę.
+
+WO obustronny przy **pojedynczym** meczu: obaj porażka, 0:0. WO jednostronny: walkower w formacie szczebla (np. BO3 → 2:0).
 
 ## Znajomi i quick game
 
@@ -425,7 +470,7 @@ Już istniejący wybór w lobby mobilnym:
 - **`setsToWinMatch === 1`:** wynik w legach (np. 2:0 przy „do 2 legów”).
 - **`setsToWinMatch > 1`:** wynik w setach (np. 2:0); szczegóły legów w secie opcjonalnie w UI korekty.
 
-Konfigurowalny format X01 (fazy 1–4 + presety ligi): ✅. Cricket: trening + quick (bez turnieju) — ✅. **Bob's 27**, **Around the Clock**, **Catch 40** i **Cricket 60:** trening + quick (bez turnieju) — ✅; szczegóły poniżej.
+Konfigurowalny format X01 (fazy 1–4 + presety organizacji): ✅. Cricket: trening + quick (bez turnieju) — ✅. **Bob's 27**, **Around the Clock**, **Catch 40** i **Cricket 60:** trening + quick (bez turnieju) — ✅; szczegóły poniżej.
 
 ### Format gry — podsumowanie kontekstów
 
@@ -500,7 +545,7 @@ Wspólne dla **quick game online**, **treningu** i (tam gdzie dotyczy) **turniej
 
 ## Reguły meczu (MVP)
 
-- **Web (twentySix):** ligi/turnieje, start turnieju, zaproszenia do turnieju (wysyłka), korekta wyników, live, publiczny podgląd, **znajomi** (invite/accept — bez komunikatora).
+- **Web (twentySix):** organizacje/turnieje, start turnieju, zaproszenia do turnieju (wysyłka), korekta wyników, live, publiczny podgląd, **znajomi** (invite/accept — bez komunikatora).
 - **API:** walidacja grup×awans, podział do grup, statusy meczów, quick game (oba tryby urządzeń), zaproszenia, achievementy, point schemes.
 - **Mobile:** tablet, quick game online, **trening (lokalny)**, znajomi (MVP), akceptacja zaproszeń (turniej, lobby, znajomi).
 
@@ -512,7 +557,7 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 
 ### Web
 
-- Twórca ligi = organizator; współadmin per liga
+- Twórca organizacji = organizator; współadmin per organizacja
 - Turniej: zaproszenia (`tournament_invitations`), goście, start (grupy + walidowany awans + kody)
 - Start z podzbiorem zaakceptowanych zawodników
 - Korekta wyniku / walkower (zgodnie z formatem meczu); live WebSocket
@@ -555,7 +600,7 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 - Krykiet w MVP
 - Tryby drużynowe 2v2 w quick game
 - Wolne losy w drabince **po fazie grupowej** (`groups_playoff`) — bye tylko w czystym SE/DE
-- Seeding drabinki z rankingu ligowego (MVP wariantów: tylko losowe R1)
+- Seeding drabinki z rankingu sezonowego (MVP wariantów: tylko losowe R1)
 - Równoległe wpisywanie rzutów w multi-device (tylko kolejno)
 
 ## Kryterium „MVP jest gotowe”
@@ -566,7 +611,7 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 4. Tablet + live web; achievementy; auto start playoff.
 5. Quick game min. 2; do 8 graczy FFA; format konfigurowalny (domyślnie do 2 legów w 1 secie); rotacja startu legów; oba tryby urządzeń; statystyki.
 6. Walkower/korekta na webie (zgodnie z formatem meczu) → auto przeliczenie; point scheme z liczby graczy.
-7. Offline/solo bez zapisu; gość ogląda ligi/turnieje.
+7. Offline/solo bez zapisu; gość ogląda organizacje/turnieje.
 
 ## Marka produktu
 
@@ -574,7 +619,7 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 | -------- | ----- | ----- |
 | **Produkt (wszędzie)** | **twentySix** | UI, tytuł w sklepach, dokumentacja, kod, komunikacja |
 | **Logo / ikona / favicon** | **26** | Tylko grafika (np. ikona aplikacji); nawiązanie do 1, 20, 5 |
-| **Podtytuł (sklepy, opcjonalnie)** | np. „Dart — ligi i turnieje” | Pod nazwą twentySix |
+| **Podtytuł (sklepy, opcjonalnie)** | np. „Dart — organizacje i turnieje” | Pod nazwą twentySix |
 | **Formalnie (domena, prawne)** | TwentySix / twentySix | Do rejestracji znaku / domeny |
 | **Repozytoria** | `twentysix-backend`, `twentysix-mobile` | Ścieżki na dysku (dawne: DartScore, Suwalska-Liga-Darta-MobileApp) |
 

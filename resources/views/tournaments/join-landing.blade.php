@@ -11,8 +11,8 @@
     @else
         <p class="text-text-secondary text-sm mb-1">Zgłoszenie do turnieju</p>
         <h2 class="text-xl text-text font-semibold mb-1">{{ $tournament->name }}</h2>
-        @if($tournament->season?->league)
-            <p class="text-text-secondary text-sm mb-4">{{ $tournament->season->league->name }}</p>
+        @if($tournament->season?->organization)
+            <p class="text-text-secondary text-sm mb-4">{{ $tournament->season->organization->name }}</p>
         @endif
 
         <p class="text-text-secondary text-sm mb-6">

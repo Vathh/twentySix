@@ -131,7 +131,7 @@ return [
         'current_password' => 'aktualne hasło',
         'description' => 'opis',
         'name' => 'Nazwa użytkownika',
-        'leagueName' => 'Nazwa ligi',
+        'organizationName' => 'Nazwa organizacji',
         'seasonName' => 'Nazwa sezonu',
     ],
 

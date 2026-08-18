@@ -2,7 +2,7 @@
 
 namespace App\Models\Season;
 
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
@@ -17,16 +17,16 @@ class Season extends Model
     protected static function booted(): void
     {
         static::created(function ($season) {
-            $season->league?->touch();
+            $season->organization?->touch();
         });
 
         static::updated(function ($season) {
-            $season->league?->touch();
+            $season->organization?->touch();
         });
     }
 
     protected $fillable = [
-      'league_id',
+      'organization_id',
       'name',
       'start_date',
       'end_date',
@@ -37,9 +37,9 @@ class Season extends Model
         'end_date' => 'date'
     ];
 
-    public function league(): BelongsTo
+    public function organization(): BelongsTo
     {
-        return $this->belongsTo(League::class);
+        return $this->belongsTo(Organization::class);
     }
 
     public function admins(): BelongsToMany

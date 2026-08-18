@@ -52,10 +52,10 @@ class PlatformAdminService
         ];
     }
 
-    public function setCanCreateLeagues(int $userId, bool $enabled): User
+    public function setCanCreateOrganizations(int $userId, bool $enabled): User
     {
         $user = $this->userRepository->findModel($userId);
-        $this->platformAdminRepository->setCanCreateLeagues($user, $enabled);
+        $this->platformAdminRepository->setCanCreateOrganizations($user, $enabled);
 
         return $user->fresh(['player']) ?? $user;
     }

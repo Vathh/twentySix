@@ -16,7 +16,7 @@
             <div>
                 <x-empty-state
                     title="Brak sezonów"
-                    description="Sezony pojawią się po utworzeniu ich w ligach."
+                    description="Sezony pojawią się po utworzeniu ich w organizacjach."
                 />
             </div>
         </template>
@@ -51,10 +51,10 @@
         </div>
     </div>
 
-    @canCreateLeagues
+    @canCreateOrganizations
     <a href="{{ route('seasons.create') }}" class="btn-fab">
         Stwórz nowy sezon
     </a>
-    @endcanCreateLeagues
+    @endcanCreateOrganizations
 
 @endsection

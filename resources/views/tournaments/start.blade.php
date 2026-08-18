@@ -404,7 +404,7 @@
                                     : 'bg-bg text-text-secondary hover:bg-bg/80'"
                                 class="px-5 py-2 rounded-t-lg font-semibold text-sm transition"
                             >
-                                Goście ligi / sezonu
+                                Goście organizacji / sezonu
                             </button>
                         </div>
                     </div>
@@ -413,7 +413,7 @@
                         {{-- Stały skład --}}
                         <div x-show="activeTab === 'registered'">
                             <div x-data="{ selectedRegulars: [] }">
-                                <h3 class="text-accent font-semibold mb-2">Stały skład ligi / sezonu</h3>
+                                <h3 class="text-accent font-semibold mb-2">Stały skład organizacji / sezonu</h3>
                                 <p class="text-text-secondary text-sm mb-3">Zaznacz bywalców i wyślij masowe zaproszenia.</p>
 
                                 @if($regulars->isEmpty())
@@ -421,7 +421,7 @@
                                         Brak powiązanych użytkowników.
                                         <a href="{{ route('seasons.relatedUsers', $tournament->season->id) }}" class="text-accent underline">Sezon</a>
                                         ·
-                                        <a href="{{ route('leagues.relatedUsers', $tournament->season->league->id) }}" class="text-accent underline">Liga</a>
+                                        <a href="{{ route('organizations.relatedUsers', $tournament->season->organization->id) }}" class="text-accent underline">Organizacja</a>
                                     </p>
                                 @else
                                     <div class="flex flex-wrap gap-2 mb-4">
@@ -463,7 +463,7 @@
                         {{-- Goście --}}
                         <div x-show="activeTab === 'guests'" style="display: none;">
                             <h3 class="text-accent font-semibold mb-2">Powiązani goście</h3>
-                            <p class="text-text-secondary text-sm mb-4">Dodaj gości z puli ligi/sezonu do tego turnieju.</p>
+                            <p class="text-text-secondary text-sm mb-4">Dodaj gości z puli organizacji/sezonu do tego turnieju.</p>
 
                             <p
                                 class="text-text-secondary text-sm"
@@ -472,7 +472,7 @@
                                 Brak powiązanych gości.
                                 <a href="{{ route('seasons.guests', $tournament->season->id) }}" class="text-accent underline">Sezon</a>
                                 ·
-                                <a href="{{ route('leagues.guests', $tournament->season->league->id) }}" class="text-accent underline">Liga</a>
+                                <a href="{{ route('organizations.guests', $tournament->season->organization->id) }}" class="text-accent underline">Organizacja</a>
                             </p>
                             <div
                                 class="flex flex-wrap gap-3"
@@ -525,7 +525,7 @@
                     'startingScoreOptions' => $startingScoreOptions,
                     'defaultMatchFormat' => $defaultMatchFormat,
                     'defaultMatchFormatsByStage' => $defaultMatchFormatsByStage,
-                    'hasLeagueFormatPresets' => $hasLeagueFormatPresets,
+                    'hasOrganizationFormatPresets' => $hasOrganizationFormatPresets,
                     'oldMatchFormats' => $oldMatchFormats,
                     'minPlayers' => $minPlayers,
                     'minPlayersPerGroup' => $minPlayersPerGroup,
@@ -689,8 +689,8 @@
                              x-cloak>
                             <p class="text-accent font-semibold text-sm mb-1">Format gry per etap</p>
                             <p class="text-text-secondary/70 text-xs mb-4"
-                               x-text="hasLeagueFormatPresets
-                                   ? 'Domyślne z presetów ligi — możesz nadpisać przed startem. Tablet odczyta format z meczu.'
+                               x-text="hasOrganizationFormatPresets
+                                   ? 'Domyślne z presetów organizacji — możesz nadpisać przed startem. Tablet odczyta format z meczu.'
                                    : 'Domyślnie 501 · 1 set · 2 legi. Tablet odczyta format z meczu — bez konfiguracji przy starcie gry.'">
                             </p>
                             <div class="overflow-x-auto">
@@ -783,7 +783,7 @@
                 startingScoreOptions: config.startingScoreOptions ?? [],
                 defaultMatchFormat: config.defaultMatchFormat ?? {},
                 defaultMatchFormatsByStage: config.defaultMatchFormatsByStage ?? {},
-                hasLeagueFormatPresets: !!config.hasLeagueFormatPresets,
+                hasOrganizationFormatPresets: !!config.hasOrganizationFormatPresets,
                 oldMatchFormats: config.oldMatchFormats ?? {},
                 matchFormats: {},
                 minPlayers: config.minPlayers ?? 4,

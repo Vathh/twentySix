@@ -29,7 +29,7 @@ class SeasonPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can_create_leagues == true;
+        return $user->can_create_organizations == true;
     }
 
     /**

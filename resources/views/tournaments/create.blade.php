@@ -15,7 +15,7 @@
                 @if($seasonId)
                     <p class="card-description text-center mb-6">Turniej zostanie dodany do wybranego sezonu.</p>
                 @else
-                    <p class="card-description text-center mb-6">Turniej jednorazowy — bez powiązania z ligą i sezonem.</p>
+                    <p class="card-description text-center mb-6">Turniej jednorazowy — bez powiązania z organizacją i sezonem.</p>
                 @endif
 
                 <label class="form-label text-accent" for="tournamentName">Nazwa turnieju</label>

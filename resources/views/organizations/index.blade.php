@@ -1,6 +1,6 @@
 ﻿@extends('layouts.app')
 
-@section('title', 'Ligi')
+@section('title', 'Organizacje')
 
 @section('content')
 
@@ -9,14 +9,14 @@
         x-data="indexLoadMore(@js([
             'items' => $items,
             'hasMore' => $hasMore,
-            'url' => route('leagues.index'),
+            'url' => route('organizations.index'),
         ]))"
     >
         <template x-if="items.length === 0">
             <div>
                 <x-empty-state
-                    title="Brak lig"
-                    description="Utwórz pierwszą ligę, aby organizować sezony i turnieje."
+                    title="Brak organizacji"
+                    description="Utwórz pierwszą organizację, aby organizować sezony i turnieje."
                 />
             </div>
         </template>
@@ -44,10 +44,10 @@
         </div>
     </div>
 
-    @canCreateLeagues
-    <a href="{{ route('leagues.create') }}" class="btn-fab">
-        Stwórz nową ligę
+    @canCreateOrganizations
+    <a href="{{ route('organizations.create') }}" class="btn-fab">
+        Stwórz nową organizację
     </a>
-    @endcanCreateLeagues
+    @endcanCreateOrganizations
 
 @endsection

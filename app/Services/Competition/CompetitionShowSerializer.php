@@ -6,11 +6,11 @@ use App\Domain\Game\GroupGameDomain;
 use App\Domain\Game\PlayoffGameDomain;
 use App\Domain\Game\WinnerDestination;
 use App\Domain\GroupStandingDomain;
-use App\Domain\LeagueDomain;
+use App\Domain\OrganizationDomain;
 use App\Domain\SeasonDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameStage;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Queries\GetTournamentData;
@@ -27,12 +27,12 @@ class CompetitionShowSerializer
     }
 
     /**
-     * @return array{league: array, seasons: list<array>}
+     * @return array{organization: array, seasons: list<array>}
      */
-    public function league(League $league): array
+    public function organization(Organization $organization): array
     {
-        $league->loadMissing(['seasons']);
-        $domain = LeagueDomain::fromEloquent($league, ['seasons']);
+        $organization->loadMissing(['seasons']);
+        $domain = OrganizationDomain::fromEloquent($organization, ['seasons']);
         $seasons = collect($domain->seasons)
             ->sortByDesc(fn (SeasonDomain $season) => $season->updatedAt?->getTimestamp() ?? 0)
             ->values()
@@ -43,7 +43,7 @@ class CompetitionShowSerializer
             ->all();
 
         return [
-            'league' => [
+            'organization' => [
                 'id' => $domain->id,
                 'name' => $domain->name,
                 'description' => $domain->description,
@@ -55,12 +55,12 @@ class CompetitionShowSerializer
     }
 
     /**
-     * @return array{season: array, league: ?array{id: int, name: string}, tournaments: list<array>, standings: list<array>, standingsHasMore: bool}
+     * @return array{season: array, organization: ?array{id: int, name: string}, tournaments: list<array>, standings: list<array>, standingsHasMore: bool}
      */
     public function season(Season $season): array
     {
-        $season->loadMissing(['league', 'tournaments']);
-        $domain = SeasonDomain::fromEloquent($season, ['league', 'tournaments']);
+        $season->loadMissing(['organization', 'tournaments']);
+        $domain = SeasonDomain::fromEloquent($season, ['organization', 'tournaments']);
 
         $tournaments = $domain->tournaments
             ->sortByDesc(fn (TournamentDomain $t) => $t->date?->getTimestamp() ?? PHP_INT_MIN)
@@ -84,8 +84,8 @@ class CompetitionShowSerializer
                 'endDate' => $domain->getEndDate(),
                 'updatedAt' => $domain->getUpdatedAtDate(),
             ],
-            'league' => $domain->league
-                ? ['id' => $domain->league->id, 'name' => $domain->league->name]
+            'organization' => $domain->organization
+                ? ['id' => $domain->organization->id, 'name' => $domain->organization->name]
                 : null,
             'tournaments' => $tournaments,
             'standings' => $this->mapStandingsRows($standingsPage['items']),
@@ -141,7 +141,7 @@ class CompetitionShowSerializer
     {
         $tournament = $viewModel->tournament();
         $season = $viewModel->season();
-        $league = $season?->league;
+        $organization = $season?->organization;
 
         $showStageInResults = $tournament->format !== \App\Enums\TournamentFormat::DoubleElimination;
 
@@ -155,12 +155,12 @@ class CompetitionShowSerializer
                 'statusVariant' => $tournament->status->badgeVariant(),
                 'isStarted' => $tournament->isStarted(),
                 'hasPlayoff' => $tournament->hasPlayoffBracket(),
-                'tracksLeaguePoints' => $tournament->tracksLeaguePoints(),
+                'tracksSeasonPoints' => $tournament->tracksSeasonPoints(),
                 'format' => $tournament->format->value,
                 'showStageInResults' => $showStageInResults,
             ],
-            'league' => $league
-                ? ['id' => $league->id, 'name' => $league->name]
+            'organization' => $organization
+                ? ['id' => $organization->id, 'name' => $organization->name]
                 : null,
             'season' => $season
                 ? ['id' => $season->id, 'name' => $season->name]

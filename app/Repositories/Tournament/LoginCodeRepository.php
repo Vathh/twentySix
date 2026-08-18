@@ -11,7 +11,7 @@ class LoginCodeRepository
     public function findByCodeWithTournament(string $code): ?LoginCode
     {
         return LoginCode::query()
-            ->with(['tournament.season.league'])
+            ->with(['tournament.season.organization'])
             ->where('code', $code)
             ->first();
     }

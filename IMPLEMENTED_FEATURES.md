@@ -25,20 +25,20 @@ Szczegóły wymagań: [`docs/product.md`](docs/product.md). Aktywne zadania: [`d
 
 | Wymaganie MVP | Status | Pliki / uwagi |
 |---------------|--------|---------------|
-| Twórca ligi = organizator | ✅ | `LeagueRepository`, `LeagueController`, `LeaguePolicy` |
-| Współadmin per liga (pełne prawa) | ✅ | `/leagues/{id}/admins/*`, `LeaguePolicy` |
+| Twórca organizacji = organizator | ✅ | `OrganizationRepository`, `OrganizationController`, `OrganizationPolicy` |
+| Współadmin per organizacja (pełne prawa) | ✅ | `/organizations/{id}/admins/*`, `OrganizationPolicy` |
 | Turniej: goście (nazwa) | ✅ | `SeasonController`, `PlayerRepository` |
 | Turniej: zaproszenia (wyszukiwarka + akceptacja) | ✅ | Strona startu: wysyłka, masowy invite ze składu (`relatedUsers`); mobile: accept/reject/withdraw |
 | Start turnieju: liczba grup | ✅ | `start.blade.php` — potęgi 2 (2…64), `TournamentStartRules` |
 | Start: walidowany awans z grupy | ✅ | Kreator + `TournamentStartValidator` |
 | Start: jeden kod tabletu 8 znaków + QR | ✅ | `LoginCodeService::generateForTournament`, `/tablet-login/{code}` |
 | Start: tylko zaakceptowani + goście | ✅ | `getTournamentStartPool`, walidacja przy `run` |
-| Publiczny podgląd lig/turniejów | ✅ | Gość bez logowania — [`scenariusze_manualne_web_gosc_krok3.md`](docs/scenariusze_manualne_web_gosc_krok3.md) |
+| Publiczny podgląd organizacji/turniejów | ✅ | Gość bez logowania — [`scenariusze_manualne_web_gosc_krok3.md`](docs/scenariusze_manualne_web_gosc_krok3.md) |
 | Korekta wyniku / walkower na webie | ✅ | `games/show` — formularz admina sezonu, `GameResultCorrectionService` |
 | Live podgląd meczu (WebSocket) | ✅ | `games/{type}/{id}/live`, `game-live.js`, Reverb `game.state` |
 | Live WebSocket na webie (turniej) | ❌ | Brak widoku live całego turnieju z WS |
 | Znajomi na webie | ✅ | Profil gracza: invite → accept; panel boczny (przychodzące / znajomi / oczekujący); `FriendInvitationController` |
-| Presety formatu gry w lidze | ✅ | `leagues.match_format_presets`, edycja ligi → domyślne w kreatorze startu turnieju |
+| Presety formatu gry w organizacji | ✅ | `organizations.match_format_presets`, edycja organizacji → domyślne w kreatorze startu turnieju |
 
 ---
 

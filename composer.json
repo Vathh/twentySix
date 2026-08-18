@@ -2,7 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "laravel/laravel",
     "type": "project",
-    "description": "twentySix — backend API and web panel for dart leagues and tournaments.",
+    "description": "twentySix — backend API and web panel for dart organizations and tournaments.",
     "keywords": ["laravel", "darts", "twentysix"],
     "license": "MIT",
     "require": {

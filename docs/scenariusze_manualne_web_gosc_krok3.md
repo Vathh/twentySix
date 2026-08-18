@@ -22,7 +22,7 @@ Powiązane: turniej tablet — [`scenariusze_manualne_turniej_mvp.md`](scenarius
 | Gość | — | — | Okno incognito, bez logowania |
 | Admin | `demo-admin@twentysix.local` | `password` | Scenariusze 10–12 (druga karta / zwykłe okno) |
 
-**Dane demo:** turniej **Turniej 6-osobowy (faza grupowa)** w lidze **twentySix — Liga demonstracyjna** → sezon **Sezon jesienny 2025**. Jeśli turniej jest już po fazie grupowej / playoff — nadal OK do podglądu; do live potrzebny mecz **w trakcie** (tablet) lub tymczasowo zostawiony niedokończony.
+**Dane demo:** turniej **Turniej 6-osobowy (faza grupowa)** w organizacji **twentySix — Organizacja demonstracyjna** → sezon **Sezon jesienny 2025**. Jeśli turniej jest już po fazie grupowej / playoff — nadal OK do podglądu; do live potrzebny mecz **w trakcie** (tablet) lub tymczasowo zostawiony niedokończony.
 
 ---
 
@@ -42,14 +42,14 @@ Wykonuj po kolei. Przy każdym punkcie: **OK?** ☐ / uwagi.
 ### A1. Strona główna i nawigacja
 
 1. Wejdź na `http://127.0.0.1:8000/` (lub IP komputera w LAN).
-2. **Oczekiwane:** nagłówek „twentySix”, linki: Strona główna, Ligi, Sezony, Turnieje, Szukaj graczy, **Zaloguj się**. **Brak** „Wyloguj”, „Mój profil”, panelu znajomych z prawej.
+2. **Oczekiwane:** nagłówek „twentySix”, linki: Strona główna, Organizacje, Sezony, Turnieje, Szukaj graczy, **Zaloguj się**. **Brak** „Wyloguj”, „Mój profil”, panelu znajomych z prawej.
 3. Kliknij **Zobacz turnieje** (lub link Turnieje w menu).
 4. **Oczekiwane:** lista turniejów, **brak** przycisku „Stwórz nowy turniej” w rogu.
 
-### A2. Liga → sezon → turniej
+### A2. Organizacja → sezon → turniej
 
-5. Menu **Ligi** → kliknij **twentySix — Liga demonstracyjna** (lub pierwszą ligę z listy).
-6. **Oczekiwane:** opis ligi, tabela top 40, lista sezonów. **Brak** bocznego panelu „Zarządzanie ligą”.
+5. Menu **Organizacje** → kliknij **twentySix — Organizacja demonstracyjna** (lub pierwszą organizację z listy).
+6. **Oczekiwane:** opis organizacji, tabela top 40, lista sezonów. **Brak** bocznego panelu „Zarządzanie organizacją”.
 7. Kliknij sezon **Sezon jesienny 2025**.
 8. **Oczekiwane:** daty sezonu, lista turniejów. **Brak** panelu „Zarządzanie sezonem”.
 9. Kliknij **Turniej 6-osobowy (faza grupowa)** (lub inny wystartowany turniej z seeda).
@@ -139,7 +139,7 @@ W **zwykłym oknie** (zalogowany `demo-admin@twentysix.local`).
 | # | Scenariusz | OK? | Uwagi |
 |---|------------|-----|-------|
 | A1 | Nawigacja gościa | ☐ | |
-| A2 | Liga → sezon → turniej | ☐ | |
+| A2 | Organizacja → sezon → turniej | ☐ | |
 | A3 | Zakładki turnieju | ☐ | |
 | A4 | Szczegóły meczu (finished) | ☐ | |
 | A5 | Live + sync WS | ☐ | |

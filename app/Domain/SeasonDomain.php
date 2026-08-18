@@ -12,7 +12,7 @@ class SeasonDomain
     use AssertsRelationsLoaded;
 
     /** @var list<string> */
-    private const RELATIONS = ['league', 'admins', 'relatedUsers', 'tournaments'];
+    private const RELATIONS = ['organization', 'admins', 'relatedUsers', 'tournaments'];
 
     /**
      * @param int $id
@@ -21,7 +21,7 @@ class SeasonDomain
      * @param Carbon|null $endDate
      * @param Carbon $updatedAt
      * @param array $admins
-     * @param LeagueDomain|null $league
+     * @param OrganizationDomain|null $organization
      * @param array $relatedUsers
      * @param Collection<TournamentDomain> $tournaments
      * @param array $guests
@@ -33,7 +33,7 @@ class SeasonDomain
         public readonly ?Carbon $endDate,
         public readonly Carbon $updatedAt,
         public readonly array $admins,
-        public readonly ?LeagueDomain $league,
+        public readonly ?OrganizationDomain $organization,
         public readonly array $relatedUsers,
         public readonly Collection $tournaments,
         public readonly array $guests
@@ -62,8 +62,8 @@ class SeasonDomain
                     'name' => $user->player->name,
                 ])->toArray()
                 : [],
-            league: in_array('league', $with) && $season->league
-                ? LeagueDomain::fromEloquent($season->league)
+            organization: in_array('organization', $with) && $season->organization
+                ? OrganizationDomain::fromEloquent($season->organization)
                 : null,
             relatedUsers: in_array('relatedUsers', $with)
                 ? $season->relatedUsers->map(fn($user) => [
@@ -93,12 +93,12 @@ class SeasonDomain
         return $this->endDate?->format('Y-m-d');
     }
 
-    /** Nagłówek listy: „Liga – nazwa sezonu”, gdy znana jest liga. */
+    /** Nagłówek listy: „Organizacja – nazwa sezonu”, gdy znana jest organizacja. */
     public function displayTitle(): string
     {
-        $leagueName = $this->league?->name;
-        if (is_string($leagueName) && $leagueName !== '') {
-            return $leagueName.' - '.$this->name;
+        $organizationName = $this->organization?->name;
+        if (is_string($organizationName) && $organizationName !== '') {
+            return $organizationName.' - '.$this->name;
         }
 
         return $this->name;

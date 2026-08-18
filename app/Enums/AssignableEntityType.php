@@ -4,6 +4,6 @@ namespace App\Enums;
 
 enum AssignableEntityType: string
 {
-    case LEAGUE = 'league';
+    case ORGANIZATION = 'organization';
     case SEASON = 'season';
 }

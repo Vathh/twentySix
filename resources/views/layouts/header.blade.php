@@ -31,7 +31,7 @@
                 && Auth::user()->player
                 && $currentPlayer
                 && (int) $currentPlayer->id === (int) Auth::user()->player->id;
-            $rozgrywkiActive = request()->routeIs('leagues.*', 'seasons.*', 'tournaments.*');
+            $rozgrywkiActive = request()->routeIs('organizations.*', 'seasons.*', 'tournaments.*', 'leagues.*', 'league-seasons.*', 'league-games.*');
         @endphp
         <nav id="site-nav"
              class="w-full md:w-auto md:flex md:flex-wrap md:items-center md:gap-1"
@@ -63,10 +63,10 @@
                      class="nav-dropdown"
                      role="menu">
                     <div class="nav-dropdown-panel">
-                        <a href="{{ route('leagues.index') }}"
-                           class="nav-dropdown-item {{ request()->routeIs('leagues.*') ? 'active' : '' }}"
+                        <a href="{{ route('organizations.index') }}"
+                           class="nav-dropdown-item {{ request()->routeIs('organizations.*') ? 'active' : '' }}"
                            role="menuitem"
-                           @click="navOpen = false; open = false">Ligi</a>
+                           @click="navOpen = false; open = false">Organizacje</a>
                         <a href="{{ route('seasons.index') }}"
                            class="nav-dropdown-item {{ request()->routeIs('seasons.*') ? 'active' : '' }}"
                            role="menuitem"

@@ -4,7 +4,7 @@ namespace App\Repositories\Platform;
 
 use App\Enums\TournamentStatus;
 use App\Enums\GameStatus;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\QuickGame\QuickGame;
 use App\Models\QuickGame\QuickGameFfaSession;
 use App\Models\QuickGame\QuickGameLobby;
@@ -24,10 +24,10 @@ class PlatformAdminRepository
      * @return array{
      *     usersTotal: int,
      *     usersVerified: int,
-     *     usersCanCreateLeagues: int,
+     *     usersCanCreateOrganizations: int,
      *     usersRegisteredToday: int,
      *     usersRegisteredLast7Days: int,
-     *     leaguesTotal: int,
+     *     organizationsTotal: int,
      *     seasonsTotal: int,
      *     tournamentsTotal: int,
      *     tournamentsByStatus: array<string, int>,
@@ -63,10 +63,10 @@ class PlatformAdminRepository
         return [
             'usersTotal' => User::query()->count(),
             'usersVerified' => User::query()->whereNotNull('email_verified_at')->count(),
-            'usersCanCreateLeagues' => User::query()->where('can_create_leagues', true)->count(),
+            'usersCanCreateOrganizations' => User::query()->where('can_create_organizations', true)->count(),
             'usersRegisteredToday' => User::query()->whereDate('created_at', $now->toDateString())->count(),
             'usersRegisteredLast7Days' => User::query()->where('created_at', '>=', $now->copy()->subDays(7))->count(),
-            'leaguesTotal' => League::query()->count(),
+            'organizationsTotal' => Organization::query()->count(),
             'seasonsTotal' => Season::query()->count(),
             'tournamentsTotal' => Tournament::query()->count(),
             'tournamentsByStatus' => $tournamentsByStatus,
@@ -101,9 +101,9 @@ class PlatformAdminRepository
         return $query->paginate($perPage)->withQueryString();
     }
 
-    public function setCanCreateLeagues(User $user, bool $enabled): void
+    public function setCanCreateOrganizations(User $user, bool $enabled): void
     {
-        $user->forceFill(['can_create_leagues' => $enabled])->save();
+        $user->forceFill(['can_create_organizations' => $enabled])->save();
     }
 
     public function setBanned(User $user, bool $banned): void
@@ -115,8 +115,8 @@ class PlatformAdminRepository
 
     /**
      * @return array{
-     *     leaguesAdmin: list<array{id: int, name: string}>,
-     *     leaguesMember: list<array{id: int, name: string}>,
+     *     organizationsAdmin: list<array{id: int, name: string}>,
+     *     organizationsMember: list<array{id: int, name: string}>,
      *     friendsCount: int,
      *     friends: list<string>,
      *     tournamentResultsCount: int,
@@ -134,16 +134,16 @@ class PlatformAdminRepository
         $user->loadMissing('player');
         $playerId = $user->player?->id;
 
-        $leaguesAdmin = $user->adminLeagues()
+        $organizationsAdmin = $user->adminOrganizations()
             ->orderBy('name')
-            ->get(['leagues.id', 'leagues.name'])
-            ->map(fn ($league) => ['id' => (int) $league->id, 'name' => (string) $league->name])
+            ->get(['organizations.id', 'organizations.name'])
+            ->map(fn ($organization) => ['id' => (int) $organization->id, 'name' => (string) $organization->name])
             ->all();
 
-        $leaguesMember = $user->relatedLeagues()
+        $organizationsMember = $user->relatedOrganizations()
             ->orderBy('name')
-            ->get(['leagues.id', 'leagues.name'])
-            ->map(fn ($league) => ['id' => (int) $league->id, 'name' => (string) $league->name])
+            ->get(['organizations.id', 'organizations.name'])
+            ->map(fn ($organization) => ['id' => (int) $organization->id, 'name' => (string) $organization->name])
             ->all();
 
         $friendIds = DB::table('friendships')
@@ -205,8 +205,8 @@ class PlatformAdminRepository
         $lastTokenCreatedAt = $user->tokens()->max('created_at');
 
         return [
-            'leaguesAdmin' => $leaguesAdmin,
-            'leaguesMember' => $leaguesMember,
+            'organizationsAdmin' => $organizationsAdmin,
+            'organizationsMember' => $organizationsMember,
             'friendsCount' => $friendIds->count(),
             'friends' => $friendNames,
             'tournamentResultsCount' => $tournamentResultsCount,

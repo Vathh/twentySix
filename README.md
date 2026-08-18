@@ -1,6 +1,6 @@
 # twentySix
 
-System do organizacji **lig i turniejów darterskich** oraz meczów ze znajomymi — panel webowy + aplikacja mobilna.
+System do prowadzenia **organizacji i turniejów darterskich** oraz meczów ze znajomymi — panel webowy + aplikacja mobilna.
 
 | | |
 | --- | --- |
@@ -17,7 +17,7 @@ Pełny opis flow gry — od utworzenia turnieju, przez QR i logowanie tabletu, p
 
 W skrócie:
 
-1. **Web:** liga → turniej → zaproszenia / QR zgłoszeń / goście  
+1. **Web:** organizacja → turniej → zaproszenia / QR zgłoszeń / goście  
 2. **Web:** start turnieju (grupy+playoff / SE / DE) → powstaje **jeden kod + QR** na tablety  
 3. **Mobile:** Turniej → skan QR lub wpisanie kodu → wybór meczu → sędziowanie  
 4. **Web:** tabele i drabinka aktualizują się na żywo  

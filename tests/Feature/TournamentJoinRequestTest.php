@@ -7,7 +7,7 @@ use App\Enums\TournamentJoinRequestStatus;
 use App\Enums\TournamentStatus;
 use App\Events\TournamentJoinRequestsUpdated;
 use App\Events\TournamentStartRosterUpdated;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Models\Tournament\TournamentInvitation;
@@ -42,11 +42,11 @@ class TournamentJoinRequestTest extends TestCase
         $playerService->create('Admin', $this->admin->id);
         $playerService->create('Player One', $this->player->id);
 
-        $league = League::create(['name' => 'Liga QR', 'description' => '']);
-        $league->relatedUsers()->attach($this->admin->id);
+        $organization = Organization::create(['name' => 'Organizacja QR', 'description' => '']);
+        $organization->relatedUsers()->attach($this->admin->id);
 
         $season = Season::create([
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'name' => 'S1',
             'start_date' => now(),
             'end_date' => now()->addMonth(),

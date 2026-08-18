@@ -50,16 +50,16 @@ class AppServiceProvider extends ServiceProvider
             $view->with('sentFriendInvitations', $sentFriendInvitations);
         });
 
-        Blade::if('canCreateLeagues', function () {
-            return auth()->check() && auth()->user()->can_create_leagues;
+        Blade::if('canCreateOrganizations', function () {
+            return auth()->check() && auth()->user()->can_create_organizations;
         });
 
         Blade::if('platformAdmin', function () {
             return auth()->check() && auth()->user()->isPlatformAdmin();
         });
 
-        Blade::if('leagueAdmin', function ($league) {
-            return auth()->check() && in_array(auth()->id(), array_column($league->admins, 'id'));
+        Blade::if('organizationAdmin', function ($organization) {
+            return auth()->check() && in_array(auth()->id(), array_column($organization->admins, 'id'));
         });
 
         Blade::if('seasonAdmin', function ($season) {

@@ -23,12 +23,12 @@
             <p class="text-2xl font-semibold text-text">{{ $stats['usersVerified'] }}</p>
         </div>
         <div class="card p-4">
-            <p class="text-text-secondary text-xs mb-1">Mogą tworzyć ligi</p>
-            <p class="text-2xl font-semibold text-text">{{ $stats['usersCanCreateLeagues'] }}</p>
+            <p class="text-text-secondary text-xs mb-1">Mogą tworzyć organizacje</p>
+            <p class="text-2xl font-semibold text-text">{{ $stats['usersCanCreateOrganizations'] }}</p>
         </div>
         <div class="card p-4">
-            <p class="text-text-secondary text-xs mb-1">Ligi / sezony</p>
-            <p class="text-2xl font-semibold text-text">{{ $stats['leaguesTotal'] }} <span class="text-text-muted text-lg">/</span> {{ $stats['seasonsTotal'] }}</p>
+            <p class="text-text-secondary text-xs mb-1">Organizacje / sezony</p>
+            <p class="text-2xl font-semibold text-text">{{ $stats['organizationsTotal'] }} <span class="text-text-muted text-lg">/</span> {{ $stats['seasonsTotal'] }}</p>
         </div>
     </div>
 
@@ -89,7 +89,7 @@
 
     <p class="text-text-muted text-xs">
         Dostęp tylko dla kont z <code class="text-accent">users.role = admin</code>.
-        To nie jest panel organizatora ligi — to narzędzie właściciela aplikacji.
+        To nie jest panel organizatora organizacji — to narzędzie właściciela aplikacji.
     </p>
 </div>
 @endsection

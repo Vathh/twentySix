@@ -26,10 +26,10 @@ Powiązane: quick game — [`scenariusze_manualne_quick_game_mvp_4e.md`](scenari
 
 ## Dane demo po seedzie
 
-| Turniej | Liga / sezon | Status | Do czego |
+| Turniej | Organizacja / sezon | Status | Do czego |
 |---------|--------------|--------|----------|
-| **Turniej 6-osobowy (faza grupowa)** | twentySix — Liga demonstracyjna → Sezon jesienny 2025 | **faza grupowa** (`group`) | Scenariusze **1–4** — granie na tablecie |
-| **Mistrzostwa 32 — pełny bracket (demo)** | ta sama liga / sezon | **zakończony** (`finished`) | Tylko podgląd web (wyniki, playoff) — bez grania od zera |
+| **Turniej 6-osobowy (faza grupowa)** | twentySix — Organizacja demonstracyjna → Sezon jesienny 2025 | **faza grupowa** (`group`) | Scenariusze **1–4** — granie na tablecie |
+| **Mistrzostwa 32 — pełny bracket (demo)** | ta sama organizacja / sezon | **zakończony** (`finished`) | Tylko podgląd web (wyniki, playoff) — bez grania od zera |
 
 ### Kody tabletów (ważne)
 
@@ -43,7 +43,7 @@ Seeder wywołuje `tryCreateGroupGames` — to **od razu startuje** turniej 6-oso
 
 Kod widoczny po zalogowaniu jako admin:
 
-`Ligi` → **twentySix — Liga demonstracyjna** → **Sezon jesienny 2025** → turniej **Turniej 6-osobowy (faza grupowa)** → sekcja **„Kod logowania na tablety”** (tekst + QR).
+`Organizacje` → **twentySix — Organizacja demonstracyjna** → **Sezon jesienny 2025** → turniej **Turniej 6-osobowy (faza grupowa)** → sekcja **„Kod logowania na tablety”** (tekst + QR).
 
 ---
 
@@ -152,7 +152,7 @@ Powiązane: web gość — [`scenariusze_manualne_web_gosc_krok3.md`](scenariusz
 
 Jeśli seed został nadpisany lub chcesz pełny flow organizatora:
 
-1. Web: liga → sezon → utwórz turniej.
+1. Web: organizacja → sezon → utwórz turniej.
 2. `/tournaments/{id}/start` — uczestnicy, goście, **min. 4 graczy**, grupy / SE / DE; po starcie: jeden kod tabletu + QR.
 3. **Start** → kody tabletów + faza grupowa.
 4. Dalej scenariusze 1–4.

@@ -84,9 +84,9 @@ class TournamentInvitationRepositoryTest extends TestCase
         $admin = User::factory()->create();
         $invited = User::factory()->create();
 
-        $league = \App\Models\League\League::create(['name' => 'Test League', 'description' => '']);
+        $organization = \App\Models\Organization\Organization::create(['name' => 'Test Organization', 'description' => '']);
         $season = \App\Models\Season\Season::create([
-            'league_id' => $league->id,
+            'organization_id' => $organization->id,
             'name' => 'Season 1',
             'start_date' => now(),
             'end_date' => now()->addMonth(),

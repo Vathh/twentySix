@@ -2,7 +2,7 @@
 namespace App\Services\Season;
 
 use App\Domain\SeasonDomain;
-use App\Repositories\League\LeagueRepository;
+use App\Repositories\Organization\OrganizationRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\Season\SeasonRepository;
 use App\Services\Player\PlayerService;
@@ -17,7 +17,7 @@ class SeasonService
         private SeasonRepository $seasonRepository,
         private PlayerService $playerService,
         private PlayerRepository $playerRepository,
-        private LeagueRepository $leagueRepository,
+        private OrganizationRepository $organizationRepository,
     )
     {
     }
@@ -58,18 +58,18 @@ class SeasonService
     }
 
     public function create(
-        ?int     $leagueId,
+        ?int     $organizationId,
         string  $name,
         array   $adminsIds = [],
         ?string $startDate = null,
         ?string $endDate = null
     ): void
     {
-        $league = $this->leagueRepository->findByIdWithAdmins($leagueId);
-        $leagueAdminsIds = $league?->getAdminsIds() ?? [];
-        $allAdminsIds = array_unique(array_merge($leagueAdminsIds, $adminsIds));
+        $organization = $this->organizationRepository->findByIdWithAdmins($organizationId);
+        $organizationAdminsIds = $organization?->getAdminsIds() ?? [];
+        $allAdminsIds = array_unique(array_merge($organizationAdminsIds, $adminsIds));
         try {
-            $this->seasonRepository->create($leagueId, $name, $allAdminsIds, $startDate, $endDate);
+            $this->seasonRepository->create($organizationId, $name, $allAdminsIds, $startDate, $endDate);
         } catch (Throwable $e) {
             throw ValidationException::withMessages([
                 'general' => 'Nie udało się dodać sezonu. Spróbuj ponownie.'
@@ -86,8 +86,8 @@ class SeasonService
         // Pobierz gracza użytkownika (domenowy obiekt)
         $playerDomain = $this->playerRepository->findByUserId($userId);
         
-        // Pobierz sezon z ligą i gośćmi (domenowy obiekt)
-        $seasonDomain = $this->seasonRepository->findByIdWithLeagueAndGuests($seasonId);
+        // Pobierz sezon z organizacją i gośćmi (domenowy obiekt)
+        $seasonDomain = $this->seasonRepository->findByIdWithOrganizationAndGuests($seasonId);
 
         // Jeśli użytkownik ma gracza (Player), sprawdź czy nie ma konfliktu z gościem
         if ($playerDomain) {
@@ -100,12 +100,12 @@ class SeasonService
                 $this->playerService->updateGuestName($guestInSeason->id, $newName);
             }
 
-            // Sprawdź gości w lidze
-            if ($seasonDomain->league) {
-                $guestInLeague = $this->playerService->findGuestByName($playerName, null, $seasonDomain->league->id);
-                if ($guestInLeague) {
-                    $newName = $this->playerService->generateUniqueGuestName($playerName, null, $seasonDomain->league->id);
-                    $this->playerService->updateGuestName($guestInLeague->id, $newName);
+            // Sprawdź gości w organizacji
+            if ($seasonDomain->organization) {
+                $guestInOrganization = $this->playerService->findGuestByName($playerName, null, $seasonDomain->organization->id);
+                if ($guestInOrganization) {
+                    $newName = $this->playerService->generateUniqueGuestName($playerName, null, $seasonDomain->organization->id);
+                    $this->playerService->updateGuestName($guestInOrganization->id, $newName);
                 }
             }
         }

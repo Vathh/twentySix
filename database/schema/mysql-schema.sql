@@ -266,42 +266,42 @@ CREATE TABLE `jobs` (
   KEY `jobs_queue_index` (`queue`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `league_user`;
+DROP TABLE IF EXISTS `organization_user`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `league_user` (
+CREATE TABLE `organization_user` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `league_id` bigint(20) unsigned NOT NULL,
+  `organization_id` bigint(20) unsigned NOT NULL,
   `user_id` bigint(20) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `league_user_league_id_user_id_unique` (`league_id`,`user_id`),
-  KEY `league_user_user_id_foreign` (`user_id`),
-  CONSTRAINT `league_user_league_id_foreign` FOREIGN KEY (`league_id`) REFERENCES `leagues` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `league_user_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  UNIQUE KEY `organization_user_organization_id_user_id_unique` (`organization_id`,`user_id`),
+  KEY `organization_user_user_id_foreign` (`user_id`),
+  CONSTRAINT `organization_user_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `organization_user_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `league_user_admin`;
+DROP TABLE IF EXISTS `organization_user_admin`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `league_user_admin` (
+CREATE TABLE `organization_user_admin` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `league_id` bigint(20) unsigned NOT NULL,
+  `organization_id` bigint(20) unsigned NOT NULL,
   `user_id` bigint(20) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `league_user_admin_league_id_foreign` (`league_id`),
-  KEY `league_user_admin_user_id_foreign` (`user_id`),
-  CONSTRAINT `league_user_admin_league_id_foreign` FOREIGN KEY (`league_id`) REFERENCES `leagues` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `league_user_admin_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  KEY `organization_user_admin_organization_id_foreign` (`organization_id`),
+  KEY `organization_user_admin_user_id_foreign` (`user_id`),
+  CONSTRAINT `organization_user_admin_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `organization_user_admin_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `leagues`;
+DROP TABLE IF EXISTS `organizations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `leagues` (
+CREATE TABLE `organizations` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -405,13 +405,13 @@ CREATE TABLE `players` (
   `name` varchar(255) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `league_id` bigint(20) unsigned DEFAULT NULL,
+  `organization_id` bigint(20) unsigned DEFAULT NULL,
   `season_id` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `players_user_id_unique` (`user_id`),
-  KEY `players_league_id_foreign` (`league_id`),
+  KEY `players_organization_id_foreign` (`organization_id`),
   KEY `players_season_id_foreign` (`season_id`),
-  CONSTRAINT `players_league_id_foreign` FOREIGN KEY (`league_id`) REFERENCES `leagues` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `players_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON DELETE SET NULL,
   CONSTRAINT `players_season_id_foreign` FOREIGN KEY (`season_id`) REFERENCES `seasons` (`id`) ON DELETE SET NULL,
   CONSTRAINT `players_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -708,15 +708,15 @@ DROP TABLE IF EXISTS `seasons`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `seasons` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `league_id` bigint(20) unsigned DEFAULT NULL,
+  `organization_id` bigint(20) unsigned DEFAULT NULL,
   `name` varchar(255) NOT NULL,
   `start_date` date DEFAULT NULL,
   `end_date` date DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `seasons_league_id_foreign` (`league_id`),
-  CONSTRAINT `seasons_league_id_foreign` FOREIGN KEY (`league_id`) REFERENCES `leagues` (`id`) ON DELETE SET NULL
+  KEY `seasons_organization_id_foreign` (`organization_id`),
+  CONSTRAINT `seasons_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `organizations` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `sessions`;
@@ -918,18 +918,18 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (3,'0001_01_01_0000
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (4,'2025_09_28_135937_modify_users_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (5,'2025_09_29_163533_remove_name_from_user',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (6,'2025_09_30_145710_create_players_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (7,'2025_09_30_150531_create_leagues_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (8,'2025_09_30_160624_create_league_user_admin_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (7,'2025_09_30_150531_create_organizations_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (8,'2025_09_30_160624_create_organization_user_admin_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (9,'2025_10_01_131016_modify_user_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (10,'2025_10_02_153608_modify_player_on_delete',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (11,'2025_10_02_160359_create_seasons_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (12,'2025_10_02_161223_create_season_user_admin_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (13,'2025_10_03_165530_modify_league_adding_description',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (14,'2025_10_03_173423_change_description_in_league_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (15,'2025_10_06_173951_create_league_user_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (13,'2025_10_03_165530_modify_organization_adding_description',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (14,'2025_10_03_173423_change_description_in_organization_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (15,'2025_10_06_173951_create_organization_user_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (16,'2025_10_21_105207_create_season_user_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (17,'2025_10_27_190436_create_tournament_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (18,'2025_10_29_173131_add_league_id_to_players_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (18,'2025_10_29_173131_add_organization_id_to_players_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (19,'2025_10_31_173022_add_season_id_to_players_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (20,'2025_11_03_183441_create_games_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (21,'2025_11_05_190250_add_status_to_tournaments',1);
@@ -955,7 +955,7 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (40,'2026_01_29_160
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (41,'2026_01_29_173422_create_quick_game_results_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (42,'2026_01_29_174308_create_quick_game_lobbies_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (43,'2026_01_29_175216_add_lobby_id_to_quick_games_table',1);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (44,'2026_01_30_100000_create_league_player_stats_table',1);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (44,'2026_01_30_100000_create_organization_player_stats_table',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (45,'2026_02_07_120000_ensure_quick_game_lobby_tables',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (46,'2026_02_08_150000_fix_quick_game_lobbies_status_for_sqlite',1);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (47,'2026_02_09_120000_add_legs_count_to_quick_game_lobbies',1);
@@ -986,8 +986,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (71,'2026_07_18_153
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (72,'2026_07_18_202000_create_tournament_user_admin_table',5);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (73,'2026_07_20_151500_make_tournament_results_season_and_points_nullable',6);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (74,'2026_07_23_180000_create_user_push_tokens_table',7);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (75,'2026_07_27_160000_add_match_format_presets_to_leagues_table',7);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (75,'2026_07_27_160000_add_match_format_presets_to_organizations_table',7);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (76,'2026_07_27_200000_add_cricket_state_to_ffa_sessions',8);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (77,'2026_07_28_150000_add_join_code_to_tournaments',9);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (78,'2026_07_28_150100_create_tournament_join_requests_table',9);
-INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (79,'2026_07_30_170000_drop_league_player_stats_table',10);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (79,'2026_07_30_170000_drop_organization_player_stats_table',10);

@@ -1,6 +1,6 @@
 # Przewodnik po twentySix
 
-Krótki opis, **jak działa aplikacja** — od ligi i turnieju po sędziowanie na tablecie i szybką grę ze znajomymi.
+Krótki opis, **jak działa aplikacja** — od organizacji i turnieju po sędziowanie na tablecie i szybką grę ze znajomymi.
 
 > **Zrzuty ekranu:** wstaw swoje pliki PNG/JPG do folderu [`assets/screenshots/`](assets/screenshots/) pod nazwami wskazanymi przy każdym miejscu. Lista do zrobienia: [`assets/screenshots/README.md`](assets/screenshots/README.md).
 
@@ -8,11 +8,11 @@ Krótki opis, **jak działa aplikacja** — od ligi i turnieju po sędziowanie n
 
 ## Czym jest twentySix?
 
-**twentySix** to system do organizacji lig i turniejów darterskich oraz meczów ze znajomymi:
+**twentySix** to system do prowadzenia organizacji i turniejów darterskich oraz meczów ze znajomymi:
 
 | Część | Do czego |
 | ----- | -------- |
-| **Panel webowy** | Ligi, sezony, turnieje, zaproszenia, tabele, wyniki na żywo |
+| **Panel webowy** | Organizacje, sezony, turnieje, zaproszenia, tabele, wyniki na żywo |
 | **Aplikacja mobilna** | Sędziowanie turnieju (tablet), szybka gra online, trening, znajomi |
 | **Web — sędziowanie** | Ten sam kod tabletu → `/referee` (laptop przy tarczy; suma wizyty) |
 
@@ -24,31 +24,31 @@ Nazwa produktu: **twentySix**. Znak **26** to tylko logo / ikona.
 
 ```mermaid
 flowchart LR
-  Org[Organizator / admin ligi] --> Web[Panel web]
+  Org[Organizator / admin organizacji] --> Web[Panel web]
   Gracz[Gracz z kontem] --> Web
   Gracz --> Mobile[Aplikacja mobilna]
   Sedzia[Sędzia przy tarczy] --> Tablet[Mobile: logowanie kodem]
   Kibic[Gość bez konta] --> Web
 ```
 
-- **Organizator** — tworzy ligę i turnieje, zaprasza graczy, startuje turniej, pokazuje kod QR tabletom.
+- **Organizator** — tworzy organizację i turnieje, zaprasza graczy, startuje turniej, pokazuje kod QR tabletom.
 - **Gracz** — akceptuje zaproszenia, gra w turniejach i szybkich meczach, ma historię i znajomych.
 - **Sędzia (tablet / laptop)** — loguje się **kodem / QR turnieju** (bez konta użytkownika) i wpisuje wyniki meczów w aplikacji mobilnej albo w przeglądarce.
-- **Gość web** — może oglądać publiczne ligi i wyniki.
+- **Gość web** — może oglądać publiczne organizacje i wyniki.
 
 ---
 
 ## Flow turnieju — od zera do wyniku
 
-To główna ścieżka produktu: **liga → turniej → skład → start → tablety → wyniki**.
+To główna ścieżka produktu: **organizacja → turniej → skład → start → tablety → wyniki**.
 
-### 1. Liga i sezon (web)
+### 1. Organizacja i sezon (web)
 
-Organizator tworzy **ligę**, a w niej **sezon**. Turnieje należą do sezonu (albo są turniejami jednorazowymi).
+Organizator tworzy **organizację**, a w niej **sezon**. Turnieje należą do sezonu (albo są turniejami jednorazowymi).
 
-![01 — lista lig / sezon](assets/screenshots/01-web-liga-sezon.png)
+![01 — lista organizacji / sezon](assets/screenshots/01-web-organizacja-sezon.png)
 
-<!-- Zrzut: panel web — lista lig albo widok sezonu z listą turniejów. -->
+<!-- Zrzut: panel web — lista organizacji albo widok sezonu z listą turniejów. -->
 
 ### 2. Utworzenie turnieju (web)
 
@@ -62,7 +62,7 @@ W sezonie: **Nowy turniej** → nazwa, data → przejście do strony przygotowan
 
 Na stronie startu turnieju organizator zbiera zawodników:
 
-1. **Zaproszenia** — wyszukanie gracza / masowe zaproszenie ze składu ligi → gracz akceptuje w aplikacji (lub na webie).
+1. **Zaproszenia** — wyszukanie gracza / masowe zaproszenie ze składu organizacji → gracz akceptuje w aplikacji (lub na webie).
 2. **QR zgłoszenia** — zawodnik skanuje QR ze strony startu → wysyła zgłoszenie → admin **Dołącz / Odrzuć**.
 3. **Goście** — nazwa wpisana przez admina (bez konta, bez profilu).
 
@@ -138,7 +138,7 @@ Na laptopie: `/referee/login` (lub CTA z QR) → ten sam kod → lista meczów w
 ### 7. Playoff i zakończenie
 
 Po fazie grupowej startuje drabinka (albo turniej od razu jest SE/DE).  
-Gdy wszystkie mecze playoff są skończone, turniej kończy się, kody tabletów przestają działać, punkty idą do tabeli ligowej (gdy turniej jest w sezonie).
+Gdy wszystkie mecze playoff są skończone, turniej kończy się, kody tabletów przestają działać, punkty idą do tabeli sezonu (gdy turniej jest w sezonie).
 
 ![11 — web: drabinka playoff](assets/screenshots/11-web-playoff.png)
 
@@ -174,12 +174,12 @@ Bez konta i bez zapisu — lokalna rozgrywka „na sucho”. Wynik znika po mecz
 
 ## Podgląd dla kibiców (web)
 
-Gość bez logowania może oglądać publiczne ligi, turnieje, tabele i wyniki.  
+Gość bez logowania może oglądać publiczne organizacje, turnieje, tabele i wyniki.  
 Live wyników działa, gdy mecz jest w trakcie (WebSocket).
 
 ![14 — web: podgląd gościa](assets/screenshots/14-web-podglad-goscia.png)
 
-<!-- Zrzut: publiczna strona turnieju / ligi bez panelu admina. -->
+<!-- Zrzut: publiczna strona turnieju / organizacji bez panelu admina. -->
 
 ---
 
@@ -187,7 +187,7 @@ Live wyników działa, gdy mecz jest w trakcie (WebSocket).
 
 | Cel | Web | Mobile |
 | --- | --- | ------ |
-| Zarządzanie ligą / turniejem | tak | — |
+| Zarządzanie organizacją / turniejem | tak | — |
 | Zaproszenia / zgłoszenia QR | tak (admin) | akceptacja / skan |
 | Start turnieju + kody tabletów | tak | — |
 | Sędziowanie turnieju | `/referee` (kod tabletu) | Turniej → kod/QR |

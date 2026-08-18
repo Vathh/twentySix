@@ -20,7 +20,7 @@ class TournamentRepository
     public function getAll(): Collection
     {
         return Tournament::query()
-            ->with(['season.league'])
+            ->with(['season.organization'])
             ->get()
             ->map(fn (Tournament $tournament) => TournamentDomain::fromEloquent($tournament, ['season']));
     }
@@ -34,7 +34,7 @@ class TournamentRepository
     {
         $page = max(1, $page);
         $paginator = Tournament::query()
-            ->with(['season.league'])
+            ->with(['season.organization'])
             ->orderByRaw('COALESCE(date, ?) DESC', ['1970-01-01'])
             ->orderByDesc('id')
             ->paginate(self::INDEX_PER_PAGE, ['*'], 'page', $page);
@@ -138,14 +138,14 @@ class TournamentRepository
      */
     public function findWithSeasonAndPointSchemeRules(int $tournamentId): ?TournamentDomain
     {
-        $tournament = Tournament::with(['season.league', 'pointScheme.rules'])->findOrFail($tournamentId);
+        $tournament = Tournament::with(['season.organization', 'pointScheme.rules'])->findOrFail($tournamentId);
 
         return TournamentDomain::fromEloquent($tournament, ['season', 'pointScheme', 'pointScheme.rules']);
     }
 
     public function findWithSeasonAndPointScheme(int $tournamentId): ?TournamentDomain
     {
-        $tournament = Tournament::with(['season.league', 'pointScheme'])->findOrFail($tournamentId);
+        $tournament = Tournament::with(['season.organization', 'pointScheme'])->findOrFail($tournamentId);
 
         return TournamentDomain::fromEloquent($tournament, ['season', 'pointScheme']);
     }
@@ -228,12 +228,12 @@ class TournamentRepository
     }
 
     /**
-     * Zwraca league_id dla turnieju (przez sezon). Null jeśli turniej nie ma sezonu.
+     * Zwraca organization_id dla turnieju (przez sezon). Null jeśli turniej nie ma sezonu.
      */
-    public function getLeagueIdForTournament(int $tournamentId): ?int
+    public function getOrganizationIdForTournament(int $tournamentId): ?int
     {
         $tournament = Tournament::with('season')->find($tournamentId);
-        return $tournament?->season?->league_id;
+        return $tournament?->season?->organization_id;
     }
 
     /**
@@ -251,7 +251,7 @@ class TournamentRepository
 
     public function findByJoinCode(string $code): ?Tournament
     {
-        return Tournament::with(['season.league'])
+        return Tournament::with(['season.organization'])
             ->where('join_code', $code)
             ->first();
     }

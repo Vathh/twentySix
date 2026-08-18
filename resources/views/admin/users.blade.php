@@ -34,7 +34,7 @@
                     <th class="text-left py-3 px-3 font-semibold">Email</th>
                     <th class="text-left py-3 px-3 font-semibold">Rola</th>
                     <th class="text-left py-3 px-3 font-semibold">Weryfikacja</th>
-                    <th class="text-left py-3 px-3 font-semibold">Tworzenie lig</th>
+                    <th class="text-left py-3 px-3 font-semibold">Tworzenie organizacji</th>
                     <th class="text-left py-3 px-3 font-semibold">Status</th>
                     <th class="text-left py-3 px-3 font-semibold">Rejestracja</th>
                 </tr>
@@ -68,11 +68,11 @@
                             @endif
                         </td>
                         <td class="py-3 px-3">
-                            <form method="POST" action="{{ route('admin.users.can-create-leagues', $user->id) }}" class="inline">
+                            <form method="POST" action="{{ route('admin.users.can-create-organizations', $user->id) }}" class="inline">
                                 @csrf
-                                <input type="hidden" name="can_create_leagues" value="{{ $user->can_create_leagues ? 0 : 1 }}">
+                                <input type="hidden" name="can_create_organizations" value="{{ $user->can_create_organizations ? 0 : 1 }}">
                                 <button type="submit" class="btn-mini" @if($user->isBanned()) disabled @endif>
-                                    {{ $user->can_create_leagues ? 'Wyłącz' : 'Włącz' }}
+                                    {{ $user->can_create_organizations ? 'Wyłącz' : 'Włącz' }}
                                 </button>
                             </form>
                         </td>

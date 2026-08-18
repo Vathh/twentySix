@@ -1,137 +1,69 @@
 @extends('layouts.app')
 
-@section('title')
-    Edycja ligi {{ $league->name }}
-@endsection
+@section('title', 'Edycja ligi')
 
 @section('content')
+    <div class="container mx-auto py-6 max-w-3xl px-4">
+        <a href="{{ route('leagues.show', $league) }}" class="link-back mb-4 inline-block">← Powrót</a>
+        <h1 class="page-title">Edycja ligi</h1>
+        <p class="text-text-muted mb-6">Poza sezonem możesz ruszać szczeble i format. W trakcie sezonu piramida jest zamrożona.</p>
 
-    <div class="flex justify-center items-start min-h-[70vh] px-4 py-8">
-        <form class="form-card w-full max-w-3xl"
-              action="{{ route('leagues.update', $league->id) }}"
-              method="POST">
+        <form class="form-card !max-w-none" method="POST" action="{{ route('leagues.update', $league) }}">
             @csrf
             @method('PUT')
 
-            <div class="flex flex-col items-stretch">
-                <h1 class="page-title text-center">Edycja ligi</h1>
+            <label class="form-label text-accent" for="leagueName">Nazwa ligi</label>
+            <input class="mb-5 input-field" type="text" id="leagueName" name="leagueName"
+                   value="{{ old('leagueName', $league->name) }}" required maxlength="80">
 
-                <label class="form-label text-accent" for="leagueName">Nazwa ligi</label>
-                <input
-                    class="mb-5 input-field"
-                    type="text"
-                    id="leagueName"
-                    name="leagueName"
-                    value="{{ old('leagueName', $league->name) }}"
-                    required
-                >
+            <label class="form-label text-accent" for="description">Opis</label>
+            <textarea class="input-field mb-6 h-24 resize-none" id="description" name="description" maxlength="500">{{ old('description', $league->description) }}</textarea>
 
-                <label class="form-label text-accent" for="description">Opis ligi</label>
-                <textarea
-                    class="input-field mb-2 h-32 resize-none"
-                    id="description"
-                    name="description"
-                    maxlength="500"
-                    oninput="updateCounter()"
-                >{{ old('description', $league->description) }}</textarea>
-
-                <div class="text-accent text-sm text-right mb-6">
-                    <span id="charCount">0</span>/500
-                </div>
-
-                <div class="mb-6 rounded-lg border border-border bg-bg/40 p-4">
-                    <p class="text-accent font-semibold text-sm mb-1">Presety formatu gry</p>
-                    <p class="text-text-secondary/70 text-xs mb-4">
-                        Te wartości wczytają się jako domyślne przy starcie każdego turnieju w tej lidze.
-                        Przy starcie turnieju nadal możesz je nadpisać.
-                    </p>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-text-secondary">
-                            <thead class="text-accent">
-                                <tr class="border-b border-border">
-                                    <th class="text-left py-2 pr-3 font-semibold">Etap</th>
-                                    <th class="text-left py-2 px-2 font-semibold">Punkty</th>
-                                    <th class="text-left py-2 px-2 font-semibold">Legi / set</th>
-                                    <th class="text-left py-2 pl-2 font-semibold">Sety / mecz</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($matchFormatStages as $stage)
-                                    @php
-                                        $format = $matchFormats[$stage['value']] ?? [
-                                            'startingScore' => 501,
-                                            'legsToWinSet' => 2,
-                                            'setsToWinMatch' => 1,
-                                        ];
-                                    @endphp
-                                    <tr class="border-b border-border/60 last:border-0">
-                                        <td class="py-2 pr-3 whitespace-nowrap">{{ $stage['label'] }}</td>
-                                        <td class="py-2 px-2">
-                                            <select
-                                                class="select-field w-full min-w-[5rem]"
-                                                name="matchFormats[{{ $stage['value'] }}][startingScore]"
-                                            >
-                                                @foreach($startingScoreOptions as $score)
-                                                    <option
-                                                        value="{{ $score }}"
-                                                        @selected((int) ($format['startingScore'] ?? 501) === (int) $score)
-                                                    >{{ $score }}</option>
-                                                @endforeach
-                                            </select>
-                                        </td>
-                                        <td class="py-2 px-2">
-                                            <select
-                                                class="select-field w-full min-w-[4rem]"
-                                                name="matchFormats[{{ $stage['value'] }}][legsToWinSet]"
-                                            >
-                                                @for($n = 1; $n <= 15; $n++)
-                                                    <option
-                                                        value="{{ $n }}"
-                                                        @selected((int) ($format['legsToWinSet'] ?? 2) === $n)
-                                                    >{{ $n }}</option>
-                                                @endfor
-                                            </select>
-                                        </td>
-                                        <td class="py-2 pl-2">
-                                            <select
-                                                class="select-field w-full min-w-[4rem]"
-                                                name="matchFormats[{{ $stage['value'] }}][setsToWinMatch]"
-                                            >
-                                                @for($n = 1; $n <= 5; $n++)
-                                                    <option
-                                                        value="{{ $n }}"
-                                                        @selected((int) ($format['setsToWinMatch'] ?? 1) === $n)
-                                                    >{{ $n }}</option>
-                                                @endfor
-                                            </select>
-                                        </td>
-                                    </tr>
+            @foreach($divisions as $index => $division)
+                <div class="card mb-4">
+                    <p class="font-semibold text-accent mb-3">{{ $index === 0 ? 'Najwyższy szczebel' : 'Szczebel '.($index + 1) }}</p>
+                    <input type="hidden" name="divisions[{{ $index }}][id]" value="{{ $division->id }}">
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        <label class="block">
+                            <span class="form-label">Nazwa</span>
+                            <input class="input-field" type="text" name="divisions[{{ $index }}][name]" value="{{ old("divisions.$index.name", $division->name) }}" required>
+                        </label>
+                        <label class="block">
+                            <span class="form-label">Pojemność</span>
+                            <input class="input-field" type="number" min="2" max="16" name="divisions[{{ $index }}][capacity]" value="{{ old("divisions.$index.capacity", $division->capacity) }}" required>
+                        </label>
+                        <label class="block">
+                            <span class="form-label">Start (X01)</span>
+                            <select class="input-field" name="divisions[{{ $index }}][startingScore]">
+                                @foreach($startingScores as $score)
+                                    <option value="{{ $score }}" @selected((int) old("divisions.$index.startingScore", $division->starting_score) === $score)>{{ $score }}</option>
                                 @endforeach
-                            </tbody>
-                        </table>
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="form-label">Legi do wygrania seta</span>
+                            <input class="input-field" type="number" min="1" max="15" name="divisions[{{ $index }}][legsToWinSet]" value="{{ old("divisions.$index.legsToWinSet", $division->legs_to_win_set) }}" required>
+                        </label>
+                        <label class="block">
+                            <span class="form-label">Sety do wygrania meczu</span>
+                            <input class="input-field" type="number" min="1" max="5" name="divisions[{{ $index }}][setsToWinMatch]" value="{{ old("divisions.$index.setsToWinMatch", $division->sets_to_win_match) }}" required>
+                        </label>
+                        @if($index > 0)
+                            <label class="block">
+                                <span class="form-label">Awans bezpośredni</span>
+                                <input class="input-field" type="number" min="0" max="8" name="divisions[{{ $index }}][promoteDirect]" value="{{ old("divisions.$index.promoteDirect", $division->promote_direct) }}">
+                            </label>
+                            <label class="block">
+                                <span class="form-label">Miejsca barażowe</span>
+                                <input class="input-field" type="number" min="0" max="8" name="divisions[{{ $index }}][promotePlayoff]" value="{{ old("divisions.$index.promotePlayoff", $division->promote_playoff) }}">
+                            </label>
+                        @endif
                     </div>
                 </div>
+            @endforeach
 
-                <button class="btn btn-primary" type="submit">Zapisz zmiany</button>
-                <a href="{{ route('leagues.show', $league->id) }}" class="btn btn-secondary mt-4 text-center">Powrót</a>
-
-                <x-errors/>
-            </div>
+            <button class="btn btn-primary w-full" type="submit">Zapisz</button>
+            <x-errors/>
         </form>
     </div>
-
-@endsection
-
-@section('scripts')
-    <script>
-        function updateCounter() {
-            const textarea = document.getElementById('description');
-            const counter = document.getElementById('charCount');
-            counter.textContent = textarea.value.length;
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            updateCounter();
-        });
-    </script>
 @endsection

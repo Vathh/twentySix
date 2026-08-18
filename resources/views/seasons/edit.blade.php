@@ -16,13 +16,13 @@
             <div class="flex flex-col items-stretch">
                 <h1 class="page-title text-center">Edycja sezonu</h1>
 
-                <label class="form-label text-accent" for="leagueName">Nazwa sezonu</label>
+                <label class="form-label text-accent" for="seasonName">Nazwa sezonu</label>
                 <input
                     class="mb-5 input-field"
                     type="text"
-                    id="leagueName"
-                    name="leagueName"
-                    value="{{ old('leagueName', $season->name) }}"
+                    id="seasonName"
+                    name="seasonName"
+                    value="{{ old('seasonName', $season->name) }}"
                     required
                 >
 

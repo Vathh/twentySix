@@ -7,7 +7,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Agregaty punktów / achievementów po liście turniejów (liga, sezon).
+ * Agregaty punktów / achievementów po liście turniejów (organizacja, sezon).
  */
 class TournamentAggregateRepository
 {

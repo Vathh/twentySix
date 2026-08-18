@@ -69,7 +69,7 @@ class TournamentController extends Controller
         if ($seasonId !== null) {
             $this->authorize('update', $this->seasonRepository->findModel((int) $seasonId));
         } else {
-            abort_unless(Auth::user()?->can_create_leagues, 403);
+            abort_unless(Auth::user()?->can_create_organizations, 403);
         }
 
         return view('tournaments.create', ['seasonId' => $seasonId]);
@@ -87,7 +87,7 @@ class TournamentController extends Controller
         if ($seasonId !== null) {
             $this->authorize('update', $this->seasonRepository->findModel((int) $seasonId));
         } else {
-            abort_unless(Auth::user()?->can_create_leagues, 403);
+            abort_unless(Auth::user()?->can_create_organizations, 403);
         }
 
         $tournamentId = $this->tournamentService->create(

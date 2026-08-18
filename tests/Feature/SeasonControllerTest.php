@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
 use App\Models\Users\User;
@@ -16,7 +16,7 @@ class SeasonControllerTest extends TestCase
 
     private User $adminUser;
     private User $regularUser;
-    private League $league;
+    private Organization $organization;
     private Player $adminPlayer;
 
     protected function setUp(): void
@@ -25,12 +25,12 @@ class SeasonControllerTest extends TestCase
 
         $this->adminUser = User::factory()->create([
             'email' => 'admin@test.com',
-            'can_create_leagues' => true,
+            'can_create_organizations' => true,
         ]);
 
         $this->regularUser = User::factory()->create([
             'email' => 'user@test.com',
-            'can_create_leagues' => false,
+            'can_create_organizations' => false,
         ]);
 
         $playerService = app(PlayerService::class);
@@ -39,8 +39,8 @@ class SeasonControllerTest extends TestCase
 
         $this->adminPlayer = Player::where('user_id', $this->adminUser->id)->first();
 
-        $this->league = League::create(['name' => 'Test League', 'description' => 'Test']);
-        $this->league->admins()->attach($this->adminUser->id);
+        $this->organization = Organization::create(['name' => 'Test Organization', 'description' => 'Test']);
+        $this->organization->admins()->attach($this->adminUser->id);
     }
 
     public function test_user_can_view_seasons_index(): void
@@ -52,22 +52,22 @@ class SeasonControllerTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_league_admin_can_create_season(): void
+    public function test_organization_admin_can_create_season(): void
     {
         $this->actingAs($this->adminUser);
 
-        $response = $this->post("/seasons?leagueId={$this->league->id}", [
+        $response = $this->post("/seasons?organizationId={$this->organization->id}", [
             'seasonName' => 'New Season',
             'startDate' => '2024-01-01',
             'endDate' => '2024-12-31',
         ]);
 
-        $response->assertRedirect("/leagues/{$this->league->id}");
+        $response->assertRedirect("/organizations/{$this->organization->id}");
         $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('seasons', [
             'name' => 'New Season',
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
         ]);
     }
 
@@ -77,7 +77,7 @@ class SeasonControllerTest extends TestCase
         
         $this->actingAs($this->regularUser);
 
-        $response = $this->post("/seasons?leagueId={$this->league->id}", [
+        $response = $this->post("/seasons?organizationId={$this->organization->id}", [
             'seasonName' => 'New Season',
             'startDate' => '2024-01-01',
             'endDate' => '2024-12-31',
@@ -91,12 +91,12 @@ class SeasonControllerTest extends TestCase
         $this->actingAs($this->adminUser);
         Season::create([
             'name' => 'Existing Season',
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
 
-        $response = $this->post("/seasons?leagueId={$this->league->id}", [
+        $response = $this->post("/seasons?organizationId={$this->organization->id}", [
             'seasonName' => 'Existing Season',
             'startDate' => '2024-01-01',
             'endDate' => '2024-12-31',
@@ -110,7 +110,7 @@ class SeasonControllerTest extends TestCase
         $this->actingAs($this->adminUser);
         $season = Season::create([
             'name' => 'Test Season',
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -131,7 +131,7 @@ class SeasonControllerTest extends TestCase
         $this->actingAs($this->adminUser);
         $season = Season::create([
             'name' => 'Test Season',
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -153,7 +153,7 @@ class SeasonControllerTest extends TestCase
         $this->actingAs($this->adminUser);
         $season = Season::create([
             'name' => 'Test Season',
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -175,7 +175,7 @@ class SeasonControllerTest extends TestCase
         $this->actingAs($this->adminUser);
         $season = Season::create([
             'name' => 'Test Season',
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -196,7 +196,7 @@ class SeasonControllerTest extends TestCase
         $this->actingAs($this->adminUser);
         $season = Season::create([
             'name' => 'Test Season',
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
@@ -221,12 +221,12 @@ class SeasonControllerTest extends TestCase
         $this->actingAs($this->adminUser);
         $season = Season::create([
             'name' => 'Test Season',
-            'league_id' => $this->league->id,
+            'organization_id' => $this->organization->id,
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
         $season->admins()->attach($this->adminUser->id);
-        $guest = Player::create(['name' => 'Guest', 'season_id' => $season->id, 'league_id' => $this->league->id]);
+        $guest = Player::create(['name' => 'Guest', 'season_id' => $season->id, 'organization_id' => $this->organization->id]);
 
         $response = $this->delete("/seasons/{$season->id}/guests/remove", [
             'player_id' => $guest->id,

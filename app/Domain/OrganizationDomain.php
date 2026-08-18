@@ -2,10 +2,10 @@
 namespace App\Domain;
 
 use App\Domain\Concerns\AssertsRelationsLoaded;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use Carbon\Carbon;
 
-class LeagueDomain
+class OrganizationDomain
 {
     use AssertsRelationsLoaded;
 
@@ -34,39 +34,39 @@ class LeagueDomain
     {}
 
     /**
-     * @param League $league
+     * @param Organization $organization
      * @param array $with
      * @return self
      */
-    public static function fromEloquent(League $league, array $with = []): self
+    public static function fromEloquent(Organization $organization, array $with = []): self
     {
-        self::assertRelationsLoaded($league, $with, self::RELATIONS);
+        self::assertRelationsLoaded($organization, $with, self::RELATIONS);
 
-        $presets = is_array($league->match_format_presets) ? $league->match_format_presets : [];
+        $presets = is_array($organization->match_format_presets) ? $organization->match_format_presets : [];
 
         return new self(
-            id: $league->id,
-            name: $league->name,
-            description: $league->description,
-            createdAt: $league->created_at,
-            updatedAt: $league->updated_at,
+            id: $organization->id,
+            name: $organization->name,
+            description: $organization->description,
+            createdAt: $organization->created_at,
+            updatedAt: $organization->updated_at,
             admins: in_array('admins', $with)
-                ? $league->admins->map(fn($user) => [
+                ? $organization->admins->map(fn($user) => [
                     'id' => $user->id,
                     'name' => $user->player->name,
                 ])->toArray()
                 : [],
             seasons: in_array('seasons', $with)
-                ? $league->seasons->map(fn($season) => SeasonDomain::fromEloquent($season))->toArray()
+                ? $organization->seasons->map(fn($season) => SeasonDomain::fromEloquent($season))->toArray()
                 : [],
             relatedUsers: in_array('relatedUsers', $with)
-                ? $league->relatedUsers->map(fn($user) => [
+                ? $organization->relatedUsers->map(fn($user) => [
                     'id' => $user->id,
                     'name' => $user->player->name,
                 ])->toArray()
                 : [],
             guests: in_array('guests', $with)
-                ? $league->guests->map(fn($guest) => [
+                ? $organization->guests->map(fn($guest) => [
                     'id' => $guest->id,
                     'name' => $guest->name
                 ])->toArray()

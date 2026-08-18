@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Domain\SeasonDomain;
 use App\Enums\AssignableEntityType;
-use App\Models\League\League;
+use App\Models\Organization\Organization;
 use App\Models\Season\Season;
-use App\Rules\UniquePlayerInSeasonAndLeague;
+use App\Rules\UniquePlayerInSeasonAndOrganization;
 use App\Services\Player\PlayerService;
 use App\Services\Season\SeasonService;
 use App\Services\User\UserService;
@@ -44,12 +44,12 @@ class SeasonController extends Controller
 
     public function create(Request $request): Factory|View
     {
-        $leagueId = $request->query('leagueId');
-        $league = League::with('admins')->findOrFail($leagueId);
+        $organizationId = $request->query('organizationId');
+        $organization = Organization::with('admins')->findOrFail($organizationId);
 
-        $this->authorize('createSeason', $league);
+        $this->authorize('createSeason', $organization);
 
-        return view('seasons.create', ['leagueId' => $leagueId]);
+        return view('seasons.create', ['organizationId' => $organizationId]);
     }
 
     public function store(Request $request)
@@ -60,19 +60,19 @@ class SeasonController extends Controller
            'endDate' => 'required|date',
         ]);
 
-        $leagueId = $request->query('leagueId');
+        $organizationId = $request->query('organizationId');
 
-        $this->seasonService->create( $leagueId, $validated['seasonName'], (array)Auth::id(), $validated['startDate'], $validated['endDate']);
+        $this->seasonService->create( $organizationId, $validated['seasonName'], (array)Auth::id(), $validated['startDate'], $validated['endDate']);
 
         return redirect()
-            ->route('leagues.show', ['league' => $leagueId])
+            ->route('organizations.show', ['organization' => $organizationId])
             ->with('success', 'Pomyślnie stworzono sezon!');
     }
 
     public function show(Season $season)
     {
-        $season->loadMissing(['admins', 'league', 'tournaments']);
-        $seasonDomain = SeasonDomain::fromEloquent($season, ['admins', 'league', 'tournaments']);
+        $season->loadMissing(['admins', 'organization', 'tournaments']);
+        $seasonDomain = SeasonDomain::fromEloquent($season, ['admins', 'organization', 'tournaments']);
 
         return view('seasons.show', ['season' => $seasonDomain]);
     }
@@ -210,14 +210,14 @@ class SeasonController extends Controller
      */
     public function addGuest(Request $request, int $seasonId)
     {
-        $season = $this->loadAndAuthorize($seasonId, ['league']);
+        $season = $this->loadAndAuthorize($seasonId, ['organization']);
 
         $validated = $request->validate([
             'name' => [
                 'required',
                 'string',
                 'max:20',
-                new \App\Rules\UniquePlayerNameInSeason($seasonId, $season->league->id),
+                new \App\Rules\UniquePlayerNameInSeason($seasonId, $season->organization->id),
             ],
         ]);
 
