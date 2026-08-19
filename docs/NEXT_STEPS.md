@@ -31,7 +31,7 @@
 
 | Temat | Stan |
 |-------|------|
-| **Liga piramidowa (web)** | W toku — organizacja ma ligi ze szczeblami, składem, sezonem ligowym, tabelą, WO/rezygnacją; scoring tabletem później |
+| **Liga piramidowa** | Web: ligi, składy, sezon, tabela (W/P albo W/R/P + punkty), WO/rezygnacja. Mobile: lista meczów, lobby 1v1, scoring H2H na jednym telefonie. Później: `each_own`, katalog piramidy w Rozgrywkach |
 | **Awatary graczy** | Zaplanowane (jeszcze bez planu) — upload + profil/listy; limity + fallback inicjałów; później crop/CDN |
 | **Live drabinka / playoff (web WS)** | Później — zakładka Playoff dziś SSR (F5); live WS jest dla macierzy grup + pojedynczego meczu. Wzorzec: `TournamentGroupMatrixLiveService` |
 | **Prowadzenie organizacji typu Apagon** | Później — zakres UX do ustalenia przy planie |

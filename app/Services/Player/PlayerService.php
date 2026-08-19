@@ -125,22 +125,22 @@ class PlayerService
      * @param int|null $organizationId
      * @return PlayerDomain|null
      */
-    public function findGuestByName(string $name, ?int $seasonId = null, ?int $organizationId = null): ?PlayerDomain
+    public function findGuestByName(string $name, ?int $seasonId = null, ?int $organizationId = null, ?int $leagueId = null): ?PlayerDomain
     {
-        return $this->playerRepository->findGuestByName($name, $seasonId, $organizationId);
+        return $this->playerRepository->findGuestByName($name, $seasonId, $organizationId, $leagueId);
     }
 
     /**
      * Generuje unikalną nazwę dla gościa
      * Format: "Tomek", "Tomek 1", "Tomek 2", itd.
-     * @param string $baseName
-     * @param int|null $seasonId
-     * @param int|null $organizationId
-     * @return string
      */
-    public function generateUniqueGuestName(string $baseName, ?int $seasonId = null, ?int $organizationId = null): string
-    {
-        return $this->playerRepository->generateUniqueGuestName($baseName, $seasonId, $organizationId);
+    public function generateUniqueGuestName(
+        string $baseName,
+        ?int $seasonId = null,
+        ?int $organizationId = null,
+        ?int $leagueId = null,
+    ): string {
+        return $this->playerRepository->generateUniqueGuestName($baseName, $seasonId, $organizationId, $leagueId);
     }
 }
 

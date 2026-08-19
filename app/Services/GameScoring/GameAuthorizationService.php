@@ -16,7 +16,7 @@ class GameAuthorizationService
 
     public function canCorrectTournamentGame(?int $tournamentId, GameKind $kind): bool
     {
-        if ($kind === GameKind::QUICK || $tournamentId === null || ! Auth::check()) {
+        if ($kind === GameKind::QUICK || $kind === GameKind::LEAGUE || $tournamentId === null || ! Auth::check()) {
             return false;
         }
 

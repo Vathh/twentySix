@@ -41,7 +41,6 @@ class LeaguePyramidTest extends TestCase
             $user = User::factory()->create();
             $playerService->create('Gracz '.$i, $user->id);
             $player = Player::query()->where('user_id', $user->id)->first();
-            $this->organization->relatedUsers()->attach($user->id);
             $this->players[] = $player;
         }
     }
@@ -80,6 +79,7 @@ class LeaguePyramidTest extends TestCase
         $league = League::query()->where('name', 'Pucharowa')->first();
         $this->assertNotNull($league);
         $this->assertCount(2, $league->divisions);
+        $this->attachLeaguePool($league);
 
         $top = $league->divisions->firstWhere('position', 0);
         $bottom = $league->divisions->firstWhere('position', 1);
@@ -229,6 +229,7 @@ class LeaguePyramidTest extends TestCase
             'promoteDirect' => 0,
             'promotePlayoff' => 0,
         ]]);
+        $this->attachLeaguePool($league);
         $division = $league->divisions->first();
         $leagueService->assignPlayer($league->id, $division->id, $this->players[2]->id);
         $leagueService->assignPlayer($league->id, $division->id, $this->players[3]->id);
@@ -268,6 +269,7 @@ class LeaguePyramidTest extends TestCase
             'promoteDirect' => 0,
             'promotePlayoff' => 0,
         ]]);
+        $this->attachLeaguePool($league);
         $division = $league->divisions->first();
         $leagueService->assignPlayer($league->id, $division->id, $this->players[2]->id);
         $leagueService->assignPlayer($league->id, $division->id, $this->players[3]->id);
@@ -289,6 +291,88 @@ class LeaguePyramidTest extends TestCase
         $this->assertSame('2026-09-01', $matchday->window_start->format('Y-m-d'));
         $this->assertSame('2026-09-10', $matchday->window_end->format('Y-m-d'));
         $this->assertSame('2026-09-10', $season->end_date->format('Y-m-d'));
+    }
+
+    #[Test]
+    public function season_with_draws_stores_best_of_format(): void
+    {
+        $this->actingAs($this->admin);
+        $leagueService = app(LeagueService::class);
+        $league = $leagueService->create($this->organization->id, 'BO', null, [[
+            'name' => 'Jedyna',
+            'capacity' => 4,
+            'startingScore' => 501,
+            'legsToWinSet' => 2,
+            'setsToWinMatch' => 1,
+            'promoteDirect' => 0,
+            'promotePlayoff' => 0,
+        ]]);
+        $this->attachLeaguePool($league);
+        $division = $league->divisions->first();
+        $leagueService->assignPlayer($league->id, $division->id, $this->players[0]->id);
+        $leagueService->assignPlayer($league->id, $division->id, $this->players[1]->id);
+
+        $this->post(route('league-seasons.store', $league), [
+            'seasonName' => 'Z remisami',
+            'calendar_mode' => 'deadline',
+            'rounds_each' => 1,
+            'startDate' => '2026-09-01',
+            'endDate' => '2026-10-01',
+            'allows_draws' => 1,
+            'win_length' => 6,
+            'start_now' => 1,
+        ])->assertRedirect();
+
+        $season = LeagueSeason::query()->where('league_id', $league->id)->first();
+        $this->assertTrue((bool) $season->allows_draws);
+        $this->assertSame(6, (int) $season->win_length);
+        $this->assertSame('best_of', $season->win_mode->value);
+        $game = $season->games()->first();
+        $this->assertSame('best_of', $game->win_mode->value);
+        $this->assertSame(6, (int) $game->win_length);
+        $this->assertSame(4, (int) $game->legs_to_win_set);
+    }
+
+    #[Test]
+    public function players_open_lobby_accept_and_start_scoring(): void
+    {
+        $this->actingAs($this->admin);
+        $league = $this->seedStartedTwoPlayerLeague();
+        $season = $league->seasons()->first();
+        $game = $season->games()->first();
+        $this->assertNotNull($game);
+
+        $hostUser = \App\Models\Users\User::query()->findOrFail($this->players[0]->user_id);
+        $opponentUser = \App\Models\Users\User::query()->findOrFail($this->players[1]->user_id);
+
+        \Laravel\Sanctum\Sanctum::actingAs($hostUser);
+        $open = $this->postJson('/api/league-games/'.$game->id.'/open-lobby');
+        $open->assertOk()->assertJsonPath('status', 'lobby');
+
+        \Laravel\Sanctum\Sanctum::actingAs($opponentUser);
+        $this->postJson('/api/league-games/'.$game->id.'/accept')
+            ->assertOk()
+            ->assertJsonPath('opponentAccepted', true);
+
+        \Laravel\Sanctum\Sanctum::actingAs($hostUser);
+        $this->postJson('/api/league-games/'.$game->id.'/start')
+            ->assertOk()
+            ->assertJsonPath('status', 'in_progress');
+
+        $state = $this->getJson('/api/league-games/'.$game->id.'/scoring/state');
+        $state->assertOk()->assertJsonPath('game.kind', 'league');
+
+        $this->postJson('/api/league-games/'.$game->id.'/legs', [
+            'player1DoubleTracked' => false,
+            'player2DoubleTracked' => false,
+        ])->assertOk();
+    }
+
+    private function attachLeaguePool(League $league): void
+    {
+        $league->relatedUsers()->syncWithoutDetaching(
+            collect($this->players)->pluck('user_id')->all(),
+        );
     }
 
     private function completeScheduledGames(LeagueSeason $season): void
@@ -313,6 +397,7 @@ class LeaguePyramidTest extends TestCase
             'promoteDirect' => 0,
             'promotePlayoff' => 0,
         ]]);
+        $this->attachLeaguePool($league);
         $division = $league->divisions->first();
         $leagueService->assignPlayer($league->id, $division->id, $this->players[0]->id);
         $leagueService->assignPlayer($league->id, $division->id, $this->players[1]->id);

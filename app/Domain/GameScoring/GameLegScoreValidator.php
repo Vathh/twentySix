@@ -9,7 +9,7 @@ final class GameLegScoreValidator
     /**
      * Waliduje wynik meczu zgodnie z formatem (legi przy 1 secie, sety przy wielu setach).
      *
-     * @return int winnerId
+     * @return int|null winnerId albo null przy dopuszczalnym remisie
      */
     public static function validateAndResolveWinner(
         int $player1Id,
@@ -17,9 +17,19 @@ final class GameLegScoreValidator
         int $player1Score,
         int $player2Score,
         MatchFormat $format,
-    ): int {
+    ): ?int {
         $toWin = $format->scoreToWin();
         $unit = $format->scoreUnit();
+
+        if ($format->isBestOf() && $format->isSingleSet()) {
+            return self::validateBestOfLegs(
+                $player1Id,
+                $player2Id,
+                $player1Score,
+                $player2Score,
+                $format,
+            );
+        }
 
         return self::validateRaceWinner(
             $player1Id,
@@ -46,6 +56,45 @@ final class GameLegScoreValidator
         }
 
         return [0, $win];
+    }
+
+    /**
+     * @return int|null
+     */
+    private static function validateBestOfLegs(
+        int $player1Id,
+        int $player2Id,
+        int $player1Score,
+        int $player2Score,
+        MatchFormat $format,
+    ): ?int {
+        $winAt = $format->legsToWinSet;
+        $maxLegs = $format->winLength;
+
+        if ($player1Score < 0 || $player2Score < 0) {
+            throw new DomainException('Wynik w legach nie może być ujemny.');
+        }
+        if ($player1Score > $winAt || $player2Score > $winAt) {
+            throw new DomainException("Maksymalny wynik to {$winAt} legów.");
+        }
+
+        $played = $player1Score + $player2Score;
+        if ($played > $maxLegs) {
+            throw new DomainException("Best of {$maxLegs}: za dużo rozegranych legów.");
+        }
+
+        if ($player1Score === $player2Score) {
+            if ($format->allowsDraw() && $played === $maxLegs) {
+                return null;
+            }
+            throw new DomainException('Mecz musi mieć zwycięzcę — wyniki nie mogą być remisowe.');
+        }
+
+        if ($player1Score !== $winAt && $player2Score !== $winAt && $played !== $maxLegs) {
+            throw new DomainException("Jeden z graczy musi wygrać {$winAt} legów albo rozegrać {$maxLegs}.");
+        }
+
+        return $player1Score > $player2Score ? $player1Id : $player2Id;
     }
 
     /**

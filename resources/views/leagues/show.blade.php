@@ -16,6 +16,8 @@
                 <h2 class="admin-sidebar-title">⚙️ Zarządzanie ligą</h2>
                 <nav class="flex flex-col space-y-3">
                     <a href="{{ route('leagues.roster', $league) }}" class="admin-sidebar-link">👥 Skład szczebli</a>
+                    <a href="{{ route('leagues.relatedUsers', $league) }}" class="admin-sidebar-link">👥 Powiązani użytkownicy</a>
+                    <a href="{{ route('leagues.guests', $league) }}" class="admin-sidebar-link">👤 Goście</a>
                     @if($hasOpenSeason)
                         <span
                             class="admin-sidebar-link admin-sidebar-link-disabled"

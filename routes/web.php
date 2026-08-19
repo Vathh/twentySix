@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\FriendInvitationController;
+use App\Http\Controllers\MyCompetitionsController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\LeagueSeasonController;
@@ -91,6 +92,8 @@ Route::middleware('auth')->prefix('settings')->name('settings.')->group(function
     Route::put('/password', [SettingsController::class, 'updatePassword'])->name('password.update');
 });
 
+Route::middleware('auth')->get('/me', [MyCompetitionsController::class, 'index'])->name('me.index');
+
 Route::get('/players/search', [PlayerController::class, 'search'])->name('players.search');
 Route::get('/players/{player}/edit', [PlayerController::class, 'edit'])->middleware('auth')->name('players.edit');
 Route::put('/players/{player}', [PlayerController::class, 'update'])->middleware('auth')->name('players.update');
@@ -104,6 +107,9 @@ Route::resource('organizations', OrganizationController::class);
 Route::prefix('organizations/{organization}')->group(function () {
     Route::get('/relatedUsers', [OrganizationController::class, 'relatedUsers'])->name('organizations.relatedUsers');
     Route::post('/relatedUsers/add', [OrganizationController::class, 'addRelatedUser'])->name('organizations.relatedUsers.add');
+    Route::post('/relatedUsers/invitations/{invitation}/cancel', [OrganizationController::class, 'cancelRelatedUserInvitation'])
+        ->whereNumber('invitation')
+        ->name('organizations.relatedUsers.invitations.cancel');
     Route::delete('/relatedUsers/remove', [OrganizationController::class, 'removeRelatedUser'])->name('organizations.relatedUsers.remove');
 
     Route::get('/admins', [OrganizationController::class, 'admins'])->name('organizations.admins');
@@ -124,6 +130,13 @@ Route::put('/leagues/{league}', [LeagueController::class, 'update'])->name('leag
 Route::get('/leagues/{league}/roster', [LeagueController::class, 'roster'])->name('leagues.roster')->middleware('auth');
 Route::post('/leagues/{league}/roster', [LeagueController::class, 'assignPlayer'])->name('leagues.roster.assign')->middleware('auth');
 Route::delete('/leagues/{league}/roster', [LeagueController::class, 'removePlayer'])->name('leagues.roster.remove')->middleware('auth');
+Route::patch('/leagues/{league}/roster/capacity', [LeagueController::class, 'updateDivisionCapacity'])->name('leagues.roster.capacity')->middleware('auth');
+Route::get('/leagues/{league}/relatedUsers', [LeagueController::class, 'relatedUsers'])->name('leagues.relatedUsers')->middleware('auth');
+Route::post('/leagues/{league}/relatedUsers/add', [LeagueController::class, 'addRelatedUser'])->name('leagues.relatedUsers.add')->middleware('auth');
+Route::delete('/leagues/{league}/relatedUsers/remove', [LeagueController::class, 'removeRelatedUser'])->name('leagues.relatedUsers.remove')->middleware('auth');
+Route::get('/leagues/{league}/guests', [LeagueController::class, 'guests'])->name('leagues.guests')->middleware('auth');
+Route::post('/leagues/{league}/guests/add', [LeagueController::class, 'addGuest'])->name('leagues.guests.add')->middleware('auth');
+Route::delete('/leagues/{league}/guests/remove', [LeagueController::class, 'removeGuest'])->name('leagues.guests.remove')->middleware('auth');
 
 Route::get('/leagues/{league}/seasons/create', [LeagueSeasonController::class, 'create'])->name('league-seasons.create')->middleware('auth');
 Route::post('/leagues/{league}/seasons', [LeagueSeasonController::class, 'store'])->name('league-seasons.store')->middleware('auth');

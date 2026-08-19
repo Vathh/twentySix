@@ -79,7 +79,15 @@ class GameLegRepository
             GameKind::GROUP => $this->getByGameId($context->gameId),
             GameKind::PLAYOFF => $this->getByPlayoffGameId($context->gameId),
             GameKind::QUICK => $this->getByQuickGameId($context->gameId),
+            GameKind::LEAGUE => $this->getByLeagueGameId($context->gameId),
         };
+    }
+
+    public function getByLeagueGameId(int $leagueGameId): \Illuminate\Support\Collection
+    {
+        return GameLeg::where('league_game_id', $leagueGameId)
+            ->orderBy('leg_number')
+            ->get();
     }
 
     public function findModel(int $legId): GameLeg
@@ -95,6 +103,7 @@ class GameLegRepository
             GameKind::GROUP => $query->where('game_id', $context->gameId),
             GameKind::PLAYOFF => $query->where('playoff_game_id', $context->gameId),
             GameKind::QUICK => $query->where('quick_game_id', $context->gameId),
+            GameKind::LEAGUE => $query->where('league_game_id', $context->gameId),
         };
 
         return $query->first();
@@ -116,6 +125,7 @@ class GameLegRepository
             GameKind::GROUP => $data['game_id'] = $context->gameId,
             GameKind::PLAYOFF => $data['playoff_game_id'] = $context->gameId,
             GameKind::QUICK => $data['quick_game_id'] = $context->gameId,
+            GameKind::LEAGUE => $data['league_game_id'] = $context->gameId,
         };
 
         return GameLeg::create($data);
@@ -149,6 +159,7 @@ class GameLegRepository
             GameKind::GROUP => $query->where('game_id', $context->gameId),
             GameKind::PLAYOFF => $query->where('playoff_game_id', $context->gameId),
             GameKind::QUICK => $query->where('quick_game_id', $context->gameId),
+            GameKind::LEAGUE => $query->where('league_game_id', $context->gameId),
         };
 
         $query->delete();

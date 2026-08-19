@@ -64,6 +64,29 @@ class LeagueStandingCalculatorTest extends TestCase
         $this->assertSame(1, $rows[1]->losses);
     }
 
+    #[Test]
+    public function sporting_draw_awards_one_point_each_when_using_points(): void
+    {
+        $rows = LeagueStandingCalculator::calculate(
+            [1, 2],
+            [[
+                'player1Id' => 1,
+                'player2Id' => 2,
+                'player1Score' => 3,
+                'player2Score' => 3,
+                'winnerId' => null,
+                'status' => 'finished',
+            ]],
+            true,
+        );
+
+        $this->assertSame(1, $rows[0]->draws);
+        $this->assertSame(1, $rows[1]->draws);
+        $this->assertSame(1, $rows[0]->points);
+        $this->assertSame(1, $rows[1]->points);
+        $this->assertSame(0, $rows[0]->losses);
+    }
+
     /**
      * @return array{player1Id: int, player2Id: int, player1Score: int, player2Score: int, winnerId: ?int, status: string}
      */

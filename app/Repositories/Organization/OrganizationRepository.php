@@ -77,7 +77,7 @@ class OrganizationRepository
     public function addRelatedUser(int $organizationId, int $userId): void
     {
         $organization = Organization::findOrFail($organizationId);
-        $organization->relatedUsers()->attach($userId);
+        $organization->relatedUsers()->syncWithoutDetaching([$userId]);
     }
 
     public function removeRelatedUser(int $organizationId, int $userId): void

@@ -6,6 +6,7 @@ use App\Domain\GameScoring\MatchFormat;
 use App\Enums\GameKind;
 use App\Models\Game\Game;
 use App\Models\PlayoffGame\PlayoffGame;
+use App\Models\League\LeagueGame;
 use App\Models\QuickGame\QuickGame;
 use DomainException;
 
@@ -76,7 +77,20 @@ readonly class GameScoringContext
             GameKind::GROUP => 'group-game.'.$this->gameId,
             GameKind::PLAYOFF => 'playoff-game.'.$this->gameId,
             GameKind::QUICK => 'quick-game.'.$this->gameId,
+            GameKind::LEAGUE => 'league-game.'.$this->gameId,
         };
+    }
+
+    public static function fromLeagueGame(LeagueGame $game): self
+    {
+        return new self(
+            kind: GameKind::LEAGUE,
+            gameId: $game->id,
+            player1Id: (int) $game->player1_id,
+            player2Id: (int) $game->player2_id,
+            tournamentId: null,
+            matchFormat: MatchFormat::fromRecord($game),
+        );
     }
 
     public function otherPlayerId(int $playerId): int

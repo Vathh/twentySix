@@ -10,6 +10,7 @@ use App\Domain\OrganizationDomain;
 use App\Domain\SeasonDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameStage;
+use App\Models\League\League;
 use App\Models\Organization\Organization;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
@@ -27,11 +28,11 @@ class CompetitionShowSerializer
     }
 
     /**
-     * @return array{organization: array, seasons: list<array>}
+     * @return array{organization: array, seasons: list<array>, leagues: list<array>}
      */
     public function organization(Organization $organization): array
     {
-        $organization->loadMissing(['seasons']);
+        $organization->loadMissing(['seasons', 'leagues']);
         $domain = OrganizationDomain::fromEloquent($organization, ['seasons']);
         $seasons = collect($domain->seasons)
             ->sortByDesc(fn (SeasonDomain $season) => $season->updatedAt?->getTimestamp() ?? 0)
@@ -39,6 +40,14 @@ class CompetitionShowSerializer
             ->map(fn (SeasonDomain $season) => [
                 'id' => $season->id,
                 'name' => $season->name,
+            ])
+            ->all();
+        $leagues = $organization->leagues
+            ->sortBy('name')
+            ->values()
+            ->map(fn (League $league) => [
+                'id' => $league->id,
+                'name' => $league->name,
             ])
             ->all();
 
@@ -51,6 +60,7 @@ class CompetitionShowSerializer
                 'updatedAt' => $domain->updatedAtDate(),
             ],
             'seasons' => $seasons,
+            'leagues' => $leagues,
         ];
     }
 

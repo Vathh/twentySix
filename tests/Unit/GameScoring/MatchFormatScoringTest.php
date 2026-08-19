@@ -88,6 +88,55 @@ class MatchFormatScoringTest extends TestCase
         $this->assertSame(1, $format->setsToWinMatch);
     }
 
+    public function test_apply_leg_win_best_of_even_finishes_as_draw(): void
+    {
+        $format = MatchFormat::forLeagueRules(501, \App\Enums\MatchWinMode::BEST_OF, 6);
+
+        $result = MatchFormatScoring::applyLegWinToH2hGame(
+            format: $format,
+            winnerPlayerId: self::PLAYER_2,
+            player1Id: self::PLAYER_1,
+            player2Id: self::PLAYER_2,
+            player1Score: 3,
+            player2Score: 2,
+            player1LegsInSet: 0,
+            player2LegsInSet: 0,
+            currentSetNumber: 1,
+        );
+
+        $this->assertSame([
+            'finished' => true,
+            'winnerId' => null,
+            'player1Score' => 3,
+            'player2Score' => 3,
+            'player1LegsInSet' => 0,
+            'player2LegsInSet' => 0,
+            'currentSetNumber' => 1,
+        ], $result);
+    }
+
+    public function test_apply_leg_win_best_of_finishes_at_win_target_early(): void
+    {
+        $format = MatchFormat::forLeagueRules(501, \App\Enums\MatchWinMode::BEST_OF, 6);
+
+        $result = MatchFormatScoring::applyLegWinToH2hGame(
+            format: $format,
+            winnerPlayerId: self::PLAYER_1,
+            player1Id: self::PLAYER_1,
+            player2Id: self::PLAYER_2,
+            player1Score: 3,
+            player2Score: 1,
+            player1LegsInSet: 0,
+            player2LegsInSet: 0,
+            currentSetNumber: 1,
+        );
+
+        $this->assertTrue($result['finished']);
+        $this->assertSame(self::PLAYER_1, $result['winnerId']);
+        $this->assertSame(4, $result['player1Score']);
+        $this->assertSame(1, $result['player2Score']);
+    }
+
     // --- applyLegWinToH2hGame — multi set ---
 
     public function test_apply_leg_win_multi_set_increments_legs_in_set_without_closing_set(): void

@@ -55,23 +55,9 @@
                         · kolejki z równego podziału sezonu
                     @endif
                     · każdy z każdym × {{ $season->rounds_each }}
+                    · {{ $season->allows_draws ? 'Best of '.$season->win_length.' (z remisami)' : 'First to '.$season->win_length }}
                     · {{ $season->start_date->format('Y-m-d') }} – {{ $season->end_date->format('Y-m-d') }}
                 </p>
-
-                @if($season->matchdays->isNotEmpty())
-                    <div class="card mb-8">
-                        <h2 class="section-title text-accent mt-0">Kolejki</h2>
-                        <p class="text-text-muted text-sm mb-3">Mecze danej kolejki trzeba rozegrać w podanym oknie.</p>
-                        <ol class="space-y-1 text-sm">
-                            @foreach($season->matchdays as $matchday)
-                                <li>
-                                    <span class="font-semibold">Kolejka {{ $matchday->round_number }}</span>
-                                    <span class="text-text-muted">· {{ $matchday->windowLabel() }}</span>
-                                </li>
-                            @endforeach
-                        </ol>
-                    </div>
-                @endif
 
                 @foreach($divisions as $block)
                     @php $division = $block['division']; @endphp
@@ -83,8 +69,14 @@
                                 <th class="w-12 text-center tracking-normal">#</th>
                                 <th class="text-left">Zawodnik</th>
                                 <th class="w-12 text-center tracking-normal">M</th>
-                                <th class="w-12 text-center tracking-normal">W</th>
-                                <th class="w-12 text-center tracking-normal">P</th>
+                                <th class="w-12 text-center tracking-normal text-success-bright">W</th>
+                                @if($season->allows_draws)
+                                    <th class="w-12 text-center tracking-normal text-warning">R</th>
+                                @endif
+                                <th class="w-12 text-center tracking-normal text-danger-text">P</th>
+                                @if($season->allows_draws)
+                                    <th class="w-12 text-center tracking-normal">Pkt</th>
+                                @endif
                                 <th class="w-14 text-center tracking-normal">+/−</th>
                             </tr>
                             </thead>
@@ -104,13 +96,19 @@
                                         @endif
                                     </td>
                                     <td class="score-num text-center">{{ $row->played }}</td>
-                                    <td class="score-num text-center">{{ $row->wins }}</td>
-                                    <td class="score-num text-center">{{ $row->losses }}</td>
+                                    <td class="score-num text-center text-success-bright">{{ $row->wins }}</td>
+                                    @if($season->allows_draws)
+                                        <td class="score-num text-center text-warning">{{ $row->draws }}</td>
+                                    @endif
+                                    <td class="score-num text-center text-danger-text">{{ $row->losses }}</td>
+                                    @if($season->allows_draws)
+                                        <td class="score-num text-center">{{ $row->points }}</td>
+                                    @endif
                                     <td class="score-num text-center">{{ $row->unitDiff > 0 ? '+' : '' }}{{ $row->unitDiff }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-text-muted">Brak zawodników na tym szczeblu.</td>
+                                    <td colspan="{{ $season->allows_draws ? 8 : 6 }}" class="text-text-muted">Brak zawodników na tym szczeblu.</td>
                                 </tr>
                             @endforelse
                             </tbody>
@@ -122,15 +120,16 @@
                             @foreach($season->matchdays as $matchday)
                                 @php
                                     $roundGames = $block['games']->where('league_season_matchday_id', $matchday->id);
-                                    $isCurrentMatchday = now()->betweenIncluded(
-                                        $matchday->window_start->copy()->startOfDay(),
-                                        $matchday->window_end->copy()->endOfDay()
-                                    );
                                 @endphp
                                 @if($roundGames->isNotEmpty())
-                                    <details class="group" @if($isCurrentMatchday) open @endif>
+                                    <details class="group" @if($matchday->isCurrent()) open @endif>
                                         <summary class="cursor-pointer list-none flex items-center justify-between gap-3 text-sm text-text-muted hover:text-text transition mt-4 mb-1 py-1 [&::-webkit-details-marker]:hidden">
-                                            <span>Kolejka {{ $matchday->round_number }} · {{ $matchday->windowLabel() }}</span>
+                                            <span>
+                                                Kolejka {{ $matchday->round_number }} · {{ $matchday->windowLabel() }}
+                                                @if($matchday->isCurrent())
+                                                    <span class="text-accent font-semibold"> · teraz</span>
+                                                @endif
+                                            </span>
                                             <span class="shrink-0 text-xs transition group-open:rotate-180" aria-hidden="true">▼</span>
                                         </summary>
                                         <div class="space-y-2">

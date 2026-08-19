@@ -3,6 +3,7 @@
 namespace App\Domain\GameScoring;
 
 use App\Enums\GameStage;
+use App\Enums\MatchWinMode;
 use DomainException;
 
 readonly class MatchFormat
@@ -38,6 +39,8 @@ readonly class MatchFormat
     /** @var list<int> */
     public const ALLOWED_STARTING_SCORES = [101, 201, 301, 401, 501, 601, 701, 801, 901, 1001];
 
+    public int $winLength;
+
     public function __construct(
         public int $startingScore = self::DEFAULT_STARTING_SCORE,
         public int $legsToWinSet = self::DEFAULT_LEGS_TO_WIN_SET,
@@ -46,7 +49,14 @@ readonly class MatchFormat
         public string $outRule = self::DEFAULT_OUT_RULE,
         public string $bob27Mode = self::BOB27_MODE_HARD,
         public string $bob27Bull = self::BOB27_BULL_WITH,
+        public MatchWinMode $winMode = MatchWinMode::FIRST_TO,
+        ?int $winLength = null,
     ) {
+        $this->winLength = $winLength ?? (
+            $winMode === MatchWinMode::BEST_OF
+                ? max(1, ($legsToWinSet * 2) - 1)
+                : ($setsToWinMatch === 1 ? $legsToWinSet : $setsToWinMatch)
+        );
     }
 
     public static function default(): self
@@ -54,27 +64,72 @@ readonly class MatchFormat
         return new self;
     }
 
+    public static function forLeagueRules(int $startingScore, MatchWinMode $winMode, int $length): self
+    {
+        if ($winMode === MatchWinMode::BEST_OF) {
+            if ($length < 2 || $length > 16 || $length % 2 !== 0) {
+                throw new DomainException('Best of z remisami: parzysta liczba legów (2–16).');
+            }
+
+            return new self(
+                startingScore: $startingScore,
+                legsToWinSet: intdiv($length, 2) + 1,
+                setsToWinMatch: 1,
+                winMode: MatchWinMode::BEST_OF,
+                winLength: $length,
+            );
+        }
+
+        if ($length < 1 || $length > 15) {
+            throw new DomainException('First to: 1–15 legów.');
+        }
+
+        return new self(
+            startingScore: $startingScore,
+            legsToWinSet: $length,
+            setsToWinMatch: 1,
+            winMode: MatchWinMode::FIRST_TO,
+            winLength: $length,
+        );
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
+        $winMode = self::normalizeWinMode($data['winMode'] ?? $data['win_mode'] ?? null);
+        $explicitLength = $data['winLength'] ?? $data['win_length'] ?? null;
+        $legs = (int) ($data['legsToWinSet'] ?? $data['legs_to_win_set'] ?? self::DEFAULT_LEGS_TO_WIN_SET);
+        if ($winMode === MatchWinMode::BEST_OF && $explicitLength !== null) {
+            $legs = intdiv((int) $explicitLength, 2) + 1;
+        }
+
         return new self(
             startingScore: (int) ($data['startingScore'] ?? $data['starting_score'] ?? self::DEFAULT_STARTING_SCORE),
-            legsToWinSet: (int) ($data['legsToWinSet'] ?? $data['legs_to_win_set'] ?? self::DEFAULT_LEGS_TO_WIN_SET),
+            legsToWinSet: $legs,
             setsToWinMatch: (int) ($data['setsToWinMatch'] ?? $data['sets_to_win_match'] ?? self::DEFAULT_SETS_TO_WIN_MATCH),
             gameType: self::normalizeGameType((string) ($data['gameType'] ?? $data['game_type'] ?? self::DEFAULT_GAME_TYPE)),
             outRule: (string) ($data['outRule'] ?? $data['out_rule'] ?? self::DEFAULT_OUT_RULE),
             bob27Mode: self::normalizeBob27Mode((string) ($data['bob27Mode'] ?? $data['bob27_mode'] ?? self::BOB27_MODE_HARD)),
             bob27Bull: self::normalizeBob27Bull((string) ($data['bob27Bull'] ?? $data['bob27_bull'] ?? self::BOB27_BULL_WITH)),
+            winMode: $winMode,
+            winLength: $explicitLength !== null ? (int) $explicitLength : null,
         );
     }
 
     public static function fromRecord(object $record): self
     {
+        $winMode = self::normalizeWinMode($record->win_mode ?? $record->winMode ?? null);
+        $explicitLength = $record->win_length ?? $record->winLength ?? null;
+        $legs = (int) ($record->legs_to_win_set ?? self::DEFAULT_LEGS_TO_WIN_SET);
+        if ($winMode === MatchWinMode::BEST_OF && $explicitLength !== null) {
+            $legs = intdiv((int) $explicitLength, 2) + 1;
+        }
+
         return new self(
             startingScore: (int) ($record->starting_score ?? self::DEFAULT_STARTING_SCORE),
-            legsToWinSet: (int) ($record->legs_to_win_set ?? self::DEFAULT_LEGS_TO_WIN_SET),
+            legsToWinSet: $legs,
             setsToWinMatch: (int) ($record->sets_to_win_match ?? self::DEFAULT_SETS_TO_WIN_MATCH),
             gameType: self::normalizeGameType((string) ($record->game_type ?? self::DEFAULT_GAME_TYPE)),
             outRule: self::DEFAULT_OUT_RULE,
@@ -88,7 +143,18 @@ readonly class MatchFormat
                     ? $record->bob27_bull
                     : self::BOB27_BULL_WITH
             )),
+            winMode: $winMode,
+            winLength: $explicitLength !== null ? (int) $explicitLength : null,
         );
+    }
+
+    public static function normalizeWinMode(mixed $value): MatchWinMode
+    {
+        if ($value instanceof MatchWinMode) {
+            return $value;
+        }
+
+        return MatchWinMode::tryFrom((string) $value) ?? MatchWinMode::FIRST_TO;
     }
 
     public static function normalizeGameType(string $gameType): string
@@ -178,6 +244,8 @@ readonly class MatchFormat
             'outRule' => $this->outRule,
             'bob27Mode' => $this->bob27Mode,
             'bob27Bull' => $this->bob27Bull,
+            'winMode' => $this->winMode->value,
+            'winLength' => $this->winLength,
         ];
     }
 
@@ -216,6 +284,16 @@ readonly class MatchFormat
         return $this->isSingleSet() ? 'legi' : 'sety';
     }
 
+    public function isBestOf(): bool
+    {
+        return $this->winMode === MatchWinMode::BEST_OF;
+    }
+
+    public function allowsDraw(): bool
+    {
+        return $this->isBestOf() && $this->isSingleSet() && $this->winLength % 2 === 0;
+    }
+
     public function formatLabel(): string
     {
         if ($this->isCricket()) {
@@ -236,6 +314,10 @@ readonly class MatchFormat
             return sprintf('Cricket 60 · do %d legów', $this->legsToWinSet);
         }
         if ($this->isSingleSet()) {
+            if ($this->isBestOf()) {
+                return sprintf('%d · best of %d', $this->startingScore, $this->winLength);
+            }
+
             return sprintf('%d · do %d legów', $this->startingScore, $this->legsToWinSet);
         }
 
@@ -267,12 +349,25 @@ readonly class MatchFormat
         if ($this->setsToWinMatch < 1 || $this->setsToWinMatch > 5) {
             throw new DomainException('Sety do meczu muszą być między 1 a 5.');
         }
+
+        if ($this->winMode === MatchWinMode::BEST_OF) {
+            if (! $this->isSingleSet()) {
+                throw new DomainException('Best of jest dostępne tylko przy jednym secie (gra na legi).');
+            }
+            if ($this->winLength < 2 || $this->winLength > 16) {
+                throw new DomainException('Best of: 2–16 legów.');
+            }
+        }
     }
 
     public function validateForStage(GameStage $stage): void
     {
         if (! $this->isX01()) {
             throw new DomainException('W turnieju dostępny jest tylko format X01.');
+        }
+
+        if ($this->winMode === MatchWinMode::BEST_OF) {
+            throw new DomainException('W turnieju dostępny jest tylko First to — mecz musi mieć zwycięzcę.');
         }
 
         $this->validate();

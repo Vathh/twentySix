@@ -4,10 +4,25 @@
 ])
 
 <div
-    x-data="{ toasts: {{ json_encode($messages) }} }"
+    x-data="{
+        toasts: {{ json_encode($messages) }}.map((toast, index) => ({ ...toast, id: 'flash-' + index })),
+        push(detail) {
+            if (!detail?.text) {
+                return;
+            }
+            this.toasts.push({
+                id: Date.now() + '-' + Math.random(),
+                type: detail.type || 'error',
+                text: detail.text,
+                show: true,
+                duration: detail.duration,
+            });
+        },
+    }"
+    @app-toast.window="push($event.detail)"
     class="fixed top-5 right-5 z-50 space-y-2 w-96 max-w-[calc(100vw-2rem)]"
 >
-    <template x-for="(toast, index) in toasts" :key="index">
+    <template x-for="toast in toasts" :key="toast.id">
         <div
             x-show="toast.show !== false"
             x-init="setTimeout(() => toast.show = false, toast.duration ?? {{ $duration }})"

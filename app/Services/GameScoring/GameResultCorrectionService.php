@@ -47,7 +47,7 @@ class GameResultCorrectionService
         match ($kind) {
             GameKind::GROUP => $this->applyGroupResult($gameId, $player1Score, $player2Score),
             GameKind::PLAYOFF => $this->applyPlayoffResult($gameId, $player1Score, $player2Score),
-            GameKind::QUICK => throw new DomainException('Korekta wyniku na webie dotyczy tylko meczów turniejowych.'),
+            GameKind::QUICK, GameKind::LEAGUE => throw new DomainException('Korekta wyniku na webie dotyczy tylko meczów turniejowych.'),
         };
     }
 
@@ -56,7 +56,7 @@ class GameResultCorrectionService
         [$player1Id, $format] = match ($kind) {
             GameKind::GROUP => $this->resolveGroupContext($gameId),
             GameKind::PLAYOFF => $this->resolvePlayoffContext($gameId),
-            GameKind::QUICK => throw new DomainException('Walkower na webie dotyczy tylko meczów turniejowych.'),
+            GameKind::QUICK, GameKind::LEAGUE => throw new DomainException('Walkower na webie dotyczy tylko meczów turniejowych.'),
         };
 
         [$player1Score, $player2Score] = GameLegScoreValidator::walkoverScores(

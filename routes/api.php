@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FriendshipController;
 use App\Http\Controllers\Api\GameController;
 use App\Http\Controllers\Api\OrganizationController;
+use App\Http\Controllers\Api\OrganizationInvitationController;
 use App\Http\Controllers\Api\PlayerProfileController;
 use App\Http\Controllers\Api\PushTokenController;
 use App\Http\Controllers\Api\QuickGameController;
@@ -14,7 +15,12 @@ use App\Http\Controllers\Api\TournamentCatalogController;
 use App\Http\Controllers\Api\TournamentInvitationController;
 use App\Http\Controllers\Api\TournamentJoinController;
 use App\Http\Controllers\Api\GameScoring\GroupGameScoringController;
+use App\Http\Controllers\Api\GameScoring\LeagueGameScoringController;
 use App\Http\Controllers\Api\GameScoring\PlayoffGameScoringController;
+use App\Http\Controllers\Api\LeagueCatalogController;
+use App\Http\Controllers\Api\LeagueSeasonCatalogController;
+use App\Http\Controllers\Api\LeagueGamePlayController;
+use App\Http\Controllers\Api\MyCompetitionsController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'tournamentLogin']); // kod turnieju – do sędziowania
@@ -35,6 +41,8 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
 
     Route::put('/push-tokens', [PushTokenController::class, 'upsert']);
     Route::delete('/push-tokens', [PushTokenController::class, 'destroy']);
+
+    Route::get('/me/competitions', [MyCompetitionsController::class, 'index']);
 
     Route::prefix('game')->group(function () {
         Route::post('/inProgress', [GameController::class, 'setStatusInProgress']);
@@ -57,6 +65,22 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::post('/legs/{leg}/visits', [PlayoffGameScoringController::class, 'recordVisit'])->whereNumber('leg');
         Route::post('/legs/{leg}/visits/undo', [PlayoffGameScoringController::class, 'undoVisit'])->whereNumber('leg');
         Route::post('/legs/{leg}/close', [PlayoffGameScoringController::class, 'closeLeg'])->whereNumber('leg');
+    });
+
+    Route::get('/league-games/mine', [LeagueGamePlayController::class, 'mine']);
+    Route::get('/league-games/invitations', [LeagueGamePlayController::class, 'invitations']);
+    Route::prefix('league-games/{leagueGame}')->whereNumber('leagueGame')->group(function () {
+        Route::get('/', [LeagueGamePlayController::class, 'show']);
+        Route::post('/open-lobby', [LeagueGamePlayController::class, 'openLobby']);
+        Route::post('/accept', [LeagueGamePlayController::class, 'accept']);
+        Route::post('/reject', [LeagueGamePlayController::class, 'reject']);
+        Route::post('/cancel', [LeagueGamePlayController::class, 'cancel']);
+        Route::post('/start', [LeagueGamePlayController::class, 'start']);
+        Route::get('/scoring/state', [LeagueGameScoringController::class, 'state']);
+        Route::post('/legs', [LeagueGameScoringController::class, 'startLeg']);
+        Route::post('/legs/{leg}/visits', [LeagueGameScoringController::class, 'recordVisit'])->whereNumber('leg');
+        Route::post('/legs/{leg}/visits/undo', [LeagueGameScoringController::class, 'undoVisit'])->whereNumber('leg');
+        Route::post('/legs/{leg}/close', [LeagueGameScoringController::class, 'closeLeg'])->whereNumber('leg');
     });
 
     Route::prefix('friends')->group(function () {
@@ -86,6 +110,8 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
 
     Route::get('/organizations', [OrganizationController::class, 'index']);
     Route::get('/organizations/{organization}', [OrganizationController::class, 'show'])->whereNumber('organization');
+    Route::get('/leagues/{league}', [LeagueCatalogController::class, 'show'])->whereNumber('league');
+    Route::get('/league-seasons/{leagueSeason}', [LeagueSeasonCatalogController::class, 'show'])->whereNumber('leagueSeason');
     Route::get('/seasons', [SeasonController::class, 'index']);
     Route::get('/seasons/{season}', [SeasonController::class, 'show'])->whereNumber('season');
     Route::get('/seasons/{season}/standings', [SeasonController::class, 'standings'])->whereNumber('season');
@@ -97,6 +123,12 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::post('/{invitationId}/accept', [TournamentInvitationController::class, 'accept'])->whereNumber('invitationId');
         Route::post('/{invitationId}/reject', [TournamentInvitationController::class, 'reject'])->whereNumber('invitationId');
         Route::post('/{invitationId}/withdraw', [TournamentInvitationController::class, 'withdraw'])->whereNumber('invitationId');
+    });
+
+    Route::prefix('organizations/invitations')->group(function () {
+        Route::get('/received', [OrganizationInvitationController::class, 'received']);
+        Route::post('/{invitationId}/accept', [OrganizationInvitationController::class, 'accept'])->whereNumber('invitationId');
+        Route::post('/{invitationId}/reject', [OrganizationInvitationController::class, 'reject'])->whereNumber('invitationId');
     });
 
     Route::prefix('tournaments/join')->group(function () {

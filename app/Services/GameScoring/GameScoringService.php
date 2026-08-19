@@ -4,17 +4,20 @@ namespace App\Services\GameScoring;
 
 use App\DTO\GameScoring\CloseLegPlayerStatsDTO;
 use App\DTO\GameScoring\RecordVisitDTO;
-use App\Enums\GameStatus;
 use App\Enums\GameKind;
+use App\Enums\GameStatus;
+use App\Enums\LeagueGameStatus;
 use App\Events\GameScoringStateUpdated;
 use App\Models\Game\Game;
 use App\Models\Game\GameLeg;
+use App\Models\League\LeagueGame;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\QuickGame\QuickGame;
 use App\Repositories\Game\GameLegPlayerStatRepository;
 use App\Repositories\Game\GameLegRepository;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\Game\GameVisitRepository;
+use App\Repositories\League\LeagueGameRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 use App\Services\Game\GameService;
@@ -33,6 +36,7 @@ class GameScoringService
         private GameRepository $gameRepository,
         private PlayoffGameRepository $playoffGameRepository,
         private QuickGameRepository $quickGameRepository,
+        private LeagueGameRepository $leagueGameRepository,
         private GameLegRepository $gameLegRepository,
         private GameVisitRepository $gameVisitRepository,
         private GameLegPlayerStatRepository $gameLegPlayerStatRepository,
@@ -70,9 +74,20 @@ class GameScoringService
     }
 
     /**
+     * @return array{0: GameScoringContext, 1: Model}
+     */
+    public function resolveLeagueGame(int $leagueGameId): array
+    {
+        $game = $this->leagueGameRepository->findForPlay($leagueGameId);
+        $context = GameScoringContext::fromLeagueGame($game);
+
+        return [$context, $game];
+    }
+
+    /**
      * @return array<string, mixed>
      */
-    public function getState(GameScoringContext $context, Game|PlayoffGame|QuickGame $game): array
+    public function getState(GameScoringContext $context, Game|PlayoffGame|QuickGame|LeagueGame $game): array
     {
         return $this->gameScoringStateBuilder->build($context, $game);
     }
@@ -82,7 +97,7 @@ class GameScoringService
      */
     public function startLeg(
         GameScoringContext $context,
-        Game|PlayoffGame|QuickGame $game,
+        Game|PlayoffGame|QuickGame|LeagueGame $game,
         bool $player1DoubleTracked,
         bool $player2DoubleTracked,
     ): array {
@@ -90,7 +105,7 @@ class GameScoringService
             throw new DomainException('W tym meczu jest już otwarty leg.');
         }
 
-        if ($game->status === GameStatus::FINISHED) {
+        if ($this->isFinished($game)) {
             throw new DomainException('Mecz jest już zakończony.');
         }
 
@@ -123,7 +138,7 @@ class GameScoringService
      */
     public function recordVisit(
         GameScoringContext $context,
-        Game|PlayoffGame|QuickGame $game,
+        Game|PlayoffGame|QuickGame|LeagueGame $game,
         int $legId,
         RecordVisitDTO $dto,
     ): array {
@@ -165,7 +180,7 @@ class GameScoringService
      */
     public function undoLastVisit(
         GameScoringContext $context,
-        Game|PlayoffGame|QuickGame $game,
+        Game|PlayoffGame|QuickGame|LeagueGame $game,
         int $legId,
     ): array {
         $leg = $this->resolveLegForContext($context, $legId);
@@ -173,11 +188,10 @@ class GameScoringService
 
         if (
             ! $leg->isOpen()
-            && $game->status === GameStatus::FINISHED
-            && $context->tournamentId !== null
-            && $context->kind !== GameKind::QUICK
+            && $this->isFinished($game)
+            && in_array($context->kind, [GameKind::GROUP, GameKind::PLAYOFF, GameKind::LEAGUE], true)
         ) {
-            throw new DomainException('Cofanie wizyty po zakończeniu meczu turniejowego wymaga korekty wyniku na webie.');
+            throw new DomainException('Cofanie wizyty po zakończeniu meczu wymaga korekty wyniku na webie.');
         }
 
         return DB::transaction(function () use ($context, $game, $leg) {
@@ -194,8 +208,8 @@ class GameScoringService
                 $this->gameLegPlayerStatRepository->resetAfterLegReopen($leg->id);
                 $this->revertLegWinOnGame($game, $legWinnerId, $context);
 
-                if ($game->status === GameStatus::FINISHED) {
-                    $game->status = GameStatus::IN_PROGRESS;
+                if ($this->isFinished($game)) {
+                    $this->markInProgress($game);
                     $game->winner_id = null;
                     $this->persistGame($game);
                 }
@@ -217,7 +231,7 @@ class GameScoringService
      */
     public function closeLeg(
         GameScoringContext $context,
-        Game|PlayoffGame|QuickGame $game,
+        Game|PlayoffGame|QuickGame|LeagueGame $game,
         int $legId,
         int $winnerId,
         array $playerStats,
@@ -261,15 +275,10 @@ class GameScoringService
                 (int) ($game->current_set_number ?? 1),
             );
 
-            $game->player1_score = $result['player1Score'];
-            $game->player2_score = $result['player2Score'];
-            $game->player1_legs_in_set = $result['player1LegsInSet'];
-            $game->player2_legs_in_set = $result['player2LegsInSet'];
-            $game->current_set_number = $result['currentSetNumber'];
+            $this->applyMatchProgress($game, $result);
 
             if ($result['finished']) {
-                $game->status = GameStatus::FINISHED;
-                $game->winner_id = $result['winnerId'];
+                $this->markFinished($game, $result['winnerId']);
             }
 
             $this->persistGame($game);
@@ -277,9 +286,10 @@ class GameScoringService
             $freshGame = $game->fresh(['player1', 'player2']);
 
             if (
-                $freshGame->status === GameStatus::FINISHED
+                $this->isFinished($freshGame)
                 && $context->tournamentId !== null
                 && $context->kind !== GameKind::QUICK
+                && $context->kind !== GameKind::LEAGUE
             ) {
                 $this->gameService->finalizeTournamentGameFromScoring($context, $freshGame);
             }
@@ -288,7 +298,7 @@ class GameScoringService
             $this->pushGroupMatrixLive(
                 $context,
                 $freshGame,
-                includeStandings: $freshGame->status === GameStatus::FINISHED,
+                includeStandings: $this->isFinished($freshGame),
             );
 
             return $state;
@@ -322,7 +332,7 @@ class GameScoringService
         }
     }
 
-    private function revertLegWinOnGame(Game|PlayoffGame|QuickGame $game, ?int $legWinnerId, GameScoringContext $context): void
+    private function revertLegWinOnGame(Game|PlayoffGame|QuickGame|LeagueGame $game, ?int $legWinnerId, GameScoringContext $context): void
     {
         $result = MatchFormatScoring::revertLegWinOnH2hGame(
             $context->matchFormat,
@@ -336,11 +346,7 @@ class GameScoringService
             (int) ($game->current_set_number ?? 1),
         );
 
-        $game->player1_score = $result['player1Score'];
-        $game->player2_score = $result['player2Score'];
-        $game->player1_legs_in_set = $result['player1LegsInSet'];
-        $game->player2_legs_in_set = $result['player2LegsInSet'];
-        $game->current_set_number = $result['currentSetNumber'];
+        $this->applyMatchProgress($game, $result);
 
         $this->persistGame($game);
     }
@@ -353,6 +359,7 @@ class GameScoringService
             GameKind::GROUP => (int) $leg->game_id === $context->gameId,
             GameKind::PLAYOFF => (int) $leg->playoff_game_id === $context->gameId,
             GameKind::QUICK => (int) $leg->quick_game_id === $context->gameId,
+            GameKind::LEAGUE => (int) $leg->league_game_id === $context->gameId,
         };
 
         if (! $belongs) {
@@ -362,26 +369,65 @@ class GameScoringService
         return $leg;
     }
 
-    private function setGameInProgress(Game|PlayoffGame|QuickGame $game): void
+    private function setGameInProgress(Game|PlayoffGame|QuickGame|LeagueGame $game): void
     {
-        if ($game->status !== GameStatus::FINISHED) {
-            $game->status = GameStatus::IN_PROGRESS;
-            $this->persistGame($game);
+        if ($this->isFinished($game)) {
+            return;
         }
+
+        $this->markInProgress($game);
+        $this->persistGame($game);
     }
 
-    private function persistGame(Game|PlayoffGame|QuickGame $game): void
+    /**
+     * @param  array{player1Score: int, player2Score: int, player1LegsInSet: int, player2LegsInSet: int, currentSetNumber: int}  $result
+     */
+    private function applyMatchProgress(Game|PlayoffGame|QuickGame|LeagueGame $game, array $result): void
+    {
+        $game->player1_score = $result['player1Score'];
+        $game->player2_score = $result['player2Score'];
+        if ($game instanceof LeagueGame) {
+            return;
+        }
+
+        $game->player1_legs_in_set = $result['player1LegsInSet'];
+        $game->player2_legs_in_set = $result['player2LegsInSet'];
+        $game->current_set_number = $result['currentSetNumber'];
+    }
+
+    private function isFinished(Game|PlayoffGame|QuickGame|LeagueGame $game): bool
+    {
+        if ($game instanceof LeagueGame) {
+            return $game->status === LeagueGameStatus::FINISHED;
+        }
+
+        return $game->status === GameStatus::FINISHED;
+    }
+
+    private function markFinished(Game|PlayoffGame|QuickGame|LeagueGame $game, ?int $winnerId): void
+    {
+        $game->status = $game instanceof LeagueGame ? LeagueGameStatus::FINISHED : GameStatus::FINISHED;
+        $game->winner_id = $winnerId;
+    }
+
+    private function markInProgress(Game|PlayoffGame|QuickGame|LeagueGame $game): void
+    {
+        $game->status = $game instanceof LeagueGame ? LeagueGameStatus::IN_PROGRESS : GameStatus::IN_PROGRESS;
+    }
+
+    private function persistGame(Game|PlayoffGame|QuickGame|LeagueGame $game): void
     {
         match (true) {
             $game instanceof Game => $this->gameRepository->save($game),
             $game instanceof PlayoffGame => $this->playoffGameRepository->save($game),
             $game instanceof QuickGame => $this->quickGameRepository->save($game),
+            $game instanceof LeagueGame => $this->leagueGameRepository->save($game),
         };
     }
 
     private function pushGroupMatrixLive(
         GameScoringContext $context,
-        Game|PlayoffGame|QuickGame $game,
+        Game|PlayoffGame|QuickGame|LeagueGame $game,
         bool $includeStandings,
     ): void {
         if ($context->kind !== GameKind::GROUP || ! $game instanceof Game) {
@@ -394,7 +440,7 @@ class GameScoringService
     /**
      * @return array<string, mixed>
      */
-    private function broadcastState(GameScoringContext $context, Game|PlayoffGame|QuickGame $game): array
+    private function broadcastState(GameScoringContext $context, Game|PlayoffGame|QuickGame|LeagueGame $game): array
     {
         $game->loadMissing(['player1', 'player2']);
         $state = $this->gameScoringStateBuilder->build($context, $game);

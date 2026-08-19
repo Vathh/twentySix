@@ -4,6 +4,7 @@
 
 @section('content')
     <div class="container mx-auto py-8 max-w-3xl">
+        <a href="{{ route('seasons.show', $season->id) }}" class="link-back mb-4 inline-block">← {{ $season->name }}</a>
 
         <h1 class="page-title">{{ $season->name }}</h1>
 

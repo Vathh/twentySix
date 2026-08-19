@@ -7,6 +7,7 @@ use App\Enums\AssignableEntityType;
 use App\Models\Organization\Organization;
 use App\Models\Users\User;
 use App\Services\League\LeagueService;
+use App\Services\Organization\OrganizationInvitationService;
 use App\Services\Organization\OrganizationService;
 use App\Services\Player\PlayerService;
 use App\Services\User\UserService;
@@ -24,6 +25,7 @@ class OrganizationController extends Controller
 {
     public function __construct(
         private OrganizationService $organizationService,
+        private OrganizationInvitationService $organizationInvitationService,
         private UserService $userService,
         private PlayerService $playerService,
         private LeagueService $leagueService,
@@ -125,14 +127,18 @@ class OrganizationController extends Controller
         $organization = $this->loadAndAuthorize($organizationId, ['relatedUsers']);
 
         $search = $request->input('search');
+        $pendingInvitations = $this->organizationInvitationService->getPendingForOrganization($organizationId);
+        $excludeFromSearch = collect($organization->relatedUsers)
+            ->concat($pendingInvitations->map(fn ($invitation) => ['id' => $invitation->userId]));
 
-        $users = $this->userService->search($organization->relatedUsers, $search);
+        $users = $this->userService->search($excludeFromSearch, $search);
 
         $relatedUsers = $this->userService->sortByName($organization->relatedUsers);
 
         return view('organizations.relatedUsers', [
             'organization' => $organization,
             'relatedUsers' => $relatedUsers,
+            'pendingInvitations' => $pendingInvitations,
             'users' => $users
         ]);
     }
@@ -145,11 +151,38 @@ class OrganizationController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $this->organizationService->addRelatedUser($organizationId, $validated['user_id']);
+        try {
+            $this->organizationInvitationService->send(
+                $organizationId,
+                $validated['user_id'],
+                Auth::id(),
+            );
+        } catch (\RuntimeException $e) {
+            return redirect()
+                ->route('organizations.relatedUsers', $organizationId)
+                ->with('error', $e->getMessage());
+        }
 
         return redirect()
                     ->route('organizations.relatedUsers', $organizationId)
-                    ->with('success', 'Użytkownik dodany do organizacji');
+                    ->with('success', 'Wysłano zaproszenie do organizacji');
+    }
+
+    public function cancelRelatedUserInvitation(Request $request, int $organizationId, int $invitation)
+    {
+        $this->loadAndAuthorize($organizationId);
+
+        try {
+            $this->organizationInvitationService->cancel($organizationId, $invitation);
+        } catch (\RuntimeException $e) {
+            return redirect()
+                ->route('organizations.relatedUsers', $organizationId)
+                ->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('organizations.relatedUsers', $organizationId)
+            ->with('success', 'Anulowano zaproszenie');
     }
 
     public function removeRelatedUser(Request $request, int $organizationId)
@@ -160,7 +193,7 @@ class OrganizationController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $this->organizationService->removeRelatedUser($organizationId, $validated['user_id']);
+        $this->organizationInvitationService->removeMember($organizationId, $validated['user_id']);
 
         return redirect()
                     ->route('organizations.relatedUsers', $organizationId)

@@ -37,6 +37,29 @@ class InvitationPushService
         );
     }
 
+    public function notifyLeagueGameInvitation(int $recipientUserId, int $gameId, string $hostName): void
+    {
+        $this->dispatch(
+            recipientUserId: $recipientUserId,
+            type: InvitationPushType::League,
+            invitationId: $gameId,
+            context: ['hostName' => $hostName],
+        );
+    }
+
+    public function notifyOrganizationInvitation(
+        int $recipientUserId,
+        int $invitationId,
+        string $organizationName,
+    ): void {
+        $this->dispatch(
+            recipientUserId: $recipientUserId,
+            type: InvitationPushType::Organization,
+            invitationId: $invitationId,
+            context: ['organizationName' => $organizationName],
+        );
+    }
+
     /**
      * @param  array<string, string>  $context
      * @return array{title: string, body: string, data: array<string, mixed>}
@@ -55,6 +78,14 @@ class InvitationPushService
             InvitationPushType::Lobby => sprintf(
                 '%s zaprasza Cię do quick game',
                 $context['hostName'] ?? 'Host',
+            ),
+            InvitationPushType::League => sprintf(
+                '%s zaprasza Cię do meczu ligowego',
+                $context['hostName'] ?? 'Rywal',
+            ),
+            InvitationPushType::Organization => sprintf(
+                'Zaproszenie do organizacji: %s',
+                $context['organizationName'] ?? 'Organizacja',
             ),
         };
 

@@ -5,6 +5,7 @@ namespace App\Services\GameScoring;
 use App\Enums\GameStatus;
 use App\Models\Game\Game;
 use App\Models\Game\GameLeg;
+use App\Models\League\LeagueGame;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\QuickGame\QuickGame;
 use App\Repositories\Game\GameLegPlayerStatRepository;
@@ -27,7 +28,7 @@ class GameScoringStateBuilder
     /**
      * @return array<string, mixed>
      */
-    public function build(GameScoringContext $context, Game|PlayoffGame|QuickGame $game): array
+    public function build(GameScoringContext $context, Game|PlayoffGame|QuickGame|LeagueGame $game): array
     {
         $legs = $this->gameLegRepository->getForContext($context);
         $legIds = $legs->pluck('id')->all();
@@ -78,7 +79,7 @@ class GameScoringStateBuilder
             'game' => [
                 'id' => $context->gameId,
                 'kind' => $context->kind->value,
-                'status' => $game->status instanceof GameStatus ? $game->status->value : $game->status,
+                'status' => $game->status instanceof \BackedEnum ? $game->status->value : (string) $game->status,
                 'tournamentId' => $context->tournamentId,
                 'startingScore' => $context->startingScore(),
                 'player1LegsWon' => $isSingleSet ? $player1MatchScore : (int) ($game->player1_legs_in_set ?? 0),

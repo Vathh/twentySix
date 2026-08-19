@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Enums\OrganizationInvitationStatus;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Users\User;
 use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class OrganizationControllerTest extends TestCase
@@ -175,6 +177,8 @@ class OrganizationControllerTest extends TestCase
 
     public function test_admin_can_add_related_user(): void
     {
+        Queue::fake();
+
         $this->actingAs($this->adminUser);
         $organization = Organization::create(['name' => 'Test Organization', 'description' => 'Test']);
         $organization->admins()->attach($this->adminUser->id);
@@ -186,7 +190,13 @@ class OrganizationControllerTest extends TestCase
         $response->assertRedirect("/organizations/{$organization->id}/relatedUsers");
         $response->assertSessionHas('success');
 
-        $this->assertTrue($organization->fresh()->relatedUsers->contains('id', $this->regularUser->id));
+        $this->assertFalse($organization->fresh()->relatedUsers->contains('id', $this->regularUser->id));
+        $this->assertDatabaseHas('organization_invitations', [
+            'organization_id' => $organization->id,
+            'user_id' => $this->regularUser->id,
+            'invited_by' => $this->adminUser->id,
+            'status' => OrganizationInvitationStatus::PENDING->value,
+        ]);
     }
 
     public function test_admin_can_remove_related_user(): void

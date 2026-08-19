@@ -7,7 +7,8 @@
         <form class="form-card" method="POST" action="{{ route('league-seasons.store', $league) }}"
               x-data="{
                   mode: '{{ old('calendar_mode', 'matchdays') }}',
-                  planning: '{{ old('matchday_planning', 'fixed_length') }}'
+                  planning: '{{ old('matchday_planning', 'fixed_length') }}',
+                  allowsDraws: '{{ old('allows_draws') ? '1' : '0' }}'
               }">
             @csrf
             <h1 class="page-title text-center">Nowy sezon ligowy</h1>
@@ -64,6 +65,37 @@
                 <option value="1" @selected(old('rounds_each', '1') === '1')>1 (bez rewanżu)</option>
                 <option value="2" @selected(old('rounds_each') === '2')>2 (z rewanżem)</option>
             </select>
+
+            <p class="form-label text-accent">Długość meczu (legi, jeden set)</p>
+            <label class="flex items-start gap-2 text-sm mb-2">
+                <input type="radio" name="allows_draws" value="0" x-model="allowsDraws">
+                <span>
+                    <strong>Bez remisów</strong> — First to N. Zawsze jest zwycięzca. Tabela: W / P.
+                </span>
+            </label>
+            <label class="flex items-start gap-2 text-sm mb-4">
+                <input type="radio" name="allows_draws" value="1" x-model="allowsDraws">
+                <span>
+                    <strong>Z remisami</strong> — Best of (parzyste). Wynik w stylu 3:3 to po 1 pkt. Tabela: W / R / P i punkty 2/1/0.
+                </span>
+            </label>
+
+            <div x-show="allowsDraws !== '1'">
+                <label class="form-label text-accent" for="win_length_ft">First to (legi)</label>
+                <select class="mb-5 input-field" id="win_length_ft" name="win_length" :disabled="allowsDraws === '1'">
+                    @foreach(range(1, 15) as $n)
+                        <option value="{{ $n }}" @selected((int) old('win_length', 2) === $n)>do {{ $n }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div x-show="allowsDraws === '1'" x-cloak>
+                <label class="form-label text-accent" for="win_length_bo">Best of (legi)</label>
+                <select class="mb-5 input-field" id="win_length_bo" name="win_length" :disabled="allowsDraws !== '1'">
+                    @foreach([2, 4, 6, 8, 10, 12, 14, 16] as $n)
+                        <option value="{{ $n }}" @selected((int) old('win_length', 6) === $n)>best of {{ $n }}</option>
+                    @endforeach
+                </select>
+            </div>
 
             <label class="form-label text-accent" for="startDate">Data rozpoczęcia</label>
             <input class="mb-5 input-field" type="date" id="startDate" name="startDate" value="{{ old('startDate') }}" required>

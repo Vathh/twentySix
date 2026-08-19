@@ -122,6 +122,7 @@ class GameViewController extends Controller
             GameKind::GROUP => $this->gameScoringService->resolveGroupGame($id),
             GameKind::PLAYOFF => $this->gameScoringService->resolvePlayoffGame($id),
             GameKind::QUICK => $this->gameScoringService->resolveQuickGame($id),
+            GameKind::LEAGUE => $this->gameScoringService->resolveLeagueGame($id),
         };
     }
 }

@@ -255,7 +255,8 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - Organizacja (i opcjonalnie sezon) utrzymuje listę **powiązanych użytkowników** — **stali bywalcy**, którzy regularnie grają w turniejach tej organizacji.
 - Lista **nie wpisuje** nikogo automatycznie do turnieju — służy do **szybkiego masowego wysyłania zaproszeń** (zaznaczenie wielu osób → wyślij zaproszenia).
 - Na stronie startu turnieju skład do masowego invite = **suma `organization.relatedUsers` + `season.relatedUsers` bez duplikatów** (jak dziś `getRelatedPlayers`, ale tylko użytkownicy z kontem — bez gości).
-- Zarządzanie składem (dodawanie/usuwanie osób z listy organizacji/sezonu) pozostaje na dotychczasowych ekranach `relatedUsers`.
+- **Skład organizacji:** admin na **webie** wysyła zaproszenie (ekran `relatedUsers`); gracz akceptuje na **mobile** (zakładka **Gra**). Do `relatedUsers` wpisuje się **dopiero po akceptacji**. Usunięcie ze składu zdejmuje powiązanie; można zaprosić ponownie.
+- **Skład sezonu** (osobna lista) — nadal dodawanie/usuwanie na ekranie sezonu, bez osobnego zaproszenia.
 
 #### Strona startu turnieju (web) — układ B
 
@@ -291,10 +292,19 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - `POST /api/tournaments/invitations/{id}/reject`
 - `POST /api/tournaments/invitations/{id}/withdraw` — tylko własne, status `accepted`, turniej **nie wystartował**
 
+#### Zaproszenia do organizacji (`relatedUsers`)
+
+- Wysyłka: admin na **webie** (ekran powiązanych użytkowników organizacji) — przycisk **Zaproś**.
+- Akceptacja / odrzucenie: **mobile** (zakładka **Gra**).
+- `GET /api/organizations/invitations/received`
+- `POST /api/organizations/invitations/{id}/accept`
+- `POST /api/organizations/invitations/{id}/reject`
+
 #### Mobile — ekran zaproszeń
 
-- **Jeden ekran** z zakładkami: **Turniej** | **Pojedynek** (quick game / lobby) | **Znajomi**.
-- Pull-to-refresh na liście. **Push** przy nowym zaproszeniu (znajomi / turniej / lobby) — ✅.
+- **Jeden ekran** z zakładkami: **Gra** | **Znajomi**.
+- **Gra:** zaproszenia do turnieju, organizacji, quick game i meczu ligowego.
+- Pull-to-refresh na liście. **Push** przy nowym zaproszeniu (znajomi / turniej / organizacja / lobby / liga) — ✅.
 
 ## Organizacja i punktacja (MVP)
 
@@ -311,28 +321,34 @@ Organizacja
 ├── Sezon turniejowy     ← Season + Tournament (jak dotychczas)
 └── Liga (wiele na organizację)
       ├── Szczebel (pozycja 0 = najwyższa)
-      ├── Trwały skład piramidy
+      ├── Pula ligi (powiązani użytkownicy + goście) — osobna od organizacji
+      ├── Trwały skład piramidy (przydział z puli na szczebel)
       └── Sezony ligowe (zamrożone zdjęcie + mecze + tabela)
 ```
 
 - Tylko **indywidualna**; format **X01** per szczebel (501 / legi / sety), zamrażany na start sezonu.
+- **Pula ligi** jest własna: powiązani użytkownicy i goście ligi (nie mieszanka ze składu organizacji). Admin uzupełnia pulę na ekranach ligi. **Skład szczebli:** przeciąganie znaczników z puli (powiązani / goście) na szczeble.
 - Sezon ligowy i sezon turniejowy to **osobne byty**.
 - Kalendarz przy starcie sezonu ligowego:
   - **Kolejki:** albo **długość kolejki + data startu** (koniec sezonu wyliczany ze składu), albo **start i koniec sezonu** (długość kolejki = równy podział tego okresu).
   - albo **pula meczów z jednym deadline’em**.
 - Mecze: pełny round-robin, 1 albo 2 spotkania każdy z każdym (rewanż bez przewagi gospodarza).
-- Gra **na miejscu, sędzia, jedno urządzenie** (jak turniej). Wpis wyniku / walkower na **webie**; scoring tabletem — później.
+- Długość meczu **na sezon** (wszystkie szczeble): **First to N** (bez remisów) albo **Best of** parzyste (z remisami). 501 itd. nadal **per szczebel**. Tiebreaki i baraże zawsze First to (musi być zwycięzca).
+- Start meczu z **mobile**: Graj → Mecze ligowe → **Rozpocznij** tylko w aktualnym oknie kolejki. Lobby 1v1 z auto-zaproszeniem przeciwnika (zakładka **Gra**), akceptacja, potem scoring H2H na **jednym telefonie**. Gość bez konta: wynik wpisuje admin na webie.
+- Admin web: WO, korekta, rezygnacja; przy otwartym lobby / meczu w trakcie nie nadpisuje wyniku z formularza.
 
 ### Cykl życia
 
-1. **Poza sezonem** — admin rusza strukturę, składy, dopisuje/wypisuje ludzi na szczebel.
+1. **Poza sezonem** — admin rusza strukturę, pulę ligi, składy szczebli.
 2. **Start sezonu** — zdjęcie składu i reguł, generacja meczów, zamrożenie piramidy.
 3. **W sezonie** — bez nowych szczebli i bez przesuwania ludzi. Wolno: rezygnacja; przy zaległym meczu: WO jednostronny / obustronny / przedłużenie. Admin może **anulować sezon** (hasło + wpisanie nazwy) — wraca skład sprzed startu, mecze giną.
 4. **Koniec** — tabele → auto awans/spadek/baraż → łatanie dziur z dołu → piramida zaktualizowana.
 
 ### Tabela i baraże
 
-Kolejność: **zwycięstwa → różnica legów (jednostek meczu) → bilans bezpośredni → dogrywka → losowanie**.
+Kolejność bez remisów: **zwycięstwa → różnica jednostek → bilans bezpośredni → dogrywka → losowanie**.
+
+Sezon **z remisami**: tabela **W / R / P** i **punkty 2 / 1 / 0**; sort: **punkty → różnica jednostek → bezpośredni → dogrywka**. Remis sportowy (np. 3:3) = po 1 pkt. WO obustronny 0:0 = obie porażki, 0 pkt.
 
 - 2 osoby w remisie na linii awansu/spadku: jeden mecz (deathmatch).
 - 3–4: mini-drabinka SE (bye jeśli trzeba), mecz o 3. miejsce przy 4 osobach.
@@ -644,7 +660,7 @@ Historyczne rozbieżności z czasów przed `product.md` — **domknięte w MVP v
 | Losowanie playoff | Bez par z tej samej grupy (runda 1) | ✅ `PlayoffFirstRoundPairing` |
 | Rozmiar drabinki | Wybór etapu (`playoff_bracket_size`; **docelowo max 128**, dziś w kodzie jeszcze 32) | ⚠️ `PlayoffBracketFactory::create` (enumy) → generyczny silnik w planie SE/DE |
 | Warianty SE / DE | Typ przy starcie; bye; miejsca; GF | ✅ [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) |
-| Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile; `relatedUsers` = tylko masowy invite | ✅ `TournamentInvitation`, API, `InvitationsScreen` |
+| Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile; `relatedUsers` org = zaproszenie | ✅ `TournamentInvitation`, `OrganizationInvitation`, `InvitationsScreen` |
 | Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ |
 | FFA 2–8 oba tryby urządzeń | `one_device` i `each_own` | ✅ unified FFA |
 | Rotacja openera lega | `(opener + 1) % N` | ✅ |

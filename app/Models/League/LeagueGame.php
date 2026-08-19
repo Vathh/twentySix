@@ -5,6 +5,7 @@ namespace App\Models\League;
 use App\Enums\LeagueGamePurpose;
 use App\Enums\LeagueGameStatus;
 use App\Enums\LeagueWalkoverType;
+use App\Enums\MatchWinMode;
 use App\Models\Player\Player;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,10 +27,15 @@ class LeagueGame extends Model
         'status',
         'walkover_type',
         'deadline_at',
+        'lobby_host_player_id',
+        'opponent_accepted_at',
+        'scoring_host_player_id',
         'starting_score',
         'legs_to_win_set',
         'sets_to_win_match',
         'game_type',
+        'win_mode',
+        'win_length',
         'tie_group_key',
         'bracket_round',
         'is_third_place',
@@ -43,6 +49,8 @@ class LeagueGame extends Model
             'walkover_type' => LeagueWalkoverType::class,
             'deadline_at' => 'datetime',
             'is_third_place' => 'boolean',
+            'win_mode' => MatchWinMode::class,
+            'opponent_accepted_at' => 'datetime',
         ];
     }
 
@@ -69,6 +77,16 @@ class LeagueGame extends Model
     public function player2(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'player2_id');
+    }
+
+    public function scoringHost(): BelongsTo
+    {
+        return $this->belongsTo(Player::class, 'scoring_host_player_id');
+    }
+
+    public function lobbyHost(): BelongsTo
+    {
+        return $this->belongsTo(Player::class, 'lobby_host_player_id');
     }
 
     public function winner(): BelongsTo

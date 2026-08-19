@@ -5,12 +5,14 @@ namespace App\Services\GameScoring;
 use App\Enums\GameStatus;
 use App\Enums\GameKind;
 use App\Models\Game\Game;
+use App\Models\League\LeagueGame;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\QuickGame\QuickGame;
 use App\Repositories\Game\GameLegPlayerStatRepository;
 use App\Repositories\Game\GameLegRepository;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\Game\GameVisitRepository;
+use App\Repositories\League\LeagueGameRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 use App\Support\GameScoring\GameScoringContext;
@@ -26,6 +28,7 @@ class GameDetailService
         private GameRepository $gameRepository,
         private PlayoffGameRepository $playoffGameRepository,
         private QuickGameRepository $quickGameRepository,
+        private LeagueGameRepository $leagueGameRepository,
         private GameLegRepository $gameLegRepository,
         private GameVisitRepository $gameVisitRepository,
         private GameLegPlayerStatRepository $gameLegPlayerStatRepository,
@@ -47,6 +50,9 @@ class GameDetailService
             ),
             GameKind::QUICK => $this->buildFromQuickGame(
                 $this->quickGameRepository->findModel($id, ['player1', 'player2']),
+            ),
+            GameKind::LEAGUE => $this->buildFromLeagueGame(
+                $this->leagueGameRepository->findForPlay($id),
             ),
         };
     }
@@ -106,9 +112,25 @@ class GameDetailService
     /**
      * @return array<string, mixed>
      */
+    private function buildFromLeagueGame(LeagueGame $game): array
+    {
+        $context = GameScoringContext::fromLeagueGame($game);
+
+        return $this->assemble(
+            $context,
+            $game,
+            label: 'Liga',
+            subtitle: $game->season?->league?->name,
+            backUrl: route('league-games.show', $game),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     private function assemble(
         GameScoringContext $context,
-        Game|PlayoffGame|QuickGame $game,
+        Game|PlayoffGame|QuickGame|LeagueGame $game,
         string $label,
         ?string $subtitle,
         string $backUrl,
@@ -167,9 +189,9 @@ class GameDetailService
             $context->player2Id,
         );
 
-        $tournamentId = $game instanceof QuickGame
-            ? null
-            : ($game->tournament_id !== null ? (int) $game->tournament_id : null);
+        $tournamentId = ($game instanceof Game || $game instanceof PlayoffGame)
+            ? (int) $game->tournament_id
+            : null;
 
         return [
             'kind' => $context->kind->value,
@@ -189,7 +211,7 @@ class GameDetailService
                 $tournamentId,
                 $context->kind,
             ),
-            'status' => $game->status instanceof GameStatus ? $game->status->value : $game->status,
+            'status' => $game->status instanceof \BackedEnum ? $game->status->value : (string) $game->status,
             'player1' => $game->player1,
             'player2' => $game->player2,
             'player1Score' => (int) $game->player1_score,
@@ -199,7 +221,9 @@ class GameDetailService
             'legsDetail' => $legsDetail,
             'legsBySet' => $legsBySet,
             'broadcastChannel' => $context->broadcastChannelName(),
-            'isLive' => $game->status === GameStatus::IN_PROGRESS,
+            'isLive' => $game->status instanceof GameStatus
+                ? $game->status === GameStatus::IN_PROGRESS
+                : (string) ($game->status instanceof \BackedEnum ? $game->status->value : $game->status) === 'in_progress',
         ];
     }
 
@@ -275,6 +299,7 @@ class GameDetailService
             'group' => GameKind::GROUP,
             'playoff' => GameKind::PLAYOFF,
             'quick' => GameKind::QUICK,
+            'league' => GameKind::LEAGUE,
             default => throw new DomainException('Nieznany typ meczu.'),
         };
     }

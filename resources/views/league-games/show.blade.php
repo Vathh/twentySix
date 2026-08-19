@@ -38,6 +38,10 @@
                 @endif
             @elseif($game->status->value === 'voided')
                 <p class="text-text-muted">Mecz anulowany (rezygnacja).</p>
+            @elseif($game->status->value === 'lobby')
+                <p class="text-warning">Lobby — oczekiwanie na akceptację przeciwnika.</p>
+            @elseif($game->status->value === 'in_progress')
+                <p class="text-success-bright">Mecz w trakcie (sędziowanie na telefonie).</p>
             @else
                 <p class="text-text-muted">Nie rozegrany@if($overdue) · zaległy@endif</p>
                 @if($game->deadline_at)

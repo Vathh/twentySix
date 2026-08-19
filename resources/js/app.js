@@ -8,6 +8,7 @@ import { registerIndexLoadMore } from './indexLoadMore.js';
 import { registerRefereeLogin } from './referee/refereeLogin.js';
 import { registerRefereeGames } from './referee/refereeGames.js';
 import { registerRefereeScoring } from './referee/refereeScoring.js';
+import { registerLeagueRosterBoard } from './leagueRosterBoard.js';
 
 registerGameLiveViewer(alpine);
 registerFfaLiveViewer(alpine);
@@ -17,6 +18,7 @@ registerIndexLoadMore(alpine);
 registerRefereeLogin(alpine);
 registerRefereeGames(alpine);
 registerRefereeScoring(alpine);
+registerLeagueRosterBoard(alpine);
 
 window.Alpine = alpine;
 alpine.start();

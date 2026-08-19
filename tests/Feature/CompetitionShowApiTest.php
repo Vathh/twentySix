@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\League\League;
+use App\Models\League\LeagueDivision;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
@@ -34,6 +36,17 @@ class CompetitionShowApiTest extends TestCase
             'start_date' => '2024-01-01',
             'end_date' => '2024-12-31',
         ]);
+        $league = League::create([
+            'organization_id' => $organization->id,
+            'name' => 'Liga A',
+            'description' => '',
+        ]);
+        LeagueDivision::create([
+            'league_id' => $league->id,
+            'position' => 0,
+            'name' => 'Ekstraklasa',
+            'capacity' => 8,
+        ]);
 
         $this->getJson('/api/organizations/'.$organization->id)
             ->assertOk()
@@ -42,10 +55,13 @@ class CompetitionShowApiTest extends TestCase
             ->assertJsonStructure([
                 'organization' => ['id', 'name', 'description', 'createdAt', 'updatedAt'],
                 'seasons' => [['id', 'name']],
+                'leagues' => [['id', 'name']],
             ])
             ->assertJsonMissingPath('standings')
             ->assertJsonCount(1, 'seasons')
-            ->assertJsonPath('seasons.0.name', 'Sezon 1');
+            ->assertJsonPath('seasons.0.name', 'Sezon 1')
+            ->assertJsonCount(1, 'leagues')
+            ->assertJsonPath('leagues.0.name', 'Liga A');
     }
 
     public function test_organization_show_404(): void

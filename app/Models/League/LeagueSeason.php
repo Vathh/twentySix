@@ -5,6 +5,7 @@ namespace App\Models\League;
 use App\Enums\LeagueCalendarMode;
 use App\Enums\LeagueMatchdayPlanning;
 use App\Enums\LeagueSeasonStatus;
+use App\Enums\MatchWinMode;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -19,6 +20,9 @@ class LeagueSeason extends Model
         'rounds_each',
         'matchday_length_days',
         'matchday_planning',
+        'allows_draws',
+        'win_mode',
+        'win_length',
         'start_date',
         'end_date',
         'deadline_at',
@@ -33,11 +37,14 @@ class LeagueSeason extends Model
             'status' => LeagueSeasonStatus::class,
             'calendar_mode' => LeagueCalendarMode::class,
             'matchday_planning' => LeagueMatchdayPlanning::class,
+            'win_mode' => MatchWinMode::class,
+            'allows_draws' => 'boolean',
             'start_date' => 'date',
             'end_date' => 'date',
             'deadline_at' => 'datetime',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
+            'win_length' => 'integer',
             'rounds_each' => 'integer',
             'matchday_length_days' => 'integer',
             'random_seed' => 'integer',

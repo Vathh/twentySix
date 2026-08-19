@@ -159,6 +159,7 @@ final class ScoringStateContract
         return match ($kind) {
             'playoff' => 'tournament_playoff',
             'quick' => 'quick_h2h',
+            'league' => 'league',
             default => 'tournament_group',
         };
     }

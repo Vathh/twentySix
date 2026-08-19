@@ -7,4 +7,5 @@ enum GameKind: string
     case GROUP = 'group';
     case PLAYOFF = 'playoff';
     case QUICK = 'quick';
+    case LEAGUE = 'league';
 }

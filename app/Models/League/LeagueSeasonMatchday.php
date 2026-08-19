@@ -2,6 +2,8 @@
 
 namespace App\Models\League;
 
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -37,5 +39,13 @@ class LeagueSeasonMatchday extends Model
     public function windowLabel(): string
     {
         return $this->window_start->format('d.m.Y').' – '.$this->window_end->format('d.m.Y');
+    }
+
+    public function isCurrent(?CarbonInterface $at = null): bool
+    {
+        $today = Carbon::parse($at ?? now())->toDateString();
+
+        return $today >= $this->window_start->toDateString()
+            && $today <= $this->window_end->toDateString();
     }
 }

@@ -87,6 +87,26 @@
         @apply bg-bg rounded-lg p-6 border border-border;
     }
 
+    .roster-dropzone {
+        @apply min-h-24 rounded-lg border border-dashed border-border p-3 transition;
+    }
+
+    .roster-dropzone-active {
+        @apply border-accent bg-accent/10;
+    }
+
+    .roster-chip {
+        @apply inline-flex items-center rounded-lg border border-border bg-bg px-3 py-2 text-sm font-semibold text-text-muted select-none;
+    }
+
+    .roster-chip-guest {
+        @apply border-accent/40 text-text-secondary;
+    }
+
+    .roster-capacity-btn {
+        @apply inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-bg text-sm font-semibold leading-none text-text-muted hover:text-text hover:border-accent/40 disabled:opacity-40 disabled:pointer-events-none;
+    }
+
     /* --- Formularze --- */
     .form-label {
         @apply mb-2 block text-base font-semibold text-text-secondary;
@@ -172,6 +192,13 @@
 
     .nav-dropdown-item.active {
         @apply text-accent font-semibold bg-accent-muted/40 md:bg-transparent;
+    }
+
+    button.nav-dropdown-item,
+    .nav-dropdown-item-button {
+        @apply w-full text-left bg-transparent border-0 cursor-pointer;
+        font-family: inherit;
+        font-size: inherit;
     }
 
     .referee-numpad-key {

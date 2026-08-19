@@ -2,6 +2,7 @@
 
 namespace App\Models\Game;
 
+use App\Models\League\LeagueGame;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\Player\Player;
 use App\Models\QuickGame\QuickGame;
@@ -17,6 +18,7 @@ class GameLeg extends Model
         'game_id',
         'playoff_game_id',
         'quick_game_id',
+        'league_game_id',
         'leg_number',
         'player1_score',
         'player2_score',
@@ -48,6 +50,11 @@ class GameLeg extends Model
     public function quickGame(): BelongsTo
     {
         return $this->belongsTo(QuickGame::class, 'quick_game_id');
+    }
+
+    public function leagueGame(): BelongsTo
+    {
+        return $this->belongsTo(LeagueGame::class, 'league_game_id');
     }
 
     public function winner(): BelongsTo

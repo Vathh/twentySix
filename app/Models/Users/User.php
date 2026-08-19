@@ -4,6 +4,7 @@ namespace App\Models\Users;
 
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
+use App\Models\Season\Season;
 use App\Notifications\VerifyEmailNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -82,6 +83,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function relatedOrganizations(): BelongsToMany
     {
         return $this->belongsToMany(Organization::class, 'organization_user');
+    }
+
+    public function adminSeasons(): BelongsToMany
+    {
+        return $this->belongsToMany(Season::class, 'season_user_admin');
+    }
+
+    public function relatedSeasons(): BelongsToMany
+    {
+        return $this->belongsToMany(Season::class, 'season_user');
     }
 
     public function sendEmailVerificationNotification(): void

@@ -3,17 +3,18 @@
 namespace App\Domain\League;
 
 /**
- * Tabela ligowa: zwycięstwa → różnica jednostek meczu (legi przy 1 secie) → bilans bezpośredni.
+ * Tabela ligowa: zwycięstwa → różnica jednostek → bilans bezpośredni.
+ * Sezon z remisami: punkty 2/1/0, potem różnica jednostek → bezpośredni.
  * Nierozstrzygnięte grupy dostają `needsTiebreak`.
  */
 final class LeagueStandingCalculator
 {
     /**
      * @param  list<int>  $playerIds
-     * @param  list<array{player1Id: int, player2Id: int, player1Score: int, player2Score: int, winnerId: ?int, status: string}>  $games
+     * @param  list<array{player1Id: int, player2Id: int, player1Score: int, player2Score: int, winnerId: ?int, status: string, walkoverType?: string}>  $games
      * @return list<LeagueStandingRow>
      */
-    public static function calculate(array $playerIds, array $games): array
+    public static function calculate(array $playerIds, array $games, bool $usePoints = false): array
     {
         $playerIds = array_values(array_unique(array_map('intval', $playerIds)));
         $stats = [];
@@ -21,7 +22,9 @@ final class LeagueStandingCalculator
             $stats[$id] = [
                 'played' => 0,
                 'wins' => 0,
+                'draws' => 0,
                 'losses' => 0,
+                'points' => 0,
                 'for' => 0,
                 'against' => 0,
             ];
@@ -41,6 +44,7 @@ final class LeagueStandingCalculator
             $s1 = (int) $game['player1Score'];
             $s2 = (int) $game['player2Score'];
             $winnerId = $game['winnerId'] !== null ? (int) $game['winnerId'] : null;
+            $walkover = (string) ($game['walkoverType'] ?? 'none');
 
             $stats[$p1]['played']++;
             $stats[$p2]['played']++;
@@ -51,13 +55,20 @@ final class LeagueStandingCalculator
 
             if ($winnerId === $p1) {
                 $stats[$p1]['wins']++;
+                $stats[$p1]['points'] += 2;
                 $stats[$p2]['losses']++;
             } elseif ($winnerId === $p2) {
                 $stats[$p2]['wins']++;
+                $stats[$p2]['points'] += 2;
                 $stats[$p1]['losses']++;
-            } else {
+            } elseif ($winnerId === null && $s1 === 0 && $s2 === 0) {
                 $stats[$p1]['losses']++;
                 $stats[$p2]['losses']++;
+            } else {
+                $stats[$p1]['draws']++;
+                $stats[$p2]['draws']++;
+                $stats[$p1]['points'] += 1;
+                $stats[$p2]['points'] += 1;
             }
         }
 
@@ -68,7 +79,9 @@ final class LeagueStandingCalculator
                 playerId: $id,
                 played: $row['played'],
                 wins: $row['wins'],
+                draws: $row['draws'],
                 losses: $row['losses'],
+                points: $row['points'],
                 unitsFor: $row['for'],
                 unitsAgainst: $row['against'],
                 unitDiff: $row['for'] - $row['against'],
@@ -76,8 +89,11 @@ final class LeagueStandingCalculator
             );
         }
 
-        usort($rows, static function (LeagueStandingRow $a, LeagueStandingRow $b): int {
-            if ($a->wins !== $b->wins) {
+        usort($rows, static function (LeagueStandingRow $a, LeagueStandingRow $b) use ($usePoints): int {
+            if ($usePoints && $a->points !== $b->points) {
+                return $b->points <=> $a->points;
+            }
+            if (! $usePoints && $a->wins !== $b->wins) {
                 return $b->wins <=> $a->wins;
             }
             if ($a->unitDiff !== $b->unitDiff) {
@@ -87,15 +103,15 @@ final class LeagueStandingCalculator
             return $a->playerId <=> $b->playerId;
         });
 
-        return self::assignPlaces($rows, $countable);
+        return self::assignPlaces($rows, $countable, $usePoints);
     }
 
     /**
      * @param  list<LeagueStandingRow>  $rows
-     * @param  list<array{player1Id: int, player2Id: int, player1Score: int, player2Score: int, winnerId: ?int, status: string}>  $games
+     * @param  list<array{player1Id: int, player2Id: int, player1Score: int, player2Score: int, winnerId: ?int, status: string, walkoverType?: string}>  $games
      * @return list<LeagueStandingRow>
      */
-    private static function assignPlaces(array $rows, array $games): array
+    private static function assignPlaces(array $rows, array $games, bool $usePoints = false): array
     {
         $placed = [];
         $index = 0;
@@ -104,7 +120,7 @@ final class LeagueStandingCalculator
         while ($index < $n) {
             $group = [$rows[$index]];
             $j = $index + 1;
-            while ($j < $n && $rows[$j]->wins === $rows[$index]->wins && $rows[$j]->unitDiff === $rows[$index]->unitDiff) {
+            while ($j < $n && self::samePrimaryRecord($rows[$j], $rows[$index], $usePoints)) {
                 $group[] = $rows[$j];
                 $j++;
             }
@@ -135,6 +151,15 @@ final class LeagueStandingCalculator
         return $placed;
     }
 
+    private static function samePrimaryRecord(LeagueStandingRow $a, LeagueStandingRow $b, bool $usePoints): bool
+    {
+        if ($a->unitDiff !== $b->unitDiff) {
+            return false;
+        }
+
+        return $usePoints ? $a->points === $b->points : $a->wins === $b->wins;
+    }
+
     /**
      * @param  list<LeagueStandingRow>  $group
      * @param  list<array{player1Id: int, player2Id: int, player1Score: int, player2Score: int, winnerId: ?int, status: string}>  $games
@@ -150,6 +175,9 @@ final class LeagueStandingCalculator
         usort($group, static function (LeagueStandingRow $a, LeagueStandingRow $b) use ($ids, $games): int {
             $sa = self::miniStats($a->playerId, $ids, $games);
             $sb = self::miniStats($b->playerId, $ids, $games);
+            if ($sa['points'] !== $sb['points']) {
+                return $sb['points'] <=> $sa['points'];
+            }
             if ($sa['wins'] !== $sb['wins']) {
                 return $sb['wins'] <=> $sa['wins'];
             }
@@ -175,11 +203,12 @@ final class LeagueStandingCalculator
     /**
      * @param  list<int>  $groupIds
      * @param  list<array{player1Id: int, player2Id: int, player1Score: int, player2Score: int, winnerId: ?int, status: string}>  $games
-     * @return array{wins: int, diff: int}
+     * @return array{wins: int, points: int, diff: int}
      */
     private static function miniStats(int $playerId, array $groupIds, array $games): array
     {
         $wins = 0;
+        $points = 0;
         $diff = 0;
         foreach ($games as $game) {
             $p1 = (int) $game['player1Id'];
@@ -193,6 +222,7 @@ final class LeagueStandingCalculator
             $s1 = (int) $game['player1Score'];
             $s2 = (int) $game['player2Score'];
             $winnerId = $game['winnerId'] !== null ? (int) $game['winnerId'] : null;
+            $walkover = (string) ($game['walkoverType'] ?? 'none');
             if ($p1 === $playerId) {
                 $diff += $s1 - $s2;
             } else {
@@ -200,10 +230,15 @@ final class LeagueStandingCalculator
             }
             if ($winnerId === $playerId) {
                 $wins++;
+                $points += 2;
+            } elseif ($winnerId === null && $s1 === 0 && $s2 === 0) {
+                // WO obustronny — bez punktów
+            } elseif ($winnerId === null) {
+                $points += 1;
             }
         }
 
-        return ['wins' => $wins, 'diff' => $diff];
+        return ['wins' => $wins, 'points' => $points, 'diff' => $diff];
     }
 
     /**

@@ -122,7 +122,7 @@ class GameService
         match ($context->kind) {
             GameKind::GROUP => $this->finalizeGroupGameFromScoring($dto),
             GameKind::PLAYOFF => $this->finalizePlayoffGameFromScoring($dto),
-            GameKind::QUICK => null,
+            GameKind::QUICK, GameKind::LEAGUE => null,
         };
     }
 

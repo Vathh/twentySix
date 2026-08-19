@@ -54,6 +54,14 @@ class GameLegScoreValidatorTest extends TestCase
         GameLegScoreValidator::validateAndResolveWinner(1, 2, 1, 1, $this->bo3Legs);
     }
 
+    public function test_best_of_even_allows_draw(): void
+    {
+        $format = MatchFormat::forLeagueRules(501, \App\Enums\MatchWinMode::BEST_OF, 6);
+
+        $this->assertNull(GameLegScoreValidator::validateAndResolveWinner(1, 2, 3, 3, $format));
+        $this->assertSame(1, GameLegScoreValidator::validateAndResolveWinner(1, 2, 4, 2, $format));
+    }
+
     public function test_rejects_invalid_leg_totals(): void
     {
         $this->expectException(DomainException::class);

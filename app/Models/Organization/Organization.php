@@ -42,6 +42,11 @@ class Organization extends Model
         return $this->belongsToMany(User::class, 'organization_user');
     }
 
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(OrganizationInvitation::class);
+    }
+
     public function guests(): HasMany
     {
         return $this->hasMany(Player::class);

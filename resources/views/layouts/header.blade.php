@@ -31,7 +31,9 @@
                 && Auth::user()->player
                 && $currentPlayer
                 && (int) $currentPlayer->id === (int) Auth::user()->player->id;
-            $rozgrywkiActive = request()->routeIs('organizations.*', 'seasons.*', 'tournaments.*', 'leagues.*', 'league-seasons.*', 'league-games.*');
+            $kontoActive = request()->routeIs('me.*', 'settings.*');
+            $rozgrywkiActive = request()->routeIs('organizations.*', 'seasons.*', 'tournaments.*', 'leagues.*', 'league-seasons.*', 'league-games.*')
+                && ! $kontoActive;
         @endphp
         <nav id="site-nav"
              class="w-full md:w-auto md:flex md:flex-wrap md:items-center md:gap-1"
@@ -81,10 +83,6 @@
 
             <a href='{{ route('players.search') }}' class="nav-btn {{ request()->routeIs('players.*') && ! $isMyProfile ? 'active' : '' }}" @click="navOpen = false">Szukaj graczy</a>
 
-            @auth
-                <a href='{{ route('settings.index') }}' class="nav-btn {{ request()->routeIs('settings.*') ? 'active' : '' }}" @click="navOpen = false">Ustawienia</a>
-            @endauth
-
             @platformAdmin
                 <a href='{{ route('admin.dashboard') }}' class="nav-btn {{ request()->routeIs('admin.*') ? 'active' : '' }}" @click="navOpen = false">Panel</a>
             @endplatformAdmin
@@ -95,10 +93,46 @@
             @endguest
 
             @auth
-                <form action="{{ route('logout') }}" method="POST" class="m-0">
-                    @csrf
-                    <button class="nav-btn w-full md:w-auto text-left" type="submit">Wyloguj się</button>
-                </form>
+                <div class="relative w-full md:w-auto"
+                     x-data="{ open: false }"
+                     @mouseenter="if (window.matchMedia('(min-width: 768px)').matches) open = true"
+                     @mouseleave="if (window.matchMedia('(min-width: 768px)').matches) open = false">
+                    <button type="button"
+                            class="nav-btn inline-flex items-center gap-1 w-full md:w-auto {{ $kontoActive ? 'active' : '' }}"
+                            @click="if (!window.matchMedia('(min-width: 768px)').matches) open = !open"
+                            :aria-expanded="open.toString()"
+                            aria-haspopup="true"
+                            aria-controls="nav-konto-menu">
+                        <span>Konto</span>
+                        <span class="text-[0.65rem] opacity-70 leading-none" aria-hidden="true" x-text="open ? '▴' : '▾'"></span>
+                    </button>
+                    <div id="nav-konto-menu"
+                         x-show="open"
+                         x-cloak
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 -translate-y-1"
+                         class="nav-dropdown md:right-0 md:left-auto"
+                         role="menu">
+                        <div class="nav-dropdown-panel">
+                            <a href="{{ route('me.index') }}"
+                               class="nav-dropdown-item {{ request()->routeIs('me.*') ? 'active' : '' }}"
+                               role="menuitem"
+                               @click="navOpen = false; open = false">Gdzie gram</a>
+                            <a href="{{ route('settings.index') }}"
+                               class="nav-dropdown-item {{ request()->routeIs('settings.*') ? 'active' : '' }}"
+                               role="menuitem"
+                               @click="navOpen = false; open = false">Ustawienia</a>
+                            <form action="{{ route('logout') }}" method="POST" class="m-0">
+                                @csrf
+                                <button class="nav-dropdown-item nav-dropdown-item-button" type="submit" role="menuitem">Wyloguj się</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             @endauth
         </nav>
     </div>

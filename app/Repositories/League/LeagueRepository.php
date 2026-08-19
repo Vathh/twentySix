@@ -7,7 +7,6 @@ use App\Models\League\League;
 use App\Models\League\LeagueDivision;
 use App\Models\League\LeagueDivisionMember;
 use App\Models\League\LeagueSeason;
-use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -31,8 +30,8 @@ class LeagueRepository
         return League::query()
             ->with([
                 'organization.admins',
-                'organization.relatedUsers.player',
-                'organization.guests',
+                'relatedUsers.player',
+                'guests',
                 'divisions.members.player',
                 'seasons',
             ])
@@ -134,6 +133,13 @@ class LeagueRepository
         });
     }
 
+    public function updateDivisionCapacity(int $divisionId, int $capacity): void
+    {
+        LeagueDivision::query()->whereKey($divisionId)->update([
+            'capacity' => $capacity,
+        ]);
+    }
+
     public function assignPlayer(int $leagueId, int $divisionId, int $playerId): void
     {
         DB::transaction(function () use ($leagueId, $divisionId, $playerId) {
@@ -192,18 +198,30 @@ class LeagueRepository
     /**
      * @return Collection<int, Player>
      */
-    public function eligiblePlayers(int $organizationId): Collection
+    public function eligiblePlayers(int $leagueId): Collection
     {
-        $organization = Organization::query()
+        $league = League::query()
             ->with(['relatedUsers.player', 'guests'])
-            ->findOrFail($organizationId);
+            ->findOrFail($leagueId);
 
-        return $organization->relatedUsers
+        return $league->relatedUsers
             ->map(fn ($user) => $user->player)
             ->filter()
-            ->concat($organization->guests)
+            ->concat($league->guests)
             ->unique('id')
             ->sortBy('name')
             ->values();
+    }
+
+    public function addRelatedUser(int $leagueId, int $userId): void
+    {
+        $league = League::query()->findOrFail($leagueId);
+        $league->relatedUsers()->syncWithoutDetaching([$userId]);
+    }
+
+    public function removeRelatedUser(int $leagueId, int $userId): void
+    {
+        $league = League::query()->findOrFail($leagueId);
+        $league->relatedUsers()->detach($userId);
     }
 }

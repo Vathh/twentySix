@@ -28,11 +28,22 @@ final class MatchFormatScoring
                 $player2Score++;
             }
 
-            $finished = $player1Score >= $format->legsToWinSet || $player2Score >= $format->legsToWinSet;
+            $winAt = $format->legsToWinSet;
+            $reachedWin = $player1Score >= $winAt || $player2Score >= $winAt;
+            $playedAll = $format->isBestOf() && ($player1Score + $player2Score) >= $format->winLength;
+            $finished = $reachedWin || $playedAll;
+            $winnerId = null;
+            if ($finished) {
+                if ($player1Score === $player2Score) {
+                    $winnerId = null;
+                } else {
+                    $winnerId = $player1Score > $player2Score ? $player1Id : $player2Id;
+                }
+            }
 
             return [
                 'finished' => $finished,
-                'winnerId' => $finished ? ($player1Score >= $format->legsToWinSet ? $player1Id : $player2Id) : null,
+                'winnerId' => $winnerId,
                 'player1Score' => $player1Score,
                 'player2Score' => $player2Score,
                 'player1LegsInSet' => $player1LegsInSet,

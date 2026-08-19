@@ -15,7 +15,7 @@ Broadcast::channel('group-game.{gameId}', function () {
     return true;
 });
 
-Broadcast::channel('playoff-game.{playoffGameId}', function () {
+Broadcast::channel('league-game.{leagueGameId}', function () {
     return true;
 });
 

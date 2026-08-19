@@ -61,6 +61,8 @@ class LeagueSeasonController extends Controller
             'deadline_at' => 'nullable|date',
             'matchday_length_days' => 'nullable|integer|min:1|max:60',
             'start_now' => 'sometimes|boolean',
+            'allows_draws' => 'sometimes|boolean',
+            'win_length' => 'nullable|integer|min:1|max:16',
         ]);
 
         try {
@@ -75,6 +77,8 @@ class LeagueSeasonController extends Controller
                 $request->boolean('start_now'),
                 isset($validated['matchday_length_days']) ? (int) $validated['matchday_length_days'] : null,
                 $validated['matchday_planning'] ?? null,
+                $request->boolean('allows_draws'),
+                (int) ($validated['win_length'] ?? 2),
             );
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage())->withInput();

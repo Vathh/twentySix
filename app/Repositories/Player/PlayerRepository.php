@@ -4,6 +4,7 @@ namespace App\Repositories\Player;
 
 use App\Domain\PlayerDomain;
 use App\Enums\AssignableEntityType;
+use App\Models\League\League;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
@@ -67,7 +68,8 @@ class PlayerRepository
     {
         match ($targetType) {
             AssignableEntityType::ORGANIZATION => $this->addToOrganization($name, $targetId),
-            AssignableEntityType::SEASON => $this->addToSeason($name, $targetId)
+            AssignableEntityType::SEASON => $this->addToSeason($name, $targetId),
+            AssignableEntityType::LEAGUE => $this->addToLeague($name, $targetId),
         };
     }
 
@@ -90,14 +92,14 @@ class PlayerRepository
     }
 
     /**
-     * Znajduje gościa o danej nazwie w sezonie lub organizacji
-     * @param string $name
-     * @param int|null $seasonId
-     * @param int|null $organizationId
-     * @return PlayerDomain|null
+     * Znajduje gościa o danej nazwie w sezonie, organizacji albo lidze.
      */
-    public function findGuestByName(string $name, ?int $seasonId = null, ?int $organizationId = null): ?PlayerDomain
-    {
+    public function findGuestByName(
+        string $name,
+        ?int $seasonId = null,
+        ?int $organizationId = null,
+        ?int $leagueId = null,
+    ): ?PlayerDomain {
         $query = Player::where('name', $name)
             ->whereNull('user_id'); // Tylko goście
 
@@ -109,6 +111,10 @@ class PlayerRepository
             $query->where('organization_id', $organizationId);
         }
 
+        if ($leagueId) {
+            $query->where('league_id', $leagueId);
+        }
+
         $player = $query->first();
 
         return $player ? PlayerDomain::fromEloquent($player) : null;
@@ -117,25 +123,23 @@ class PlayerRepository
     /**
      * Generuje unikalną nazwę dla gościa (dodaje numer jeśli potrzeba)
      * Format: "Tomek", "Tomek 1", "Tomek 2", itd.
-     * @param string $baseName
-     * @param int|null $seasonId
-     * @param int|null $organizationId
-     * @return string
      */
-    public function generateUniqueGuestName(string $baseName, ?int $seasonId = null, ?int $organizationId = null): string
-    {
-        // Sprawdź czy sama nazwa bazowa jest wolna
-        if (!$this->findGuestByName($baseName, $seasonId, $organizationId)) {
+    public function generateUniqueGuestName(
+        string $baseName,
+        ?int $seasonId = null,
+        ?int $organizationId = null,
+        ?int $leagueId = null,
+    ): string {
+        if (! $this->findGuestByName($baseName, $seasonId, $organizationId, $leagueId)) {
             return $baseName;
         }
 
-        // Jeśli nie, dodaj numer
         $counter = 1;
-        $newName = $baseName . ' ' . $counter;
+        $newName = $baseName.' '.$counter;
 
-        while ($this->findGuestByName($newName, $seasonId, $organizationId)) {
+        while ($this->findGuestByName($newName, $seasonId, $organizationId, $leagueId)) {
             $counter++;
-            $newName = $baseName . ' ' . $counter;
+            $newName = $baseName.' '.$counter;
         }
 
         return $newName;
@@ -296,6 +300,14 @@ class PlayerRepository
         $season = Season::findOrFail($seasonId);
         $season->guests()->create([
             'name' => $name
+        ]);
+    }
+
+    private function addToLeague(string $name, int $leagueId): void
+    {
+        $league = League::query()->findOrFail($leagueId);
+        $league->guests()->create([
+            'name' => $name,
         ]);
     }
 }
