@@ -95,10 +95,13 @@ class LeagueSeasonService
                     ]);
                 }
             }
-        } elseif ($endDate === null || $endDate === '') {
-            throw ValidationException::withMessages([
-                'endDate' => 'Podaj datę zakończenia sezonu.',
-            ]);
+        } else {
+            $resolvedEnd = $deadlineAt ?: $endDate;
+            if ($resolvedEnd === null || $resolvedEnd === '') {
+                throw ValidationException::withMessages([
+                    'deadline_at' => 'Podaj termin wszystkich meczów — to będzie też data zakończenia sezonu.',
+                ]);
+            }
         }
 
         $winMode = $allowsDraws ? MatchWinMode::BEST_OF : MatchWinMode::FIRST_TO;
@@ -120,9 +123,9 @@ class LeagueSeasonService
             'matchday_length_days' => $lengthDays,
             'matchday_planning' => $planning,
             'start_date' => $startDate,
-            'end_date' => $resolvedEnd,
+            'end_date' => Carbon::parse($resolvedEnd)->toDateString(),
             'deadline_at' => $mode === LeagueCalendarMode::DEADLINE
-                ? ($deadlineAt ? Carbon::parse($deadlineAt)->endOfDay() : Carbon::parse($resolvedEnd)->endOfDay())
+                ? Carbon::parse($resolvedEnd)->endOfDay()
                 : null,
         ]);
 

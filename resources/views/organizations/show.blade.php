@@ -84,7 +84,7 @@
                     @endforelse
                 </div>
 
-                <h2 class="section-title mt-12">Sezony</h2>
+                <h2 class="section-title mt-12">Sezony turniejowe</h2>
                 <div class="space-y-3">
                     @forelse($seasons as $season)
                         <a href="{{ route('seasons.show', ['season' => $season->id]) }}">

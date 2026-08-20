@@ -8,7 +8,8 @@
               x-data="{
                   mode: '{{ old('calendar_mode', 'matchdays') }}',
                   planning: '{{ old('matchday_planning', 'fixed_length') }}',
-                  allowsDraws: '{{ old('allows_draws') ? '1' : '0' }}'
+                  allowsDraws: '{{ old('allows_draws') ? '1' : '0' }}',
+                  deadlineAt: '{{ old('deadline_at') }}'
               }">
             @csrf
             <h1 class="page-title text-center">Nowy sezon ligowy</h1>
@@ -57,7 +58,14 @@
 
             <div x-show="mode === 'deadline'" x-cloak>
                 <label class="form-label text-accent" for="deadline_at">Termin wszystkich meczów</label>
-                <input class="mb-5 input-field" type="date" id="deadline_at" name="deadline_at" value="{{ old('deadline_at') }}">
+                <input class="mb-2 input-field" type="date" id="deadline_at" name="deadline_at"
+                       x-model="deadlineAt"
+                       :required="mode === 'deadline'"
+                       value="{{ old('deadline_at') }}">
+                <p class="text-text-muted text-sm mb-5">
+                    Do tego dnia wszystkie mecze sezonu zasadniczego mają być rozegrane.
+                    To będzie też data zakończenia sezonu.
+                </p>
             </div>
 
             <label class="form-label text-accent" for="rounds_each">Spotkania każdy z każdym</label>
@@ -100,10 +108,21 @@
             <label class="form-label text-accent" for="startDate">Data rozpoczęcia</label>
             <input class="mb-5 input-field" type="date" id="startDate" name="startDate" value="{{ old('startDate') }}" required>
 
-            <div x-show="mode === 'deadline' || planning === 'equal_span'" x-cloak>
+            <div x-show="mode === 'matchdays' && planning === 'equal_span'" x-cloak>
                 <label class="form-label text-accent" for="endDate">Data zakończenia</label>
                 <input class="mb-5 input-field" type="date" id="endDate" name="endDate" value="{{ old('endDate') }}"
-                       :required="mode === 'deadline' || planning === 'equal_span'">
+                       :required="mode === 'matchdays' && planning === 'equal_span'">
+            </div>
+
+            <div x-show="mode === 'deadline'" x-cloak>
+                <p class="form-label text-accent">Data zakończenia</p>
+                <p class="text-text mb-5" x-show="deadlineAt" x-cloak>
+                    <span x-text="deadlineAt"></span>
+                    <span class="text-text-muted text-sm"> — jak termin wszystkich meczów</span>
+                </p>
+                <p class="text-text-muted text-sm mb-5" x-show="!deadlineAt" x-cloak>
+                    Pojawi się tu data z pola „Termin wszystkich meczów”.
+                </p>
             </div>
 
             <p class="text-text-muted text-sm mb-5" x-show="mode === 'matchdays' && planning === 'fixed_length'" x-cloak>

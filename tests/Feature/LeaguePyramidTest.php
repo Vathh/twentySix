@@ -97,7 +97,7 @@ class LeaguePyramidTest extends TestCase
             'calendar_mode' => 'deadline',
             'rounds_each' => 1,
             'startDate' => '2026-09-01',
-            'endDate' => '2026-12-01',
+            'deadline_at' => '2026-12-01',
             'start_now' => 1,
         ]);
         $seasonResponse->assertRedirect();
@@ -317,7 +317,7 @@ class LeaguePyramidTest extends TestCase
             'calendar_mode' => 'deadline',
             'rounds_each' => 1,
             'startDate' => '2026-09-01',
-            'endDate' => '2026-10-01',
+            'deadline_at' => '2026-10-01',
             'allows_draws' => 1,
             'win_length' => 6,
             'start_now' => 1,
@@ -327,6 +327,8 @@ class LeaguePyramidTest extends TestCase
         $this->assertTrue((bool) $season->allows_draws);
         $this->assertSame(6, (int) $season->win_length);
         $this->assertSame('best_of', $season->win_mode->value);
+        $this->assertSame('2026-10-01', $season->end_date->format('Y-m-d'));
+        $this->assertSame('2026-10-01', $season->deadline_at->toDateString());
         $game = $season->games()->first();
         $this->assertSame('best_of', $game->win_mode->value);
         $this->assertSame(6, (int) $game->win_length);

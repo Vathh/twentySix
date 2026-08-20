@@ -58,7 +58,7 @@ class LeagueSeasonController extends Controller
             'rounds_each' => 'required|integer|in:1,2',
             'startDate' => 'required|date',
             'endDate' => 'nullable|date|after_or_equal:startDate',
-            'deadline_at' => 'nullable|date',
+            'deadline_at' => 'nullable|required_if:calendar_mode,deadline|date|after_or_equal:startDate',
             'matchday_length_days' => 'nullable|integer|min:1|max:60',
             'start_now' => 'sometimes|boolean',
             'allows_draws' => 'sometimes|boolean',

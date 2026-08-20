@@ -16,6 +16,7 @@ use App\Support\Organization\OrganizationMatchFormatPresets;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -122,16 +123,37 @@ class OrganizationController extends Controller
             ->with('success', 'Pomyślnie zaktualizowano organizację');
     }
 
-    public function relatedUsers(Request $request, int $organizationId): Factory|View
+    public function relatedUsers(Request $request, int $organizationId): Factory|View|JsonResponse
     {
         $organization = $this->loadAndAuthorize($organizationId, ['relatedUsers']);
 
-        $search = $request->input('search');
         $pendingInvitations = $this->organizationInvitationService->getPendingForOrganization($organizationId);
         $excludeFromSearch = collect($organization->relatedUsers)
             ->concat($pendingInvitations->map(fn ($invitation) => ['id' => $invitation->userId]));
 
-        $users = $this->userService->search($excludeFromSearch, $search);
+        if ($request->wantsJson()) {
+            try {
+                $users = $this->userService->search(
+                    $excludeFromSearch,
+                    $request->input('q', $request->input('search')),
+                );
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'message' => collect($e->errors())->flatten()->first() ?: 'Nieprawidłowe wyszukiwanie.',
+                    'users' => [],
+                ], 422);
+            }
+
+            return response()->json([
+                'users' => $users
+                    ->map(fn ($user) => [
+                        'id' => $user->id,
+                        'name' => $user->player?->name ?? '—',
+                    ])
+                    ->values()
+                    ->all(),
+            ]);
+        }
 
         $relatedUsers = $this->userService->sortByName($organization->relatedUsers);
 
@@ -139,11 +161,10 @@ class OrganizationController extends Controller
             'organization' => $organization,
             'relatedUsers' => $relatedUsers,
             'pendingInvitations' => $pendingInvitations,
-            'users' => $users
         ]);
     }
 
-    public function addRelatedUser(Request $request, int $organizationId)
+    public function addRelatedUser(Request $request, int $organizationId): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($organizationId);
 
@@ -152,32 +173,58 @@ class OrganizationController extends Controller
         ]);
 
         try {
-            $this->organizationInvitationService->send(
+            $invitation = $this->organizationInvitationService->send(
                 $organizationId,
                 $validated['user_id'],
                 Auth::id(),
             );
         } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            }
+
             return redirect()
                 ->route('organizations.relatedUsers', $organizationId)
                 ->with('error', $e->getMessage());
         }
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'ok' => true,
+                'invitation' => [
+                    'id' => $invitation->id,
+                    'name' => $invitation->userPlayer?->name ?? 'Brak nazwy',
+                ],
+                'message' => 'Wysłano zaproszenie do organizacji',
+            ]);
+        }
+
         return redirect()
-                    ->route('organizations.relatedUsers', $organizationId)
-                    ->with('success', 'Wysłano zaproszenie do organizacji');
+            ->route('organizations.relatedUsers', $organizationId)
+            ->with('success', 'Wysłano zaproszenie do organizacji');
     }
 
-    public function cancelRelatedUserInvitation(Request $request, int $organizationId, int $invitation)
+    public function cancelRelatedUserInvitation(Request $request, int $organizationId, int $invitation): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($organizationId);
 
         try {
             $this->organizationInvitationService->cancel($organizationId, $invitation);
         } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            }
+
             return redirect()
                 ->route('organizations.relatedUsers', $organizationId)
                 ->with('error', $e->getMessage());
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Anulowano zaproszenie',
+            ]);
         }
 
         return redirect()
@@ -185,7 +232,7 @@ class OrganizationController extends Controller
             ->with('success', 'Anulowano zaproszenie');
     }
 
-    public function removeRelatedUser(Request $request, int $organizationId)
+    public function removeRelatedUser(Request $request, int $organizationId): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($organizationId);
 
@@ -195,9 +242,16 @@ class OrganizationController extends Controller
 
         $this->organizationInvitationService->removeMember($organizationId, $validated['user_id']);
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Użytkownik usunięty z organizacji',
+            ]);
+        }
+
         return redirect()
-                    ->route('organizations.relatedUsers', $organizationId)
-                    ->with('success', 'Użytkownik usunięty z organizacji');
+            ->route('organizations.relatedUsers', $organizationId)
+            ->with('success', 'Użytkownik usunięty z organizacji');
     }
 
     public function admins(int $organizationId): Factory|View
@@ -283,7 +337,7 @@ class OrganizationController extends Controller
             'player_id' => 'required|exists:players,id',
         ]);
 
-        $this->playerService->removeGuest($validated['player_id']);
+        $this->playerService->removeGuest($validated['player_id'], AssignableEntityType::ORGANIZATION, $organizationId);
 
         return redirect()
             ->route('organizations.guests', $organizationId)

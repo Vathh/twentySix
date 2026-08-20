@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Validation\ValidationException;
 
 class LeagueController extends Controller
 {
@@ -196,17 +197,38 @@ class LeagueController extends Controller
         ]);
     }
 
-    public function relatedUsers(Request $request, League $league): Factory|View
+    public function relatedUsers(Request $request, League $league): Factory|View|JsonResponse
     {
         $this->authorize('update', $this->leagueService->getForPolicy($league->id));
 
-        return view('leagues.relatedUsers', $this->leagueService->relatedUsersData(
-            $league->id,
-            $request->input('search'),
-        ));
+        if ($request->wantsJson()) {
+            try {
+                $data = $this->leagueService->relatedUsersData(
+                    $league->id,
+                    $request->input('q', $request->input('search')),
+                );
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'message' => collect($e->errors())->flatten()->first() ?: 'Nieprawidłowe wyszukiwanie.',
+                    'users' => [],
+                ], 422);
+            }
+
+            return response()->json([
+                'users' => $data['users']
+                    ->map(fn ($user) => [
+                        'id' => $user->id,
+                        'name' => $user->player?->name ?? '—',
+                    ])
+                    ->values()
+                    ->all(),
+            ]);
+        }
+
+        return view('leagues.relatedUsers', $this->leagueService->relatedUsersData($league->id, null));
     }
 
-    public function addRelatedUser(Request $request, League $league): RedirectResponse
+    public function addRelatedUser(Request $request, League $league): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $this->leagueService->getForPolicy($league->id));
 
@@ -214,14 +236,22 @@ class LeagueController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $this->leagueService->addRelatedUser($league->id, (int) $validated['user_id']);
+        $user = $this->leagueService->addRelatedUser($league->id, (int) $validated['user_id']);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'ok' => true,
+                'user' => $user,
+                'message' => 'Użytkownik dodany do puli ligi',
+            ]);
+        }
 
         return redirect()
             ->route('leagues.relatedUsers', $league)
             ->with('success', 'Użytkownik dodany do puli ligi');
     }
 
-    public function removeRelatedUser(Request $request, League $league): RedirectResponse
+    public function removeRelatedUser(Request $request, League $league): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $this->leagueService->getForPolicy($league->id));
 
@@ -232,7 +262,18 @@ class LeagueController extends Controller
         try {
             $this->leagueService->removeRelatedUser($league->id, (int) $validated['user_id']);
         } catch (DomainException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            }
+
             return back()->with('error', $e->getMessage());
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Użytkownik usunięty z puli ligi',
+            ]);
         }
 
         return redirect()

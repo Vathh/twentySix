@@ -49,9 +49,9 @@ class PlayerService
         }
     }
 
-    public function removeGuest(int $playerId): void
+    public function removeGuest(int $playerId, AssignableEntityType $targetType, int $targetId): void
     {
-        $this->playerRepository->removeGuest($playerId);
+        $this->playerRepository->removeGuest($playerId, $targetType, $targetId);
     }
 
     public function getRelatedPlayers(int $seasonId): Collection

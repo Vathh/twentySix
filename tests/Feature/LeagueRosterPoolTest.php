@@ -193,4 +193,128 @@ class LeagueRosterPoolTest extends TestCase
 
         $this->assertSame(8, $division->fresh()->capacity);
     }
+
+    #[Test]
+    public function removing_league_guest_does_not_delete_organization_guest(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->post(route('organizations.guests.add', $this->organization->id), [
+            'name' => 'Bartek',
+        ])->assertRedirect();
+
+        $orgGuest = Player::query()
+            ->where('name', 'Bartek')
+            ->where('organization_id', $this->organization->id)
+            ->first();
+        $this->assertNotNull($orgGuest);
+
+        $orgGuest->update(['league_id' => $this->league->id]);
+
+        $this->delete(route('leagues.guests.remove', $this->league), [
+            'player_id' => $orgGuest->id,
+        ])->assertRedirect(route('leagues.guests', $this->league));
+
+        $orgGuest->refresh();
+        $this->assertSame($this->organization->id, $orgGuest->organization_id);
+        $this->assertNull($orgGuest->league_id);
+        $this->assertFalse($this->league->fresh()->guests->contains('id', $orgGuest->id));
+        $this->assertTrue($this->organization->fresh()->guests->contains('id', $orgGuest->id));
+    }
+
+    #[Test]
+    public function removing_league_only_guest_deletes_that_player(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->post(route('leagues.guests.add', $this->league), [
+            'name' => 'Gość Liga',
+        ])->assertRedirect();
+
+        $guest = Player::query()
+            ->where('name', 'Gość Liga')
+            ->where('league_id', $this->league->id)
+            ->first();
+        $this->assertNotNull($guest);
+
+        $this->delete(route('leagues.guests.remove', $this->league), [
+            'player_id' => $guest->id,
+        ])->assertRedirect();
+
+        $this->assertDatabaseMissing('players', ['id' => $guest->id]);
+    }
+
+    #[Test]
+    public function removing_organization_guest_does_not_delete_league_guest(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->post(route('organizations.guests.add', $this->organization->id), [
+            'name' => 'Bartek',
+        ])->assertRedirect();
+        $this->post(route('leagues.guests.add', $this->league), [
+            'name' => 'Bartek',
+        ])->assertRedirect();
+
+        $orgGuest = Player::query()
+            ->where('name', 'Bartek')
+            ->where('organization_id', $this->organization->id)
+            ->first();
+        $leagueGuest = Player::query()
+            ->where('name', 'Bartek')
+            ->where('league_id', $this->league->id)
+            ->first();
+        $this->assertNotNull($orgGuest);
+        $this->assertNotNull($leagueGuest);
+        $this->assertNotSame($orgGuest->id, $leagueGuest->id);
+
+        $this->delete(route('organizations.guests.remove', $this->organization->id), [
+            'player_id' => $orgGuest->id,
+        ])->assertRedirect();
+
+        $this->assertDatabaseMissing('players', ['id' => $orgGuest->id]);
+        $this->assertDatabaseHas('players', [
+            'id' => $leagueGuest->id,
+            'league_id' => $this->league->id,
+        ]);
+    }
+
+    #[Test]
+    public function related_user_search_returns_json_without_full_page(): void
+    {
+        $this->actingAs($this->admin);
+
+        $found = User::factory()->create();
+        app(PlayerService::class)->create('Nowak Jan', $found->id);
+        $already = User::factory()->create();
+        app(PlayerService::class)->create('Nowak Anna', $already->id);
+        $this->league->relatedUsers()->attach($already->id);
+
+        $this->getJson(route('leagues.relatedUsers', $this->league).'?q=Now')
+            ->assertStatus(422);
+
+        $this->getJson(route('leagues.relatedUsers', $this->league).'?q=Nowak')
+            ->assertOk()
+            ->assertJsonPath('users.0.name', 'Nowak Jan')
+            ->assertJsonMissing(['name' => 'Nowak Anna']);
+    }
+
+    #[Test]
+    public function related_user_add_accepts_json_without_redirect(): void
+    {
+        $this->actingAs($this->admin);
+
+        $found = User::factory()->create();
+        app(PlayerService::class)->create('Nowak Jan', $found->id);
+
+        $this->postJson(route('leagues.relatedUsers.add', $this->league), [
+            'user_id' => $found->id,
+        ])
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('user.id', $found->id)
+            ->assertJsonPath('user.name', 'Nowak Jan');
+
+        $this->assertTrue($this->league->fresh()->relatedUsers->contains('id', $found->id));
+    }
 }

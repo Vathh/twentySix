@@ -235,7 +235,10 @@ class SeasonControllerTest extends TestCase
         $response->assertRedirect("/seasons/{$season->id}/guests");
         $response->assertSessionHas('success');
 
-        $this->assertDatabaseMissing('players', ['id' => $guest->id]);
+        $guest->refresh();
+        $this->assertNull($guest->season_id);
+        $this->assertSame($this->organization->id, $guest->organization_id);
+        $this->assertDatabaseHas('players', ['id' => $guest->id]);
     }
 }
 

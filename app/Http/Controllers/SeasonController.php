@@ -13,8 +13,10 @@ use App\Services\User\UserService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class SeasonController extends Controller
@@ -98,24 +100,43 @@ class SeasonController extends Controller
         //
     }
 
-    public function relatedUsers(Request $request, int $seasonId): Factory|View
+    public function relatedUsers(Request $request, int $seasonId): Factory|View|JsonResponse
     {
         $season = $this->loadAndAuthorize($seasonId, ['relatedUsers']);
 
-        $search = $request->input('search');
+        if ($request->wantsJson()) {
+            try {
+                $users = $this->userService->search(
+                    $season->relatedUsers,
+                    $request->input('q', $request->input('search')),
+                );
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'message' => collect($e->errors())->flatten()->first() ?: 'Nieprawidłowe wyszukiwanie.',
+                    'users' => [],
+                ], 422);
+            }
 
-        $users = $this->userService->search($season->relatedUsers, $search);
+            return response()->json([
+                'users' => $users
+                    ->map(fn ($user) => [
+                        'id' => $user->id,
+                        'name' => $user->player?->name ?? '—',
+                    ])
+                    ->values()
+                    ->all(),
+            ]);
+        }
 
         $relatedUsers = $this->seasonService->getRelatedUsers($seasonId);
 
         return view('seasons.relatedUsers', [
             'season' => $season,
             'relatedUsers' => $relatedUsers,
-            'users' => $users
         ]);
     }
 
-    public function addRelatedUser(Request $request, int $seasonId)
+    public function addRelatedUser(Request $request, int $seasonId): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($seasonId);
 
@@ -123,14 +144,22 @@ class SeasonController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $this->seasonService->addRelatedUser($seasonId, $validated['user_id']);
+        $user = $this->seasonService->addRelatedUser($seasonId, $validated['user_id']);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'ok' => true,
+                'user' => $user,
+                'message' => 'Użytkownik dodany do sezonu',
+            ]);
+        }
 
         return redirect()
             ->route('seasons.relatedUsers', $seasonId)
             ->with('success', 'Użytkownik dodany do sezonu');
     }
 
-    public function removeRelatedUser(Request $request, int $seasonId)
+    public function removeRelatedUser(Request $request, int $seasonId): RedirectResponse|JsonResponse
     {
         $this->loadAndAuthorize($seasonId);
 
@@ -139,6 +168,13 @@ class SeasonController extends Controller
         ]);
 
         $this->seasonService->removeRelatedUser($seasonId, $validated['user_id']);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Użytkownik usunięty z sezonu',
+            ]);
+        }
 
         return redirect()
             ->route('seasons.relatedUsers', $seasonId)
@@ -236,7 +272,7 @@ class SeasonController extends Controller
             'player_id' => 'required|exists:players,id',
         ]);
 
-        $this->playerService->removeGuest($validated['player_id']);
+        $this->playerService->removeGuest($validated['player_id'], AssignableEntityType::SEASON, $seasonId);
 
         return redirect()
             ->route('seasons.guests', $seasonId)

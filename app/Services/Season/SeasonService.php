@@ -81,7 +81,7 @@ class SeasonService
         return $this->seasonRepository->getRelatedUsers($seasonId);
     }
 
-    public function addRelatedUser(int $seasonId, int $userId): void
+    public function addRelatedUser(int $seasonId, int $userId): array
     {
         // Pobierz gracza użytkownika (domenowy obiekt)
         $playerDomain = $this->playerRepository->findByUserId($userId);
@@ -111,6 +111,11 @@ class SeasonService
         }
 
         $this->seasonRepository->addRelatedUser($seasonId, $userId);
+
+        return [
+            'id' => $userId,
+            'name' => $playerDomain?->name ?? '—',
+        ];
     }
 
     public function removeRelatedUser(int $seasonId, int $userId): void

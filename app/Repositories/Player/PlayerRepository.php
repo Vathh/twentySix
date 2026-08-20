@@ -10,6 +10,7 @@ use App\Models\Player\Player;
 use App\Models\Season\Season;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PlayerRepository
 {
@@ -73,9 +74,35 @@ class PlayerRepository
         };
     }
 
-    public function removeGuest(int $playerId): void
+    public function removeGuest(int $playerId, AssignableEntityType $targetType, int $targetId): void
     {
-        Player::destroy($playerId);
+        $player = Player::query()->find($playerId);
+        if ($player === null || $player->user_id !== null) {
+            throw ValidationException::withMessages(['player_id' => 'Nieprawidłowy gość.']);
+        }
+
+        $belongs = match ($targetType) {
+            AssignableEntityType::ORGANIZATION => (int) $player->organization_id === $targetId,
+            AssignableEntityType::SEASON => (int) $player->season_id === $targetId,
+            AssignableEntityType::LEAGUE => (int) $player->league_id === $targetId,
+        };
+        if (! $belongs) {
+            throw ValidationException::withMessages(['player_id' => 'Ten gość nie należy do tej puli.']);
+        }
+
+        match ($targetType) {
+            AssignableEntityType::ORGANIZATION => $player->organization_id = null,
+            AssignableEntityType::SEASON => $player->season_id = null,
+            AssignableEntityType::LEAGUE => $player->league_id = null,
+        };
+
+        if ($player->organization_id === null && $player->season_id === null && $player->league_id === null) {
+            $player->delete();
+
+            return;
+        }
+
+        $player->save();
     }
 
     /**

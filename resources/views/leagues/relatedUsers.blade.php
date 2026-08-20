@@ -9,53 +9,13 @@
         <h1 class="page-title">Użytkownicy ligi: {{ $league->name }}</h1>
         <p class="text-text-muted mb-6">Pula powiązanych — stąd dodajesz zawodników do szczebli.</p>
 
-        <div class="card mb-8">
-            <h2 class="section-title text-accent">Aktualnie powiązani użytkownicy</h2>
-            @if(empty($relatedUsers))
-                <p class="text-text-secondary">Brak użytkowników powiązanych z tą ligą.</p>
-            @else
-                <div class="flex flex-wrap gap-3">
-                    @foreach($relatedUsers as $user)
-                        <div class="tile flex items-center justify-center flex-col">
-                            <span class="card-title mb-4 text-wrap text-center">{{ $user['name'] }}</span>
-                            <form action="{{ route('leagues.relatedUsers.remove', $league) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <input type="hidden" name="user_id" value="{{ $user['id'] }}">
-                                <button type="submit" class="btn-mini-danger">Usuń</button>
-                            </form>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </div>
-
-        <h2 class="section-title text-center">Wyszukiwanie użytkowników</h2>
-
-        <form action="{{ route('leagues.relatedUsers', $league) }}" method="GET" class="mb-6 flex flex-wrap items-center gap-4">
-            <input type="text" name="search" placeholder="Szukaj użytkownika..."
-                   value="{{ request('search') }}" class="input-field flex-1 min-w-[200px]">
-            <button type="submit" class="btn btn-primary">Szukaj</button>
-        </form>
-
-        <x-errors/>
-
-        @if(request('search') && $users->isEmpty())
-            <p class="empty-state">Brak wyników wyszukiwania.</p>
-        @else
-            <div class="flex flex-wrap gap-3 justify-center">
-                @foreach($users as $user)
-                    <div class="tile flex items-center justify-center flex-col bg-bg-elevated">
-                        <span class="card-title mb-4 text-wrap text-center">{{ $user->player->name }}</span>
-                        <form action="{{ route('leagues.relatedUsers.add', $league) }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="user_id" value="{{ $user->id }}">
-                            <button type="submit" class="btn btn-mini">Dodaj</button>
-                        </form>
-                    </div>
-                @endforeach
-            </div>
-        @endif
+        <x-related-user-search
+            :search-url="route('leagues.relatedUsers', $league)"
+            :add-url="route('leagues.relatedUsers.add', $league)"
+            :remove-url="route('leagues.relatedUsers.remove', $league)"
+            :related="$relatedUsers"
+            empty-related="Brak użytkowników powiązanych z tą ligą."
+        />
 
         <div class="flex justify-center mt-8">
             <a href="{{ route('leagues.show', $league) }}" class="btn btn-secondary">

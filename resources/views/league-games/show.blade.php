@@ -43,7 +43,12 @@
             @elseif($game->status->value === 'in_progress')
                 <p class="text-success-bright">Mecz w trakcie (sędziowanie na telefonie).</p>
             @else
-                <p class="text-text-muted">Nie rozegrany@if($overdue) · zaległy@endif</p>
+                <p class="text-text-muted">
+                    Nie rozegrany
+                    @if($overdue)
+                        · zaległy
+                    @endif
+                </p>
                 @if($game->deadline_at)
                     <p class="text-text-muted text-xs mt-1">Termin: {{ $game->deadline_at->format('Y-m-d') }}</p>
                 @endif

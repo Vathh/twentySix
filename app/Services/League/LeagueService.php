@@ -267,7 +267,10 @@ class LeagueService
         ];
     }
 
-    public function addRelatedUser(int $leagueId, int $userId): void
+    /**
+     * @return array{id: int, name: string}
+     */
+    public function addRelatedUser(int $leagueId, int $userId): array
     {
         $playerDomain = $this->playerRepository->findByUserId($userId);
         if ($playerDomain) {
@@ -279,6 +282,11 @@ class LeagueService
         }
 
         $this->leagueRepository->addRelatedUser($leagueId, $userId);
+
+        return [
+            'id' => $userId,
+            'name' => $playerDomain?->name ?? '—',
+        ];
     }
 
     public function removeRelatedUser(int $leagueId, int $userId): void
@@ -318,7 +326,7 @@ class LeagueService
     public function removeGuest(int $leagueId, int $playerId): void
     {
         $this->removeFromRosterIfPresent($leagueId, $playerId);
-        $this->playerService->removeGuest($playerId);
+        $this->playerService->removeGuest($playerId, AssignableEntityType::LEAGUE, $leagueId);
     }
 
     private function removeFromRosterIfPresent(int $leagueId, int $playerId): void
