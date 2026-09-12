@@ -14,7 +14,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Player extends Model
 {
-    protected $fillable = ['name', 'description', 'user_id', 'organization_id', 'season_id', 'league_id'];
+    protected $fillable = ['name', 'description', 'user_id', 'is_bye', 'organization_id', 'season_id', 'league_id'];
+
+    protected $casts = [
+        'is_bye' => 'boolean',
+    ];
 
     public function user(): BelongsTo
     {

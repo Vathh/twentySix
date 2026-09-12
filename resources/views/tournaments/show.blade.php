@@ -57,40 +57,44 @@
                     ])
                 @endif
 
-                <div class="overflow-x-auto -mx-1 px-1 mb-8 mt-10">
-                    <div class="flex border-b border-border min-w-max">
-                    @php
-                        $isEliminationOnly = $tournament->format->isEliminationOnly();
-                        if ($isEliminationOnly && $tab === 'groups') {
-                            $tab = 'playoff';
-                        }
-                        $tabs = $isEliminationOnly
-                            ? [
-                                'results' => 'Wyniki',
-                                'playoff' => 'Drabinka',
-                                'achievements' => 'Osiągnięcia',
-                            ]
-                            : [
-                                'results' => 'Wyniki',
-                                'playoff' => 'Playoff',
-                                'groups' => 'Grupy',
-                                'achievements' => 'Osiągnięcia',
-                            ];
-                    @endphp
+                @if(! $tournament->isStarted())
+                    <p class="text-center text-text-muted mt-10">
+                        Turniej jeszcze się nie rozpoczął. Wyniki i tabele pojawią się po starcie.
+                    </p>
+                @else
+                    <div class="overflow-x-auto -mx-1 px-1 mb-8 mt-10">
+                        <div class="flex border-b border-border min-w-max">
+                        @php
+                            $isEliminationOnly = $tournament->format->isEliminationOnly();
+                            if ($isEliminationOnly && $tab === 'groups') {
+                                $tab = 'playoff';
+                            }
+                            $tabs = $isEliminationOnly
+                                ? [
+                                    'results' => 'Wyniki',
+                                    'playoff' => 'Drabinka',
+                                    'achievements' => 'Osiągnięcia',
+                                ]
+                                : [
+                                    'results' => 'Wyniki',
+                                    'playoff' => 'Playoff',
+                                    'groups' => 'Grupy',
+                                    'achievements' => 'Osiągnięcia',
+                                ];
+                        @endphp
 
-                    @foreach($tabs as $key => $label)
-                        <a href="{{ route('tournaments.show', [$tournament->id, 'tab' => $key]) }}"
-                           class="px-4 sm:px-5 py-3 text-sm font-semibold transition border-b-2 -mb-px whitespace-nowrap
-                  {{ $tab === $key
-                        ? 'border-accent text-accent'
-                        : 'border-transparent text-text-muted hover:text-accent' }}">
-                            {{ $label }}
-                        </a>
-                    @endforeach
+                        @foreach($tabs as $key => $label)
+                            <a href="{{ route('tournaments.show', [$tournament->id, 'tab' => $key]) }}"
+                               class="px-4 sm:px-5 py-3 text-sm font-semibold transition border-b-2 -mb-px whitespace-nowrap
+                      {{ $tab === $key
+                            ? 'border-accent text-accent'
+                            : 'border-transparent text-text-muted hover:text-accent' }}">
+                                {{ $label }}
+                            </a>
+                        @endforeach
+                        </div>
                     </div>
-                </div>
 
-                @if($tournament->isStarted())
                     @if($tab === 'playoff')
                         @if($tournament->hasPlayoffBracket())
                             @include('tournaments.tabs.playoff', [

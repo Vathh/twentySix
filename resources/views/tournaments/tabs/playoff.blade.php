@@ -91,19 +91,25 @@
                             </div>
                         @endforeach
                     </div>
-
-                    @if($round['key'] === 'FINAL' && $thirdGames)
-                        <div class="pt-8 shrink-0">
-                            <p class="text-center text-sm text-text-muted mb-2">
-                                Mecz o 3. miejsce
-                            </p>
-                            @foreach($thirdGames as $game)
-                                @include('tournaments.partials.bracket-game', ['game' => $game])
-                            @endforeach
-                        </div>
-                    @endif
                 </div>
             @endforeach
+
+            @if($thirdGames)
+                <div class="bracket-round flex flex-col min-w-[220px]">
+                    <p class="text-center text-sm text-text-muted mb-2 shrink-0 h-6 leading-6">
+                        Mecz o 3. miejsce
+                    </p>
+                    <div class="bracket-round-slots flex flex-col flex-1">
+                        @foreach($thirdGames as $game)
+                            <div class="bracket-slot flex flex-1 items-center py-1.5">
+                                <div class="w-full">
+                                    @include('tournaments.partials.bracket-game', ['game' => $game])
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
     @endif
 </div>

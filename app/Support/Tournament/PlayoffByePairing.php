@@ -5,16 +5,16 @@ namespace App\Support\Tournament;
 use App\Domain\Tournament\TournamentStartRules;
 
 /**
- * Losowe pary R1: gracze i bye w jednej puli (bez rozkładania bye).
- * Dwa bye w jednej parze są dozwolone — w następnej rundzie zostaje wolny los.
+ * Losowe pary R1: gracze i BYE w jednej puli (bez rozkładania bye).
+ * Dwa BYE w jednej parze są dozwolone — BYE awansuje do następnej rundy.
  */
 final class PlayoffByePairing
 {
     /**
      * @param  list<int>  $playerIds
-     * @return list<array{0: int|null, 1: int|null}>
+     * @return list<array{0: int, 1: int}>
      */
-    public static function pair(array $playerIds, int $bracketSize): array
+    public static function pair(array $playerIds, int $bracketSize, int $byePlayerId): array
     {
         $playerCount = count($playerIds);
 
@@ -29,15 +29,15 @@ final class PlayoffByePairing
         }
 
         $byeCount = $bracketSize - $playerCount;
-        $pool = array_merge(array_values($playerIds), array_fill(0, $byeCount, null));
+        $pool = array_merge(array_values($playerIds), array_fill(0, $byeCount, $byePlayerId));
         shuffle($pool);
 
         return self::chunkPairs($pool);
     }
 
     /**
-     * @param  list<int|null>  $orderedPool
-     * @return list<array{0: int|null, 1: int|null}>
+     * @param  list<int>  $orderedPool
+     * @return list<array{0: int, 1: int}>
      */
     public static function chunkPairs(array $orderedPool): array
     {

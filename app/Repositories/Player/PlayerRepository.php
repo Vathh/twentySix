@@ -13,6 +13,30 @@ use Illuminate\Validation\ValidationException;
 
 class PlayerRepository
 {
+    public function findOrCreateByePlayer(): PlayerDomain
+    {
+        $player = Player::query()->where('is_bye', true)->first();
+        if ($player === null) {
+            $player = Player::create([
+                'name' => \App\Domain\Game\PlayoffBye::DISPLAY_NAME,
+                'user_id' => null,
+                'is_bye' => true,
+            ]);
+        }
+
+        return PlayerDomain::fromEloquent($player);
+    }
+
+    public function byePlayerId(): int
+    {
+        return $this->findOrCreateByePlayer()->id;
+    }
+
+    public function isByePlayerId(int $playerId): bool
+    {
+        return Player::query()->where('id', $playerId)->where('is_bye', true)->exists();
+    }
+
     public function create(string $name, int $userId): PlayerDomain
     {
         $player = Player::create([
@@ -105,7 +129,8 @@ class PlayerRepository
     public function updateGuestName(int $playerId, string $newName): void
     {
         Player::where('id', $playerId)
-            ->whereNull('user_id') // Tylko goście
+            ->whereNull('user_id')
+            ->where('is_bye', false)
             ->update(['name' => $newName]);
     }
 

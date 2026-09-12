@@ -50,34 +50,15 @@ class PlayoffGameRepository
             ]);
     }
 
-    /**
-     * Bye vs bye — zamyka mecz bez zwycięzcy (w następnej rundzie zostaje wolny los).
-     */
-    public function finishEmptyByeMatch(int $gameId): void
-    {
-        DB::table('playoff_games')
-            ->where('id', $gameId)
-            ->where('status', GameStatus::SCHEDULED)
-            ->whereNull('player1_id')
-            ->whereNull('player2_id')
-            ->update([
-                'player1_score' => 0,
-                'player2_score' => 0,
-                'player1_legs_in_set' => 0,
-                'player2_legs_in_set' => 0,
-                'current_set_number' => 1,
-                'winner_id' => null,
-                'status' => GameStatus::FINISHED,
-            ]);
-    }
-
     public function tryLockScheduled(int $gameId): bool
     {
-        return DB::table('playoff_games')
+        return PlayoffGame::query()
             ->where('id', $gameId)
             ->where('status', GameStatus::SCHEDULED)
             ->whereNotNull('player1_id')
             ->whereNotNull('player2_id')
+            ->whereHas('player1', fn ($q) => $q->where('is_bye', false))
+            ->whereHas('player2', fn ($q) => $q->where('is_bye', false))
             ->update(['status' => GameStatus::IN_PROGRESS]) === 1;
     }
 
@@ -105,6 +86,10 @@ class PlayoffGameRepository
         return PlayoffGame::with(['tournament', 'player1', 'player2'])
             ->where('tournament_id', $tournamentId)
             ->whereIn('status', [GameStatus::SCHEDULED, GameStatus::IN_PROGRESS])
+            ->whereNotNull('player1_id')
+            ->whereNotNull('player2_id')
+            ->whereHas('player1', fn ($q) => $q->where('is_bye', false))
+            ->whereHas('player2', fn ($q) => $q->where('is_bye', false))
             ->get()
             ->map(fn ($game) => PlayoffGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2']));
     }
@@ -131,6 +116,7 @@ class PlayoffGameRepository
     {
         PlayoffGame::where('tournament_id', $tournamentId)
             ->where('slot', $slot)
+            ->where('status', GameStatus::SCHEDULED)
             ->update(['player1_id' => $playerId]);
     }
 
@@ -138,6 +124,7 @@ class PlayoffGameRepository
     {
         PlayoffGame::where('tournament_id', $tournamentId)
             ->where('slot', $slot)
+            ->where('status', GameStatus::SCHEDULED)
             ->update(['player2_id' => $playerId]);
     }
 
@@ -195,35 +182,20 @@ class PlayoffGameRepository
     }
 
     /**
+     * Bye vs BYE oraz gracz vs BYE — oba sloty wypełnione, co najmniej jeden to BYE.
+     *
      * @return Collection<int, PlayoffGameDomain>
      */
-    public function getScheduledByes(int $tournamentId): Collection
+    public function getScheduledByeGames(int $tournamentId, int $byePlayerId): Collection
     {
         return PlayoffGame::query()
             ->where('tournament_id', $tournamentId)
             ->where('status', GameStatus::SCHEDULED)
-            ->where(function ($q) {
-                $q->where(function ($inner) {
-                    $inner->whereNotNull('player1_id')->whereNull('player2_id');
-                })->orWhere(function ($inner) {
-                    $inner->whereNull('player1_id')->whereNotNull('player2_id');
-                });
+            ->whereNotNull('player1_id')
+            ->whereNotNull('player2_id')
+            ->where(function ($q) use ($byePlayerId) {
+                $q->where('player1_id', $byePlayerId)->orWhere('player2_id', $byePlayerId);
             })
-            ->orderBy('id')
-            ->get()
-            ->map(fn (PlayoffGame $game) => PlayoffGameDomain::fromEloquent($game));
-    }
-
-    /**
-     * @return Collection<int, PlayoffGameDomain>
-     */
-    public function getScheduledDoubleByes(int $tournamentId): Collection
-    {
-        return PlayoffGame::query()
-            ->where('tournament_id', $tournamentId)
-            ->where('status', GameStatus::SCHEDULED)
-            ->whereNull('player1_id')
-            ->whereNull('player2_id')
             ->orderBy('id')
             ->get()
             ->map(fn (PlayoffGame $game) => PlayoffGameDomain::fromEloquent($game));

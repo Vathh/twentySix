@@ -58,6 +58,9 @@ class ActiveGameDTO
         if ($game->player1 === null || $game->player2 === null) {
             return null;
         }
+        if ($game->player1->isBye || $game->player2->isBye) {
+            return null;
+        }
 
         return new self(
             id: $game->id,

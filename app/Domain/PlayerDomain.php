@@ -23,7 +23,8 @@ class PlayerDomain
         public readonly int $id,
         public readonly string $name,
         public readonly ?int $userId = null,
-        public readonly Collection $achievements = new Collection
+        public readonly Collection $achievements = new Collection,
+        public readonly bool $isBye = false,
     ) {}
 
     public static function fromEloquent(?Player $player, array $with = []): ?PlayerDomain
@@ -40,7 +41,8 @@ class PlayerDomain
             userId: $player->user_id,
             achievements: in_array('achievements', $with)
                 ? $player->achievements->map(fn ($achievement) => AchievementDomain::fromEloquent($achievement))->values()
-                : collect()
+                : collect(),
+            isBye: (bool) $player->is_bye,
         );
     }
 

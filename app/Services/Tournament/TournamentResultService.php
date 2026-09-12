@@ -5,6 +5,7 @@ namespace App\Services\Tournament;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameStage;
 use App\Factories\TournamentResultsFactory;
+use App\Repositories\Player\PlayerRepository;
 use App\Repositories\PointScheme\PointSchemeRuleRepository;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Repositories\Tournament\TournamentResultRepository;
@@ -19,6 +20,7 @@ class TournamentResultService
         private TournamentResultRepository $resultRepository,
         private PointSchemeRuleRepository $pointSchemeRuleRepository,
         private TournamentOverallPlaceService $overallPlaceService,
+        private PlayerRepository $playerRepository,
     ) {}
 
     public function createForGroupLosers(int $tournamentId): void
@@ -41,6 +43,9 @@ class TournamentResultService
 
     public function createForPlayoff(int $tournamentId, int $playerId, GameStage $stage, ?int $place): void
     {
+        if ($this->playerRepository->isByePlayerId($playerId)) {
+            return;
+        }
         $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
 
         if ($this->tracksSeasonPoints($tournament)) {
@@ -104,6 +109,9 @@ class TournamentResultService
 
     private function upsertPodiumPlace(int $tournamentId, int $playerId, GameStage $stage, int $place): void
     {
+        if ($this->playerRepository->isByePlayerId($playerId)) {
+            return;
+        }
         $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
 
         if ($this->tracksSeasonPoints($tournament)) {

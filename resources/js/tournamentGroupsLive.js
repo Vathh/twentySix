@@ -44,16 +44,30 @@ export function registerTournamentGroupsLive(Alpine) {
 		connection: 'connecting',
 		pusher: null,
 		pollTimer: null,
+		connectTimeout: null,
 
 		init() {
+			if (this.pusher || this.pollTimer) {
+				return;
+			}
 			this.connectWebSocket(config);
+			void this.fetchSnapshot();
 			this.pollTimer = setInterval(() => this.fetchSnapshot(), 30000);
+			this.connectTimeout = setTimeout(() => {
+				if (this.connection === 'connecting' || this.connection === 'reconnecting') {
+					this.connection = 'offline';
+				}
+			}, 8000);
 		},
 
 		destroy() {
 			if (this.pollTimer) {
 				clearInterval(this.pollTimer);
 				this.pollTimer = null;
+			}
+			if (this.connectTimeout) {
+				clearTimeout(this.connectTimeout);
+				this.connectTimeout = null;
 			}
 			if (this.pusher) {
 				this.pusher.unsubscribe(config.channel);
@@ -83,6 +97,11 @@ export function registerTournamentGroupsLive(Alpine) {
 
 			channel.bind('pusher:subscription_succeeded', () => {
 				this.connection = 'live';
+				if (this.connectTimeout) {
+					clearTimeout(this.connectTimeout);
+					this.connectTimeout = null;
+				}
+				void this.fetchSnapshot();
 			});
 			channel.bind('pusher:subscription_error', () => {
 				this.connection = 'error';
@@ -102,6 +121,17 @@ export function registerTournamentGroupsLive(Alpine) {
 				if (this.connection === 'live') {
 					this.connection = 'reconnecting';
 				}
+			});
+			this.pusher.connection.bind('connected', () => {
+				if (this.connection !== 'live') {
+					this.connection = 'connecting';
+				}
+			});
+			this.pusher.connection.bind('failed', () => {
+				this.connection = 'offline';
+			});
+			this.pusher.connection.bind('unavailable', () => {
+				this.connection = 'offline';
 			});
 		},
 

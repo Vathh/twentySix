@@ -12,6 +12,7 @@ use App\Enums\TournamentStatus;
 use App\Models\Player\Player;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\Tournament\Tournament;
+use App\Repositories\Player\PlayerRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Services\PlayoffGame\PlayoffService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,6 +34,7 @@ class DoubleEliminationByeResolutionTest extends TestCase
             'tablets_count' => 1,
         ]);
 
+        $byeId = app(PlayerRepository::class)->byePlayerId();
         $p1 = Player::create(['name' => 'Dropper']);
         $format = MatchFormat::default()->toDatabaseColumns();
 
@@ -41,7 +43,7 @@ class DoubleEliminationByeResolutionTest extends TestCase
             'bracket_side' => 'losers',
             'round' => 'L1',
             'slot' => 'L1-1',
-            'player1_id' => null,
+            'player1_id' => $byeId,
             'player2_id' => $p1->id,
             'status' => GameStatus::SCHEDULED,
             'winner_destination_slot' => 'L2-1-A',
@@ -69,9 +71,10 @@ class DoubleEliminationByeResolutionTest extends TestCase
         $this->assertSame($p1->id, $lbR2->winner_id);
         $this->assertSame($p1->id, $lbR3->player1_id);
         $this->assertNull($lbR3->player2_id);
+        $this->assertSame(GameStatus::SCHEDULED, $lbR3->status);
     }
 
-    public function test_bye_vs_bye_finishes_without_filling_next_round_with_player(): void
+    public function test_bye_vs_bye_advances_bye_into_next_round_and_waits_for_feeder(): void
     {
         $tournament = Tournament::create([
             'name' => 'DE double bye',
@@ -83,6 +86,7 @@ class DoubleEliminationByeResolutionTest extends TestCase
             'tablets_count' => 1,
         ]);
 
+        $byeId = app(PlayerRepository::class)->byePlayerId();
         $format = MatchFormat::default()->toDatabaseColumns();
 
         $w0 = PlayoffGame::create(array_merge([
@@ -90,8 +94,8 @@ class DoubleEliminationByeResolutionTest extends TestCase
             'bracket_side' => 'winners',
             'round' => 'W0',
             'slot' => 'W0-1',
-            'player1_id' => null,
-            'player2_id' => null,
+            'player1_id' => $byeId,
+            'player2_id' => $byeId,
             'status' => GameStatus::SCHEDULED,
             'winner_destination_slot' => 'W1-1-A',
             'loser_destination_slot' => 'L0-1-A',
@@ -109,16 +113,32 @@ class DoubleEliminationByeResolutionTest extends TestCase
             'loser_destination_slot' => null,
         ], $format));
 
+        $l0 = PlayoffGame::create(array_merge([
+            'tournament_id' => $tournament->id,
+            'bracket_side' => 'losers',
+            'round' => 'L0',
+            'slot' => 'L0-1',
+            'player1_id' => null,
+            'player2_id' => null,
+            'status' => GameStatus::SCHEDULED,
+            'winner_destination_slot' => 'L1-1-A',
+            'loser_destination_slot' => null,
+        ], $format));
+
         app(PlayoffService::class)->resolveScheduledByes($tournament->id);
 
         $w0->refresh();
         $w1->refresh();
+        $l0->refresh();
 
         $this->assertSame(GameStatus::FINISHED, $w0->status);
-        $this->assertNull($w0->winner_id);
-        $this->assertNull($w1->player1_id);
+        $this->assertSame($byeId, (int) $w0->winner_id);
+        $this->assertSame($byeId, (int) $w1->player1_id);
         $this->assertNull($w1->player2_id);
-        $this->assertSame(GameStatus::FINISHED, $w1->status);
+        $this->assertSame(GameStatus::SCHEDULED, $w1->status);
+        $this->assertSame($byeId, (int) $l0->player1_id);
+        $this->assertNull($l0->player2_id);
+        $this->assertSame(GameStatus::SCHEDULED, $l0->status);
     }
 
     public function test_advancement_into_bye_slot_triggers_auto_resolve(): void
@@ -133,6 +153,7 @@ class DoubleEliminationByeResolutionTest extends TestCase
             'tablets_count' => 1,
         ]);
 
+        $byeId = app(PlayerRepository::class)->byePlayerId();
         $winner = Player::create(['name' => 'Winner']);
         $loser = Player::create(['name' => 'Loser']);
         $format = MatchFormat::default()->toDatabaseColumns();
@@ -166,7 +187,7 @@ class DoubleEliminationByeResolutionTest extends TestCase
             'bracket_side' => 'losers',
             'round' => 'L1',
             'slot' => 'L1-1',
-            'player1_id' => null,
+            'player1_id' => $byeId,
             'player2_id' => null,
             'status' => GameStatus::SCHEDULED,
             'winner_destination_slot' => 'L2-1-A',
@@ -221,6 +242,7 @@ class DoubleEliminationByeResolutionTest extends TestCase
             'tablets_count' => 1,
         ]);
 
+        $byeId = app(PlayerRepository::class)->byePlayerId();
         $players = collect(range(1, 6))->map(fn (int $i) => Player::create(['name' => "P{$i}"]));
 
         app(PlayoffService::class)->generateDoubleEliminationBracket(
@@ -236,11 +258,8 @@ class DoubleEliminationByeResolutionTest extends TestCase
         $this->assertCount(4, $w0);
 
         foreach ($w0 as $game) {
-            $hasP1 = $game->player1_id !== null;
-            $hasP2 = $game->player2_id !== null;
-            if ($hasP1 xor $hasP2) {
-                $this->assertSame(GameStatus::FINISHED, $game->status);
-            } elseif (! $hasP1 && ! $hasP2) {
+            $hasBye = (int) $game->player1_id === $byeId || (int) $game->player2_id === $byeId;
+            if ($hasBye) {
                 $this->assertSame(GameStatus::FINISHED, $game->status);
             } else {
                 $this->assertSame(GameStatus::SCHEDULED, $game->status);
@@ -249,7 +268,7 @@ class DoubleEliminationByeResolutionTest extends TestCase
 
         $this->assertSame(
             6,
-            $w0->flatMap(fn ($g) => array_filter([$g->player1_id, $g->player2_id]))
+            $w0->flatMap(fn ($g) => array_filter([$g->player1_id, $g->player2_id], fn ($id) => (int) $id !== $byeId))
                 ->unique()
                 ->count(),
         );

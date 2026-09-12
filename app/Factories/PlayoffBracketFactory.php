@@ -12,7 +12,7 @@ use InvalidArgumentException;
 class PlayoffBracketFactory
 {
     /**
-     * @param  list<array{0: int|null, 1: int|null}>  $firstRoundPairs  null = bye
+     * @param  list<array{0: int|null, 1: int|null}>  $firstRoundPairs  null = TBD (nie BYE)
      * @return Collection<int, PlayoffGameDomain>
      */
     public function create(int $tournamentId, int $bracketSize, array $firstRoundPairs): Collection

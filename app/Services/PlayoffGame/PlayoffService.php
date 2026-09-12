@@ -11,6 +11,7 @@ use App\Enums\PlayerSlot;
 use App\Factories\DoubleEliminationBracketFactory;
 use App\Factories\PlayoffBracketFactory;
 use App\Repositories\GroupStanding\GroupStandingRepository;
+use App\Repositories\Player\PlayerRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\Tournament\TournamentMatchFormatRepository;
 use App\Repositories\Tournament\TournamentRepository;
@@ -26,6 +27,7 @@ class PlayoffService
         private PlayoffBracketFactory $bracketFactory,
         private DoubleEliminationBracketFactory $doubleElimFactory,
         private PlayoffGameRepository $gameRepository,
+        private PlayerRepository $playerRepository,
         private GroupStandingRepository $groupStandingRepository,
         private TournamentRepository $tournamentRepository,
         private TournamentMatchFormatRepository $matchFormatRepository,
@@ -58,7 +60,11 @@ class PlayoffService
     public function generateSingleEliminationBracket(int $tournamentId, array $playerIds): void
     {
         $bracketSize = $this->tournamentRepository->getBracketSize($tournamentId);
-        $firstRoundPairs = PlayoffByePairing::pair($playerIds, $bracketSize);
+        $firstRoundPairs = PlayoffByePairing::pair(
+            $playerIds,
+            $bracketSize,
+            $this->playerRepository->byePlayerId(),
+        );
         $playoffGames = $this->bracketFactory->create($tournamentId, $bracketSize, $firstRoundPairs);
 
         $formatsByStage = $this->matchFormatRepository->getForTournament($tournamentId)
@@ -79,7 +85,11 @@ class PlayoffService
         $reset = ($tournament->grand_final_mode?->value ?? GrandFinalMode::Reset->value)
             === GrandFinalMode::Reset->value;
 
-        $firstRoundPairs = PlayoffByePairing::pair($playerIds, $bracketSize);
+        $firstRoundPairs = PlayoffByePairing::pair(
+            $playerIds,
+            $bracketSize,
+            $this->playerRepository->byePlayerId(),
+        );
         $playoffGames = $this->doubleElimFactory->create(
             $tournamentId,
             $bracketSize,
@@ -96,8 +106,8 @@ class PlayoffService
     }
 
     /**
-     * Zamyka mecze bye (gracz vs wolny los oraz bye vs bye) i kaskaduje awanse.
-     * Wołane po generacji drabinki oraz po każdym wpisaniu gracza w slot.
+     * Zamyka mecze z jawnym BYE (gracz vs BYE oraz BYE vs BYE) i kaskaduje awanse.
+     * Puste sloty (null) to TBD — czekają na feedera, nie są walkowerem.
      */
     public function resolveScheduledByes(int $tournamentId): void
     {
@@ -108,19 +118,13 @@ class PlayoffService
         $this->resolvingByes = true;
 
         try {
+            $byePlayerId = $this->playerRepository->byePlayerId();
+
             for ($guard = 0; $guard < 128; $guard++) {
                 $progress = false;
 
-                foreach ($this->gameRepository->getScheduledDoubleByes($tournamentId) as $game) {
-                    if ($game->id === null) {
-                        continue;
-                    }
-                    $this->gameRepository->finishEmptyByeMatch($game->id);
-                    $progress = true;
-                }
-
-                foreach ($this->gameRepository->getScheduledByes($tournamentId) as $game) {
-                    $winnerId = $game->byeWinnerId();
+                foreach ($this->gameRepository->getScheduledByeGames($tournamentId, $byePlayerId) as $game) {
+                    $winnerId = $game->byeAdvanceWinnerId($byePlayerId);
                     if ($winnerId === null || $game->id === null) {
                         continue;
                     }
@@ -130,8 +134,8 @@ class PlayoffService
                         type: GameType::PLAYOFF,
                         player1Id: $game->player1Id ?? 0,
                         player2Id: $game->player2Id ?? 0,
-                        player1Score: $game->player1Id !== null ? 1 : 0,
-                        player2Score: $game->player2Id !== null ? 1 : 0,
+                        player1Score: $winnerId === $game->player1Id ? 1 : 0,
+                        player2Score: $winnerId === $game->player2Id ? 1 : 0,
                         winnerId: $winnerId,
                         tournamentId: $tournamentId,
                     );

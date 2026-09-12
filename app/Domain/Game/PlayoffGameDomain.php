@@ -160,18 +160,9 @@ class PlayoffGameDomain extends GameDomain
         return PlayoffRoundLabel::label($this->round);
     }
 
-    public function isByeReady(): bool
+    public function byeAdvanceWinnerId(int $byePlayerId): ?int
     {
-        return ($this->player1Id !== null) xor ($this->player2Id !== null);
-    }
-
-    public function byeWinnerId(): ?int
-    {
-        if (! $this->isByeReady()) {
-            return null;
-        }
-
-        return $this->player1Id ?? $this->player2Id;
+        return PlayoffBye::advanceWinnerId($this->player1Id, $this->player2Id, $byePlayerId);
     }
 
     public function playerIds(): array

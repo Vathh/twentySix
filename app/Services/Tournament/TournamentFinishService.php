@@ -34,19 +34,15 @@ class TournamentFinishService
             return false;
         }
 
-        $relevant = $tournament->playoffGames->filter(
-            fn ($game) => $game->player1_id !== null && $game->player2_id !== null,
-        );
+        $incomplete = $tournament->playoffGames->filter(function ($game) {
+            if ($game->slot === 'GF2' && $game->player1_id === null && $game->player2_id === null) {
+                return false;
+            }
 
-        if ($relevant->isEmpty()) {
-            return false;
-        }
+            return $game->status !== GameStatus::FINISHED;
+        });
 
-        $allPlayoffFinished = $relevant->every(
-            fn ($game) => $game->status === GameStatus::FINISHED,
-        );
-
-        if (! $allPlayoffFinished) {
+        if ($incomplete->isNotEmpty()) {
             return false;
         }
 

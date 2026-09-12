@@ -12,7 +12,6 @@
             ],
             'reverb' => \App\Support\Broadcasting\ReverbClientConfig::forWeb(),
         ]))"
-        x-init="init()"
     @endif
 >
     <div class="flex flex-wrap items-center justify-center gap-3 mb-2 mt-4">
