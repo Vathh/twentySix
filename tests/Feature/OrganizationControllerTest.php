@@ -220,6 +220,19 @@ class OrganizationControllerTest extends TestCase
         $this->assertFalse($organization->fresh()->relatedUsers->contains('id', $this->regularUser->id));
     }
 
+    public function test_admin_can_view_admins_page(): void
+    {
+        $this->actingAs($this->adminUser);
+        $organization = Organization::create(['name' => 'Test Organization', 'description' => 'Test']);
+        $organization->admins()->attach([$this->adminUser->id, $this->regularUser->id]);
+
+        $this->get("/organizations/{$organization->id}/admins")
+            ->assertOk()
+            ->assertSee('Admin')
+            ->assertSee('User')
+            ->assertSee('Usuń');
+    }
+
     public function test_admin_can_add_admin(): void
     {
         $this->actingAs($this->adminUser);

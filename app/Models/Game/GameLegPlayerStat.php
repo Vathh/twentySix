@@ -28,11 +28,13 @@ class GameLegPlayerStat extends Model
         'double_tracked' => 'boolean',
     ];
 
+    /** @return BelongsTo<GameLeg, $this> */
     public function gameLeg(): BelongsTo
     {
         return $this->belongsTo(GameLeg::class);
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

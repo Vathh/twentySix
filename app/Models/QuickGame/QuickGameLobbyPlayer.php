@@ -21,11 +21,13 @@ class QuickGameLobbyPlayer extends Model
         'is_ready' => 'boolean',
     ];
 
+    /** @return BelongsTo<QuickGameLobby, $this> */
     public function lobby(): BelongsTo
     {
         return $this->belongsTo(QuickGameLobby::class, 'lobby_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

@@ -3,6 +3,7 @@
 namespace App\Domain;
 
 use App\Domain\Concerns\AssertsRelationsLoaded;
+use App\Domain\Game\PlayoffBye;
 use App\Models\Player\Player;
 use Illuminate\Support\Collection;
 
@@ -37,7 +38,7 @@ class PlayerDomain
 
         return new self(
             id: $player->id,
-            name: $player->name,
+            name: (bool) $player->is_bye ? PlayoffBye::DISPLAY_NAME : $player->name,
             userId: $player->user_id,
             achievements: in_array('achievements', $with)
                 ? $player->achievements->map(fn ($achievement) => AchievementDomain::fromEloquent($achievement))->values()

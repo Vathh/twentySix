@@ -98,6 +98,34 @@
 
     .roster-chip {
         @apply inline-flex items-center rounded-lg border border-border bg-bg px-3 py-2 text-sm font-semibold text-text-muted select-none;
+        -webkit-user-drag: none;
+    }
+
+    .roster-chip-movable {
+        cursor: grab;
+        touch-action: none;
+    }
+
+    .roster-chip > * {
+        pointer-events: none;
+    }
+
+    .roster-chip-source {
+        opacity: 0.35;
+    }
+
+    .roster-chip-ghost {
+        position: fixed;
+        z-index: 60;
+        pointer-events: none;
+        transform: translate(-50%, -120%);
+        box-shadow: 0 10px 24px color-mix(in srgb, var(--color-accent) 22%, transparent);
+    }
+
+    body.roster-dragging,
+    body.roster-dragging * {
+        cursor: grabbing !important;
+        user-select: none !important;
     }
 
     .roster-chip-guest {
@@ -965,19 +993,23 @@
 
     /* --- Alerty / badge --- */
     .alert-success {
-        @apply p-3 rounded-lg bg-success-muted border border-success/30 text-success-bright;
+        @apply p-3 rounded-lg border border-success/40 text-success-bright shadow-lg;
+        background-color: color-mix(in srgb, var(--color-success) 32%, var(--color-bg-elevated));
     }
 
     .alert-danger {
-        @apply p-3 rounded-lg bg-danger-muted border border-danger/30 text-danger-text;
+        @apply p-3 rounded-lg border border-danger/40 text-danger-text shadow-lg;
+        background-color: color-mix(in srgb, var(--color-danger) 28%, var(--color-bg-elevated));
     }
 
     .alert-warning {
-        @apply p-3 rounded-lg bg-warning-muted border border-warning/30 text-warning;
+        @apply p-3 rounded-lg border border-warning/40 text-warning shadow-lg;
+        background-color: color-mix(in srgb, var(--color-warning) 28%, var(--color-bg-elevated));
     }
 
     .alert-info {
-        @apply p-3 rounded-lg bg-info-muted border border-info/30 text-info;
+        @apply p-3 rounded-lg border border-info/40 text-info shadow-lg;
+        background-color: color-mix(in srgb, var(--color-info) 28%, var(--color-bg-elevated));
     }
 
     .badge-live {

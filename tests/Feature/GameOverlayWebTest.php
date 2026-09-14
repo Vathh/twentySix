@@ -34,7 +34,7 @@ class GameOverlayWebTest extends TestCase
             ->assertSee('Overlay Alice')
             ->assertSee('Overlay Bob')
             ->assertSee('Overlay Cup')
-            ->assertSee('drabinki zwycięzców')
+            ->assertSee('Drabinka wygranych')
             ->assertDontSee('WB R1')
             ->assertSee('aria-label="Otwiera"', false)
             ->assertSee('game-overlay-opener', false)
@@ -215,6 +215,36 @@ class GameOverlayWebTest extends TestCase
         $this->get(route('games.show', ['type' => 'playoff', 'id' => $game->id]))
             ->assertOk()
             ->assertSee('77.77');
+    }
+
+    public function test_show_page_formats_whole_leg_average_with_two_decimals(): void
+    {
+        $game = $this->playoffGame(
+            GameStatus::FINISHED,
+            'Whole Alice',
+            'Whole Bob',
+            player1Score: 1,
+            player2Score: 0,
+        );
+        $leg = GameLeg::create([
+            'playoff_game_id' => $game->id,
+            'leg_number' => 1,
+            'winner_id' => $game->player1_id,
+            'started_at' => now(),
+            'finished_at' => now(),
+        ]);
+        GameLegPlayerStat::create([
+            'game_leg_id' => $leg->id,
+            'player_id' => $game->player1_id,
+            'double_tracked' => false,
+            'leg_average' => 72,
+            'first_nine_average' => 72,
+            'darts_thrown' => 9,
+        ]);
+
+        $this->get(route('games.show', ['type' => 'playoff', 'id' => $game->id]))
+            ->assertOk()
+            ->assertSee('72.00');
     }
 
     private function playoffGame(

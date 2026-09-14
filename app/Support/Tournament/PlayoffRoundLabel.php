@@ -17,23 +17,20 @@ final class PlayoffRoundLabel
         }
 
         if ($round === 'GF' || $round === 'GF1') {
-            return 'Grand Final';
+            return 'Wielki finał';
         }
         if ($round === 'GF2') {
-            return 'Grand Final (reset)';
+            return 'Wielki finał — reset';
         }
-        if (preg_match('/^W(\d+)$/', $round, $m)) {
-            return 'WB R'.((int) $m[1] + 1);
-        }
-        if (preg_match('/^L(\d+)$/', $round, $m)) {
-            return 'LB R'.((int) $m[1] + 1);
+        if (preg_match('/^[WL](\d+)$/', $round, $m)) {
+            return 'Runda '.((int) $m[1] + 1);
         }
 
         return $round;
     }
 
-    /** Etykieta dla widza (overlay / transmisja) — bez skrótów WB/LB. */
-    public static function broadcastLabel(string $round): string
+    /** Etykieta na liście meczów / overlay — bez skrótów WB/LB. */
+    public static function listLabel(string $round): string
     {
         $stage = GameStage::tryFrom($round);
         if ($stage !== null) {
@@ -47,12 +44,18 @@ final class PlayoffRoundLabel
             return 'Wielki finał — reset';
         }
         if (preg_match('/^W(\d+)$/', $round, $m)) {
-            return 'Runda '.((int) $m[1] + 1).' drabinki zwycięzców';
+            return 'Drabinka wygranych — runda '.((int) $m[1] + 1);
         }
         if (preg_match('/^L(\d+)$/', $round, $m)) {
-            return 'Runda '.((int) $m[1] + 1).' drabinki przegranych';
+            return 'Drabinka przegranych — runda '.((int) $m[1] + 1);
         }
 
         return $round;
+    }
+
+    /** Etykieta dla widza (overlay / transmisja). */
+    public static function broadcastLabel(string $round): string
+    {
+        return self::listLabel($round);
     }
 }

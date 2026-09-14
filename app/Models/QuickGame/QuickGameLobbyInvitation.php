@@ -14,11 +14,13 @@ class QuickGameLobbyInvitation extends Model
         'status',
     ];
 
+    /** @return BelongsTo<QuickGameLobby, $this> */
     public function lobby(): BelongsTo
     {
         return $this->belongsTo(QuickGameLobby::class, 'lobby_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function invitedPlayer(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'invited_player_id');

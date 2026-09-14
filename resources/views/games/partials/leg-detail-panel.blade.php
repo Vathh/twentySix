@@ -32,8 +32,8 @@
             @foreach($block['playerStats'] as $stat)
                 <tr class="border-b border-border/40">
                     <td class="py-1.5">{{ $stat->player->name ?? $stat->player_id }}</td>
-                    <td class="text-center py-1.5">{{ $stat->leg_average ?? '—' }}</td>
-                    <td class="text-center py-1.5">{{ $stat->first_nine_average ?? $stat->leg_average ?? '—' }}</td>
+                    <td class="text-center py-1.5">{{ \App\Support\AverageFormat::display($stat->leg_average) }}</td>
+                    <td class="text-center py-1.5">{{ \App\Support\AverageFormat::display($stat->first_nine_average ?? $stat->leg_average) }}</td>
                     <td class="text-center py-1.5">{{ $stat->highest_visit ?? '—' }}</td>
                     <td class="text-center py-1.5">
                         @if($stat->double_tracked && $stat->double_attempts)

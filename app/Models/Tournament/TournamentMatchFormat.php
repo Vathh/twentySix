@@ -18,6 +18,7 @@ class TournamentMatchFormat extends Model
         'game_type',
     ];
 
+    /** @return BelongsTo<Tournament, $this> */
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);

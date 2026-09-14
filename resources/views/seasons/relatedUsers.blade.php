@@ -12,10 +12,16 @@
             :search-url="route('seasons.relatedUsers', $season->id)"
             :add-url="route('seasons.relatedUsers.add', $season->id)"
             :remove-url="route('seasons.relatedUsers.remove', $season->id)"
+            :cancel-url-template="preg_replace('#/invitations/\d+/cancel$#', '/invitations/__ID__/cancel', route('seasons.relatedUsers.invitations.cancel', [$season->id, 0]))"
             :related="collect($relatedUsers)->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => $user->player->name ?? '—',
             ])->values()->all()"
+            :pending="$pendingInvitations->map(fn ($invitation) => [
+                'id' => $invitation->id,
+                'name' => $invitation->userPlayer?->name ?? 'Brak nazwy',
+            ])->values()->all()"
+            add-label="Zaproś"
             empty-related="Brak użytkowników powiązanych z tym sezonem."
         />
 

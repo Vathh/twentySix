@@ -108,7 +108,7 @@ class GameDetailService
         return [
             GameScoringContext::fromPlayoffGame($game),
             $game,
-            'Turniejowy — '.PlayoffRoundLabel::label((string) $game->round),
+            'Turniejowy — '.PlayoffRoundLabel::listLabel((string) $game->round),
             $game->tournament?->name,
             $game->tournament
                 ? route('tournaments.show', ['tournament' => $game->tournament_id, 'tab' => 'playoff'])

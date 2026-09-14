@@ -60,6 +60,8 @@
                     </dl>
                 </div>
 
+                @include('seasons.partials.standings', ['standings' => $standings])
+
                 <h2 class="section-title mt-12">Turnieje</h2>
                 <div class="space-y-3">
                     @forelse($season->tournaments as $tournament)

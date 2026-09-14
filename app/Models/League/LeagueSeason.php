@@ -53,31 +53,37 @@ class LeagueSeason extends Model
         ];
     }
 
+    /** @return BelongsTo<League, $this> */
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);
     }
 
+    /** @return HasMany<LeagueSeasonDivision, $this> */
     public function divisions(): HasMany
     {
         return $this->hasMany(LeagueSeasonDivision::class)->orderBy('position');
     }
 
+    /** @return HasMany<LeagueSeasonParticipant, $this> */
     public function participants(): HasMany
     {
         return $this->hasMany(LeagueSeasonParticipant::class);
     }
 
+    /** @return HasMany<LeagueSeasonMatchday, $this> */
     public function matchdays(): HasMany
     {
         return $this->hasMany(LeagueSeasonMatchday::class)->orderBy('round_number');
     }
 
+    /** @return HasMany<LeagueGame, $this> */
     public function games(): HasMany
     {
         return $this->hasMany(LeagueGame::class);
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function champion(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'champion_player_id');

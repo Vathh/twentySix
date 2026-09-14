@@ -13,11 +13,13 @@ class QuickGameLobbyRematchIntent extends Model
         'player_id',
     ];
 
+    /** @return BelongsTo<QuickGameLobby, $this> */
     public function sourceLobby(): BelongsTo
     {
         return $this->belongsTo(QuickGameLobby::class, 'source_lobby_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'player_id');

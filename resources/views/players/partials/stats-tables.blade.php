@@ -16,7 +16,10 @@
         if ($key === 'fastest_qf') {
             return $stats['fastest_qf'] !== null ? $stats['fastest_qf'].' lotek' : '–';
         }
-        if (in_array($key, ['avg_three_darts', 'highest_hf'], true)) {
+        if ($key === 'avg_three_darts') {
+            return \App\Support\AverageFormat::display($stats[$key] ?? null, '–');
+        }
+        if ($key === 'highest_hf') {
             return $stats[$key] !== null ? (string) $stats[$key] : '–';
         }
 

@@ -27,16 +27,19 @@ class QuickGame extends Model
         'status' => GameStatus::class,
     ];
 
+    /** @return BelongsTo<Player, $this> */
     public function player1(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'player1_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player2(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'player2_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function winner(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'winner_id');

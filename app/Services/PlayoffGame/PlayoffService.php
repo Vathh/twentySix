@@ -2,6 +2,7 @@
 
 namespace App\Services\PlayoffGame;
 
+use App\Domain\Game\PlayoffBye;
 use App\Domain\Game\PlayoffGameDomain;
 use App\Domain\Game\WinnerDestination;
 use App\DTO\GameResultDTO;
@@ -129,13 +130,16 @@ class PlayoffService
                         continue;
                     }
 
+                    $byeVsBye = PlayoffBye::isByeId($game->player1Id, $byePlayerId)
+                        && PlayoffBye::isByeId($game->player2Id, $byePlayerId);
+
                     $dto = new GameResultDTO(
                         gameId: $game->id,
                         type: GameType::PLAYOFF,
                         player1Id: $game->player1Id ?? 0,
                         player2Id: $game->player2Id ?? 0,
-                        player1Score: $winnerId === $game->player1Id ? 1 : 0,
-                        player2Score: $winnerId === $game->player2Id ? 1 : 0,
+                        player1Score: $byeVsBye ? 0 : ($winnerId === $game->player1Id ? 1 : 0),
+                        player2Score: $byeVsBye ? 0 : ($winnerId === $game->player2Id ? 1 : 0),
                         winnerId: $winnerId,
                         tournamentId: $tournamentId,
                     );

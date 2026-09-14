@@ -54,41 +54,49 @@ class LeagueGame extends Model
         ];
     }
 
+    /** @return BelongsTo<LeagueSeason, $this> */
     public function season(): BelongsTo
     {
         return $this->belongsTo(LeagueSeason::class, 'league_season_id');
     }
 
+    /** @return BelongsTo<LeagueSeasonDivision, $this> */
     public function seasonDivision(): BelongsTo
     {
         return $this->belongsTo(LeagueSeasonDivision::class, 'league_season_division_id');
     }
 
+    /** @return BelongsTo<LeagueSeasonMatchday, $this> */
     public function matchday(): BelongsTo
     {
         return $this->belongsTo(LeagueSeasonMatchday::class, 'league_season_matchday_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player1(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'player1_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player2(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'player2_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function scoringHost(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'scoring_host_player_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function lobbyHost(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'lobby_host_player_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function winner(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'winner_id');

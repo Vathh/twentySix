@@ -20,6 +20,7 @@ use App\Services\Player\PlayerOverviewService;
 use App\Services\Player\PlayerStatsService;
 use App\Services\PlayoffGame\PlayoffService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
+use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentResultService;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +39,7 @@ class GameResultCorrectionService
         private PlayerOverviewService $playerOverviewService,
         private TournamentResultService $tournamentResultService,
         private TournamentGroupMatrixLiveService $groupMatrixLiveService,
+        private TournamentPlayoffBracketLiveService $playoffBracketLiveService,
         private BadgeAwardService $badgeAwardService,
     ) {}
 
@@ -186,6 +188,8 @@ class GameResultCorrectionService
                 $this->recalculatePlayerStats(new UpdateGameDTO($dto, [], []));
             });
 
+            $this->playoffBracketLiveService->pushTournament((int) $game->tournamentId);
+
             return;
         }
 
@@ -194,6 +198,8 @@ class GameResultCorrectionService
         if (! $this->gameService->update($updateDto)) {
             throw new DomainException('Nie udało się zapisać wyniku meczu playoff.');
         }
+
+        $this->playoffBracketLiveService->pushTournament((int) $game->tournamentId);
     }
 
     /**

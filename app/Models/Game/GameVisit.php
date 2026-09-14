@@ -30,11 +30,13 @@ class GameVisit extends Model
         'darts' => 'array',
     ];
 
+    /** @return BelongsTo<GameLeg, $this> */
     public function gameLeg(): BelongsTo
     {
         return $this->belongsTo(GameLeg::class);
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

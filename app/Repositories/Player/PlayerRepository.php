@@ -16,12 +16,16 @@ class PlayerRepository
     public function findOrCreateByePlayer(): PlayerDomain
     {
         $player = Player::query()->where('is_bye', true)->first();
+        $name = \App\Domain\Game\PlayoffBye::DISPLAY_NAME;
         if ($player === null) {
             $player = Player::create([
-                'name' => \App\Domain\Game\PlayoffBye::DISPLAY_NAME,
+                'name' => $name,
                 'user_id' => null,
                 'is_bye' => true,
             ]);
+        } elseif ($player->name !== $name) {
+            $player->update(['name' => $name]);
+            $player = $player->fresh();
         }
 
         return PlayerDomain::fromEloquent($player);

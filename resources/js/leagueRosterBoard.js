@@ -10,6 +10,7 @@ export function registerLeagueRosterBoard(Alpine) {
 		guestsManageUrl: config.guestsManageUrl ?? '',
 		draggingId: null,
 		dropTarget: null,
+		ghost: null,
 
 		notify(text, type = 'error') {
 			window.dispatchEvent(new CustomEvent('app-toast', {
@@ -32,29 +33,31 @@ export function registerLeagueRosterBoard(Alpine) {
 		},
 
 		findPlayer(playerId) {
+			const id = Number(playerId);
 			for (const division of this.divisions) {
-				const player = division.players.find((item) => item.id === playerId);
+				const player = division.players.find((item) => Number(item.id) === id);
 				if (player) {
 					return player;
 				}
 			}
-			return this.related.find((item) => item.id === playerId)
-				?? this.guests.find((item) => item.id === playerId)
+			return this.related.find((item) => Number(item.id) === id)
+				?? this.guests.find((item) => Number(item.id) === id)
 				?? null;
 		},
 
 		takePlayer(playerId) {
+			const id = Number(playerId);
 			for (const division of this.divisions) {
-				const index = division.players.findIndex((item) => item.id === playerId);
+				const index = division.players.findIndex((item) => Number(item.id) === id);
 				if (index >= 0) {
 					return division.players.splice(index, 1)[0];
 				}
 			}
-			let index = this.related.findIndex((item) => item.id === playerId);
+			let index = this.related.findIndex((item) => Number(item.id) === id);
 			if (index >= 0) {
 				return this.related.splice(index, 1)[0];
 			}
-			index = this.guests.findIndex((item) => item.id === playerId);
+			index = this.guests.findIndex((item) => Number(item.id) === id);
 			if (index >= 0) {
 				return this.guests.splice(index, 1)[0];
 			}
@@ -63,7 +66,7 @@ export function registerLeagueRosterBoard(Alpine) {
 
 		placePlayer(player, target) {
 			if (target.type === 'division') {
-				const division = this.divisions.find((item) => item.id === target.id);
+				const division = this.divisions.find((item) => Number(item.id) === Number(target.id));
 				if (division) {
 					division.players.push(player);
 				}
@@ -79,12 +82,13 @@ export function registerLeagueRosterBoard(Alpine) {
 		},
 
 		currentLocation(playerId) {
+			const id = Number(playerId);
 			for (const division of this.divisions) {
-				if (division.players.some((item) => item.id === playerId)) {
-					return { type: 'division', id: division.id };
+				if (division.players.some((item) => Number(item.id) === id)) {
+					return { type: 'division', id: Number(division.id) };
 				}
 			}
-			if (this.related.some((item) => item.id === playerId)) {
+			if (this.related.some((item) => Number(item.id) === id)) {
 				return { type: 'related' };
 			}
 			return { type: 'guest' };
@@ -95,7 +99,7 @@ export function registerLeagueRosterBoard(Alpine) {
 				return false;
 			}
 			if (a.type === 'division') {
-				return a.id === b.id;
+				return Number(a.id) === Number(b.id);
 			}
 			return true;
 		},
@@ -143,38 +147,86 @@ export function registerLeagueRosterBoard(Alpine) {
 			}
 		},
 
-		onDragStart(event, player) {
-			if (this.locked || this.busy) {
-				event.preventDefault();
-				return;
+		targetFromPoint(x, y) {
+			const el = document.elementFromPoint(x, y);
+			const zone = el?.closest?.('[data-roster-drop]');
+			if (!zone) {
+				return null;
 			}
-			this.draggingId = player.id;
-			event.dataTransfer.effectAllowed = 'move';
-			event.dataTransfer.setData('text/plain', String(player.id));
+			const type = zone.getAttribute('data-roster-drop');
+			if (type === 'division') {
+				return { type: 'division', id: Number(zone.getAttribute('data-roster-division-id')) };
+			}
+			if (type === 'related' || type === 'guest') {
+				return { type };
+			}
+			return null;
 		},
 
-		onDragEnd() {
+		highlightFromPoint(x, y) {
+			const target = this.targetFromPoint(x, y);
+			this.dropTarget = target
+				? (target.type === 'division' ? `division-${target.id}` : target.type)
+				: null;
+		},
+
+		clearDrag() {
 			this.draggingId = null;
 			this.dropTarget = null;
+			this.ghost = null;
+			document.body.classList.remove('roster-dragging');
 		},
 
-		onDragOver(event, target) {
-			if (this.locked || this.draggingId === null) {
+		onChipPointerDown(event, player) {
+			if (this.locked || this.busy || event.button !== 0) {
 				return;
 			}
 			event.preventDefault();
-			this.dropTarget = target.type === 'division' ? `division-${target.id}` : target.type;
-		},
+			event.currentTarget.setPointerCapture?.(event.pointerId);
+			const pointerId = event.pointerId;
+			const startX = event.clientX;
+			const startY = event.clientY;
+			const playerId = Number(player.id);
+			let started = false;
 
-		async onDrop(event, target) {
-			event.preventDefault();
-			if (this.locked || this.busy) {
-				return;
-			}
-			const playerId = Number(event.dataTransfer.getData('text/plain') || this.draggingId);
-			this.draggingId = null;
-			this.dropTarget = null;
-			await this.movePlayer(playerId, target);
+			const onMove = (moveEvent) => {
+				if (moveEvent.pointerId !== pointerId) {
+					return;
+				}
+				const dx = moveEvent.clientX - startX;
+				const dy = moveEvent.clientY - startY;
+				if (!started && Math.hypot(dx, dy) < 6) {
+					return;
+				}
+				started = true;
+				this.draggingId = playerId;
+				this.ghost = {
+					name: player.name,
+					kind: player.kind,
+					x: moveEvent.clientX,
+					y: moveEvent.clientY,
+				};
+				document.body.classList.add('roster-dragging');
+				this.highlightFromPoint(moveEvent.clientX, moveEvent.clientY);
+			};
+
+			const onUp = async (upEvent) => {
+				if (upEvent.pointerId !== pointerId) {
+					return;
+				}
+				window.removeEventListener('pointermove', onMove, true);
+				window.removeEventListener('pointerup', onUp, true);
+				window.removeEventListener('pointercancel', onUp, true);
+				const target = started ? this.targetFromPoint(upEvent.clientX, upEvent.clientY) : null;
+				this.clearDrag();
+				if (target) {
+					await this.movePlayer(playerId, target);
+				}
+			};
+
+			window.addEventListener('pointermove', onMove, true);
+			window.addEventListener('pointerup', onUp, true);
+			window.addEventListener('pointercancel', onUp, true);
 		},
 
 		async movePlayer(playerId, target) {
@@ -190,7 +242,7 @@ export function registerLeagueRosterBoard(Alpine) {
 				return;
 			}
 			if (target.type === 'division') {
-				const division = this.divisions.find((item) => item.id === target.id);
+				const division = this.divisions.find((item) => Number(item.id) === Number(target.id));
 				if (!division) {
 					return;
 				}

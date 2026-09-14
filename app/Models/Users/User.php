@@ -70,26 +70,31 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->banned_at !== null;
     }
 
+    /** @return HasOne<Player, $this> */
     public function player(): HasOne
     {
         return $this->hasOne(Player::class);
     }
 
+    /** @return BelongsToMany<Organization, $this> */
     public function adminOrganizations(): BelongsToMany
     {
         return $this->belongsToMany(Organization::class, 'organization_user_admin');
     }
 
+    /** @return BelongsToMany<Organization, $this> */
     public function relatedOrganizations(): BelongsToMany
     {
         return $this->belongsToMany(Organization::class, 'organization_user');
     }
 
+    /** @return BelongsToMany<Season, $this> */
     public function adminSeasons(): BelongsToMany
     {
         return $this->belongsToMany(Season::class, 'season_user_admin');
     }
 
+    /** @return BelongsToMany<Season, $this> */
     public function relatedSeasons(): BelongsToMany
     {
         return $this->belongsToMany(Season::class, 'season_user');

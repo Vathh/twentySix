@@ -26,11 +26,13 @@ class QuickGameResult extends Model
         'points_earned' => 'integer',
     ];
 
+    /** @return BelongsTo<QuickGame, $this> */
     public function quickGame(): BelongsTo
     {
         return $this->belongsTo(QuickGame::class);
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

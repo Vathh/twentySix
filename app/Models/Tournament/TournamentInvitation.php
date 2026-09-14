@@ -22,16 +22,19 @@ class TournamentInvitation extends Model
         'responded_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Tournament, $this> */
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function invitedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'invited_by');

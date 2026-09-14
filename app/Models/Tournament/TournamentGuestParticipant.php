@@ -13,11 +13,13 @@ class TournamentGuestParticipant extends Model
         'player_id',
     ];
 
+    /** @return BelongsTo<Tournament, $this> */
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

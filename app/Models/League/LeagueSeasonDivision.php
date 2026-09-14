@@ -22,21 +22,25 @@ class LeagueSeasonDivision extends Model
         'promote_playoff',
     ];
 
+    /** @return BelongsTo<LeagueSeason, $this> */
     public function season(): BelongsTo
     {
         return $this->belongsTo(LeagueSeason::class, 'league_season_id');
     }
 
+    /** @return BelongsTo<LeagueDivision, $this> */
     public function sourceDivision(): BelongsTo
     {
         return $this->belongsTo(LeagueDivision::class, 'league_division_id');
     }
 
+    /** @return HasMany<LeagueSeasonParticipant, $this> */
     public function participants(): HasMany
     {
         return $this->hasMany(LeagueSeasonParticipant::class);
     }
 
+    /** @return HasMany<LeagueGame, $this> */
     public function games(): HasMany
     {
         return $this->hasMany(LeagueGame::class, 'league_season_division_id');

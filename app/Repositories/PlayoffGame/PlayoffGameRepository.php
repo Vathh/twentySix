@@ -94,6 +94,17 @@ class PlayoffGameRepository
             ->map(fn ($game) => PlayoffGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2']));
     }
 
+    /**
+     * @return Collection<PlayoffGameDomain>
+     */
+    public function getAllForTournament(int $tournamentId): Collection
+    {
+        return PlayoffGame::with(['player1', 'player2'])
+            ->where('tournament_id', $tournamentId)
+            ->get()
+            ->map(fn ($game) => PlayoffGameDomain::fromEloquent($game, ['player1', 'player2']));
+    }
+
     public function find(int $id): ?PlayoffGameDomain
     {
         return PlayoffGameDomain::fromEloquent(PlayoffGame::where('id', $id)->firstOrFail());

@@ -22,16 +22,19 @@ class TournamentJoinRequest extends Model
         'resolved_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Tournament, $this> */
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function resolver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'resolved_by');

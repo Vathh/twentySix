@@ -73,7 +73,7 @@ class QuickGameLobbyPayload
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, object>  $orderedPlayers
+     * @param  \Illuminate\Support\Collection<int, \App\Models\QuickGame\QuickGameLobbyPlayer>  $orderedPlayers
      */
     private static function resolveMyPlayerIndex($orderedPlayers, int $currentUserId): ?int
     {

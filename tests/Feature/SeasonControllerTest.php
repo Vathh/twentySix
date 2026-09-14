@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
+use App\Models\Tournament\Tournament;
+use App\Models\Tournament\TournamentResult;
 use App\Models\Users\User;
 use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -126,7 +128,12 @@ class SeasonControllerTest extends TestCase
         $response->assertRedirect("/seasons/{$season->id}/relatedUsers");
         $response->assertSessionHas('success');
 
-        $this->assertTrue($season->fresh()->relatedUsers->contains('id', $this->regularUser->id));
+        $this->assertFalse($season->fresh()->relatedUsers->contains('id', $this->regularUser->id));
+        $this->assertDatabaseHas('season_invitations', [
+            'season_id' => $season->id,
+            'user_id' => $this->regularUser->id,
+            'status' => 'pending',
+        ]);
     }
 
     public function test_season_admin_can_remove_related_user(): void
@@ -171,6 +178,24 @@ class SeasonControllerTest extends TestCase
         $response->assertSessionHas('success');
 
         $this->assertTrue($season->fresh()->admins->contains('id', $this->regularUser->id));
+    }
+
+    public function test_season_admin_can_view_admins_page(): void
+    {
+        $this->actingAs($this->adminUser);
+        $season = Season::create([
+            'name' => 'Test Season',
+            'organization_id' => $this->organization->id,
+            'start_date' => '2024-01-01',
+            'end_date' => '2024-12-31',
+        ]);
+        $season->admins()->attach([$this->adminUser->id, $this->regularUser->id]);
+
+        $this->get("/seasons/{$season->id}/admins")
+            ->assertOk()
+            ->assertSee('Admin')
+            ->assertSee('User')
+            ->assertSee('Usuń');
     }
 
     public function test_season_admin_can_remove_admin(): void
@@ -263,5 +288,34 @@ class SeasonControllerTest extends TestCase
         $this->assertNull($guest->season_id);
         $this->assertSame($this->organization->id, $guest->organization_id);
         $this->assertDatabaseHas('players', ['id' => $guest->id]);
+    }
+
+    public function test_season_show_displays_standings_table(): void
+    {
+        $season = Season::create([
+            'name' => 'Sezon z tabelą',
+            'organization_id' => $this->organization->id,
+            'start_date' => '2024-01-01',
+            'end_date' => '2024-12-31',
+        ]);
+        $tournament = Tournament::create([
+            'name' => 'Turniej punktowany',
+            'season_id' => $season->id,
+            'date' => '2024-06-01',
+        ]);
+        TournamentResult::create([
+            'season_id' => $season->id,
+            'tournament_id' => $tournament->id,
+            'player_id' => $this->adminPlayer->id,
+            'points' => 12,
+            'place' => 1,
+        ]);
+
+        $this->get("/seasons/{$season->id}")
+            ->assertOk()
+            ->assertSee('Tabela sezonu')
+            ->assertSee('Admin')
+            ->assertSee('12')
+            ->assertDontSee('Brak wyników w sezonie');
     }
 }

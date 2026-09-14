@@ -49,14 +49,14 @@ class TournamentResultService
         $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
 
         if ($this->tracksSeasonPoints($tournament)) {
-            $rule = $this->pointSchemeRuleRepository->find($tournament->pointScheme->id, $stage, $place);
+            $points = $this->pointsForStagePlace($tournament, $stage, $place);
 
             $result = $this->factory->createForPlayoff(
                 $tournament->season->id,
                 $tournament->id,
                 $playerId,
-                $rule->points,
-                $rule->place,
+                $points,
+                $place,
                 $stage,
             );
         } else {
@@ -115,14 +115,14 @@ class TournamentResultService
         $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
 
         if ($this->tracksSeasonPoints($tournament)) {
-            $rule = $this->pointSchemeRuleRepository->find($tournament->pointScheme->id, $stage, $place);
+            $points = $this->pointsForStagePlace($tournament, $stage, $place);
 
             $this->resultRepository->upsertForPlayer(
                 seasonId: $tournament->season->id,
                 tournamentId: $tournamentId,
                 playerId: $playerId,
-                points: $rule->points,
-                place: $rule->place,
+                points: $points,
+                place: $place,
                 stage: $stage,
             );
 
@@ -146,5 +146,14 @@ class TournamentResultService
     private function tracksSeasonPoints(TournamentDomain $tournament): bool
     {
         return $tournament->season !== null && $tournament->pointScheme !== null;
+    }
+
+    private function pointsForStagePlace(TournamentDomain $tournament, GameStage $stage, ?int $place): ?int
+    {
+        $schemeId = $tournament->pointScheme->id;
+        $rule = $this->pointSchemeRuleRepository->find($schemeId, $stage, $place)
+            ?? $this->pointSchemeRuleRepository->find($schemeId, $stage, null);
+
+        return $rule?->points;
     }
 }

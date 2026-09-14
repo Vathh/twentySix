@@ -125,9 +125,10 @@ class PlayerCheckoutBadgeTest extends TestCase
 
         $state = $scoring->startLeg($context, $game, false, false);
         $legId = (int) $state['currentLeg']['id'];
+        $this->playDownTo($scoring, $context, $game, $legId, (int) $p1->id, 121, 501);
         $scoring->recordVisit($context, $game, $legId, $this->checkoutVisitDto($p1->id, 121));
         $scoring->undoLastVisit($context, $game, $legId);
-        $scoring->recordVisit($context, $game, $legId, $this->openVisitDto($p1->id, 60, 501));
+        $scoring->recordVisit($context, $game, $legId, $this->openVisitDto($p1->id, 60, 121));
         $this->serviceCloseLeg($scoring, $context, $game, $legId, $p1, $p2);
         $this->closeScoringLegWithoutCheckout($scoring, $game->fresh(), $p1, $p2);
 
@@ -335,6 +336,8 @@ class PlayerCheckoutBadgeTest extends TestCase
         $context = GameScoringContext::fromGroupGame($game);
         $state = $scoring->startLeg($context, $game, false, false);
         $legId = (int) $state['currentLeg']['id'];
+        $starting = (int) ($game->starting_score ?: 501);
+        $this->playDownTo($scoring, $context, $game, $legId, (int) $p1->id, $checkout, $starting);
         $scoring->recordVisit($context, $game, $legId, $this->checkoutVisitDto($p1->id, $checkout));
         $this->serviceCloseLeg($scoring, $context, $game, $legId, $p1, $p2);
     }
@@ -361,6 +364,26 @@ class PlayerCheckoutBadgeTest extends TestCase
             new CloseLegPlayerStatsDTO((int) $p1->id, false, null, null),
             new CloseLegPlayerStatsDTO((int) $p2->id, false, null, null),
         ]);
+    }
+
+    private function playDownTo(
+        GameScoringService $scoring,
+        GameScoringContext $context,
+        Game $game,
+        int $legId,
+        int $playerId,
+        int $targetRemaining,
+        int $starting,
+    ): void {
+        $remaining = $starting;
+        while ($remaining - $targetRemaining > 180) {
+            $scoring->recordVisit($context, $game, $legId, $this->openVisitDto($playerId, 180, $remaining));
+            $remaining -= 180;
+        }
+        $gap = $remaining - $targetRemaining;
+        if ($gap > 0) {
+            $scoring->recordVisit($context, $game, $legId, $this->openVisitDto($playerId, $gap, $remaining));
+        }
     }
 
     private function checkoutVisitDto(int $playerId, int $checkout): RecordVisitDTO

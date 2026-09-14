@@ -66,7 +66,7 @@
 
         <article class="career-stat-card career-stat-card--avg">
             <p class="overview-summary-kicker">Średnia 3 lotki</p>
-            <p class="overview-summary-rate" x-text="hero.hasX01 ? hero.x01Average : '–'"></p>
+            <p class="overview-summary-rate" x-text="hero.hasX01 ? formatAverage(hero.x01Average) : '–'"></p>
             <p class="overview-summary-rate-label">X01</p>
             <p class="career-stat-delta"
                x-show="formatDelta(hero.x01AverageDelta)"

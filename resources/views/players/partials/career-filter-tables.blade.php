@@ -9,7 +9,7 @@
             </div>
             <div class="overview-form-stat">
                 <dt>Średnia 3 lotki</dt>
-                <dd x-text="dash(table.avg_three_darts)"></dd>
+                <dd x-text="formatAverage(table.avg_three_darts)"></dd>
             </div>
             <div class="overview-form-stat">
                 <dt>Najwyższy checkout</dt>

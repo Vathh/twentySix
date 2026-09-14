@@ -75,7 +75,10 @@ class GameController
 
     public function getActiveGames(Request $request): JsonResponse
     {
-        $tournamentId = $request->query('tournamentId');
+        $tournamentId = (int) $request->query('tournamentId');
+        if ($tournamentId < 1) {
+            return response()->json([]);
+        }
 
         $games = $this->gameService->getActiveGames($tournamentId);
 

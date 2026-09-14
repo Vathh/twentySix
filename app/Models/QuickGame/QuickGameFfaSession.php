@@ -53,16 +53,19 @@ class QuickGameFfaSession extends Model
         'finished_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<QuickGameLobby, $this> */
     public function lobby(): BelongsTo
     {
         return $this->belongsTo(QuickGameLobby::class, 'lobby_id');
     }
 
+    /** @return HasMany<QuickGameFfaVisit, $this> */
     public function visits(): HasMany
     {
         return $this->hasMany(QuickGameFfaVisit::class, 'ffa_session_id');
     }
 
+    /** @return BelongsTo<QuickGame, $this> */
     public function quickGame(): BelongsTo
     {
         return $this->belongsTo(QuickGame::class, 'quick_game_id');

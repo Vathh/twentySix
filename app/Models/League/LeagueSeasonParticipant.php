@@ -22,16 +22,19 @@ class LeagueSeasonParticipant extends Model
         ];
     }
 
+    /** @return BelongsTo<LeagueSeason, $this> */
     public function season(): BelongsTo
     {
         return $this->belongsTo(LeagueSeason::class, 'league_season_id');
     }
 
+    /** @return BelongsTo<LeagueSeasonDivision, $this> */
     public function seasonDivision(): BelongsTo
     {
         return $this->belongsTo(LeagueSeasonDivision::class, 'league_season_division_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

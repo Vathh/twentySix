@@ -31,36 +31,43 @@ class QuickGameLobby extends Model
         'player_order' => 'array',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function host(): BelongsTo
     {
         return $this->belongsTo(User::class, 'host_id');
     }
 
+    /** @return HasMany<QuickGameLobbyPlayer, $this> */
     public function players(): HasMany
     {
         return $this->hasMany(QuickGameLobbyPlayer::class, 'lobby_id')->orderBy('created_at');
     }
 
+    /** @return HasMany<QuickGameLobbyInvitation, $this> */
     public function invitations(): HasMany
     {
         return $this->hasMany(QuickGameLobbyInvitation::class, 'lobby_id');
     }
 
+    /** @return HasMany<QuickGameLobbyRematchIntent, $this> */
     public function rematchIntents(): HasMany
     {
         return $this->hasMany(QuickGameLobbyRematchIntent::class, 'source_lobby_id');
     }
 
+    /** @return BelongsTo<QuickGameLobby, $this> */
     public function rematchLobby(): BelongsTo
     {
         return $this->belongsTo(self::class, 'rematch_lobby_id');
     }
 
+    /** @return BelongsTo<QuickGame, $this> */
     public function quickGame(): BelongsTo
     {
         return $this->belongsTo(QuickGame::class, 'quick_game_id');
     }
 
+    /** @return BelongsTo<QuickGameFfaSession, $this> */
     public function ffaSession(): BelongsTo
     {
         return $this->belongsTo(QuickGameFfaSession::class, 'ffa_session_id');

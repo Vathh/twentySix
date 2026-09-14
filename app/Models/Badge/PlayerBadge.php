@@ -26,6 +26,7 @@ class PlayerBadge extends Model
         ];
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

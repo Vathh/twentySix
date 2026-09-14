@@ -148,6 +148,10 @@ Route::delete('/leagues/{league}/roster', [LeagueController::class, 'removePlaye
 Route::patch('/leagues/{league}/roster/capacity', [LeagueController::class, 'updateDivisionCapacity'])->name('leagues.roster.capacity')->middleware('auth');
 Route::get('/leagues/{league}/relatedUsers', [LeagueController::class, 'relatedUsers'])->name('leagues.relatedUsers')->middleware('auth');
 Route::post('/leagues/{league}/relatedUsers/add', [LeagueController::class, 'addRelatedUser'])->name('leagues.relatedUsers.add')->middleware('auth');
+Route::post('/leagues/{league}/relatedUsers/invitations/{invitation}/cancel', [LeagueController::class, 'cancelRelatedUserInvitation'])
+    ->whereNumber('invitation')
+    ->name('leagues.relatedUsers.invitations.cancel')
+    ->middleware('auth');
 Route::delete('/leagues/{league}/relatedUsers/remove', [LeagueController::class, 'removeRelatedUser'])->name('leagues.relatedUsers.remove')->middleware('auth');
 Route::get('/leagues/{league}/guests', [LeagueController::class, 'guests'])->name('leagues.guests')->middleware('auth');
 Route::post('/leagues/{league}/guests/add', [LeagueController::class, 'addGuest'])->name('leagues.guests.add')->middleware('auth');
@@ -170,6 +174,9 @@ Route::resource('seasons', SeasonController::class);
 Route::prefix('seasons/{season}')->group(function () {
     Route::get('/relatedUsers', [SeasonController::class, 'relatedUsers'])->name('seasons.relatedUsers');
     Route::post('/relatedUsers/add', [SeasonController::class, 'addRelatedUser'])->name('seasons.relatedUsers.add');
+    Route::post('/relatedUsers/invitations/{invitation}/cancel', [SeasonController::class, 'cancelRelatedUserInvitation'])
+        ->whereNumber('invitation')
+        ->name('seasons.relatedUsers.invitations.cancel');
     Route::delete('/relatedUsers/remove', [SeasonController::class, 'removeRelatedUser'])->name('seasons.relatedUsers.remove');
 
     Route::get('/admins', [SeasonController::class, 'admins'])->name('seasons.admins');
@@ -184,12 +191,14 @@ Route::prefix('seasons/{season}')->group(function () {
 Route::resource('tournaments', TournamentController::class);
 Route::prefix('tournaments/{tournament}')->group(function () {
     Route::get('/groups-live', [TournamentController::class, 'groupsLive'])->name('tournaments.groups-live');
+    Route::get('/playoff-live', [TournamentController::class, 'playoffLive'])->name('tournaments.playoff-live');
     Route::get('/join-requests-live', [TournamentController::class, 'joinRequestsLive'])->name('tournaments.join-requests-live');
     Route::get('/admins', [TournamentController::class, 'admins'])->name('tournaments.admins');
     Route::post('/admins/add', [TournamentController::class, 'addAdmin'])->name('tournaments.admins.add');
     Route::delete('/admins/remove', [TournamentController::class, 'removeAdmin'])->name('tournaments.admins.remove');
     Route::get('/start', [TournamentController::class, 'start'])->name('tournaments.start');
     Route::post('/run', [TournamentController::class, 'runTournament'])->name('tournaments.run');
+    Route::post('/cancel', [TournamentController::class, 'cancel'])->name('tournaments.cancel');
     Route::get('/invitations/search', [TournamentController::class, 'searchInvitationUsers'])->name('tournaments.invitations.search');
     Route::post('/invitations/send', [TournamentController::class, 'sendInvitation'])->name('tournaments.invitations.send');
     Route::post('/invitations/bulk', [TournamentController::class, 'sendBulkInvitations'])->name('tournaments.invitations.bulk');

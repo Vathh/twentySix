@@ -26,11 +26,13 @@ class LeagueSeasonMatchday extends Model
         ];
     }
 
+    /** @return BelongsTo<LeagueSeason, $this> */
     public function season(): BelongsTo
     {
         return $this->belongsTo(LeagueSeason::class, 'league_season_id');
     }
 
+    /** @return HasMany<LeagueGame, $this> */
     public function games(): HasMany
     {
         return $this->hasMany(LeagueGame::class);

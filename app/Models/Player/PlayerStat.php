@@ -34,6 +34,7 @@ class PlayerStat extends Model
         'tournament_avg_three_darts' => 'float',
     ];
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

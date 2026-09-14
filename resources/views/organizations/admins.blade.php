@@ -13,7 +13,7 @@
                     @foreach($admins as $admin)
                         <div class="tile flex items-center justify-center flex-col">
                             <span class="card-title mb-4 text-wrap text-center">{{ $admin['name'] }}</span>
-                            @if($admins->count() > 1)
+                            @if(count($admins) > 1)
                             <form action="{{ route('organizations.admins.remove', $organization->id) }}" method="POST">
                                 @csrf
                                 @method('DELETE')

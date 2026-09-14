@@ -34,13 +34,35 @@
         return $rounds;
     };
 
-    $seRoundOrder = ['SIXTYFOUR', 'THIRTYTWO', 'SIXTEEN', 'EIGHT', 'QUARTER', 'SEMI', 'FINAL'];
+    $seRoundOrder = ['SIXTYFOUR', 'THIRTYTWO', 'SIXTEEN', 'EIGHT', 'QUARTER', 'SEMI', 'THIRD', 'FINAL'];
+    $playoffLiveEnabled = $tournament->status === \App\Enums\TournamentStatus::PLAYOFF;
 @endphp
 
-<div class="mt-12 mb-16">
-    <h2 class="text-center page-title mb-8 tracking-wide">
-        {{ $bracketHeading ?? 'Playoff' }}
-    </h2>
+<div
+    class="mt-12 mb-16"
+    @if($playoffLiveEnabled)
+        x-data="tournamentPlayoffLive(@js([
+            'channel' => 'tournament.'.$tournament->id,
+            'snapshotUrl' => route('tournaments.playoff-live', $tournament->id),
+            'urls' => [
+                'showBase' => url('/games/playoff'),
+                'liveBase' => url('/games/playoff'),
+            ],
+            'reverb' => \App\Support\Broadcasting\ReverbClientConfig::forWeb(),
+        ]))"
+    @endif
+>
+    <div class="flex flex-wrap items-center justify-center gap-3 mb-8">
+        <h2 class="text-center page-title tracking-wide mb-0">
+            {{ $bracketHeading ?? 'Playoff' }}
+        </h2>
+        @if($playoffLiveEnabled)
+            <span
+                class="px-2 py-0.5 rounded text-xs font-semibold bg-accent/25 text-accent"
+                x-text="connectionLabel()"
+            >Łączenie…</span>
+        @endif
+    </div>
 
     @if($isDe)
         {{-- Double elimination: WB / LB / Grand Final --}}
@@ -69,7 +91,6 @@
     @else
         @php
             $seRounds = $buildRounds($seRoundOrder);
-            $thirdGames = $playoffGames['THIRD'] ?? null;
         @endphp
 
         <div class="flex items-stretch gap-8 sm:gap-10 overflow-x-auto pb-6">
@@ -85,31 +106,12 @@
                     <div class="bracket-round-slots flex flex-col flex-1">
                         @foreach($round['games'] as $game)
                             <div class="bracket-slot flex flex-1 items-center py-1.5">
-                                <div class="w-full">
-                                    @include('tournaments.partials.bracket-game', ['game' => $game])
-                                </div>
+                                @include('tournaments.partials.bracket-game', ['game' => $game])
                             </div>
                         @endforeach
                     </div>
                 </div>
             @endforeach
-
-            @if($thirdGames)
-                <div class="bracket-round flex flex-col min-w-[220px]">
-                    <p class="text-center text-sm text-text-muted mb-2 shrink-0 h-6 leading-6">
-                        Mecz o 3. miejsce
-                    </p>
-                    <div class="bracket-round-slots flex flex-col flex-1">
-                        @foreach($thirdGames as $game)
-                            <div class="bracket-slot flex flex-1 items-center py-1.5">
-                                <div class="w-full">
-                                    @include('tournaments.partials.bracket-game', ['game' => $game])
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
         </div>
     @endif
 </div>

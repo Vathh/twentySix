@@ -1,3 +1,5 @@
+import { formatAverage as formatAverageValue } from './formatAverage.js';
+
 export function registerPlayerCareer(alpine) {
     alpine.data('playerCareerDashboard', (initial) => ({
         window: initial.window || '90d',
@@ -159,6 +161,10 @@ export function registerPlayerCareer(alpine) {
                 return n === 0 ? '0' : null;
             }
             return (n > 0 ? '+' : '') + (Number.isInteger(n) ? String(n) : n.toFixed(1));
+        },
+
+        formatAverage(value) {
+            return formatAverageValue(value, '–');
         },
 
         dash(value) {
@@ -336,12 +342,11 @@ function roundTo(value, step) {
 }
 
 function formatYTick(value, kind, step) {
-    const decimals = step < 1 ? 1 : 0;
-    const n = value.toFixed(decimals);
     if (kind === 'percent') {
-        return `${n}%`;
+        const decimals = step < 1 ? 1 : 0;
+        return `${value.toFixed(decimals)}%`;
     }
-    return n;
+    return value.toFixed(2);
 }
 
 function formatChartDate(iso) {

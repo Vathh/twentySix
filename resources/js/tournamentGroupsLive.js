@@ -44,30 +44,22 @@ export function registerTournamentGroupsLive(Alpine) {
 		connection: 'connecting',
 		pusher: null,
 		pollTimer: null,
-		connectTimeout: null,
 
 		init() {
-			if (this.pusher || this.pollTimer) {
+			if (this.pusher) {
 				return;
 			}
 			this.connectWebSocket(config);
 			void this.fetchSnapshot();
-			this.pollTimer = setInterval(() => this.fetchSnapshot(), 30000);
-			this.connectTimeout = setTimeout(() => {
-				if (this.connection === 'connecting' || this.connection === 'reconnecting') {
-					this.connection = 'offline';
-				}
-			}, 8000);
+			if (!this.pollTimer) {
+				this.pollTimer = setInterval(() => this.fetchSnapshot(), 30000);
+			}
 		},
 
 		destroy() {
 			if (this.pollTimer) {
 				clearInterval(this.pollTimer);
 				this.pollTimer = null;
-			}
-			if (this.connectTimeout) {
-				clearTimeout(this.connectTimeout);
-				this.connectTimeout = null;
 			}
 			if (this.pusher) {
 				this.pusher.unsubscribe(config.channel);
@@ -84,7 +76,7 @@ export function registerTournamentGroupsLive(Alpine) {
 
 			const useTls = cfg.reverb.scheme === 'https';
 			this.pusher = new Pusher(cfg.reverb.key, {
-				cluster: 'reverb',
+				cluster: 'mt1',
 				wsHost: cfg.reverb.host,
 				wsPort: cfg.reverb.port,
 				wssPort: cfg.reverb.port,
@@ -93,14 +85,25 @@ export function registerTournamentGroupsLive(Alpine) {
 				enabledTransports: ['ws', 'wss'],
 			});
 
+			this.pusher.connection.bind('connected', () => {
+				this.connection = 'live';
+			});
+			this.pusher.connection.bind('disconnected', () => {
+				if (this.connection === 'live') {
+					this.connection = 'reconnecting';
+				}
+			});
+			this.pusher.connection.bind('failed', () => {
+				this.connection = 'offline';
+			});
+			this.pusher.connection.bind('unavailable', () => {
+				this.connection = 'offline';
+			});
+
 			const channel = this.pusher.subscribe(cfg.channel);
 
 			channel.bind('pusher:subscription_succeeded', () => {
 				this.connection = 'live';
-				if (this.connectTimeout) {
-					clearTimeout(this.connectTimeout);
-					this.connectTimeout = null;
-				}
 				void this.fetchSnapshot();
 			});
 			channel.bind('pusher:subscription_error', () => {
@@ -115,23 +118,6 @@ export function registerTournamentGroupsLive(Alpine) {
 						this.connection = 'live';
 					}
 				});
-			});
-
-			this.pusher.connection.bind('disconnected', () => {
-				if (this.connection === 'live') {
-					this.connection = 'reconnecting';
-				}
-			});
-			this.pusher.connection.bind('connected', () => {
-				if (this.connection !== 'live') {
-					this.connection = 'connecting';
-				}
-			});
-			this.pusher.connection.bind('failed', () => {
-				this.connection = 'offline';
-			});
-			this.pusher.connection.bind('unavailable', () => {
-				this.connection = 'offline';
 			});
 		},
 
@@ -243,6 +229,7 @@ export function registerTournamentGroupsLive(Alpine) {
 			try {
 				const res = await fetch(config.snapshotUrl, {
 					headers: { Accept: 'application/json' },
+					credentials: 'same-origin',
 				});
 				if (!res.ok) {
 					return;

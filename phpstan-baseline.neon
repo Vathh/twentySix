@@ -7,18 +7,6 @@ parameters:
 			path: app/DTO/ActiveGameDTO.php
 
 		-
-			message: '#^Parameter \#1 \$player of static method App\\Domain\\PlayerDomain\:\:fromEloquent\(\) expects App\\Models\\Player\\Player\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/AchievementDomain.php
-
-		-
-			message: '#^Parameter \#1 \$tournament of static method App\\Domain\\Tournament\\TournamentDomain\:\:fromEloquent\(\) expects App\\Models\\Tournament\\Tournament, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/AchievementDomain.php
-
-		-
 			message: '#^Method App\\Domain\\Career\\Cricket56CareerCollector\:\:emptySectors\(\) should return array\<string, array\{S\: int, D\: int, T\: int\}\> but returns array\{15\: array\{S\: 0, D\: 0, T\: 0\}, 16\: array\{S\: 0, D\: 0, T\: 0\}, 17\: array\{S\: 0, D\: 0, T\: 0\}, 18\: array\{S\: 0, D\: 0, T\: 0\}, 19\: array\{S\: 0, D\: 0, T\: 0\}, 20\: array\{S\: 0, D\: 0, T\: 0\}, bull\: array\{S\: 0, D\: 0, T\: 0\}\}\.$#'
 			identifier: return.type
 			count: 1
@@ -43,214 +31,16 @@ parameters:
 			path: app/Domain/Career/X01CareerCollector.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domain/FriendshipInvitationDomain.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
 			path: app/Domain/Game/GameDomain.php
 
 		-
-			message: '#^Parameter \#1 \$player of static method App\\Domain\\PlayerDomain\:\:fromEloquent\(\) expects App\\Models\\Player\\Player\|null, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 3
-			path: app/Domain/Game/GroupGameDomain.php
-
-		-
-			message: '#^Parameter \#1 \$tournament of static method App\\Domain\\Tournament\\TournamentDomain\:\:fromEloquent\(\) expects App\\Models\\Tournament\\Tournament, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Game/GroupGameDomain.php
-
-		-
-			message: '#^Parameter \#1 \$player of static method App\\Domain\\PlayerDomain\:\:fromEloquent\(\) expects App\\Models\\Player\\Player\|null, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 3
-			path: app/Domain/Game/PlayoffGameDomain.php
-
-		-
-			message: '#^Parameter \#1 \$tournament of static method App\\Domain\\Tournament\\TournamentDomain\:\:fromEloquent\(\) expects App\\Models\\Tournament\\Tournament, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Game/PlayoffGameDomain.php
-
-		-
-			message: '#^Parameter \#1 \$player of static method App\\Domain\\PlayerDomain\:\:fromEloquent\(\) expects App\\Models\\Player\\Player\|null, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 3
-			path: app/Domain/Game/QuickGameDomain.php
-
-		-
 			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 2
 			path: app/Domain/GameScoring/MatchFormat.php
-
-		-
-			message: '#^Parameter \#1 \$player of static method App\\Domain\\PlayerDomain\:\:fromEloquent\(\) expects App\\Models\\Player\\Player\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/GroupStandingDomain.php
-
-		-
-			message: '#^Parameter \#1 \$tournament of static method App\\Domain\\Tournament\\TournamentDomain\:\:fromEloquent\(\) expects App\\Models\\Tournament\\Tournament, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/GroupStandingDomain.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Organization/OrganizationInvitationDomain.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Organization/OrganizationInvitationDomain.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Domain/OrganizationDomain.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/OrganizationDomain.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domain/OrganizationDomain.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 3
-			path: app/Domain/OrganizationDomain.php
-
-		-
-			message: '#^Parameter \#1 \$season of static method App\\Domain\\SeasonDomain\:\:fromEloquent\(\) expects App\\Models\\Season\\Season, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/OrganizationDomain.php
-
-		-
-			message: '#^Parameter \#1 \$achievement of static method App\\Domain\\AchievementDomain\:\:fromEloquent\(\) expects App\\Models\\Achievements\\Achievement, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/PlayerDomain.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Domain/SeasonDomain.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/SeasonDomain.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domain/SeasonDomain.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 3
-			path: app/Domain/SeasonDomain.php
-
-		-
-			message: '#^Parameter \#1 \$organization of static method App\\Domain\\OrganizationDomain\:\:fromEloquent\(\) expects App\\Models\\Organization\\Organization, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/SeasonDomain.php
-
-		-
-			message: '#^Parameter \#1 \$tournament of static method App\\Domain\\Tournament\\TournamentDomain\:\:fromEloquent\(\) expects App\\Models\\Tournament\\Tournament, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/SeasonDomain.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: App\\Domain\\Tournament\\PointSchemeRuleDomain, Closure\(App\\Models\\PointScheme\\PointSchemeRule\)\: App\\Domain\\Tournament\\PointSchemeRuleDomain given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Tournament/PointSchemeDomain.php
-
-		-
-			message: '#^Parameter \#1 \$achievement of static method App\\Domain\\AchievementDomain\:\:fromEloquent\(\) expects App\\Models\\Achievements\\Achievement, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Tournament/TournamentDomain.php
-
-		-
-			message: '#^Parameter \#1 \$game of static method App\\Domain\\Game\\GroupGameDomain\:\:fromEloquent\(\) expects App\\Models\\Game\\Game, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Tournament/TournamentDomain.php
-
-		-
-			message: '#^Parameter \#1 \$groupStanding of static method App\\Domain\\GroupStandingDomain\:\:fromEloquent\(\) expects App\\Models\\GroupStanding\\GroupStanding, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Tournament/TournamentDomain.php
-
-		-
-			message: '#^Parameter \#1 \$scheme of static method App\\Domain\\Tournament\\PointSchemeDomain\:\:fromEloquent\(\) expects App\\Models\\PointScheme\\PointScheme, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Tournament/TournamentDomain.php
-
-		-
-			message: '#^Parameter \#1 \$season of static method App\\Domain\\SeasonDomain\:\:fromEloquent\(\) expects App\\Models\\Season\\Season, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Tournament/TournamentDomain.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Tournament/TournamentInvitationDomain.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Tournament/TournamentInvitationDomain.php
-
-		-
-			message: '#^Parameter \#1 \$player of static method App\\Domain\\PlayerDomain\:\:fromEloquent\(\) expects App\\Models\\Player\\Player\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Tournament/TournamentResultDomain.php
-
-		-
-			message: '#^Parameter \#1 \$season of static method App\\Domain\\SeasonDomain\:\:fromEloquent\(\) expects App\\Models\\Season\\Season, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Tournament/TournamentResultDomain.php
-
-		-
-			message: '#^Parameter \#1 \$tournament of static method App\\Domain\\Tournament\\TournamentDomain\:\:fromEloquent\(\) expects App\\Models\\Tournament\\Tournament, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Tournament/TournamentResultDomain.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -325,22 +115,10 @@ parameters:
 			path: app/Http/Controllers/PagesController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/PlatformAdminController.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
 			path: app/Http/Controllers/PlatformAdminController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Http/Controllers/PlayerController.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -367,30 +145,6 @@ parameters:
 			path: app/Models/League/LeagueSeasonMatchday.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Policies/LeagueGamePolicy.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$league\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Policies/LeagueGamePolicy.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$admins\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Policies/LeaguePolicy.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Policies/LeagueSeasonPolicy.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Badge\\PlayerBadgeEvent\:\:\$first_at\.$#'
 			identifier: property.notFound
 			count: 1
@@ -407,12 +161,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Repositories/Badge/PlayerBadgeRepository.php
-
-		-
-			message: '#^Parameter \#1 \$player of static method App\\Domain\\PlayerDomain\:\:fromEloquent\(\) expects App\\Models\\Player\\Player\|null, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Repositories/Friends/FriendshipRepository.php
 
 		-
 			message: '#^Called ''count'' on Laravel collection, but could have been retrieved as a query\.$#'
@@ -433,58 +181,10 @@ parameters:
 			path: app/Repositories/GroupStanding/GroupStandingRepository.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Repositories/League/LeagueRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$members\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Repositories/League/LeagueRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Repositories/League/LeagueRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Repositories/League/LeagueSeasonRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$league_division_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Repositories/League/LeagueSeasonRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$participants\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Repositories/League/LeagueSeasonRepository.php
-
-		-
 			message: '#^Property App\\Models\\Organization\\Organization\:\:\$match_format_presets \(string\|null\) does not accept array\<string, array\<string, int\|string\>\>\.$#'
 			identifier: assign.propertyType
 			count: 1
 			path: app/Repositories/Organization/OrganizationRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Repositories/Platform/PlatformAdminRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Repositories/Platform/PlatformAdminRepository.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -529,24 +229,6 @@ parameters:
 			path: app/Repositories/Player/PlayerOverviewStatRepository.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$guests\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Repositories/Player/PlayerRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Repositories/Player/PlayerRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$relatedUsers\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Repositories/Player/PlayerRepository.php
-
-		-
 			message: '#^Method App\\Repositories\\Player\\PlayerStatRepository\:\:getDataForQuickStats\(\) should return array\{results\: object\|null, achievements\: Illuminate\\Support\\Collection\<int, object\>\} but returns array\{results\: object\|null, achievements\: Illuminate\\Support\\Collection\<int, stdClass\>\}\.$#'
 			identifier: return.type
 			count: 1
@@ -559,62 +241,14 @@ parameters:
 			path: app/Repositories/Player/PlayerStatRepository.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$relatedUsers\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Repositories/Season/SeasonRepository.php
-
-		-
-			message: '#^Method App\\Repositories\\Season\\SeasonRepository\:\:getRelatedUsers\(\) should return Illuminate\\Support\\Collection\<int, App\\Models\\Users\\User\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Repositories/Season/SeasonRepository.php
-
-		-
 			message: '#^Method App\\Repositories\\Stats\\TournamentAggregateRepository\:\:buildStandingsForTournaments\(\) should return Illuminate\\Support\\Collection\<int, object\{place\: int, player_id\: int, player_name\: string, user_id\: int\|null, points\: int, count_max\: int, count_170_plus\: int, count_qf\: int, count_hf\: int, best_qf\: int\|null, best_hf\: int\|null\}\> but returns Illuminate\\Support\\Collection\<int, object\{place\: mixed, player_id\: int, player_name\: string, user_id\: int\|null, points\: int, count_max\: int, count_170_plus\: int, count_qf\: int, count_hf\: int, best_qf\: int\|null, best_hf\: int\|null\}&stdClass\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Repositories/Stats/TournamentAggregateRepository.php
 
 		-
-			message: '#^Parameter \#1 \$player of static method App\\Domain\\PlayerDomain\:\:fromEloquent\(\) expects App\\Models\\Player\\Player\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Repositories/Tournament/TournamentGuestParticipantRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Repositories/Tournament/TournamentInvitationRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Repositories/Tournament/TournamentRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Repositories/Tournament/TournamentRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Repositories/Tournament/TournamentRepository.php
-
-		-
 			message: '#^Method App\\Repositories\\Tournament\\TournamentRepository\:\:getAdmins\(\) should return Illuminate\\Support\\Collection\<int, array\{id\: int, name\: string\}\> but returns Illuminate\\Support\\Collection\<int, array\{id\: mixed, name\: mixed\}\>\.$#'
 			identifier: return.type
-			count: 1
-			path: app/Repositories/Tournament/TournamentRepository.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
 			count: 1
 			path: app/Repositories/Tournament/TournamentRepository.php
 
@@ -631,70 +265,10 @@ parameters:
 			path: app/Repositories/User/UserRepository.php
 
 		-
-			message: '#^Parameter \#1 \$player of static method App\\Domain\\PlayerDomain\:\:fromEloquent\(\) expects App\\Models\\Player\\Player\|null, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Repositories/User/UserRepository.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Rules/UniquePlayerNameInLeague.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Rules/UniquePlayerNameInOrganization.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$guests\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Rules/UniquePlayerNameInSeason.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Rules/UniquePlayerNameInSeason.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$relatedUsers\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Rules/UniquePlayerNameInSeason.php
-
-		-
 			message: '#^Property App\\Rules\\UniquePlayerNameInSeason\:\:\$organizationId is never read, only written\.$#'
 			identifier: property.onlyWritten
 			count: 1
 			path: app/Rules/UniquePlayerNameInSeason.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Auth/MobileAppTokenService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Career/PlayerCareerStatsService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Career/TrainingGameService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Career/TrainingGameService.php
 
 		-
 			message: '#^Empty array passed to foreach\.$#'
@@ -704,12 +278,6 @@ parameters:
 
 		-
 			message: '#^Parameter \#1 \$achievements of method App\\Services\\Competition\\CompetitionShowSerializer\:\:mapAchievements\(\) expects Illuminate\\Support\\Collection\<int, array\{player\: mixed, max\: int, one_seventy\: int, qf\: list, hf\: list\}\>, Illuminate\\Support\\Collection\<int, array\{player\: App\\Domain\\PlayerDomain, max\: int, one_seventy\: int, qf\: list\<App\\Domain\\AchievementDomain\|stdClass\>, hf\: list\<App\\Domain\\AchievementDomain\>\}\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Competition/CompetitionShowSerializer.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: int, name\: string\}, Closure\(App\\Models\\League\\League\)\: array\{id\: int, name\: string\} given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Services/Competition/CompetitionShowSerializer.php
@@ -739,24 +307,6 @@ parameters:
 			path: app/Services/Game/GameLockService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$admins\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/GameScoring/GameAuthorizationService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$league\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/GameScoring/GameDetailService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/GameScoring/GameDetailService.php
-
-		-
 			message: '#^Parameter \#1 \$legsDetail of static method App\\Support\\GameScoring\\GameLegsSetGrouper\:\:group\(\) expects Illuminate\\Support\\Collection\<int, array\{leg\: object, visits\: mixed, playerStats\: mixed\}\>, Illuminate\\Support\\Collection\<\(int\|string\), array\{leg\: mixed, visits\: Illuminate\\Support\\Collection\<int, App\\Models\\Game\\GameVisit\>, playerStats\: Illuminate\\Support\\Collection\<int, App\\Models\\Game\\GameLegPlayerStat\>\}\> given\.$#'
 			identifier: argument.type
 			count: 1
@@ -767,12 +317,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 2
 			path: app/Services/GameScoring/GameDetailService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/GameScoring/GameScoringStateBuilder.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -787,81 +331,27 @@ parameters:
 			path: app/Services/GroupStanding/GroupStandingService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueGamePlayService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$league\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/League/LeagueGamePlayService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/League/LeagueGamePlayService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$round_number\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueGamePlayService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueGamePlayService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$window_end\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueGamePlayService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$window_start\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueGamePlayService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:windowLabel\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/League/LeagueGamePlayService.php
-
-		-
 			message: '#^Cannot access property \$value on string\.$#'
 			identifier: property.nonObject
 			count: 2
 			path: app/Services/League/LeagueGamePlayService.php
 
 		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			message: '#^Cannot call method copy\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Services/League/LeagueGamePlayService.php
+
+		-
+			message: '#^Cannot call method isOpen\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
 			path: app/Services/League/LeagueGamePlayService.php
 
 		-
-			message: '#^Method App\\Services\\League\\LeagueGamePlayService\:\:opponent\(\) should return App\\Models\\Player\\Player but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
 			count: 1
-			path: app/Services/League/LeagueGamePlayService.php
-
-		-
-			message: '#^Method App\\Services\\League\\LeagueGamePlayService\:\:requirePlayer\(\) should return App\\Models\\Player\\Player but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/League/LeagueGamePlayService.php
-
-		-
-			message: '#^Parameter \#1 \$player of method App\\Services\\League\\LeagueGamePlayService\:\:serializePlayer\(\) expects App\\Models\\Player\\Player\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 2
 			path: app/Services/League/LeagueGamePlayService.php
 
 		-
@@ -889,54 +379,6 @@ parameters:
 			path: app/Services/League/LeagueGamePlayService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$capacity\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 13
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$league_division_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$position\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$promote_direct\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$promote_playoff\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starting_score\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
 			message: '#^Cannot access property \$value on string\.$#'
 			identifier: property.nonObject
 			count: 2
@@ -949,166 +391,10 @@ parameters:
 			path: app/Services/League/LeagueSeasonAdvanceService.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\League\\LeagueGame\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
 			count: 2
 			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{higherDivisionId\: int\<0, max\>, lowerDivisionId\: int\<0, max\>, winnerId\: int\<0, max\>, loserId\: int\<0, max\>\}, Closure\(App\\Models\\League\\LeagueGame\)\: array\{higherDivisionId\: int\<0, max\>, lowerDivisionId\: int\<0, max\>, winnerId\: int\<0, max\>, loserId\: int\<0, max\>\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{player1Id\: int, player2Id\: int, player1Score\: int, player2Score\: int, winnerId\: int\|null, status\: string\}, Closure\(App\\Models\\League\\LeagueGame\)\: array\{player1Id\: int, player2Id\: int, player1Score\: int, player2Score\: int, winnerId\: int\|null, status\: string\} given\.$#'
-			identifier: argument.type
-			count: 3
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{player1Id\: int\<0, max\>, player2Id\: int\<0, max\>, winnerId\: int\<0, max\>\|null, status\: mixed, bracketRound\: int\<0, max\>, isThirdPlace\: bool\}, Closure\(App\\Models\\League\\LeagueGame\)\: array\{player1Id\: int\<0, max\>, player2Id\: int\<0, max\>, winnerId\: int\<0, max\>\|null, status\: mixed, bracketRound\: int\<0, max\>, isThirdPlace\: bool\} given\.$#'
-			identifier: argument.type
-			count: 2
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Parameter \#1 \$division of method App\\Services\\League\\LeagueSeasonStandingsBuilder\:\:activePlayerIds\(\) expects App\\Models\\League\\LeagueSeasonDivision, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 4
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Parameter \#1 \$key of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:contains\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|Illuminate\\Database\\Eloquent\\Model\|int\|string, Closure\(App\\Models\\League\\LeagueGame\)\: bool given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Parameter \#2 \$division of method App\\Services\\League\\LeagueSeasonAdvanceService\:\:createTiebreakGame\(\) expects App\\Models\\League\\LeagueSeasonDivision, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Parameter \#2 \$division of method App\\Services\\League\\LeagueSeasonAdvanceService\:\:ensureRoundRobinTiebreak\(\) expects App\\Models\\League\\LeagueSeasonDivision, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Parameter \#2 \$division of method App\\Services\\League\\LeagueSeasonAdvanceService\:\:resolvedTieOrder\(\) expects App\\Models\\League\\LeagueSeasonDivision, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Parameter \#5 \$existing of method App\\Services\\League\\LeagueSeasonAdvanceService\:\:ensureRoundRobinTiebreak\(\) expects Illuminate\\Support\\Collection\<int, App\\Models\\League\\LeagueGame\>, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/League/LeagueSeasonAdvanceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$capacity\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonLifecycleService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$game_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonLifecycleService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/League/LeagueSeasonLifecycleService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$members\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonLifecycleService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonLifecycleService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$participants\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonLifecycleService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$position\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonLifecycleService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$promote_direct\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonLifecycleService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$promote_playoff\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonLifecycleService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starting_score\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/League/LeagueSeasonLifecycleService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonQueryService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$league\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonQueryService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonQueryService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonQueryService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonQueryService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonQueryService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueSeasonQueryService.php
 
 		-
 			message: '#^Cannot access property \$canStart on null\.$#'
@@ -1137,19 +423,13 @@ parameters:
 		-
 			message: '#^Cannot call method isOpen\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 2
+			count: 3
 			path: app/Services/League/LeagueSeasonQueryService.php
 
 		-
 			message: '#^Cannot call method label\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 2
-			path: app/Services/League/LeagueSeasonQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$matchday of method App\\Services\\League\\LeagueSeasonQueryService\:\:mapMatchdayForApi\(\) expects App\\Models\\League\\LeagueSeasonMatchday, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
 			path: app/Services/League/LeagueSeasonQueryService.php
 
 		-
@@ -1165,69 +445,15 @@ parameters:
 			path: app/Services/League/LeagueSeasonQueryService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonResultService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$withdrawn_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonResultService.php
-
-		-
 			message: '#^Cannot call method isOpen\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 1
+			count: 2
 			path: app/Services/League/LeagueSeasonResultService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonStandingsBuilder.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$participants\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonStandingsBuilder.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$withdrawn_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/League/LeagueSeasonStandingsBuilder.php
 
 		-
 			message: '#^Cannot access property \$value on string\.$#'
 			identifier: property.nonObject
 			count: 2
-			path: app/Services/League/LeagueSeasonStandingsBuilder.php
-
-		-
-			message: '#^Method App\\Services\\League\\LeagueSeasonStandingsBuilder\:\:divisionBlocks\(\) should return list\<array\{division\: App\\Models\\League\\LeagueSeasonDivision, standings\: list\<App\\Domain\\League\\LeagueStandingRow\>, games\: Illuminate\\Support\\Collection\<int, App\\Models\\League\\LeagueGame\>, players\: Illuminate\\Support\\Collection\}\> but returns list\<array\{division\: Illuminate\\Database\\Eloquent\\Model, standings\: list\<App\\Domain\\League\\LeagueStandingRow\>, games\: Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>, players\: mixed\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/League/LeagueSeasonStandingsBuilder.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{player1Id\: int, player2Id\: int, player1Score\: int, player2Score\: int, winnerId\: int\|null, status\: string\}, Closure\(App\\Models\\League\\LeagueGame\)\: array\{player1Id\: int, player2Id\: int, player1Score\: int, player2Score\: int, winnerId\: int\|null, status\: string\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/League/LeagueSeasonStandingsBuilder.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:filter\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|null, Closure\(App\\Models\\League\\LeagueGame\)\: bool given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/League/LeagueSeasonStandingsBuilder.php
-
-		-
-			message: '#^Parameter \#1 \$division of method App\\Services\\League\\LeagueSeasonStandingsBuilder\:\:activePlayerIds\(\) expects App\\Models\\League\\LeagueSeasonDivision, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
 			path: app/Services/League/LeagueSeasonStandingsBuilder.php
 
 		-
@@ -1237,57 +463,15 @@ parameters:
 			path: app/Services/League/LeagueSeasonStandingsBuilder.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$capacity\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
-			identifier: property.notFound
+			message: '#^Cannot call method isOpen\(\) on string\.$#'
+			identifier: method.nonObject
 			count: 1
 			path: app/Services/League/LeagueService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/League/LeagueService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$members\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/League/LeagueService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$promote_direct\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$promote_playoff\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/League/LeagueService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 3
+			message: '#^Cannot call method locksPyramid\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
 			path: app/Services/League/LeagueService.php
 
 		-
@@ -1301,24 +485,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 6
 			path: app/Services/League/LeagueService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Platform/PlatformAdminService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 8
-			path: app/Services/Player/PlayerLiveGameService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Player/PlayerOverviewService.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>activity_days" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -1411,34 +577,10 @@ parameters:
 			path: app/Services/Player/PlayerOverviewService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Player/PlayerProfileService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/Player/PlayerProfileService.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/PlayoffGame/PlayoffService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/FfaMatchFinishService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$host_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/QuickGame/FfaSubmitGuard.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>host_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -1477,54 +619,6 @@ parameters:
 			path: app/Services/QuickGame/QuickGameFfaCricketScoringService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ffa_session_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameFfaPresenceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameFfaPresenceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameFfaPresenceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/QuickGame/QuickGameFfaPresenceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameFfaPresenceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameFfaPresenceService.php
-
-		-
-			message: '#^Parameter \#1 \$lobby of method App\\Services\\QuickGame\\QuickGameFfaPresenceService\:\:buildActiveMatchPayload\(\) expects App\\Models\\QuickGame\\QuickGameLobby, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/QuickGame/QuickGameFfaPresenceService.php
-
-		-
-			message: '#^Parameter \#1 \$session of method App\\Repositories\\QuickGame\\QuickGameFfaPresenceRepository\:\:findForSessionPlayer\(\) expects App\\Models\\QuickGame\\QuickGameFfaSession, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/QuickGame/QuickGameFfaPresenceService.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
@@ -1537,24 +631,6 @@ parameters:
 			path: app/Services/QuickGame/QuickGameFfaPresenceService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameFfaScoringService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameFfaScoringService.php
-
-		-
-			message: '#^Parameter \#1 \$players of static method App\\Support\\QuickGameLobbyPlayerOrder\:\:sort\(\) expects Illuminate\\Support\\Collection\<int, object\>, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/QuickGame/QuickGameFfaScoringService.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -1565,47 +641,11 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/QuickGame/QuickGameFfaScoringService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$invited_player_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameLobbyAuthorizationService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameLobbyAuthorizationService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameLobbyAuthorizationService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameLobbyAuthorizationService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Services/QuickGame/QuickGameLobbyService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_ready\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameLobbyService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_registered\.$#'
-			identifier: property.notFound
-			count: 5
 			path: app/Services/QuickGame/QuickGameLobbyService.php
 
 		-
@@ -1615,37 +655,7 @@ parameters:
 			path: app/Services/QuickGame/QuickGameLobbyService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameLobbyService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/QuickGame/QuickGameLobbyService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/QuickGame/QuickGameLobbyService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isInProgress\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/QuickGame/QuickGameLobbyService.php
-
-		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Services/QuickGame/QuickGameLobbyService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\QuickGame\\QuickGameLobbyRematchIntent\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
 			count: 1
 			path: app/Services/QuickGame/QuickGameLobbyService.php
@@ -1667,42 +677,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Services/Season/SeasonStatsService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Tournament/LoginCodeService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player1_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Tournament/TournamentFinishService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player2_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Tournament/TournamentFinishService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Tournament/TournamentFinishService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Tournament/TournamentJoinRequestService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Tournament/TournamentJoinRequestService.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -1741,55 +715,7 @@ parameters:
 			path: app/Services/Tournament/TournamentStartPageService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$division\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/User/UserCompetitionsService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/User/UserCompetitionsService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/User/UserCompetitionsService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Models\\League\\League\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Services/User/UserCompetitionsService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Models\\Season\\Season\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Services/User/UserCompetitionsService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$host_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Support/QuickGameFfa/QuickGameFfaStateBuilder.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isInProgress\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Support/QuickGameLobbyPayload.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,object\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Support/QuickGameLobbyPayload.php
-
-		-
-			message: '#^Parameter \#1 \$players of static method App\\Support\\QuickGameLobbyPlayerOrder\:\:sort\(\) expects Illuminate\\Support\\Collection\<int, object\>, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\> given\.$#'
+			message: '#^Parameter \#1 \$orderedPlayers of static method App\\Support\\QuickGameLobbyPayload\:\:resolveMyPlayerIndex\(\) expects Illuminate\\Support\\Collection\<int, object\>, Illuminate\\Support\\Collection\<int, App\\Models\\QuickGame\\QuickGameLobbyPlayer\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Support/QuickGameLobbyPayload.php
@@ -1797,20 +723,8 @@ parameters:
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Support/QuickGameLobbyPayload.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$group_number\.$#'
-			identifier: property.notFound
 			count: 2
-			path: app/ViewModels/TournamentDataViewModel.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$player\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/ViewModels/TournamentDataViewModel.php
+			path: app/Support/QuickGameLobbyPayload.php
 
 		-
 			message: '#^Empty array passed to foreach\.$#'
@@ -1837,43 +751,7 @@ parameters:
 			path: app/ViewModels/TournamentDataViewModel.php
 
 		-
-			message: '#^Method App\\ViewModels\\TournamentDataViewModel\:\:players\(\) should return array\<App\\Domain\\PlayerDomain\> but returns array\<list\<App\\Domain\\PlayerDomain\|null\>\>\.$#'
+			message: '#^Method App\\ViewModels\\TournamentDataViewModel\:\:players\(\) should return array\<App\\Domain\\PlayerDomain\> but returns array\<int\<0, max\>, list\<App\\Domain\\PlayerDomain\|null\>\>\.$#'
 			identifier: return.type
-			count: 1
-			path: app/ViewModels/TournamentDataViewModel.php
-
-		-
-			message: '#^Parameter \#1 \$achievement of static method App\\Domain\\AchievementDomain\:\:fromEloquent\(\) expects App\\Models\\Achievements\\Achievement, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/ViewModels/TournamentDataViewModel.php
-
-		-
-			message: '#^Parameter \#1 \$game of static method App\\Domain\\Game\\GroupGameDomain\:\:fromEloquent\(\) expects App\\Models\\Game\\Game, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/ViewModels/TournamentDataViewModel.php
-
-		-
-			message: '#^Parameter \#1 \$game of static method App\\Domain\\Game\\PlayoffGameDomain\:\:fromEloquent\(\) expects App\\Models\\PlayoffGame\\PlayoffGame, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/ViewModels/TournamentDataViewModel.php
-
-		-
-			message: '#^Parameter \#1 \$groupStanding of static method App\\Domain\\GroupStandingDomain\:\:fromEloquent\(\) expects App\\Models\\GroupStanding\\GroupStanding, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/ViewModels/TournamentDataViewModel.php
-
-		-
-			message: '#^Parameter \#1 \$result of static method App\\Domain\\Tournament\\TournamentResultDomain\:\:fromEloquent\(\) expects App\\Models\\Tournament\\TournamentResult, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/ViewModels/TournamentDataViewModel.php
-
-		-
-			message: '#^Parameter \#1 \$season of static method App\\Domain\\SeasonDomain\:\:fromEloquent\(\) expects App\\Models\\Season\\Season, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/ViewModels/TournamentDataViewModel.php

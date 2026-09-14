@@ -17,6 +17,7 @@ class PlayerBadgeEvent extends Model
         'source_id',
     ];
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

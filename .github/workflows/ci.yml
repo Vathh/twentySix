@@ -58,4 +58,6 @@ jobs:
           extensions: mbstring, pdo_mysql, curl
           coverage: none
       - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: cp .env.example .env
+      - run: php artisan key:generate
       - run: php artisan test

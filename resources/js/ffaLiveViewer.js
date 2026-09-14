@@ -1,4 +1,5 @@
 import Pusher from 'pusher-js';
+import { formatAverage as formatAverageValue } from './formatAverage.js';
 
 const FFA_STATE_EVENTS = ['ffa.state.updated', '.ffa.state.updated'];
 
@@ -249,10 +250,7 @@ export function registerFfaLiveViewer(Alpine) {
         },
 
         formatAverage(value) {
-            if (value == null || Number.isNaN(Number(value))) {
-                return '—';
-            }
-            return Number(value).toFixed(2);
+            return formatAverageValue(value);
         },
 
         connectionLabel() {

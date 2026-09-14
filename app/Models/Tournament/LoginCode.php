@@ -24,6 +24,7 @@ class LoginCode extends Model implements AuthenticatableContract
         'expires_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Tournament, $this> */
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);

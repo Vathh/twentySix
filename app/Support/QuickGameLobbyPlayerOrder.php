@@ -2,14 +2,15 @@
 
 namespace App\Support;
 
+use App\Models\QuickGame\QuickGameLobbyPlayer;
 use Illuminate\Support\Collection;
 
 class QuickGameLobbyPlayerOrder
 {
     /**
-     * @param  Collection<int, object>  $players  QuickGameLobbyPlayer models
+     * @param  Collection<int, QuickGameLobbyPlayer>  $players
      * @param  array<int, int>|null  $orderLobbyPlayerIds
-     * @return Collection<int, object>
+     * @return Collection<int, QuickGameLobbyPlayer>
      */
     public static function sort(Collection $players, ?array $orderLobbyPlayerIds): Collection
     {

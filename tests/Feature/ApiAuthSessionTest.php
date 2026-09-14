@@ -24,6 +24,7 @@ class ApiAuthSessionTest extends TestCase
     public function test_login_issues_mobile_token_with_thirty_day_expiry(): void
     {
         Carbon::setTestNow('2026-07-14 12:00:00');
+        $this->verifiedUser();
 
         $response = $this->postJson('/api/account/login', [
             'email' => 'session@example.com',
@@ -63,9 +64,7 @@ class ApiAuthSessionTest extends TestCase
         $newToken = $refresh->json('token');
         $this->assertNotSame($oldToken, $newToken);
 
-        $this->getJson('/api/friends', [
-            'Authorization' => 'Bearer '.$oldToken,
-        ])->assertUnauthorized();
+        $this->assertApiUnauthorized($oldToken);
 
         $stored = PersonalAccessToken::first();
         $this->assertTrue(
@@ -88,9 +87,7 @@ class ApiAuthSessionTest extends TestCase
             'Authorization' => 'Bearer '.$token,
         ])->assertOk();
 
-        $this->getJson('/api/friends', [
-            'Authorization' => 'Bearer '.$token,
-        ])->assertUnauthorized();
+        $this->assertApiUnauthorized($token);
 
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
@@ -109,8 +106,15 @@ class ApiAuthSessionTest extends TestCase
 
         Carbon::setTestNow('2026-08-15 00:00:00');
 
-        $this->getJson('/api/friends', [
-            'Authorization' => 'Bearer '.$token,
-        ])->assertUnauthorized();
+        $this->assertApiUnauthorized($token);
+    }
+
+    private function assertApiUnauthorized(string $token): void
+    {
+        $this->app['auth']->forgetGuards();
+
+        $this->withToken($token)
+            ->getJson('/api/friends')
+            ->assertUnauthorized();
     }
 }

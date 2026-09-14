@@ -40,10 +40,9 @@
                         </h2>
                         <div
                             class="roster-dropzone"
+                            data-roster-drop="division"
+                            :data-roster-division-id="division.id"
                             :class="{ 'roster-dropzone-active': dropTarget === ('division-' + division.id), 'opacity-60': busy }"
-                            @dragover.prevent="onDragOver($event, { type: 'division', id: division.id })"
-                            @dragleave="dropTarget === ('division-' + division.id) ? dropTarget = null : null"
-                            @drop.prevent="onDrop($event, { type: 'division', id: division.id })"
                         >
                             <template x-if="division.players.length === 0">
                                 <p class="text-text-secondary text-sm" x-text="locked ? 'Brak zawodników.' : 'Upuść tutaj.'"></p>
@@ -52,10 +51,8 @@
                                 <template x-for="player in division.players" :key="player.id">
                                     <div
                                         class="roster-chip"
-                                        :class="{ 'roster-chip-guest': player.kind === 'guest', 'cursor-grab': !locked }"
-                                        :draggable="!locked"
-                                        @dragstart="onDragStart($event, player)"
-                                        @dragend="onDragEnd()"
+                                        :class="{ 'roster-chip-guest': player.kind === 'guest', 'roster-chip-movable': !locked, 'roster-chip-source': draggingId === player.id }"
+                                        @pointerdown="onChipPointerDown($event, player)"
                                     >
                                         <span x-text="player.name"></span>
                                     </div>
@@ -74,10 +71,8 @@
                     </div>
                     <div
                         class="roster-dropzone"
+                        data-roster-drop="related"
                         :class="{ 'roster-dropzone-active': dropTarget === 'related', 'opacity-60': busy }"
-                        @dragover.prevent="onDragOver($event, { type: 'related' })"
-                        @dragleave="dropTarget === 'related' ? dropTarget = null : null"
-                        @drop.prevent="onDrop($event, { type: 'related' })"
                     >
                         <template x-if="related.length === 0">
                             <p class="text-text-secondary text-sm">Pula pusta.</p>
@@ -86,10 +81,8 @@
                             <template x-for="player in related" :key="player.id">
                                 <div
                                     class="roster-chip"
-                                    :class="{ 'cursor-grab': !locked }"
-                                    :draggable="!locked"
-                                    @dragstart="onDragStart($event, player)"
-                                    @dragend="onDragEnd()"
+                                    :class="{ 'roster-chip-movable': !locked, 'roster-chip-source': draggingId === player.id }"
+                                    @pointerdown="onChipPointerDown($event, player)"
                                 >
                                     <span x-text="player.name"></span>
                                 </div>
@@ -105,10 +98,8 @@
                     </div>
                     <div
                         class="roster-dropzone"
+                        data-roster-drop="guest"
                         :class="{ 'roster-dropzone-active': dropTarget === 'guest', 'opacity-60': busy }"
-                        @dragover.prevent="onDragOver($event, { type: 'guest' })"
-                        @dragleave="dropTarget === 'guest' ? dropTarget = null : null"
-                        @drop.prevent="onDrop($event, { type: 'guest' })"
                     >
                         <template x-if="guests.length === 0">
                             <p class="text-text-secondary text-sm">Pula pusta.</p>
@@ -117,10 +108,8 @@
                             <template x-for="player in guests" :key="player.id">
                                 <div
                                     class="roster-chip roster-chip-guest"
-                                    :class="{ 'cursor-grab': !locked }"
-                                    :draggable="!locked"
-                                    @dragstart="onDragStart($event, player)"
-                                    @dragend="onDragEnd()"
+                                    :class="{ 'roster-chip-movable': !locked, 'roster-chip-source': draggingId === player.id }"
+                                    @pointerdown="onChipPointerDown($event, player)"
                                 >
                                     <span x-text="player.name"></span>
                                 </div>
@@ -130,5 +119,14 @@
                 </div>
             </div>
         </div>
+
+        <template x-if="ghost">
+            <div
+                class="roster-chip roster-chip-ghost"
+                :class="{ 'roster-chip-guest': ghost.kind === 'guest' }"
+                :style="'left:' + ghost.x + 'px; top:' + ghost.y + 'px'"
+                x-text="ghost.name"
+            ></div>
+        </template>
     </div>
 @endsection

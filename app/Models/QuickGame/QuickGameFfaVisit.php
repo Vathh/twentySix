@@ -31,11 +31,13 @@ class QuickGameFfaVisit extends Model
         'darts' => 'array',
     ];
 
+    /** @return BelongsTo<QuickGameFfaSession, $this> */
     public function session(): BelongsTo
     {
         return $this->belongsTo(QuickGameFfaSession::class, 'ffa_session_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

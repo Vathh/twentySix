@@ -256,7 +256,7 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - Lista **nie wpisuje** nikogo automatycznie do turnieju — służy do **szybkiego masowego wysyłania zaproszeń** (zaznaczenie wielu osób → wyślij zaproszenia).
 - Na stronie startu turnieju skład do masowego invite = **suma `organization.relatedUsers` + `season.relatedUsers` bez duplikatów** (jak dziś `getRelatedPlayers`, ale tylko użytkownicy z kontem — bez gości).
 - **Skład organizacji:** admin na **webie** wysyła zaproszenie (ekran `relatedUsers`); gracz akceptuje na **mobile** (zakładka **Gra**). Do `relatedUsers` wpisuje się **dopiero po akceptacji**. Usunięcie ze składu zdejmuje powiązanie; można zaprosić ponownie.
-- **Skład sezonu** (osobna lista) — nadal dodawanie/usuwanie na ekranie sezonu, bez osobnego zaproszenia.
+- **Skład sezonu** i **pula ligi** — ten sam flow co organizacja: zaproszenie z webu, akceptacja na mobile, wpis na listę dopiero po akceptacji.
 
 #### Strona startu turnieju (web) — układ B
 
@@ -300,11 +300,17 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - `POST /api/organizations/invitations/{id}/accept`
 - `POST /api/organizations/invitations/{id}/reject`
 
+#### Zaproszenia do sezonu i puli ligi (`relatedUsers`)
+
+- Ten sam flow co organizacja: **Zaproś** na webie, akceptacja na mobile (zakładka **Gra**).
+- Sezon: `GET/POST /api/seasons/invitations/received|{id}/accept|{id}/reject`
+- Liga: `GET/POST /api/leagues/invitations/received|{id}/accept|{id}/reject` (osobne od zaproszeń do **meczu** ligowego `/api/league-games/...`).
+
 #### Mobile — ekran zaproszeń
 
 - **Jeden ekran** z zakładkami: **Gra** | **Znajomi**.
-- **Gra:** zaproszenia do turnieju, organizacji, quick game i meczu ligowego.
-- Pull-to-refresh na liście. **Push** przy nowym zaproszeniu (znajomi / turniej / organizacja / lobby / liga) — ✅.
+- **Gra:** zaproszenia do turnieju, organizacji, sezonu, puli ligi, quick game i meczu ligowego.
+- Pull-to-refresh na liście. **Push** przy nowym zaproszeniu (znajomi / turniej / organizacja / sezon / liga / lobby / mecz ligowy) — ✅.
 
 ## Organizacja i punktacja (MVP)
 
@@ -327,7 +333,7 @@ Organizacja
 ```
 
 - Tylko **indywidualna**; format **X01** per szczebel (501 / legi / sety), zamrażany na start sezonu.
-- **Pula ligi** jest własna: powiązani użytkownicy i goście ligi (nie mieszanka ze składu organizacji). Admin uzupełnia pulę na ekranach ligi. **Skład szczebli:** przeciąganie znaczników z puli (powiązani / goście) na szczeble.
+- **Pula ligi** jest własna: powiązani użytkownicy i goście ligi (nie mieszanka ze składu organizacji). Admin zaprasza użytkowników do puli (akceptacja na mobile), gości dodaje od razu. **Skład szczebli:** przeciąganie znaczników z puli (powiązani / goście) na szczeble.
 - Sezon ligowy i sezon turniejowy to **osobne byty**.
 - Kalendarz przy starcie sezonu ligowego:
   - **Kolejki:** albo **długość kolejki + data startu** (koniec sezonu wyliczany ze składu), albo **start i koniec sezonu** (długość kolejki = równy podział tego okresu).
@@ -673,7 +679,7 @@ Historyczne rozbieżności z czasów przed `product.md` — **domknięte w MVP v
 | Losowanie playoff | Bez par z tej samej grupy (runda 1) | ✅ `PlayoffFirstRoundPairing` |
 | Rozmiar drabinki | Wybór etapu (`playoff_bracket_size`; **docelowo max 128**, dziś w kodzie jeszcze 32) | ⚠️ `PlayoffBracketFactory::create` (enumy) → generyczny silnik w planie SE/DE |
 | Warianty SE / DE | Typ przy starcie; bye; miejsca; GF | ✅ [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) |
-| Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile; `relatedUsers` org = zaproszenie | ✅ `TournamentInvitation`, `OrganizationInvitation`, `InvitationsScreen` |
+| Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile; `relatedUsers` org/sezon/liga = zaproszenie | ✅ `TournamentInvitation`, `OrganizationInvitation`, `SeasonInvitation`, `LeagueInvitation`, `InvitationsScreen` |
 | Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ |
 | FFA 2–8 oba tryby urządzeń | `one_device` i `each_own` | ✅ unified FFA |
 | Rotacja openera lega | `(opener + 1) % N` | ✅ |

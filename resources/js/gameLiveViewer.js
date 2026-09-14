@@ -1,4 +1,5 @@
 import Pusher from 'pusher-js';
+import { formatAverage as formatAverageValue } from './formatAverage.js';
 
 const GAME_STATE_EVENTS = ['game.state', '.game.state'];
 const CHECKOUT_BOGEYS = [159, 162, 163, 165, 166, 168, 169];
@@ -251,10 +252,7 @@ export function registerGameLiveViewer(Alpine) {
         },
 
         formatAverage(value) {
-            if (value == null || Number.isNaN(Number(value))) {
-                return '—';
-            }
-            return Number(value).toFixed(2);
+            return formatAverageValue(value);
         },
 
         formatPercent(value) {

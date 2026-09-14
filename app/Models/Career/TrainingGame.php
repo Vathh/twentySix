@@ -23,6 +23,7 @@ class TrainingGame extends Model
         'metrics' => 'array',
     ];
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

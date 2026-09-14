@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\LeagueSeasonCatalogController;
 use App\Http\Controllers\Api\MyCompetitionsController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\OrganizationInvitationController;
+use App\Http\Controllers\Api\LeagueInvitationController;
+use App\Http\Controllers\Api\SeasonInvitationController;
 use App\Http\Controllers\Api\PlayerCareerController;
 use App\Http\Controllers\Api\PlayerProfileController;
 use App\Http\Controllers\Api\PushTokenController;
@@ -139,6 +141,18 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::get('/received', [OrganizationInvitationController::class, 'received']);
         Route::post('/{invitationId}/accept', [OrganizationInvitationController::class, 'accept'])->whereNumber('invitationId');
         Route::post('/{invitationId}/reject', [OrganizationInvitationController::class, 'reject'])->whereNumber('invitationId');
+    });
+
+    Route::prefix('seasons/invitations')->group(function () {
+        Route::get('/received', [SeasonInvitationController::class, 'received']);
+        Route::post('/{invitationId}/accept', [SeasonInvitationController::class, 'accept'])->whereNumber('invitationId');
+        Route::post('/{invitationId}/reject', [SeasonInvitationController::class, 'reject'])->whereNumber('invitationId');
+    });
+
+    Route::prefix('leagues/invitations')->group(function () {
+        Route::get('/received', [LeagueInvitationController::class, 'received']);
+        Route::post('/{invitationId}/accept', [LeagueInvitationController::class, 'accept'])->whereNumber('invitationId');
+        Route::post('/{invitationId}/reject', [LeagueInvitationController::class, 'reject'])->whereNumber('invitationId');
     });
 
     Route::prefix('tournaments/join')->group(function () {

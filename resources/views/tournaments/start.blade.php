@@ -382,7 +382,7 @@
 
                 @if($tournament->season)
                 <div
-                    x-data="{ activeTab: @json($addTab) }"
+                    x-data="{ activeTab: '{{ $addTab }}' }"
                 >
                     <div class="border-b border-border px-6">
                         <div class="flex gap-1">

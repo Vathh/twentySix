@@ -60,6 +60,32 @@ class InvitationPushService
         );
     }
 
+    public function notifySeasonInvitation(
+        int $recipientUserId,
+        int $invitationId,
+        string $seasonName,
+    ): void {
+        $this->dispatch(
+            recipientUserId: $recipientUserId,
+            type: InvitationPushType::Season,
+            invitationId: $invitationId,
+            context: ['seasonName' => $seasonName],
+        );
+    }
+
+    public function notifyLeagueInvitation(
+        int $recipientUserId,
+        int $invitationId,
+        string $leagueName,
+    ): void {
+        $this->dispatch(
+            recipientUserId: $recipientUserId,
+            type: InvitationPushType::LeagueMembership,
+            invitationId: $invitationId,
+            context: ['leagueName' => $leagueName],
+        );
+    }
+
     /**
      * @param  array<string, string>  $context
      * @return array{title: string, body: string, data: array<string, mixed>}
@@ -86,6 +112,14 @@ class InvitationPushService
             InvitationPushType::Organization => sprintf(
                 'Zaproszenie do organizacji: %s',
                 $context['organizationName'] ?? 'Organizacja',
+            ),
+            InvitationPushType::Season => sprintf(
+                'Zaproszenie do sezonu: %s',
+                $context['seasonName'] ?? 'Sezon',
+            ),
+            InvitationPushType::LeagueMembership => sprintf(
+                'Zaproszenie do ligi: %s',
+                $context['leagueName'] ?? 'Liga',
             ),
         };
 

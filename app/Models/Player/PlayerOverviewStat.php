@@ -36,6 +36,7 @@ class PlayerOverviewStat extends Model
         'top_opponents' => 'array',
     ];
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

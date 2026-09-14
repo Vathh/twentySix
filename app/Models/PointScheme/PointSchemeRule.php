@@ -19,6 +19,7 @@ class PointSchemeRule extends Model
         'elimination_stage' => GameStage::class,
     ];
 
+    /** @return BelongsTo<PointScheme, $this> */
     public function pointScheme(): BelongsTo
     {
         return $this->belongsTo(PointScheme::class);

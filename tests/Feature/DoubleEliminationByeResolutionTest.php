@@ -133,6 +133,8 @@ class DoubleEliminationByeResolutionTest extends TestCase
 
         $this->assertSame(GameStatus::FINISHED, $w0->status);
         $this->assertSame($byeId, (int) $w0->winner_id);
+        $this->assertSame(0, (int) $w0->player1_score);
+        $this->assertSame(0, (int) $w0->player2_score);
         $this->assertSame($byeId, (int) $w1->player1_id);
         $this->assertNull($w1->player2_id);
         $this->assertSame(GameStatus::SCHEDULED, $w1->status);

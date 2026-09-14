@@ -4,6 +4,7 @@
 
 @section('content')
 
+    <div x-data="{ cancelOpen: {{ $errors->has('current_password') ? 'true' : 'false' }} }">
     <div class="detail-layout">
 
         @if($canManageTournament)
@@ -120,6 +121,37 @@
             </div>
         </div>
 
+    </div>
+
+    @if($canManageTournament && $tournament->canCancelPlay())
+        <div
+            x-show="cancelOpen"
+            x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            @keydown.escape.window="cancelOpen = false"
+            @click.self="cancelOpen = false"
+        >
+            <div class="w-full max-w-md rounded-xl border border-danger/40 bg-bg-deep p-6" @click.stop>
+                <h2 class="text-lg font-semibold text-danger mb-2">Na pewno anulować rozgrywki?</h2>
+                <p class="text-text-muted text-sm mb-4">
+                    Znikną mecze, drabinka, tabele i wyniki. Zaproszenia i goście zostaną.
+                    Tej operacji nie da się cofnąć.
+                </p>
+                <form method="POST" action="{{ route('tournaments.cancel', $tournament->id) }}" class="space-y-4">
+                    @csrf
+                    <label class="block">
+                        <span class="form-label">Hasło Twojego konta</span>
+                        <input class="input-field" type="password" name="current_password" autocomplete="current-password" required>
+                    </label>
+                    <x-errors/>
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                        <button type="submit" class="btn btn-danger flex-1">Anuluj rozgrywki</button>
+                        <button type="button" class="btn btn-secondary flex-1" @click="cancelOpen = false">Powrót</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
     </div>
 
 @endsection

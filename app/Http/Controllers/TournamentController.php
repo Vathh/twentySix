@@ -8,10 +8,12 @@ use App\Models\Tournament\Tournament;
 use App\Queries\GetTournamentData;
 use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\Tournament\LoginCodeService;
+use App\Services\Tournament\TournamentCancelService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentGuestParticipantService;
 use App\Services\Tournament\TournamentInvitationService;
 use App\Services\Tournament\TournamentJoinRequestService;
+use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentService;
 use App\Services\Tournament\TournamentStartPageService;
 use App\Services\User\UserService;
@@ -36,7 +38,9 @@ class TournamentController extends Controller
         private LoginCodeService $loginCodeService,
         private GameAuthorizationService $gameAuthorizationService,
         private TournamentGroupMatrixLiveService $groupMatrixLiveService,
+        private TournamentPlayoffBracketLiveService $playoffBracketLiveService,
         private TournamentStartPageService $startPageService,
+        private TournamentCancelService $tournamentCancelService,
     ) {}
 
     public function index(Request $request)
@@ -116,7 +120,7 @@ class TournamentController extends Controller
             'groupPlayoffHighlights' => $viewModel->groupPlayoffHighlights(),
             'achievements' => $viewModel->achievements(),
             'results' => $viewModel->results(),
-            'tab' => \request()->get('tab', 'results'),
+            'tab' => $this->resolveShowTab($tournamentDomain),
             'canManageTournament' => $canManageTournament,
             'loginCode' => $loginCode,
             'loginUrl' => $loginUrl,
@@ -128,6 +132,30 @@ class TournamentController extends Controller
         return response()->json(
             $this->groupMatrixLiveService->snapshot($tournament->id),
         );
+    }
+
+    public function playoffLive(Tournament $tournament): JsonResponse
+    {
+        return response()->json(
+            $this->playoffBracketLiveService->snapshot($tournament->id),
+        );
+    }
+
+    public function cancel(Request $request, Tournament $tournament): RedirectResponse
+    {
+        $this->loadAndAuthorize($tournament->id);
+
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+        ], [
+            'current_password.current_password' => 'Hasło jest nieprawidłowe.',
+        ]);
+
+        $this->tournamentCancelService->cancel($tournament->id);
+
+        return redirect()
+            ->route('tournaments.start', $tournament)
+            ->with('success', 'Rozgrywki anulowane. Możesz wystartować turniej od nowa.');
     }
 
     public function joinRequestsLive(Tournament $tournament): JsonResponse
@@ -509,6 +537,20 @@ class TournamentController extends Controller
         }
 
         return back()->with('success', $successMessage);
+    }
+
+    private function resolveShowTab(TournamentDomain $tournament): string
+    {
+        $requested = request()->query('tab');
+        $allowed = $tournament->format->isEliminationOnly()
+            ? ['results', 'playoff', 'achievements']
+            : ['results', 'playoff', 'groups', 'achievements'];
+
+        if (is_string($requested) && in_array($requested, $allowed, true)) {
+            return $requested;
+        }
+
+        return $tournament->defaultShowTab();
     }
 
     /**

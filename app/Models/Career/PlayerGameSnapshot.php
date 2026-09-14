@@ -27,11 +27,13 @@ class PlayerGameSnapshot extends Model
         'metrics' => 'array',
     ];
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);
     }
 
+    /** @return MorphTo<Model, $this> */
     public function sourceable(): MorphTo
     {
         return $this->morphTo();

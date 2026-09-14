@@ -23,16 +23,19 @@ class TournamentResult extends Model
         'elimination_stage' => GameStage::class,
     ];
 
+    /** @return BelongsTo<Season, $this> */
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
     }
 
+    /** @return BelongsTo<Tournament, $this> */
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

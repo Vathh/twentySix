@@ -24,6 +24,7 @@ use App\Services\Player\PlayerStatsService;
 use App\Services\PlayoffGame\PlayoffService;
 use App\Services\Tournament\TournamentFinishService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
+use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentResultService;
 use App\Support\GameScoring\GameScoringContext;
 use Illuminate\Support\Collection;
@@ -47,6 +48,7 @@ class GameService
         private PlayerOverviewService $playerOverviewService,
         private GameLockService $gameLockService,
         private TournamentGroupMatrixLiveService $groupMatrixLiveService,
+        private TournamentPlayoffBracketLiveService $playoffBracketLiveService,
     ) {}
 
     public function setStatusInProgress(int $gameId): void
@@ -57,11 +59,13 @@ class GameService
     public function lockGame(int $gameId, GameType $type): void
     {
         $this->gameLockService->lock($gameId, $type);
+        $this->pushPlayoffBracketLive($gameId, $type);
     }
 
     public function releaseGameLock(int $gameId, GameType $type): void
     {
         $this->gameLockService->release($gameId, $type);
+        $this->pushPlayoffBracketLive($gameId, $type);
     }
 
     public function tournamentIdForGame(int $gameId, GameType $type): ?int
@@ -156,19 +160,14 @@ class GameService
      */
     public function getActiveGames(int $tournamentId): Collection
     {
-        try {
-            $games = $this->gameRepository->getActive($tournamentId);
-            $playoffGames = $this->playoffGameRepository->getActive($tournamentId);
+        $groupGames = collect($this->gameRepository->getActive($tournamentId)
+            ->map(fn ($game) => ActiveGameDTO::fromGame($game)));
 
-            return collect($games->map(fn ($game) => ActiveGameDTO::fromGame($game)))
-                ->merge(
-                    $playoffGames
-                        ->map(fn ($game) => ActiveGameDTO::fromPlayoffGameDomain($game))
-                        ->filter(),
-                );
-        } catch (Throwable $e) {
-            return collect();
-        }
+        $playoffGames = collect($this->playoffGameRepository->getActive($tournamentId)
+            ->map(fn ($game) => ActiveGameDTO::fromPlayoffGameDomain($game))
+            ->filter());
+
+        return $groupGames->merge($playoffGames);
     }
 
     private function handleTournamentResultCreating(int $winnerId,
@@ -248,6 +247,8 @@ class GameService
 
                 $this->recalculatePlayerStats($dto->gameResultDTO);
             });
+
+            $this->playoffBracketLiveService->pushTournament($dto->gameResultDTO->tournamentId);
 
             return true;
         } catch (Throwable $e) {
@@ -531,6 +532,16 @@ class GameService
             }
         }
         $this->playerOverviewService->rebuildRegistered([$dto->player1Id, $dto->player2Id]);
+    }
+
+    private function pushPlayoffBracketLive(int $gameId, GameType $type): void
+    {
+        if ($type !== GameType::PLAYOFF) {
+            return;
+        }
+
+        $tournamentId = (int) $this->playoffGameRepository->findModel($gameId)->tournament_id;
+        $this->playoffBracketLiveService->pushTournament($tournamentId);
     }
 
     private function handlePlayoffStart(int $tournamentId): void

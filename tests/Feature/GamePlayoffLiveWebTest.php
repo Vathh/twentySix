@@ -51,7 +51,7 @@ class GamePlayoffLiveWebTest extends TestCase
             ->assertOk()
             ->assertSee('Alice')
             ->assertSee('Bob')
-            ->assertSee('WB R1');
+            ->assertSee('Drabinka wygranych — runda 1');
     }
 
     public function test_playoff_show_page_works_for_de_round(): void
@@ -89,6 +89,6 @@ class GamePlayoffLiveWebTest extends TestCase
             ->assertOk()
             ->assertSee('Carol')
             ->assertSee('Dave')
-            ->assertSee('LB R1');
+            ->assertSee('Drabinka przegranych — runda 1');
     }
 }

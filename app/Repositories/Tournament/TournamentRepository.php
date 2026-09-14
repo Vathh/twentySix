@@ -4,6 +4,7 @@ namespace App\Repositories\Tournament;
 
 use App\Domain\AdminRoster;
 use App\Domain\Tournament\TournamentDomain;
+use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
@@ -266,5 +267,22 @@ class TournamentRepository
         $tournament->save();
 
         return $tournament->fresh();
+    }
+
+    /**
+     * Przywraca turniej do stanu sprzed startu (uczestnicy i kod dołączania zostają).
+     */
+    public function resetToUnstarted(int $tournamentId): void
+    {
+        Tournament::where('id', $tournamentId)->update([
+            'status' => TournamentStatus::CREATED,
+            'format' => TournamentFormat::GroupsPlayoff,
+            'grand_final_mode' => null,
+            'point_scheme_id' => null,
+            'groups_count' => null,
+            'playoff_bracket_size' => null,
+            'group_advances' => null,
+            'tablets_count' => null,
+        ]);
     }
 }

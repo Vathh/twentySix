@@ -37,36 +37,43 @@ class GameLeg extends Model
         'finished_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Game, $this> */
     public function game(): BelongsTo
     {
         return $this->belongsTo(Game::class);
     }
 
+    /** @return BelongsTo<PlayoffGame, $this> */
     public function playoffGame(): BelongsTo
     {
         return $this->belongsTo(PlayoffGame::class, 'playoff_game_id');
     }
 
+    /** @return BelongsTo<QuickGame, $this> */
     public function quickGame(): BelongsTo
     {
         return $this->belongsTo(QuickGame::class, 'quick_game_id');
     }
 
+    /** @return BelongsTo<LeagueGame, $this> */
     public function leagueGame(): BelongsTo
     {
         return $this->belongsTo(LeagueGame::class, 'league_game_id');
     }
 
+    /** @return BelongsTo<Player, $this> */
     public function winner(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'winner_id');
     }
 
+    /** @return HasMany<GameVisit, $this> */
     public function visits(): HasMany
     {
         return $this->hasMany(GameVisit::class);
     }
 
+    /** @return HasMany<GameLegPlayerStat, $this> */
     public function playerStats(): HasMany
     {
         return $this->hasMany(GameLegPlayerStat::class);

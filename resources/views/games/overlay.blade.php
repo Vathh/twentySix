@@ -25,8 +25,8 @@
                 ? 'Set '.$liveSetNumber.' · Leg '.$liveLegNumber
                 : 'Leg '.$liveLegNumber)
             : '—';
-        $liveAvg1 = isset($liveP1['gameAverage']) ? number_format((float) $liveP1['gameAverage'], 2, '.', '') : '—';
-        $liveAvg2 = isset($liveP2['gameAverage']) ? number_format((float) $liveP2['gameAverage'], 2, '.', '') : '—';
+        $liveAvg1 = \App\Support\AverageFormat::display($liveP1['gameAverage'] ?? null);
+        $liveAvg2 = \App\Support\AverageFormat::display($liveP2['gameAverage'] ?? null);
         $overlayEvent = $subtitle;
         $overlayRound = match ($kind) {
             'group' => 'Faza grupowa'.(! empty($groupNumber) ? ' · Grupa '.$groupNumber : ''),

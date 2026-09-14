@@ -145,7 +145,7 @@
         @php
             $p1 = $players[0];
             $p2 = $players[1];
-            $fmtAvg = static fn ($v) => $v !== null ? number_format((float) $v, 2, '.', '') : '—';
+            $fmtAvg = static fn ($v) => \App\Support\AverageFormat::display($v);
             $fmtInt = static fn ($v) => $v !== null ? (string) $v : '—';
         @endphp
 

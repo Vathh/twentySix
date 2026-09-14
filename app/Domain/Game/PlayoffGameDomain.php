@@ -157,7 +157,12 @@ class PlayoffGameDomain extends GameDomain
 
     public function roundLabel(): string
     {
-        return PlayoffRoundLabel::label($this->round);
+        return PlayoffRoundLabel::listLabel($this->round);
+    }
+
+    public function isByeVsBye(): bool
+    {
+        return $this->player1?->isBye === true && $this->player2?->isBye === true;
     }
 
     public function byeAdvanceWinnerId(int $byePlayerId): ?int

@@ -5,18 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\League\League;
 use App\Models\League\LeagueDivision;
 use App\Models\Organization\Organization;
+use App\Services\League\LeagueInvitationService;
 use App\Services\League\LeagueService;
+use App\Services\User\UserService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class LeagueController extends Controller
 {
     public function __construct(
         private LeagueService $leagueService,
+        private LeagueInvitationService $leagueInvitationService,
+        private UserService $userService,
     ) {}
 
     public function create(Organization $organization): Factory|View
@@ -183,10 +188,15 @@ class LeagueController extends Controller
     {
         $this->authorize('update', $this->leagueService->getForPolicy($league->id));
 
+        $data = $this->leagueService->relatedUsersData($league->id, null);
+        $pendingInvitations = $this->leagueInvitationService->getPendingForLeague($league->id);
+        $excludeFromSearch = collect($data['relatedUsers'])
+            ->concat($pendingInvitations->map(fn ($invitation) => ['id' => $invitation->userId]));
+
         if ($request->wantsJson()) {
             try {
-                $data = $this->leagueService->relatedUsersData(
-                    $league->id,
+                $users = $this->userService->search(
+                    $excludeFromSearch,
                     $request->input('q', $request->input('search')),
                 );
             } catch (ValidationException $e) {
@@ -197,7 +207,7 @@ class LeagueController extends Controller
             }
 
             return response()->json([
-                'users' => $data['users']
+                'users' => $users
                     ->map(fn ($user) => [
                         'id' => $user->id,
                         'name' => $user->player?->name ?? '—',
@@ -207,7 +217,9 @@ class LeagueController extends Controller
             ]);
         }
 
-        return view('leagues.relatedUsers', $this->leagueService->relatedUsersData($league->id, null));
+        return view('leagues.relatedUsers', array_merge($data, [
+            'pendingInvitations' => $pendingInvitations,
+        ]));
     }
 
     public function addRelatedUser(Request $request, League $league): RedirectResponse|JsonResponse
@@ -218,19 +230,64 @@ class LeagueController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $user = $this->leagueService->addRelatedUser($league->id, (int) $validated['user_id']);
+        try {
+            $invitation = $this->leagueInvitationService->send(
+                $league->id,
+                (int) $validated['user_id'],
+                Auth::id(),
+            );
+        } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            }
+
+            return redirect()
+                ->route('leagues.relatedUsers', $league)
+                ->with('error', $e->getMessage());
+        }
 
         if ($request->wantsJson()) {
             return response()->json([
                 'ok' => true,
-                'user' => $user,
-                'message' => 'Użytkownik dodany do puli ligi',
+                'invitation' => [
+                    'id' => $invitation->id,
+                    'name' => $invitation->userPlayer->name ?? 'Brak nazwy',
+                ],
+                'message' => 'Wysłano zaproszenie do ligi',
             ]);
         }
 
         return redirect()
             ->route('leagues.relatedUsers', $league)
-            ->with('success', 'Użytkownik dodany do puli ligi');
+            ->with('success', 'Wysłano zaproszenie do ligi');
+    }
+
+    public function cancelRelatedUserInvitation(Request $request, League $league, int $invitation): RedirectResponse|JsonResponse
+    {
+        $this->authorize('update', $this->leagueService->getForPolicy($league->id));
+
+        try {
+            $this->leagueInvitationService->cancel($league->id, $invitation);
+        } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            }
+
+            return redirect()
+                ->route('leagues.relatedUsers', $league)
+                ->with('error', $e->getMessage());
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Anulowano zaproszenie',
+            ]);
+        }
+
+        return redirect()
+            ->route('leagues.relatedUsers', $league)
+            ->with('success', 'Anulowano zaproszenie');
     }
 
     public function removeRelatedUser(Request $request, League $league): RedirectResponse|JsonResponse
@@ -241,7 +298,7 @@ class LeagueController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $this->leagueService->removeRelatedUser($league->id, (int) $validated['user_id']);
+        $this->leagueInvitationService->removeMember($league->id, (int) $validated['user_id']);
 
         if ($request->wantsJson()) {
             return response()->json([

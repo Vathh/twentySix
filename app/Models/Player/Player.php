@@ -20,6 +20,7 @@ class Player extends Model
         'is_bye' => 'boolean',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -43,31 +44,37 @@ class Player extends Model
         return $letter($parts[0]).$letter($parts[array_key_last($parts)]);
     }
 
+    /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return BelongsTo<Season, $this> */
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
     }
 
+    /** @return BelongsTo<League, $this> */
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);
     }
 
+    /** @return HasMany<Achievement, $this> */
     public function achievements(): HasMany
     {
         return $this->hasMany(Achievement::class);
     }
 
+    /** @return HasOne<PlayerStat, $this> */
     public function playerStat(): HasOne
     {
         return $this->hasOne(PlayerStat::class);
     }
 
+    /** @return HasOne<PlayerOverviewStat, $this> */
     public function playerOverviewStat(): HasOne
     {
         return $this->hasOne(PlayerOverviewStat::class);

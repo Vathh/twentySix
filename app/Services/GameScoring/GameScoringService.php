@@ -27,6 +27,7 @@ use App\Services\Career\PlayerCareerSnapshotService;
 use App\Services\Game\GameService;
 use App\Services\Player\PlayerOverviewService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
+use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
 use DomainException;
@@ -46,6 +47,7 @@ class GameScoringService
         private GameScoringStateBuilder $gameScoringStateBuilder,
         private GameService $gameService,
         private TournamentGroupMatrixLiveService $groupMatrixLiveService,
+        private TournamentPlayoffBracketLiveService $playoffBracketLiveService,
         private PlayerCareerSnapshotService $careerSnapshotService,
         private PlayerOverviewService $playerOverviewService,
         private BadgeAwardService $badgeAwardService,
@@ -132,7 +134,7 @@ class GameScoringService
             $this->setGameInProgress($game);
 
             $state = $this->broadcastState($context, $game);
-            $this->pushGroupMatrixLive($context, $game, includeStandings: false);
+            $this->pushTournamentLive($context, $game, includeStandings: false);
 
             return $state;
         });
@@ -237,7 +239,7 @@ class GameScoringService
             $fresh = $game->fresh(['player1', 'player2']);
             $state = $this->broadcastState($context, $fresh);
             if ($wasClosed) {
-                $this->pushGroupMatrixLive($context, $fresh, includeStandings: false);
+                $this->pushTournamentLive($context, $fresh, includeStandings: false);
                 $this->playerOverviewService->rebuildRegistered([
                     $context->player1Id,
                     $context->player2Id,
@@ -332,7 +334,7 @@ class GameScoringService
             }
 
             $state = $this->broadcastState($context, $freshGame);
-            $this->pushGroupMatrixLive(
+            $this->pushTournamentLive(
                 $context,
                 $freshGame,
                 includeStandings: $this->isFinished($freshGame),
@@ -462,6 +464,15 @@ class GameScoringService
         };
     }
 
+    private function pushTournamentLive(
+        GameScoringContext $context,
+        Game|PlayoffGame|QuickGame|LeagueGame $game,
+        bool $includeStandings,
+    ): void {
+        $this->pushGroupMatrixLive($context, $game, $includeStandings);
+        $this->pushPlayoffBracketLive($context, $game);
+    }
+
     private function pushGroupMatrixLive(
         GameScoringContext $context,
         Game|PlayoffGame|QuickGame|LeagueGame $game,
@@ -472,6 +483,17 @@ class GameScoringService
         }
 
         $this->groupMatrixLiveService->pushFromGroupGameAfterCommit($game, $includeStandings);
+    }
+
+    private function pushPlayoffBracketLive(
+        GameScoringContext $context,
+        Game|PlayoffGame|QuickGame|LeagueGame $game,
+    ): void {
+        if ($context->kind !== GameKind::PLAYOFF || ! $game instanceof PlayoffGame) {
+            return;
+        }
+
+        $this->playoffBracketLiveService->pushTournamentAfterCommit((int) $game->tournament_id);
     }
 
     /**

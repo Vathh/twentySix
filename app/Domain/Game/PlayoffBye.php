@@ -8,7 +8,7 @@ namespace App\Domain\Game;
  */
 final class PlayoffBye
 {
-    public const DISPLAY_NAME = 'BYE';
+    public const DISPLAY_NAME = 'Wolny los';
 
     public static function isByeId(?int $playerId, int $byePlayerId): bool
     {

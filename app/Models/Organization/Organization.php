@@ -23,31 +23,37 @@ class Organization extends Model
         ];
     }
 
+    /** @return BelongsToMany<User, $this> */
     public function admins(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'organization_user_admin');
     }
 
+    /** @return HasMany<Season, $this> */
     public function seasons(): HasMany
     {
         return $this->hasMany(Season::class);
     }
 
+    /** @return HasMany<League, $this> */
     public function leagues(): HasMany
     {
         return $this->hasMany(League::class);
     }
 
+    /** @return BelongsToMany<User, $this> */
     public function relatedUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'organization_user');
     }
 
+    /** @return HasMany<OrganizationInvitation, $this> */
     public function invitations(): HasMany
     {
         return $this->hasMany(OrganizationInvitation::class);
     }
 
+    /** @return HasMany<Player, $this> */
     public function guests(): HasMany
     {
         return $this->hasMany(Player::class);

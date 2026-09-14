@@ -152,8 +152,6 @@ class TournamentControllerTest extends TestCase
 
     public function test_season_admin_can_start_tournament(): void
     {
-        $this->markTestSkipped('Test wymaga Vite manifest - problem konfiguracyjny, nie logika biznesowa');
-
         $this->actingAs($this->adminUser);
         $tournament = Tournament::create([
             'name' => 'Test Tournament',
@@ -164,6 +162,27 @@ class TournamentControllerTest extends TestCase
         $response = $this->get("/tournaments/{$tournament->id}/start");
 
         $response->assertStatus(200);
+    }
+
+    public function test_start_page_shows_season_roster_and_guests(): void
+    {
+        $this->player2->update(['name' => 'Anna Testowa']);
+        $this->season->relatedUsers()->attach($this->regularUser->id);
+
+        $this->actingAs($this->adminUser);
+        $tournament = Tournament::create([
+            'name' => 'Test Tournament',
+            'season_id' => $this->season->id,
+            'date' => '2024-06-01',
+        ]);
+
+        $response = $this->get("/tournaments/{$tournament->id}/start");
+
+        $response->assertOk();
+        $response->assertSee("x-data=\"{ activeTab: 'registered' }\"", false);
+        $response->assertSee('Anna Testowa');
+        $response->assertSee('Player3');
+        $response->assertDontSee('Brak powiązanych użytkowników.');
     }
 
     public function test_season_admin_can_run_tournament_with_4_players_and_2_groups(): void
@@ -490,6 +509,64 @@ class TournamentControllerTest extends TestCase
                 ->where('starting_score', 301)
                 ->where('legs_to_win_set', 3)
                 ->count(),
+        );
+    }
+
+    public function test_group_stage_opens_groups_tab_by_default(): void
+    {
+        $tournament = $this->startedTournament(TournamentStatus::GROUP);
+
+        $html = $this->get("/tournaments/{$tournament->id}")->assertOk()->getContent();
+
+        $this->assertShowTabActive($html, 'groups');
+    }
+
+    public function test_playoff_stage_opens_bracket_tab_by_default(): void
+    {
+        $tournament = $this->startedTournament(TournamentStatus::PLAYOFF);
+
+        $html = $this->get("/tournaments/{$tournament->id}")->assertOk()->getContent();
+
+        $this->assertShowTabActive($html, 'playoff');
+    }
+
+    public function test_finished_tournament_opens_results_tab_by_default(): void
+    {
+        $tournament = $this->startedTournament(TournamentStatus::FINISHED);
+
+        $html = $this->get("/tournaments/{$tournament->id}")->assertOk()->getContent();
+
+        $this->assertShowTabActive($html, 'results');
+    }
+
+    public function test_explicit_tab_query_overrides_default(): void
+    {
+        $tournament = $this->startedTournament(TournamentStatus::GROUP);
+
+        $html = $this->get("/tournaments/{$tournament->id}?tab=results")->assertOk()->getContent();
+
+        $this->assertShowTabActive($html, 'results');
+    }
+
+    private function startedTournament(TournamentStatus $status): Tournament
+    {
+        return Tournament::create([
+            'name' => 'Tab tournament',
+            'season_id' => $this->season->id,
+            'date' => '2024-06-01',
+            'status' => $status,
+            'groups_count' => 2,
+            'playoff_bracket_size' => 4,
+            'group_advances' => [2, 2],
+            'tablets_count' => 1,
+        ]);
+    }
+
+    private function assertShowTabActive(string $html, string $tab): void
+    {
+        $this->assertMatchesRegularExpression(
+            '/tab='.preg_quote($tab, '/').'[^>]*border-accent/',
+            $html,
         );
     }
 }

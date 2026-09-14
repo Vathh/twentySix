@@ -222,6 +222,14 @@ class LeagueRepository
             ->values();
     }
 
+    /**
+     * @return Collection<int, int>
+     */
+    public function getRelatedUserIds(int $leagueId): Collection
+    {
+        return League::query()->findOrFail($leagueId)->relatedUsers()->pluck('users.id');
+    }
+
     public function addRelatedUser(int $leagueId, int $userId): void
     {
         $league = League::query()->findOrFail($leagueId);

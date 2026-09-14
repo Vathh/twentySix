@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\LeagueCalendarMode;
 use App\Enums\LeagueSeasonStatus;
 use App\Models\League\League;
+use App\Models\League\LeagueInvitation;
 use App\Models\League\LeagueSeason;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
@@ -12,6 +13,7 @@ use App\Models\Users\User;
 use App\Services\League\LeagueService;
 use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -58,6 +60,13 @@ class LeagueRosterPoolTest extends TestCase
         $this->post(route('leagues.relatedUsers.add', $this->league), [
             'user_id' => $related->id,
         ])->assertRedirect(route('leagues.relatedUsers', $this->league));
+
+        $this->assertFalse($this->league->fresh()->relatedUsers->contains('id', $related->id));
+
+        $invitation = LeagueInvitation::query()->firstOrFail();
+        Sanctum::actingAs($related);
+        $this->postJson("/api/leagues/invitations/{$invitation->id}/accept")->assertOk();
+        $this->actingAs($this->admin);
 
         $this->post(route('leagues.guests.add', $this->league), [
             'name' => 'Gość Liga',
@@ -312,9 +321,13 @@ class LeagueRosterPoolTest extends TestCase
         ])
             ->assertOk()
             ->assertJsonPath('ok', true)
-            ->assertJsonPath('user.id', $found->id)
-            ->assertJsonPath('user.name', 'Nowak Jan');
+            ->assertJsonPath('invitation.name', 'Nowak Jan');
 
-        $this->assertTrue($this->league->fresh()->relatedUsers->contains('id', $found->id));
+        $this->assertFalse($this->league->fresh()->relatedUsers->contains('id', $found->id));
+        $this->assertDatabaseHas('league_invitations', [
+            'league_id' => $this->league->id,
+            'user_id' => $found->id,
+            'status' => 'pending',
+        ]);
     }
 }

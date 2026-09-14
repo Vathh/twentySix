@@ -148,6 +148,12 @@ class TournamentDomain
         return $this->status !== TournamentStatus::CREATED;
     }
 
+    /** Czy admin może wyzerować rozgrywki i wrócić do ekranu startu. */
+    public function canCancelPlay(): bool
+    {
+        return in_array($this->status, [TournamentStatus::GROUP, TournamentStatus::PLAYOFF], true);
+    }
+
     public function showsTabletLoginCodes(): bool
     {
         return in_array($this->status, [TournamentStatus::GROUP, TournamentStatus::PLAYOFF], true);
@@ -161,6 +167,18 @@ class TournamentDomain
     public function tracksSeasonPoints(): bool
     {
         return $this->season !== null && $this->pointScheme !== null;
+    }
+
+    /**
+     * Domyślna zakładka strony turnieju: grupy w fazie grupowej, drabinka w playoff, wyniki po finale.
+     */
+    public function defaultShowTab(): string
+    {
+        return match ($this->status) {
+            TournamentStatus::GROUP => $this->format->hasGroupStage() ? 'groups' : 'playoff',
+            TournamentStatus::PLAYOFF => 'playoff',
+            default => 'results',
+        };
     }
 
     /** Czy turniej w bieżącym statusie może przejść do statusu $target (patrz `TournamentStatus::canTransitionTo`). */
