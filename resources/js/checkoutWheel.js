@@ -203,49 +203,6 @@ function wanderPoints(x, y, angle, steps, stepLen, wander, seed) {
     return pts;
 }
 
-function shapeBBox(shape) {
-    try {
-        const bbox = shape.getBBox();
-        if (bbox.width > 1 && bbox.height > 1) {
-            return bbox;
-        }
-    } catch {
-        // display:none — getBBox bywa puste albo rzuca
-    }
-    return null;
-}
-
-function wedgeFrame(group, checkout, bbox) {
-    if (Number(checkout) === 170) {
-        return {
-            originX: 450,
-            originY: 450,
-            radial: 0,
-            radialSpan: 48,
-            tangentSpan: 48,
-            omni: true,
-        };
-    }
-
-    const label = group.querySelector('.checkout-label');
-    const originX = label ? Number(label.getAttribute('x')) : bbox.x + bbox.width / 2;
-    const originY = label ? Number(label.getAttribute('y')) : bbox.y + bbox.height / 2;
-    const dx = originX - 450;
-    const dy = originY - 450;
-    const dist = Math.hypot(dx, dy) || 1;
-    const ringT = dist >= 330 ? 30 : dist >= 290 ? 42 : dist >= 240 ? 52 : dist >= 175 ? 62 : 72;
-    const chord = Math.min(bbox.width, bbox.height);
-
-    return {
-        originX,
-        originY,
-        radial: Math.atan2(dy, dx),
-        radialSpan: ringT * 0.55,
-        tangentSpan: Math.min(chord * 0.4, ringT * 0.9),
-        omni: false,
-    };
-}
-
 function smoothPathD(pts) {
     if (pts.length < 2) {
         return '';
@@ -295,6 +252,8 @@ class CheckoutWheel {
         this.svg.setAttribute('overflow', 'visible');
 
         this.ensureSharedDefs();
+        this.mountAtmosphere();
+        this.mountLife();
         this.buildLevelFilters();
 
         const wheel = this.svg.querySelector('#checkout-wheel');
@@ -334,21 +293,6 @@ class CheckoutWheel {
             group.setAttribute('data-hits', String(hits[checkout] ?? hits[String(checkout)] ?? 0));
             this.applyBrush(group, PRESETS[level], checkout);
         });
-
-        this.mountRim();
-    }
-
-    mountRim() {
-        if (this.svg.querySelector(`#${this.qid('rim')}`)) {
-            return;
-        }
-        this.svg.appendChild(svgEl('circle', {
-            id: this.qid('rim'),
-            class: 'cw-rim',
-            cx: '450',
-            cy: '450',
-            r: '362',
-        }));
     }
 
     ensureSharedDefs() {
@@ -388,6 +332,139 @@ class CheckoutWheel {
             gold.appendChild(svgEl('stop', { offset: '100%', 'stop-color': '#ffb300', 'stop-opacity': '0.08' }));
             defs.appendChild(gold);
         }
+
+        if (!document.getElementById(this.qid('caustic'))) {
+            const caustic = svgEl('linearGradient', {
+                id: this.qid('caustic'),
+                x1: '0',
+                y1: '0',
+                x2: '0',
+                y2: '1',
+            });
+            caustic.appendChild(svgEl('stop', { offset: '0%', 'stop-color': '#ffffff', 'stop-opacity': '0' }));
+            caustic.appendChild(svgEl('stop', { offset: '44%', 'stop-color': '#ffffff', 'stop-opacity': '0' }));
+            caustic.appendChild(svgEl('stop', { offset: '50%', 'stop-color': '#ffffff', 'stop-opacity': '0.55' }));
+            caustic.appendChild(svgEl('stop', { offset: '56%', 'stop-color': '#ffffff', 'stop-opacity': '0' }));
+            caustic.appendChild(svgEl('stop', { offset: '100%', 'stop-color': '#ffffff', 'stop-opacity': '0' }));
+            defs.appendChild(caustic);
+        }
+
+        if (!document.getElementById(this.qid('pit-fog'))) {
+            const fog = svgEl('filter', {
+                id: this.qid('pit-fog'),
+                x: '-15%',
+                y: '-15%',
+                width: '130%',
+                height: '130%',
+                'color-interpolation-filters': 'sRGB',
+            });
+            fog.appendChild(svgEl('feTurbulence', {
+                type: 'fractalNoise',
+                baseFrequency: '0.013 0.018',
+                numOctaves: '4',
+                seed: '11',
+                stitchTiles: 'stitch',
+                result: 't',
+            }));
+            fog.appendChild(svgEl('feColorMatrix', {
+                in: 't',
+                type: 'matrix',
+                values: '0 0 0 0 0.72  0 0 0 0 0.52  0 0 0 0 0.28  0 0 0 0.55 0',
+                result: 'tint',
+            }));
+            fog.appendChild(svgEl('feGaussianBlur', { in: 'tint', stdDeviation: '6.5' }));
+            defs.appendChild(fog);
+
+            const fade = svgEl('radialGradient', {
+                id: this.qid('pit-fade'),
+                gradientUnits: 'userSpaceOnUse',
+                cx: '450',
+                cy: '450',
+                r: '375',
+            });
+            fade.appendChild(svgEl('stop', { offset: '0%', 'stop-color': '#1c140e', 'stop-opacity': '0.2' }));
+            fade.appendChild(svgEl('stop', { offset: '58%', 'stop-color': '#8a6230', 'stop-opacity': '0.22' }));
+            fade.appendChild(svgEl('stop', { offset: '100%', 'stop-color': '#0c0c0f', 'stop-opacity': '0' }));
+            defs.appendChild(fade);
+        }
+    }
+
+    mountAtmosphere() {
+        if (this.svg.querySelector(`#${this.qid('atmosphere')}`)) {
+            return;
+        }
+        const layer = svgEl('g', { id: this.qid('atmosphere') });
+        layer.setAttribute('pointer-events', 'none');
+        layer.setAttribute('opacity', '0.7');
+        layer.appendChild(svgEl('circle', {
+            cx: '450',
+            cy: '450',
+            r: '372',
+            fill: `url(#${this.qid('pit-fade')})`,
+        }));
+        layer.appendChild(svgEl('circle', {
+            cx: '450',
+            cy: '450',
+            r: '372',
+            fill: '#d4b07a',
+            filter: `url(#${this.qid('pit-fog')})`,
+        }));
+        const spider = svgEl('g');
+        [60, 140, 210, 275, 325, 360].forEach((r) => {
+            spider.appendChild(svgEl('circle', {
+                cx: '450',
+                cy: '450',
+                r: String(r),
+                fill: 'none',
+                stroke: '#4a321c',
+                'stroke-width': r === 60 || r === 360 ? '1.6' : '1.15',
+                opacity: '0.55',
+            }));
+        });
+        for (let i = 0; i < 24; i += 1) {
+            const a = (i / 24) * Math.PI * 2 - Math.PI / 2;
+            spider.appendChild(svgEl('line', {
+                x1: String(450 + Math.cos(a) * 62),
+                y1: String(450 + Math.sin(a) * 62),
+                x2: String(450 + Math.cos(a) * 358),
+                y2: String(450 + Math.sin(a) * 358),
+                stroke: '#4a321c',
+                'stroke-width': '0.85',
+                opacity: '0.32',
+            }));
+        }
+        layer.appendChild(spider);
+        const pulse = svgEl('circle', {
+            class: 'cw-fog-pulse',
+            cx: '450',
+            cy: '450',
+            r: '372',
+            fill: '#d4b07a',
+        });
+        const wheel = this.svg.querySelector('#checkout-wheel');
+        if (wheel) {
+            this.svg.insertBefore(layer, wheel);
+            this.svg.insertBefore(pulse, wheel);
+        } else {
+            this.svg.appendChild(layer);
+            this.svg.appendChild(pulse);
+        }
+    }
+
+    mountLife() {
+        if (this.svg.querySelector(`#${this.qid('life')}`)) {
+            return;
+        }
+        const life = svgEl('g', { id: this.qid('life'), class: 'cw-life' });
+        life.setAttribute('pointer-events', 'none');
+        life.appendChild(svgEl('circle', {
+            class: 'cw-life-disc',
+            cx: '450',
+            cy: '450',
+            r: '368',
+            fill: `url(#${this.qid('caustic')})`,
+        }));
+        this.svg.appendChild(life);
     }
 
     buildLevelFilters() {
@@ -763,14 +840,7 @@ class CheckoutWheel {
         group.style.setProperty('--cw-sheen-blend', brush.material?.sheenBlend || 'overlay');
 
         const filterId = brush.material?.enabled ? this.qid(`mat-${level}`) : null;
-        const shape = group.querySelector('.checkout-shape');
-        if (shape) {
-            if (filterId) {
-                shape.setAttribute('filter', `url(#${filterId})`);
-            } else {
-                shape.removeAttribute('filter');
-            }
-        }
+        group.style.setProperty('--cw-shape-filter', filterId ? `url(#${filterId})` : 'none');
 
         this.syncHalo(group, brush, level);
         this.syncInnerStroke(group, brush, checkout);
@@ -880,77 +950,61 @@ class CheckoutWheel {
         }
         const n = Number(checkout);
         const clipId = this.ensureClip(group, checkout);
-        const bbox = shapeBBox(shape);
-        if (!bbox) {
-            return;
-        }
-        const frame = wedgeFrame(group, n, bbox);
+        const bbox = shape.getBBox();
+        const cx = bbox.x + bbox.width / 2;
+        const cy = bbox.y + bbox.height / 2;
+        const originX = n === 170 ? 450 : cx + ((450 - cx) * 0.12);
+        const originY = n === 170 ? 450 : cy + ((450 - cy) * 0.12);
+        const span = Math.min(bbox.width, bbox.height);
         const isDiamond = Boolean(brush.material.sparkle);
-        const count = frame.omni ? (isDiamond ? 10 : 8) : (isDiamond ? 5 : 4);
+        const count = isDiamond ? (n === 170 ? 10 : 9) : 8;
         const layer = svgEl('g', { class: 'checkout-cracks', 'clip-path': `url(#${clipId})` });
 
         for (let i = 0; i < count; i += 1) {
             const seed = n * 13 + i * 97;
-            const alongRadial = frame.omni || hash01(seed) > 0.4;
-            const jitter = frame.omni ? (hash01(seed) * Math.PI * 2) : ((hash01(seed + 3) - 0.5) * (alongRadial ? 0.2 : 0.16));
-            const ang = frame.omni
-                ? jitter
-                : (alongRadial ? frame.radial : frame.radial + Math.PI / 2) + jitter;
-            const reach = frame.omni
-                ? Math.min(bbox.width, bbox.height) * (0.4 + hash01(seed + 2) * 0.34)
-                : (alongRadial ? frame.radialSpan : frame.tangentSpan) * (0.55 + hash01(seed + 2) * 0.38);
-            const inner = frame.omni ? reach * 0.12 : 1.2;
-            const x1 = frame.originX + Math.cos(ang) * inner;
-            const y1 = frame.originY + Math.sin(ang) * inner;
-            const x2 = frame.originX + Math.cos(ang) * reach;
-            const y2 = frame.originY + Math.sin(ang) * reach;
-            const steps = frame.omni ? (4 + Math.floor(hash01(seed + 4) * 3)) : 3;
-            const amp = Math.min(frame.omni ? reach * (isDiamond ? 0.038 : 0.052) : 2.8, reach * 0.12);
+            const ang = hash01(seed) * Math.PI * 2;
+            const bend = (hash01(seed + 3) - 0.5) * 0.55;
+            const inner = span * (0.06 + hash01(seed + 1) * 0.1);
+            const outer = span * (0.4 + hash01(seed + 2) * 0.34);
+            const x1 = originX + Math.cos(ang) * inner;
+            const y1 = originY + Math.sin(ang) * inner;
+            const x2 = originX + Math.cos(ang + bend) * outer;
+            const y2 = originY + Math.sin(ang + bend) * outer;
+            const steps = 4 + Math.floor(hash01(seed + 4) * 3);
+            const amp = span * (isDiamond ? 0.038 : 0.052);
             layer.appendChild(svgEl('path', {
                 d: polylineD(jaggedLine(x1, y1, x2, y2, steps, amp, seed)),
-                stroke: isDiamond ? '#0e7490' : '#7dd3fc',
-                'stroke-width': isDiamond ? (i % 3 === 0 ? '1.05' : '0.6') : (i % 2 === 0 ? '1.05' : '0.65'),
-                opacity: isDiamond ? '0.72' : '0.78',
+                stroke: isDiamond ? '#ecfeff' : '#bae6fd',
+                'stroke-width': isDiamond ? (i % 3 === 0 ? '0.95' : '0.5') : (i % 2 === 0 ? '1.1' : '0.65'),
+                opacity: isDiamond ? '0.78' : '0.64',
             }));
-            if (hash01(seed + 8) > (frame.omni ? 0.28 : 0.22)) {
-                const mid = 0.4 + hash01(seed + 9) * 0.28;
+            if (hash01(seed + 8) > 0.28) {
+                const mid = 0.42 + hash01(seed + 9) * 0.28;
                 const mx = x1 + (x2 - x1) * mid;
                 const my = y1 + (y2 - y1) * mid;
-                const bang = ang + (hash01(seed + 10) > 0.5 ? 0.7 : -0.7) * (frame.omni ? 1 : 0.55);
-                const blen = reach * (frame.omni ? 0.38 : 0.26);
+                const bang = ang + (hash01(seed + 10) > 0.5 ? 0.75 : -0.75);
+                const blen = outer * 0.38;
                 layer.appendChild(svgEl('path', {
-                    d: polylineD(jaggedLine(mx, my, mx + Math.cos(bang) * blen, my + Math.sin(bang) * blen, 3, amp * 0.6, seed + 20)),
-                    stroke: isDiamond ? '#155e75' : '#bae6fd',
-                    'stroke-width': isDiamond ? '0.5' : '0.55',
-                    opacity: isDiamond ? '0.55' : '0.7',
+                    d: polylineD(jaggedLine(mx, my, mx + Math.cos(bang) * blen, my + Math.sin(bang) * blen, 3, amp * 0.7, seed + 20)),
+                    stroke: isDiamond ? '#ffffff' : '#7dd3fc',
+                    'stroke-width': isDiamond ? '0.45' : '0.55',
+                    opacity: '0.58',
                 }));
             }
         }
 
         if (!isDiamond) {
-            const inclusions = frame.omni ? 2 : 1;
-            for (let i = 0; i < inclusions; i += 1) {
+            for (let i = 0; i < 2; i += 1) {
                 const seed = n * 19 + i * 41;
-                const ang = frame.omni
-                    ? hash01(seed) * Math.PI * 2
-                    : frame.radial + (hash01(seed) - 0.5) * 0.35;
-                const reach = frame.omni
-                    ? Math.min(bbox.width, bbox.height) * (0.42 + i * 0.1)
-                    : frame.radialSpan * 0.7;
+                const ang = hash01(seed) * Math.PI * 2;
+                const x2 = originX + Math.cos(ang) * span * (0.42 + i * 0.1);
+                const y2 = originY + Math.sin(ang) * span * (0.42 + i * 0.1);
                 layer.appendChild(svgEl('path', {
                     class: 'is-inclusion',
-                    d: polylineD(jaggedLine(
-                        frame.originX,
-                        frame.originY,
-                        frame.originX + Math.cos(ang) * reach,
-                        frame.originY + Math.sin(ang) * reach,
-                        4,
-                        Math.min(2.4, reach * 0.08),
-                        seed,
-                    )),
+                    d: polylineD(jaggedLine(originX, originY, x2, y2, 5, span * 0.04, seed)),
                     stroke: '#0c4a6e',
-                    'stroke-width': '0.85',
-                    opacity: '0.38',
+                    'stroke-width': '0.9',
+                    opacity: '0.32',
                 }));
             }
         }
@@ -974,10 +1028,7 @@ class CheckoutWheel {
         }
         const n = Number(checkout);
         const clipId = this.ensureClip(group, checkout);
-        const bbox = shapeBBox(shape);
-        if (!bbox) {
-            return;
-        }
+        const bbox = shape.getBBox();
         const cx = bbox.x + bbox.width / 2;
         const cy = bbox.y + bbox.height / 2;
         const span = Math.min(bbox.width, bbox.height);
@@ -999,16 +1050,16 @@ class CheckoutWheel {
             layer.appendChild(svgEl('path', {
                 class: 'is-pour',
                 d,
-                stroke: i % 2 === 0 ? '#fff8d0' : '#ffe566',
+                stroke: i % 2 === 0 ? '#fff3b0' : '#ffe566',
                 'stroke-width': String(thick),
-                opacity: String(0.62 + hash01(seed + 7) * 0.18),
+                opacity: String(0.55 + hash01(seed + 7) * 0.16),
             }));
             layer.appendChild(svgEl('path', {
                 class: 'is-shadow',
                 d,
                 stroke: '#7a4e00',
-                'stroke-width': String(thick * 0.85),
-                opacity: String(0.42 + hash01(seed + 8) * 0.14),
+                'stroke-width': String(thick * 0.7),
+                opacity: String(0.28 + hash01(seed + 8) * 0.12),
             }));
         }
 
@@ -1026,7 +1077,7 @@ class CheckoutWheel {
                 rx: String(2.8 + hash01(seed + 2) * 4.5),
                 ry: String(1.5 + hash01(seed + 3) * 2.6),
                 fill: hash01(seed + 4) > 0.5 ? '#fff8d0' : '#ffd54a',
-                opacity: String(0.42 + hash01(seed + 5) * 0.18),
+                opacity: String(0.32 + hash01(seed + 5) * 0.18),
                 transform: `rotate(${(hash01(seed + 6) * 180).toFixed(1)} ${px} ${py})`,
             }));
         }
@@ -1049,10 +1100,7 @@ class CheckoutWheel {
             return;
         }
         const n = Number(checkout);
-        const bbox = shapeBBox(shape);
-        if (!bbox) {
-            return;
-        }
+        const bbox = shape.getBBox();
         const cx = bbox.x + bbox.width / 2;
         const cy = bbox.y + bbox.height / 2;
         const towardX = (450 - cx) * 0.18;

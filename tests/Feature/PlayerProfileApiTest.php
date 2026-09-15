@@ -50,7 +50,7 @@ class PlayerProfileApiTest extends TestCase
             ->assertJsonPath('player.id', $this->profilePlayer->id)
             ->assertJsonPath('player.name', 'Anna Nowak')
             ->assertJsonStructure([
-                'player' => ['id', 'userId', 'name', 'description', 'registeredAt'],
+                'player' => ['id', 'userId', 'name', 'description', 'registeredAt', 'initials'],
                 'friendship' => [
                     'isSelf',
                     'isFriend',
@@ -79,6 +79,12 @@ class PlayerProfileApiTest extends TestCase
                     'count_qf',
                 ],
                 'gameHistory' => ['items', 'hasMore'],
+                'liveGames',
+                'career' => ['window', 'source', 'isSelf', 'hero', 'series', 'table'],
+                'overviewSplit' => ['window', 'quick', 'tournament'],
+                'overview' => ['record', 'activity', 'social'],
+                'checkoutHits',
+                'checkoutItems',
             ])
             ->assertJsonPath('friendship.isSelf', false)
             ->assertJsonPath('friendship.canInvite', true)
@@ -105,6 +111,31 @@ class PlayerProfileApiTest extends TestCase
         $this->getJson('/api/players/'.$this->profilePlayer->id.'/games?page=1')
             ->assertOk()
             ->assertJsonStructure(['items', 'has_more']);
+    }
+
+    public function test_career_endpoint_uses_same_filters_as_web(): void
+    {
+        Sanctum::actingAs($this->viewer);
+
+        $this->getJson('/api/players/'.$this->profilePlayer->id.'/career?window=90d&source=all')
+            ->assertOk()
+            ->assertJsonPath('window', '90d')
+            ->assertJsonPath('source', 'all')
+            ->assertJsonPath('isSelf', false)
+            ->assertJsonStructure([
+                'hero' => ['games', 'x01Average', 'doublePct', 'hasX01', 'hasDoubles'],
+                'table' => [
+                    'games',
+                    'avg_three_darts',
+                    'highest_hf',
+                    'fastest_qf',
+                    'count_max',
+                    'count_170_plus',
+                    'count_hf',
+                    'count_qf',
+                ],
+                'series' => ['x01_average', 'double_pct'],
+            ]);
     }
 
     public function test_player_can_update_own_description(): void

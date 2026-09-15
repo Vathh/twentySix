@@ -2,6 +2,12 @@
     isolation: isolate;
 }
 
+.checkout-wheel__stage {
+    background:
+        radial-gradient(circle at 50% 48%, rgba(122, 84, 38, 0.22) 0%, rgba(12, 12, 15, 0) 62%),
+        radial-gradient(circle at 50% 50%, rgba(12, 12, 15, 0.2) 38%, #0c0c0f 72%);
+}
+
 .checkout-wheel__stage svg {
     display: block;
     width: min(720px, 100%);
@@ -18,6 +24,10 @@
     stroke-linejoin: round;
 }
 
+.checkout-wheel [data-checkout] .checkout-shape {
+    filter: var(--cw-shape-filter, none);
+}
+
 .checkout-wheel [data-checkout] .checkout-sheen {
     pointer-events: none;
     stroke: none !important;
@@ -28,12 +38,17 @@
 .checkout-wheel [data-checkout] .checkout-cracks {
     pointer-events: none;
     fill: none;
+    mix-blend-mode: overlay;
 }
 
 .checkout-wheel [data-checkout] .checkout-cracks path {
     fill: none;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+.checkout-wheel [data-checkout] .checkout-cracks path.is-inclusion {
+    mix-blend-mode: multiply;
 }
 
 .checkout-wheel [data-checkout] .checkout-molten {
@@ -46,8 +61,17 @@
     stroke-linejoin: round;
 }
 
+.checkout-wheel [data-checkout] .checkout-molten .is-pour {
+    mix-blend-mode: overlay;
+}
+
 .checkout-wheel [data-checkout] .checkout-molten .is-pool {
+    mix-blend-mode: overlay;
     stroke: none;
+}
+
+.checkout-wheel [data-checkout] .checkout-molten .is-shadow {
+    mix-blend-mode: multiply;
 }
 
 .checkout-wheel [data-checkout] .checkout-sparkle {
@@ -77,11 +101,31 @@
     pointer-events: none;
 }
 
-.checkout-wheel .cw-rim {
-    fill: none;
+.checkout-wheel .cw-life {
     pointer-events: none;
-    stroke: color-mix(in srgb, var(--color-text-muted) 65%, var(--color-border));
-    stroke-width: 1.75px;
+    transform-box: view-box;
+    transform-origin: 450px 450px;
+    animation: cw-spin 42s linear infinite;
+    will-change: transform;
+}
+
+.checkout-wheel .cw-life-disc {
+    mix-blend-mode: screen;
+    opacity: 0.16;
+}
+
+.checkout-wheel .cw-fog-pulse {
+    pointer-events: none;
+    animation: cw-breathe 10s ease-in-out infinite;
+}
+
+@keyframes cw-spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes cw-breathe {
+    0%, 100% { opacity: 0.08; }
+    50% { opacity: 0.2; }
 }
 
 @keyframes cw-sparkle {
@@ -92,7 +136,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .checkout-wheel .checkout-sparkle {
+    .checkout-wheel .cw-life,
+    .checkout-wheel .checkout-sparkle,
+    .checkout-wheel .cw-fog-pulse {
         animation: none !important;
+    }
+
+    .checkout-wheel .cw-life {
+        opacity: 0;
     }
 }

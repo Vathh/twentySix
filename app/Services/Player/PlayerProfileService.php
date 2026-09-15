@@ -28,44 +28,36 @@ class PlayerProfileService
     ) {}
 
     /**
-     * Pełny payload profilu dla API mobile (odpowiednik web players.show).
+     * Pełny payload profilu dla API mobile — ten sam rdzeń co web players.show.
      *
-     * @return array{
-     *     player: array{id: int, userId: int, name: string, description: string|null, registeredAt: string|null},
-     *     friendship: array{
-     *         isSelf: bool,
-     *         isFriend: bool,
-     *         canInvite: bool,
-     *         pendingSent: bool,
-     *         pendingReceived: array{id: int}|null
-     *     },
-     *     quickStats: array<string, mixed>,
-     *     tournamentStats: array<string, mixed>,
-     *     gameHistory: array{items: array, hasMore: bool}
-     * }
+     * @return array<string, mixed>
      */
     public function buildProfile(Player $player, ?User $viewer): array
     {
-        $isSelf = $this->isSelf($player, $viewer);
-        $core = $this->prepareRegisteredProfile($player, $isSelf);
-        $friendship = $this->resolveFriendshipState($player, $viewer);
+        $assembled = $this->assembleProfile($player, $viewer);
 
         return [
             'player' => [
-                'id' => $player->id,
-                'userId' => (int) $player->user_id,
-                'name' => $player->name,
-                'description' => $player->description,
-                'registeredAt' => $player->user?->created_at?->format('d.m.Y'),
+                'id' => $assembled['player']->id,
+                'userId' => (int) $assembled['player']->user_id,
+                'name' => $assembled['player']->name,
+                'description' => $assembled['player']->description,
+                'registeredAt' => $assembled['player']->user?->created_at?->format('d.m.Y'),
+                'initials' => $assembled['player']->initials(),
             ],
-            'friendship' => $this->mapFriendshipForApi($friendship),
-            'quickStats' => $core['quickStats'],
-            'tournamentStats' => $core['tournamentStats'],
+            'friendship' => $this->mapFriendshipForApi($assembled['friendship']),
+            'quickStats' => $assembled['quickStats'],
+            'tournamentStats' => $assembled['tournamentStats'],
             'gameHistory' => [
-                'items' => $core['historyItems'],
-                'hasMore' => $core['historyHasMore'],
+                'items' => $assembled['historyItems'],
+                'hasMore' => $assembled['historyHasMore'],
             ],
-            'career' => $this->playerCareerStatsService->build($player, $viewer, CareerWindow::DEFAULT_KEY, 'all'),
+            'liveGames' => $assembled['liveGames'],
+            'career' => $assembled['career'],
+            'overviewSplit' => $assembled['overviewSplit'],
+            'overview' => $assembled['overview'],
+            'checkoutHits' => $assembled['checkoutHits'],
+            'checkoutItems' => $assembled['checkoutItems'],
         ];
     }
 
@@ -143,27 +135,78 @@ class PlayerProfileService
      */
     public function buildWebShow(Player $player, ?User $viewer): array
     {
-        $isSelf = $this->isSelf($player, $viewer);
-        $core = $this->prepareRegisteredProfile($player, $isSelf);
-        $friendship = $this->resolveFriendshipState($player, $viewer);
-        $checkoutItems = $this->checkoutWheelAssembler->itemsForPlayer((int) $player->id);
+        $assembled = $this->assembleProfile($player, $viewer);
+        $friendship = $assembled['friendship'];
 
         return [
-            'player' => $player,
-            'quickStats' => $core['quickStats'],
-            'tournamentStats' => $core['tournamentStats'],
+            'player' => $assembled['player'],
+            'quickStats' => $assembled['quickStats'],
+            'tournamentStats' => $assembled['tournamentStats'],
             'isOwnProfile' => $friendship['isSelf'],
             'isFriend' => $friendship['isFriend'],
             'canInviteFriend' => $friendship['canInvite'],
             'pendingSentInvitation' => $friendship['pendingSent'],
             'pendingReceivedInvitation' => $friendship['pendingReceived'],
-            'gameHistoryItems' => $core['historyItems'],
-            'gameHistoryHasMore' => $core['historyHasMore'],
+            'gameHistoryItems' => $assembled['historyItems'],
+            'gameHistoryHasMore' => $assembled['historyHasMore'],
+            'liveGames' => $assembled['liveGames'],
+            'career' => $assembled['career'],
+            'overviewSplit' => $assembled['overviewSplit'],
+            'overview' => $assembled['overview'],
+            'checkoutHits' => $assembled['checkoutHits'],
+            'checkoutItems' => $assembled['checkoutItems'],
+        ];
+    }
+
+    /**
+     * Jedno złożenie danych profilu — web i API tylko mapują kształt.
+     *
+     * @return array{
+     *     player: Player,
+     *     quickStats: array<string, mixed>,
+     *     tournamentStats: array<string, mixed>,
+     *     historyItems: array,
+     *     historyHasMore: bool,
+     *     friendship: array{
+     *         isSelf: bool,
+     *         isFriend: bool,
+     *         canInvite: bool,
+     *         pendingSent: FriendshipInvitationDomain|null,
+     *         pendingReceived: FriendshipInvitationDomain|null
+     *     },
+     *     liveGames: list<array<string, mixed>>,
+     *     career: array<string, mixed>,
+     *     overviewSplit: array{window: string, quick: array<string, mixed>, tournament: array<string, mixed>},
+     *     overview: array<string, mixed>,
+     *     checkoutHits: array<int, int>,
+     *     checkoutItems: list<array{key: string, timesEarned: int, level: int, levelName: string}>
+     * }
+     */
+    private function assembleProfile(Player $player, ?User $viewer): array
+    {
+        $isSelf = $this->isSelf($player, $viewer);
+        $core = $this->prepareRegisteredProfile($player, $isSelf);
+        $checkoutItems = $this->checkoutWheelAssembler->itemsForPlayer((int) $player->id);
+        $checkoutHits = [];
+        foreach ($checkoutItems as $item) {
+            $times = (int) $item['timesEarned'];
+            if ($times > 0) {
+                $checkoutHits[(int) $item['key']] = $times;
+            }
+        }
+
+        return [
+            'player' => $player,
+            'quickStats' => $core['quickStats'],
+            'tournamentStats' => $core['tournamentStats'],
+            'historyItems' => $core['historyItems'],
+            'historyHasMore' => $core['historyHasMore'],
+            'friendship' => $this->resolveFriendshipState($player, $viewer),
             'liveGames' => $this->playerLiveGameService->findLiveGamesForPlayer((int) $player->id),
             'career' => $this->playerCareerStatsService->build($player, $viewer, CareerWindow::DEFAULT_KEY, 'all'),
             'overviewSplit' => $this->playerCareerStatsService->buildOverviewSplit($player),
             'overview' => $this->playerOverviewService->forProfile($player),
-            'checkoutHits' => $this->checkoutWheelAssembler->hitsForPlayer((int) $player->id),
+            'checkoutHits' => $checkoutHits,
             'checkoutItems' => $checkoutItems,
         ];
     }

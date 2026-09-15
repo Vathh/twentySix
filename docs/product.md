@@ -577,7 +577,7 @@ Wspólne dla **quick game online**, **treningu** i (tam gdzie dotyczy) **turniej
 
 ### Kariera na profilu (web)
 
-Zarejestrowany gracz ma **jedną karierę** ze snapshotów (turniej, liga, quick, trening JA). Okna toczące się, filtry źródeł, średnia X01 i duble. Szczegóły: [`design_player_career_stats.md`](design_player_career_stats.md). Dashboard mobile — później.
+Zarejestrowany gracz ma **jedną karierę** ze snapshotów (turniej, liga, quick, trening JA). Okna toczące się, filtry źródeł, średnia X01 i duble. Szczegóły: [`design_player_career_stats.md`](design_player_career_stats.md). **Web i mobile** pokazują ten sam zestaw (przegląd, historia, kariera, checkouty 100+) z jednego serwisu profilu; packing na telefonie jest inny.
 
 **Trener osobisty** (karty 30/60/90 min z katalogu trybów) jest w backendzie jako kontrakt digest→plan, **nigdzie nie pokazujemy go w UI**. Wdrożenie w aplikacji: później. [`design_player_coach.md`](design_player_coach.md).
 
