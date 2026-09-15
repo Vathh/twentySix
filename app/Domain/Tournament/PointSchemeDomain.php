@@ -3,7 +3,7 @@
 namespace App\Domain\Tournament;
 
 use App\Domain\Concerns\AssertsRelationsLoaded;
-use App\Enums\GameStage;
+use App\Enums\TournamentFormat;
 use App\Models\PointScheme\PointScheme;
 use App\Models\PointScheme\PointSchemeRule;
 use Illuminate\Support\Collection;
@@ -16,7 +16,7 @@ class PointSchemeDomain
     private const RELATIONS = ['rules'];
 
     /**
-     * @param  Collection<PointSchemeRuleDomain>  $rules
+     * @param  Collection<int, PointSchemeRuleDomain>  $rules
      */
     public function __construct(
         public readonly int $id,
@@ -35,15 +35,21 @@ class PointSchemeDomain
             name: $scheme->name,
             minPlayers: $scheme->min_players,
             maxPlayers: $scheme->max_players,
-            rules: in_array('rules', $with)
+            rules: in_array('rules', $with, true)
                 ? $scheme->rules->map(fn (PointSchemeRule $rule) => PointSchemeRuleDomain::fromEloquent($rule))
                 : collect()
         );
     }
 
-    public function getPointsAmount(GameStage $stage, ?int $place): int
+    public function pointsForPlace(TournamentFormat $tournamentFormat, int $place): ?int
     {
-        return $this->rules->where(fn (PointSchemeRuleDomain $rule) => $rule->stage === $stage && $rule->place === $place)
-            ->first()->points;
+        $format = $tournamentFormat->seasonPointFormat();
+
+        $rule = $this->rules
+            ->filter(fn (PointSchemeRuleDomain $rule) => $rule->matches($format, $place))
+            ->sortByDesc(fn (PointSchemeRuleDomain $rule) => $rule->placeFrom)
+            ->first();
+
+        return $rule?->points;
     }
 }

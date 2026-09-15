@@ -6,7 +6,6 @@ use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameStage;
 use App\Factories\TournamentResultsFactory;
 use App\Repositories\Player\PlayerRepository;
-use App\Repositories\PointScheme\PointSchemeRuleRepository;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Repositories\Tournament\TournamentResultRepository;
 use App\Services\GroupStanding\GroupStandingService;
@@ -18,7 +17,6 @@ class TournamentResultService
         private TournamentResultsFactory $factory,
         private TournamentRepository $tournamentRepository,
         private TournamentResultRepository $resultRepository,
-        private PointSchemeRuleRepository $pointSchemeRuleRepository,
         private TournamentOverallPlaceService $overallPlaceService,
         private PlayerRepository $playerRepository,
     ) {}
@@ -32,11 +30,7 @@ class TournamentResultService
             return;
         }
 
-        $results = $this->tracksSeasonPoints($tournament)
-            ? $this->factory->createManyForGroup($standings, $tournament)
-            : $this->factory->createManyForGroupWithoutPoints($standings, $tournament);
-
-        $this->resultRepository->createMany($results->toArray());
+        $this->resultRepository->createMany($this->factory->createManyForGroup($standings, $tournament)->toArray());
 
         $this->overallPlaceService->recalculateOverallPlaces($tournamentId);
     }
@@ -48,29 +42,16 @@ class TournamentResultService
         }
         $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
 
-        if ($this->tracksSeasonPoints($tournament)) {
-            $points = $this->pointsForStagePlace($tournament, $stage, $place);
+        $seasonId = $this->tracksSeasonPoints($tournament) ? $tournament->season->id : null;
 
-            $result = $this->factory->createForPlayoff(
-                $tournament->season->id,
-                $tournament->id,
-                $playerId,
-                $points,
-                $place,
-                $stage,
-            );
-        } else {
-            $result = $this->factory->createForPlayoff(
-                null,
-                $tournament->id,
-                $playerId,
-                null,
-                $place,
-                $stage,
-            );
-        }
-
-        $this->resultRepository->create($result);
+        $this->resultRepository->create($this->factory->createForPlayoff(
+            $seasonId,
+            $tournament->id,
+            $playerId,
+            null,
+            $place,
+            $stage,
+        ));
 
         $this->overallPlaceService->recalculateOverallPlaces($tournamentId);
     }
@@ -114,25 +95,10 @@ class TournamentResultService
         }
         $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
 
-        if ($this->tracksSeasonPoints($tournament)) {
-            $points = $this->pointsForStagePlace($tournament, $stage, $place);
-
-            $this->resultRepository->upsertForPlayer(
-                seasonId: $tournament->season->id,
-                tournamentId: $tournamentId,
-                playerId: $playerId,
-                points: $points,
-                place: $place,
-                stage: $stage,
-            );
-
-            $this->overallPlaceService->recalculateOverallPlaces($tournamentId);
-
-            return;
-        }
+        $seasonId = $this->tracksSeasonPoints($tournament) ? $tournament->season->id : null;
 
         $this->resultRepository->upsertForPlayer(
-            seasonId: null,
+            seasonId: $seasonId,
             tournamentId: $tournamentId,
             playerId: $playerId,
             points: null,
@@ -146,14 +112,5 @@ class TournamentResultService
     private function tracksSeasonPoints(TournamentDomain $tournament): bool
     {
         return $tournament->season !== null && $tournament->pointScheme !== null;
-    }
-
-    private function pointsForStagePlace(TournamentDomain $tournament, GameStage $stage, ?int $place): ?int
-    {
-        $schemeId = $tournament->pointScheme->id;
-        $rule = $this->pointSchemeRuleRepository->find($schemeId, $stage, $place)
-            ?? $this->pointSchemeRuleRepository->find($schemeId, $stage, null);
-
-        return $rule?->points;
     }
 }

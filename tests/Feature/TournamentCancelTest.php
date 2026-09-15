@@ -2,12 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Enums\GameStage;
 use App\Enums\TournamentStatus;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\PointScheme\PointScheme;
-use App\Models\PointScheme\PointSchemeRule;
 use App\Models\Season\Season;
 use App\Models\Tournament\LoginCode;
 use App\Models\Tournament\Tournament;
@@ -15,11 +13,13 @@ use App\Models\Tournament\TournamentInvitation;
 use App\Models\Users\User;
 use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\InsertsPointSchemeRules;
 use Tests\Support\SeedsTournamentParticipants;
 use Tests\TestCase;
 
 class TournamentCancelTest extends TestCase
 {
+    use InsertsPointSchemeRules;
     use RefreshDatabase;
     use SeedsTournamentParticipants;
 
@@ -81,14 +81,7 @@ class TournamentCancelTest extends TestCase
             'min_players' => 2,
             'max_players' => 8,
         ]);
-        PointSchemeRule::insert([
-            ['point_scheme_id' => $scheme->id, 'elimination_stage' => GameStage::GROUP->value, 'place' => 2, 'points' => 2],
-            ['point_scheme_id' => $scheme->id, 'elimination_stage' => GameStage::GROUP->value, 'place' => 1, 'points' => 4],
-            ['point_scheme_id' => $scheme->id, 'elimination_stage' => GameStage::QUARTER->value, 'place' => null, 'points' => 6],
-            ['point_scheme_id' => $scheme->id, 'elimination_stage' => GameStage::SEMI->value, 'place' => null, 'points' => 8],
-            ['point_scheme_id' => $scheme->id, 'elimination_stage' => GameStage::FINAL->value, 'place' => 2, 'points' => 10],
-            ['point_scheme_id' => $scheme->id, 'elimination_stage' => GameStage::FINAL->value, 'place' => 1, 'points' => 12],
-        ]);
+        $this->insertDefaultSeRules($scheme->id);
     }
 
     public function test_admin_can_cancel_started_tournament_with_password(): void

@@ -13,32 +13,16 @@ use Illuminate\Support\Collection;
 class TournamentResultsFactory
 {
     /**
-     * @param  Collection<GroupStandingDomain>  $groupStandings
-     * @return Collection<TournamentResultDomain>
+     * @param  Collection<int, GroupStandingDomain>  $groupStandings
+     * @return Collection<int, TournamentResultDomain>
      */
     public function createManyForGroup(Collection $groupStandings, TournamentDomain $tournament): Collection
     {
-        $seasonId = $tournament->season->id;
-        $pointSchemeRules = $tournament->pointScheme->rules->filter(fn ($rule) => $rule->stage === GameStage::GROUP);
+        $seasonId = $tournament->tracksSeasonPoints() ? $tournament->season->id : null;
 
-        return $groupStandings->map(function ($standing) use ($seasonId, $pointSchemeRules) {
-            return $this->createForGroup(
-                standing: $standing,
-                seasonId: $seasonId,
-                points: $pointSchemeRules->first(fn ($rule) => $rule->place === $standing->place)->points
-            );
-        });
-    }
-
-    /**
-     * @param  Collection<GroupStandingDomain>  $groupStandings
-     * @return Collection<TournamentResultDomain>
-     */
-    public function createManyForGroupWithoutPoints(Collection $groupStandings, TournamentDomain $tournament): Collection
-    {
-        return $groupStandings->map(fn ($standing) => new TournamentResultDomain(
+        return $groupStandings->map(fn (GroupStandingDomain $standing) => new TournamentResultDomain(
             season: null,
-            seasonId: null,
+            seasonId: $seasonId,
             tournament: null,
             tournamentId: $standing->tournament->id,
             player: null,
@@ -49,28 +33,14 @@ class TournamentResultsFactory
         ));
     }
 
-    private function createForGroup(GroupStandingDomain $standing, int $seasonId, int $points): TournamentResultDomain
-    {
-        return new TournamentResultDomain(
-            season: null,
-            seasonId: $seasonId,
-            tournament: null,
-            tournamentId: $standing->tournament->id,
-            player: null,
-            playerId: $standing->player->id,
-            points: $points,
-            place: $standing->place,
-            eliminationStage: GameStage::GROUP,
-        );
-    }
-
-    public function createForPlayoff(?int $seasonId,
+    public function createForPlayoff(
+        ?int $seasonId,
         int $tournamentId,
         int $playerId,
         ?int $points,
         ?int $place,
-        GameStage $stage): TournamentResultDomain
-    {
+        GameStage $stage,
+    ): TournamentResultDomain {
         return new TournamentResultDomain(
             season: null,
             seasonId: $seasonId,

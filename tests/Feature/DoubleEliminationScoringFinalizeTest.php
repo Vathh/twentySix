@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Domain\GameScoring\MatchFormat;
 use App\Enums\BracketSide;
-use App\Enums\GameStage;
 use App\Enums\GameStatus;
 use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
@@ -12,7 +11,6 @@ use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\PointScheme\PointScheme;
-use App\Models\PointScheme\PointSchemeRule;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Models\Tournament\TournamentResult;
@@ -28,7 +26,7 @@ class DoubleEliminationScoringFinalizeTest extends TestCase
     use ActsAsTournamentTablet;
     use RefreshDatabase;
 
-    public function test_closing_lb_game_does_not_404_when_point_scheme_has_no_exact_place(): void
+    public function test_closing_lb_game_awards_de_bucket_points(): void
     {
         $user = User::factory()->create(['email' => 'de-scoring@test.com']);
         app(PlayerService::class)->create('Host', $user->id);
@@ -41,23 +39,10 @@ class DoubleEliminationScoringFinalizeTest extends TestCase
             'end_date' => '2024-12-31',
         ]);
 
-        $scheme = PointScheme::create([
-            'name' => 'od 4 do 8 osób',
-            'min_players' => 4,
-            'max_players' => 8,
-        ]);
-        PointSchemeRule::create([
-            'point_scheme_id' => $scheme->id,
-            'elimination_stage' => GameStage::SEMI->value,
-            'place' => null,
-            'points' => 8,
-        ]);
-        PointSchemeRule::create([
-            'point_scheme_id' => $scheme->id,
-            'elimination_stage' => GameStage::FINAL->value,
-            'place' => 1,
-            'points' => 13,
-        ]);
+        $scheme = PointScheme::query()
+            ->where('min_players', 4)
+            ->where('max_players', 8)
+            ->firstOrFail();
 
         $tournament = Tournament::create([
             'name' => 'Turniej DE sezonu',
@@ -141,5 +126,13 @@ class DoubleEliminationScoringFinalizeTest extends TestCase
                 ->where('player_id', $loser->id)
                 ->exists()
         );
+
+        $result = TournamentResult::query()
+            ->where('tournament_id', $tournament->id)
+            ->where('player_id', $loser->id)
+            ->firstOrFail();
+
+        $this->assertSame(5, $result->place);
+        $this->assertSame(5, $result->points);
     }
 }

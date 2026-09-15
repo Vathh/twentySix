@@ -14,7 +14,6 @@ use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\PointScheme\PointScheme;
-use App\Models\PointScheme\PointSchemeRule;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
@@ -22,11 +21,13 @@ use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\Concerns\ActsAsTournamentTablet;
+use Tests\Concerns\InsertsPointSchemeRules;
 use Tests\TestCase;
 
 class GameControllerApiTest extends TestCase
 {
     use ActsAsTournamentTablet;
+    use InsertsPointSchemeRules;
     use RefreshDatabase;
 
     private User $user;
@@ -78,12 +79,7 @@ class GameControllerApiTest extends TestCase
             'max_players' => 8,
         ]);
 
-        PointSchemeRule::create(['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::GROUP->value, 'place' => 2, 'points' => 2]);
-        PointSchemeRule::create(['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::GROUP->value, 'place' => 1, 'points' => 4]);
-        PointSchemeRule::create(['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::QUARTER->value, 'place' => null, 'points' => 6]);
-        PointSchemeRule::create(['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::SEMI->value, 'place' => null, 'points' => 8]);
-        PointSchemeRule::create(['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::FINAL->value, 'place' => 2, 'points' => 10]);
-        PointSchemeRule::create(['point_scheme_id' => $smallScheme->id, 'elimination_stage' => GameStage::FINAL->value, 'place' => 1, 'points' => 12]);
+        $this->insertDefaultSeRules($smallScheme->id);
 
         $this->tournament->update(['point_scheme_id' => $smallScheme->id]);
 

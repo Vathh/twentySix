@@ -79,10 +79,10 @@ Istniejący kod w `Support/GameScoring`, FFA itd. przenosimy do Domain **stopnio
 
 ## Turniej a schematy punktów (`PointScheme`)
 
-- **Liczba uczestników** przy starcie (`TournamentService::tryCreateGroupGames`, `count($playerIds)`) musi wpadać w co najmniej jeden przedział `min_players`–`max_players` w `point_schemes` (obecnie seed pokrywa **4–80**). Dobór: `PointSchemeService::findByPlayersAmount`; przy braku dopasowania — wyjątek.
-- **Reguły** w `point_scheme_rules` opisują punkty za miejsca w grupie oraz za etapy drabinki (`EIGHT`, `QUARTER`, `THIRD`, `FINAL`). **Większy turniej = wyższa skala punktów** przy tym samym etapie (porównaj np. zwycięstwo w finale między przedziałami w seedzie).
-- Przedziały w seedzie są **rozłączne** (4–8, 9–16, …, aż do 73–80). Jeśli kiedyś dodasz nakładające się zakresy, `PointSchemeService::findByPlayersAmount` wybiera schemat z **największym `min_players`** (wyższa skala przy granicy).
-- **Źródło prawdy** i zmiany przedziałów / liczb: `database/seeders/PointSchemeSeeder.php` — nowe przedziały tylko po uzgodnieniu; pilnuj monotoniczności i spójności z kodem wyników.
+- **Liczba uczestników** przy starcie (`count($playerIds)`) musi wpadać w przedział `min_players`–`max_players` w `point_schemes` (seed: **4–8, 9–16, 17–32, 33–64, 65–128**). Dobór: `PointSchemeService::findByPlayersAmount`; przy braku dopasowania — wyjątek. Limit stawki / drabinki na razie **128**; przyszłe pasmo **129–256** gdy limit wzrośnie.
+- **Reguły** w `point_scheme_rules`: `format` (`se` / `de`) + `place_from` / `place_to` + `points`. `groups_playoff` i SE używają `se`; DE — `de`. Punkty z **miejsca overall** po `TournamentOverallPlaceService`, nie z `GameStage`.
+- Przedziały w seedzie są **rozłączne**. Przy nakładaniu `findByPlayersAmount` wybiera schemat z **największym `min_players`**.
+- **Źródło liczb:** `App\Domain\Tournament\SeasonPointTable` (zgodnie z `docs/design_point_schemes.md`); seeder tylko materializuje DB.
 
 ## Szczegóły meczu, wizyty i statystyki (plan wdrożenia)
 

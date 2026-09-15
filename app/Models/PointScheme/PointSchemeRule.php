@@ -2,7 +2,7 @@
 
 namespace App\Models\PointScheme;
 
-use App\Enums\GameStage;
+use App\Enums\PointSchemeFormat;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -10,13 +10,14 @@ class PointSchemeRule extends Model
 {
     protected $fillable = [
         'point_scheme_id',
-        'elimination_stage',
-        'place',
+        'format',
+        'place_from',
+        'place_to',
         'points',
     ];
 
     protected $casts = [
-        'elimination_stage' => GameStage::class,
+        'format' => PointSchemeFormat::class,
     ];
 
     /** @return BelongsTo<PointScheme, $this> */

@@ -26,6 +26,20 @@ class TournamentResultRepository
             ->update(['place' => $place]);
     }
 
+    public function updatePoints(int $tournamentId, int $playerId, ?int $points): void
+    {
+        TournamentResult::where('tournament_id', $tournamentId)
+            ->where('player_id', $playerId)
+            ->update(['points' => $points]);
+    }
+
+    public function updatePlaceAndPoints(int $tournamentId, int $playerId, int $place, ?int $points): void
+    {
+        TournamentResult::where('tournament_id', $tournamentId)
+            ->where('player_id', $playerId)
+            ->update(['place' => $place, 'points' => $points]);
+    }
+
     public function createMany(array $tournamentResults): void
     {
         $mapped = array_map(fn (TournamentResultDomain $result) => [

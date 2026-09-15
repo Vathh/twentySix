@@ -22,13 +22,7 @@ class TournamentOverallPlaceService
 
     public function recalculateOverallPlaces(int $tournamentId): void
     {
-        $tournament = $this->tournamentRepository->findWithSeasonAndPointScheme($tournamentId);
-
-        $bracketSize = $this->resolveBracketSize($tournamentId, $tournament->playoffBracketSize);
-
-        if ($bracketSize === null) {
-            return;
-        }
+        $tournament = $this->tournamentRepository->findWithSeasonAndPointSchemeRules($tournamentId);
 
         $results = $this->tournamentResultRepository->getAllForTournament($tournamentId);
 
@@ -36,21 +30,47 @@ class TournamentOverallPlaceService
             return;
         }
 
-        $groupPlacesByPlayer = $this->groupStandingRepository->getPlacesByPlayerId($tournamentId);
+        $bracketSize = $this->resolveBracketSize($tournamentId, $tournament->playoffBracketSize);
 
-        $rows = $results->map(fn (TournamentResult $result) => [
-            'player_id' => $result->player_id,
-            'elimination_stage' => $result->elimination_stage,
-            'group_place' => $result->elimination_stage === GameStage::GROUP
-                ? ($groupPlacesByPlayer[$result->player_id] ?? null)
-                : null,
-            'current_place' => $result->place,
-        ]);
+        if ($bracketSize !== null) {
+            $groupPlacesByPlayer = $this->groupStandingRepository->getPlacesByPlayerId($tournamentId);
 
-        $places = $this->calculator->calculate($bracketSize, $rows);
+            $rows = $results->map(fn (TournamentResult $result) => [
+                'player_id' => $result->player_id,
+                'elimination_stage' => $result->elimination_stage,
+                'group_place' => $result->elimination_stage === GameStage::GROUP
+                    ? ($groupPlacesByPlayer[$result->player_id] ?? null)
+                    : null,
+                'current_place' => $result->place,
+            ]);
 
-        foreach ($places as $playerId => $place) {
-            $this->tournamentResultRepository->updatePlace($tournamentId, $playerId, $place);
+            $places = $this->calculator->calculate($bracketSize, $rows);
+
+            foreach ($places as $playerId => $place) {
+                $points = $tournament->tracksSeasonPoints()
+                    ? $tournament->pointScheme->pointsForPlace($tournament->format, $place)
+                    : null;
+
+                $this->tournamentResultRepository->updatePlaceAndPoints($tournamentId, $playerId, $place, $points);
+            }
+
+            return;
+        }
+
+        if (! $tournament->tracksSeasonPoints()) {
+            return;
+        }
+
+        foreach ($results as $result) {
+            if ($result->place === null) {
+                continue;
+            }
+
+            $this->tournamentResultRepository->updatePoints(
+                $tournamentId,
+                $result->player_id,
+                $tournament->pointScheme->pointsForPlace($tournament->format, $result->place),
+            );
         }
     }
 

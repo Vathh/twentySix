@@ -6,17 +6,18 @@ use App\Enums\GameStage;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\PointScheme\PointScheme;
-use App\Models\PointScheme\PointSchemeRule;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Models\Tournament\TournamentResult;
 use App\Models\Users\User;
 use App\Services\Tournament\TournamentResultService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\InsertsPointSchemeRules;
 use Tests\TestCase;
 
 class TournamentResultPodiumSyncTest extends TestCase
 {
+    use InsertsPointSchemeRules;
     use RefreshDatabase;
 
     private Tournament $tournament;
@@ -41,12 +42,7 @@ class TournamentResultPodiumSyncTest extends TestCase
         ]);
 
         $scheme = PointScheme::create(['name' => 'test', 'min_players' => 2, 'max_players' => 8]);
-        PointSchemeRule::insert([
-            ['point_scheme_id' => $scheme->id, 'elimination_stage' => GameStage::FINAL->value, 'place' => 1, 'points' => 12],
-            ['point_scheme_id' => $scheme->id, 'elimination_stage' => GameStage::FINAL->value, 'place' => 2, 'points' => 10],
-            ['point_scheme_id' => $scheme->id, 'elimination_stage' => GameStage::THIRD->value, 'place' => 3, 'points' => 8],
-            ['point_scheme_id' => $scheme->id, 'elimination_stage' => GameStage::THIRD->value, 'place' => 4, 'points' => 6],
-        ]);
+        $this->insertDefaultSeRules($scheme->id);
 
         $this->tournament = Tournament::create([
             'name' => 'Turniej test',

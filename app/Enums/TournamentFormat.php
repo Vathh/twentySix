@@ -26,4 +26,10 @@ enum TournamentFormat: string
     {
         return $this === self::SingleElimination || $this === self::DoubleElimination;
     }
+
+    /** Kolumna tabeli punktacji sezonowej: DE ma ciaśniejsze kubełki miejsc. */
+    public function seasonPointFormat(): PointSchemeFormat
+    {
+        return $this === self::DoubleElimination ? PointSchemeFormat::De : PointSchemeFormat::Se;
+    }
 }
