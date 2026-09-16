@@ -1,5 +1,6 @@
 @props([
     'hits' => [],
+    'items' => [],
     'demo' => false,
 ])
 
@@ -12,6 +13,7 @@
     data-checkout-wheel
     @if($demo) data-checkout-wheel-demo="1" @endif
     data-checkout-hits='@json($hits)'
+    data-checkout-items='@json($items)'
 >
     <div class="checkout-wheel__stage overflow-visible px-2 py-4 sm:px-4">
         {!! $svg !!}

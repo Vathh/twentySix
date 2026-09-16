@@ -13,8 +13,11 @@ class CheckoutWheelLevelsTest extends TestCase
         $this->assertSame('iron', CheckoutWheelLevels::fromHits(1));
         $this->assertSame('iron', CheckoutWheelLevels::fromHits(2));
         $this->assertSame('bronze', CheckoutWheelLevels::fromHits(3));
+        $this->assertSame('bronze', CheckoutWheelLevels::fromHits(4));
         $this->assertSame('gold', CheckoutWheelLevels::fromHits(5));
-        $this->assertSame('bright', CheckoutWheelLevels::fromHits(10));
+        $this->assertSame('gold', CheckoutWheelLevels::fromHits(6));
+        $this->assertSame('bright', CheckoutWheelLevels::fromHits(7));
+        $this->assertSame('apex', CheckoutWheelLevels::fromHits(10));
         $this->assertSame('apex', CheckoutWheelLevels::fromHits(15));
         $this->assertSame('apex', CheckoutWheelLevels::fromHits(40));
     }

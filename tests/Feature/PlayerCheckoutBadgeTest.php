@@ -76,6 +76,12 @@ class PlayerCheckoutBadgeTest extends TestCase
 
         $this->assertSame(2, (int) PlayerBadge::query()->where('player_id', $p1->id)->where('badge_key', '121')->value('times_earned'));
         $this->assertDatabaseCount('player_badge_events', 2);
+
+        $item = collect(app(CheckoutWheelAssembler::class)->itemsForPlayer((int) $p1->id))->firstWhere('key', '121');
+        $this->assertSame(2, $item['timesEarned']);
+        $this->assertNotNull($item['lastEarnedAt']);
+        $this->assertSame('group', $item['lastGame']['type']);
+        $this->assertSame('Rywal', $item['lastGame']['opponents']);
     }
 
     #[Test]
@@ -242,8 +248,9 @@ class PlayerCheckoutBadgeTest extends TestCase
         $this->assertCount(12, $unlocked);
         $oneTwoOne = collect($items)->firstWhere('key', '121');
         $this->assertSame(7, $oneTwoOne['timesEarned']);
-        $this->assertSame(5, $oneTwoOne['level']);
-        $this->assertSame('gold', $oneTwoOne['levelName']);
+        $this->assertSame(7, $oneTwoOne['level']);
+        $this->assertSame('bright', $oneTwoOne['levelName']);
+        $this->assertNull($oneTwoOne['lastGame']);
 
         $this->get(route('players.show', $player))
             ->assertOk()

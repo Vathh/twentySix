@@ -4,9 +4,9 @@ namespace App\Domain\Badge\Checkout;
 
 final class CheckoutLevelPolicy
 {
-    public const APEX = 15;
+    public const APEX = 10;
 
-    public const BRIGHT = 10;
+    public const BRIGHT = 7;
 
     public const GOLD = 5;
 

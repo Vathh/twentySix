@@ -84,7 +84,9 @@ class PlayerProfileApiTest extends TestCase
                 'overviewSplit' => ['window', 'quick', 'tournament'],
                 'overview' => ['record', 'activity', 'social'],
                 'checkoutHits',
-                'checkoutItems',
+                'checkoutItems' => [
+                    '*' => ['key', 'timesEarned', 'level', 'levelName', 'lastEarnedAt', 'lastGame'],
+                ],
             ])
             ->assertJsonPath('friendship.isSelf', false)
             ->assertJsonPath('friendship.canInvite', true)

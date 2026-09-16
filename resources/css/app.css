@@ -261,6 +261,12 @@
         @apply sticky top-0 z-40 bg-bg-deep/90 backdrop-blur-md text-text-secondary py-3 sm:py-4 border-b border-border;
     }
 
+    .profile-tabs {
+        @apply sticky z-30 -mx-4 px-4 mb-6 flex gap-2 border-b border-border pt-2 pb-2 overflow-x-auto;
+        @apply bg-bg-deep/90 backdrop-blur-md;
+        top: var(--site-header-h, 4.25rem);
+    }
+
     .career-section-head {
         @apply flex items-center justify-between gap-3 mb-2;
     }
@@ -908,7 +914,7 @@
 
     .career-filter-bar.is-stuck {
         position: fixed;
-        z-index: 30;
+        z-index: 29;
         @apply py-1 px-4;
         background: transparent;
     }

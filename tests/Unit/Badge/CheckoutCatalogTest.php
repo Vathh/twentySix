@@ -41,10 +41,12 @@ class CheckoutCatalogTest extends TestCase
         $this->assertSame(3, CheckoutLevelPolicy::levelForHits(3));
         $this->assertSame(3, CheckoutLevelPolicy::levelForHits(4));
         $this->assertSame(5, CheckoutLevelPolicy::levelForHits(5));
-        $this->assertSame(5, CheckoutLevelPolicy::levelForHits(7));
+        $this->assertSame(5, CheckoutLevelPolicy::levelForHits(6));
+        $this->assertSame(7, CheckoutLevelPolicy::levelForHits(7));
+        $this->assertSame(7, CheckoutLevelPolicy::levelForHits(9));
         $this->assertSame(10, CheckoutLevelPolicy::levelForHits(10));
-        $this->assertSame(15, CheckoutLevelPolicy::levelForHits(15));
-        $this->assertSame('gold', CheckoutLevelPolicy::nameForHits(7));
+        $this->assertSame(10, CheckoutLevelPolicy::levelForHits(15));
+        $this->assertSame('bright', CheckoutLevelPolicy::nameForHits(7));
         $this->assertSame('locked', CheckoutLevelPolicy::nameForHits(0));
     }
 }

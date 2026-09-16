@@ -37,7 +37,12 @@ export function registerPlayerCareer(alpine) {
 
         headerOffsetPx() {
             const header = document.querySelector('.site-header');
-            return header ? Math.round(header.getBoundingClientRect().height) : 64;
+            const tabs = document.querySelector('.profile-tabs');
+            let offset = header ? Math.round(header.getBoundingClientRect().height) : 64;
+            if (tabs) {
+                offset += Math.round(tabs.getBoundingClientRect().height);
+            }
+            return offset;
         },
 
         syncFilterSticky() {

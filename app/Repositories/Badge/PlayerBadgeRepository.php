@@ -157,6 +157,35 @@ class PlayerBadgeRepository
     }
 
     /**
+     * Najnowsze zdarzenie per badge_key (checkout).
+     *
+     * @return array<string, array{source_kind: string, source_id: int, created_at: string|null}>
+     */
+    public function latestEventsByBadgeKey(int $playerId, string $category): array
+    {
+        $rows = PlayerBadgeEvent::query()
+            ->where('player_id', $playerId)
+            ->where('category', $category)
+            ->orderByDesc('id')
+            ->get(['badge_key', 'source_kind', 'source_id', 'created_at']);
+
+        $latest = [];
+        foreach ($rows as $row) {
+            $key = (string) $row->badge_key;
+            if (isset($latest[$key])) {
+                continue;
+            }
+            $latest[$key] = [
+                'source_kind' => (string) $row->source_kind,
+                'source_id' => (int) $row->source_id,
+                'created_at' => $row->created_at?->toIso8601String(),
+            ];
+        }
+
+        return $latest;
+    }
+
+    /**
      * @return Collection<int, PlayerBadge>
      */
     public function forPlayerCategory(int $playerId, string $category): Collection

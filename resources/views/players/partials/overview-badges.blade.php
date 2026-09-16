@@ -13,5 +13,5 @@
     <p class="text-sm text-text-secondary mb-4">
         Finish 100–170 w meczach 501 (liga i turniej). Im więcej trafień, tym jaśniejszy klin.
     </p>
-    <x-checkout-wheel :hits="$checkoutHits" />
+    <x-checkout-wheel :hits="$checkoutHits" :items="$checkoutItems" />
 </section>

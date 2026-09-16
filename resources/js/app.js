@@ -30,5 +30,22 @@ registerCheckoutWheels();
 registerFriendsPanel(alpine);
 registerPlayerCareer(alpine);
 
+function registerSiteHeaderOffset() {
+    const header = document.querySelector('.site-header');
+    if (!header) {
+        return;
+    }
+    const sync = () => {
+        document.documentElement.style.setProperty('--site-header-h', `${header.offsetHeight}px`);
+    };
+    sync();
+    if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(sync).observe(header);
+    }
+    window.addEventListener('resize', sync);
+}
+
+registerSiteHeaderOffset();
+
 window.Alpine = alpine;
 alpine.start();

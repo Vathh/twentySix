@@ -130,7 +130,7 @@ class PlayerProfileService
      *     overviewSplit: array{window: string, quick: array<string, mixed>, tournament: array<string, mixed>},
      *     overview: array<string, mixed>,
      *     checkoutHits: array<int, int>,
-     *     checkoutItems: list<array{key: string, timesEarned: int, level: int, levelName: string}>
+     *     checkoutItems: list<array{key: string, timesEarned: int, level: int, levelName: string, lastEarnedAt: string|null, lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null}>
      * }
      */
     public function buildWebShow(Player $player, ?User $viewer): array
@@ -179,7 +179,7 @@ class PlayerProfileService
      *     overviewSplit: array{window: string, quick: array<string, mixed>, tournament: array<string, mixed>},
      *     overview: array<string, mixed>,
      *     checkoutHits: array<int, int>,
-     *     checkoutItems: list<array{key: string, timesEarned: int, level: int, levelName: string}>
+     *     checkoutItems: list<array{key: string, timesEarned: int, level: int, levelName: string, lastEarnedAt: string|null, lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null}>
      * }
      */
     private function assembleProfile(Player $player, ?User $viewer): array

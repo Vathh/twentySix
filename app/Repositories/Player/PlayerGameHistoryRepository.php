@@ -94,6 +94,37 @@ class PlayerGameHistoryRepository
     }
 
     /**
+     * Skróty meczów dla źródeł z badge events (liga / grupa / play-off).
+     *
+     * @param  list<array{source_kind: string, source_id: int, created_at?: string|null}>  $refs
+     * @return array<string, array{type: string, id: int|null, date: string, date_formatted: string, opponents: string, result: string, score: string|null, tournament_name: string|null}>
+     */
+    public function summariesForBadgeSources(int $playerId, array $refs): array
+    {
+        $stubs = [];
+        foreach ($refs as $ref) {
+            $kind = (string) $ref['source_kind'];
+            $sourceType = $kind === 'group' ? 'game' : $kind;
+            $date = $ref['created_at'] ?? now()->toDateTimeString();
+            $stubs[] = [
+                'type' => $kind === 'group' ? 'group' : $kind,
+                'date' => $date,
+                'source_id' => (int) $ref['source_id'],
+                'source_type' => $sourceType,
+            ];
+        }
+
+        $items = $this->resolveDetails($playerId, $stubs);
+        $map = [];
+        foreach ($items as $i => $item) {
+            $ref = $refs[$i];
+            $map[$ref['source_kind'].':'.$ref['source_id']] = $item;
+        }
+
+        return $map;
+    }
+
+    /**
      * Dla wycinka stubów pobiera szczegóły (przeciwnicy, wynik, turniej).
      *
      * @param  array<int, array{type: string, date: string, source_id: int, source_type: string}>  $stubs

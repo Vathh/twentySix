@@ -80,7 +80,7 @@ document.addEventListener('alpine:init', () => {
         @include('players.partials.profile-hero')
 
         {{-- Zakładki --}}
-        <div class="flex gap-2 mb-6 border-b border-border pb-2 overflow-x-auto">
+        <div class="profile-tabs">
             <button type="button"
                     @click="activeTab = 'overview'"
                     :class="activeTab === 'overview' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"

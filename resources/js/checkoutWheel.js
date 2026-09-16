@@ -1,17 +1,17 @@
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const LEVELS = [
-    ['apex', 15],
-    ['bright', 10],
+    ['apex', 10],
+    ['bright', 7],
     ['gold', 5],
     ['bronze', 3],
     ['iron', 1],
 ];
 
 const DEMO_HITS = {
-    170: 15, 167: 5, 164: 10, 161: 3, 151: 1, 152: 3, 154: 5, 157: 10, 160: 15,
-    138: 1, 140: 3, 144: 5, 148: 10, 150: 15, 121: 1, 126: 3, 130: 5, 134: 10,
-    100: 1, 107: 3, 112: 5, 118: 15, 120: 10,
+    170: 10, 167: 5, 164: 7, 161: 3, 151: 1, 152: 3, 154: 5, 157: 7, 160: 10,
+    138: 1, 140: 3, 144: 5, 148: 7, 150: 10, 121: 1, 126: 3, 130: 5, 134: 7,
+    100: 1, 107: 3, 112: 5, 118: 10, 120: 7,
 };
 
 const offGlow = { enabled: false, color: '#2e2e38', blur: 0, opacity: 0 };
@@ -189,6 +189,85 @@ function jaggedLine(x1, y1, x2, y2, steps, amp, seed) {
     return pts;
 }
 
+/** Pęknięcia w środku klina; na cienkich pierścieniach gęściej i grubiej. */
+function ringGeometry(checkout) {
+    const n = Number(checkout);
+    if (n === 170) return { r0: 0, r1: 60, count: 1 };
+    if (n >= 161) return { r0: 60, r1: 140, count: 3 };
+    if (n >= 151) return { r0: 140, r1: 210, count: 9 };
+    if (n >= 138) return { r0: 210, r1: 275, count: 13 };
+    if (n >= 121) return { r0: 275, r1: 325, count: 17 };
+    return { r0: 325, r1: 372, count: 21 };
+}
+
+function crackField(checkout, bbox) {
+    const n = Number(checkout);
+    const ring = ringGeometry(n);
+    const thick = ring.r1 - ring.r0;
+    const midR = (ring.r0 + ring.r1) / 2;
+    const chord = midR * ((Math.PI * 2) / ring.count);
+    const span = Math.max(thick, chord * 0.72, 32);
+    const extra = ring.count >= 21 ? 6 : ring.count >= 17 ? 4 : ring.count >= 13 ? 2 : 0;
+    const boost = Math.min(2.35, Math.max(1, 90 / thick));
+    if (n === 170) {
+        return {
+            originX: 450, originY: 450, span, radialAng: 0, extra: 0, polar: false,
+            boost, r0: 0, r1: 60, halfA: Math.PI, tiles: 1,
+        };
+    }
+    const cx = bbox.x + bbox.width / 2;
+    const cy = bbox.y + bbox.height / 2;
+    const radialAng = Math.atan2(cy - 450, cx - 450);
+    return {
+        originX: 450 + Math.cos(radialAng) * midR,
+        originY: 450 + Math.sin(radialAng) * midR,
+        span,
+        radialAng,
+        extra,
+        polar: true,
+        boost,
+        r0: ring.r0,
+        r1: ring.r1,
+        halfA: Math.PI / ring.count,
+        tiles: ring.count,
+    };
+}
+
+function crackBudget(field, isDiamond, checkout) {
+    const tiles = field.tiles || 1;
+    const extra = isDiamond
+        ? (tiles >= 21 ? 2 : tiles >= 17 ? 1 : 0)
+        : (tiles >= 21 ? 3 : tiles >= 17 ? 1 : 0);
+    const base = isDiamond ? (Number(checkout) === 170 ? 8 : 7) : 6;
+    return {
+        count: base + extra,
+        boost: isDiamond ? field.boost : Math.min(1.65, field.boost),
+        forkAt: isDiamond ? 0.38 : 0.55,
+        inclusions: isDiamond ? 0 : (tiles >= 17 ? 1 : 2),
+    };
+}
+
+function crackAngle(seed, radialAng, polar) {
+    if (!polar) {
+        return hash01(seed) * Math.PI * 2;
+    }
+    const lane = Math.floor(hash01(seed + 11) * 4);
+    const spread = lane < 2 ? 0.42 : 0.28;
+    const base = radialAng + [0, Math.PI, Math.PI / 2, -Math.PI / 2][lane];
+    return base + (hash01(seed) - 0.5) * spread;
+}
+
+function crackStart(field, seed) {
+    if (!field.polar) {
+        return { x: field.originX, y: field.originY };
+    }
+    const tA = (hash01(seed + 15) - 0.5) * 1.55 * field.halfA;
+    const tR = 0.22 + hash01(seed + 16) * 0.56;
+    const r = field.r0 + tR * (field.r1 - field.r0);
+    const a = field.radialAng + tA;
+    return { x: 450 + Math.cos(a) * r, y: 450 + Math.sin(a) * r };
+}
+
 function wanderPoints(x, y, angle, steps, stepLen, wander, seed) {
     const pts = [[x, y]];
     let a = angle;
@@ -229,6 +308,48 @@ function parseHits(host) {
     } catch {
         return {};
     }
+}
+
+function parseItems(host) {
+    try {
+        const raw = host.dataset.checkoutItems || '[]';
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) {
+            return {};
+        }
+        const map = {};
+        parsed.forEach((item) => {
+            if (item && item.key != null) {
+                map[String(item.key)] = item;
+            }
+        });
+        return map;
+    } catch {
+        return {};
+    }
+}
+
+function timesWord(n) {
+    const abs = Math.abs(n);
+    const mod10 = abs % 10;
+    const mod100 = abs % 100;
+    if (abs === 1) return 'raz';
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'razy';
+    return 'razy';
+}
+
+function gameTypeLabel(type) {
+    if (type === 'league') return 'Liga';
+    if (type === 'group' || type === 'playoff') return 'Turniej';
+    if (type === 'quick') return 'Szybkie';
+    return '';
+}
+
+function formatTipDate(iso) {
+    if (!iso) return '';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('pl-PL');
 }
 
 class CheckoutWheel {
@@ -293,6 +414,7 @@ class CheckoutWheel {
             group.setAttribute('data-hits', String(hits[checkout] ?? hits[String(checkout)] ?? 0));
             this.applyBrush(group, PRESETS[level], checkout);
         });
+        this.bindTips();
     }
 
     ensureSharedDefs() {
@@ -951,34 +1073,33 @@ class CheckoutWheel {
         const n = Number(checkout);
         const clipId = this.ensureClip(group, checkout);
         const bbox = shape.getBBox();
-        const cx = bbox.x + bbox.width / 2;
-        const cy = bbox.y + bbox.height / 2;
-        const originX = n === 170 ? 450 : cx + ((450 - cx) * 0.12);
-        const originY = n === 170 ? 450 : cy + ((450 - cy) * 0.12);
-        const span = Math.min(bbox.width, bbox.height);
+        const field = crackField(n, bbox);
+        const { span, radialAng, polar } = field;
         const isDiamond = Boolean(brush.material.sparkle);
-        const count = isDiamond ? (n === 170 ? 10 : 9) : 8;
+        const { count, boost, forkAt, inclusions } = crackBudget(field, isDiamond, n);
         const layer = svgEl('g', { class: 'checkout-cracks', 'clip-path': `url(#${clipId})` });
 
         for (let i = 0; i < count; i += 1) {
             const seed = n * 13 + i * 97;
-            const ang = hash01(seed) * Math.PI * 2;
-            const bend = (hash01(seed + 3) - 0.5) * 0.55;
-            const inner = span * (0.06 + hash01(seed + 1) * 0.1);
-            const outer = span * (0.4 + hash01(seed + 2) * 0.34);
-            const x1 = originX + Math.cos(ang) * inner;
-            const y1 = originY + Math.sin(ang) * inner;
-            const x2 = originX + Math.cos(ang + bend) * outer;
-            const y2 = originY + Math.sin(ang + bend) * outer;
+            const start = crackStart(field, seed);
+            const ang = crackAngle(seed, radialAng, polar);
+            const bend = (hash01(seed + 3) - 0.5) * 0.45;
+            const inner = span * (0.02 + hash01(seed + 1) * 0.05);
+            const outer = span * (0.42 + hash01(seed + 2) * 0.4);
+            const x1 = start.x + Math.cos(ang) * inner;
+            const y1 = start.y + Math.sin(ang) * inner;
+            const x2 = start.x + Math.cos(ang + bend) * outer;
+            const y2 = start.y + Math.sin(ang + bend) * outer;
             const steps = 4 + Math.floor(hash01(seed + 4) * 3);
-            const amp = span * (isDiamond ? 0.038 : 0.052);
+            const amp = span * (isDiamond ? 0.038 : 0.052) * boost;
+            const wide = (isDiamond ? (i % 3 === 0 ? 0.95 : 0.5) : (i % 2 === 0 ? 1.1 : 0.65)) * boost;
             layer.appendChild(svgEl('path', {
                 d: polylineD(jaggedLine(x1, y1, x2, y2, steps, amp, seed)),
-                stroke: isDiamond ? '#ecfeff' : '#bae6fd',
-                'stroke-width': isDiamond ? (i % 3 === 0 ? '0.95' : '0.5') : (i % 2 === 0 ? '1.1' : '0.65'),
-                opacity: isDiamond ? '0.78' : '0.64',
+                stroke: isDiamond ? (i % 3 === 0 ? '#ffffff' : '#7dd3fc') : '#bae6fd',
+                'stroke-width': String(wide),
+                opacity: isDiamond ? '0.86' : '0.72',
             }));
-            if (hash01(seed + 8) > 0.28) {
+            if (hash01(seed + 8) > forkAt) {
                 const mid = 0.42 + hash01(seed + 9) * 0.28;
                 const mx = x1 + (x2 - x1) * mid;
                 const my = y1 + (y2 - y1) * mid;
@@ -987,23 +1108,24 @@ class CheckoutWheel {
                 layer.appendChild(svgEl('path', {
                     d: polylineD(jaggedLine(mx, my, mx + Math.cos(bang) * blen, my + Math.sin(bang) * blen, 3, amp * 0.7, seed + 20)),
                     stroke: isDiamond ? '#ffffff' : '#7dd3fc',
-                    'stroke-width': isDiamond ? '0.45' : '0.55',
-                    opacity: '0.58',
+                    'stroke-width': String((isDiamond ? 0.45 : 0.55) * boost),
+                    opacity: '0.62',
                 }));
             }
         }
 
         if (!isDiamond) {
-            for (let i = 0; i < 2; i += 1) {
+            for (let i = 0; i < inclusions; i += 1) {
                 const seed = n * 19 + i * 41;
-                const ang = hash01(seed) * Math.PI * 2;
-                const x2 = originX + Math.cos(ang) * span * (0.42 + i * 0.1);
-                const y2 = originY + Math.sin(ang) * span * (0.42 + i * 0.1);
+                const start = crackStart(field, seed + 3);
+                const ang = crackAngle(seed, radialAng, polar);
+                const x2 = start.x + Math.cos(ang) * span * (0.42 + i * 0.1);
+                const y2 = start.y + Math.sin(ang) * span * (0.42 + i * 0.1);
                 layer.appendChild(svgEl('path', {
                     class: 'is-inclusion',
-                    d: polylineD(jaggedLine(originX, originY, x2, y2, 5, span * 0.04, seed)),
+                    d: polylineD(jaggedLine(start.x, start.y, x2, y2, 5, span * 0.04, seed)),
                     stroke: '#0c4a6e',
-                    'stroke-width': '0.9',
+                    'stroke-width': String(0.9 * boost),
                     opacity: '0.32',
                 }));
             }
@@ -1136,6 +1258,81 @@ class CheckoutWheel {
                 shape.after(halo);
                 shape.after(core);
             }
+        }
+    }
+
+    bindTips() {
+        this.details = parseItems(this.host);
+        if (this.host.dataset.checkoutWheelDemo === '1') {
+            Object.entries(DEMO_HITS).forEach(([key, times]) => {
+                this.details[key] = { key, timesEarned: times, lastEarnedAt: null, lastGame: null };
+            });
+        }
+        this.tip = this.host.querySelector('.cw-tip');
+        if (!this.tip) {
+            this.tip = document.createElement('div');
+            this.tip.className = 'cw-tip';
+            this.tip.hidden = true;
+            this.host.appendChild(this.tip);
+        }
+        this.svg.querySelectorAll('[data-checkout]').forEach((group) => {
+            group.addEventListener('pointerenter', (event) => this.showTip(group, event));
+            group.addEventListener('pointermove', (event) => this.moveTip(event));
+            group.addEventListener('pointerleave', () => this.hideTip());
+        });
+    }
+
+    showTip(group, event) {
+        const key = group.getAttribute('data-checkout');
+        const hits = Number(group.getAttribute('data-hits') || 0);
+        const detail = this.details[key] || {};
+        const times = Number(detail.timesEarned ?? hits) || 0;
+        const title = document.createElement('div');
+        title.className = 'cw-tip__score';
+        title.textContent = `Checkout ${key}`;
+        const count = document.createElement('div');
+        count.className = 'cw-tip__count';
+        count.textContent = times > 0 ? `${times} ${timesWord(times)}` : 'Jeszcze nie rzucony';
+        this.tip.replaceChildren(title, count);
+        if (times > 0 && detail.lastGame) {
+            const game = document.createElement('div');
+            game.className = 'cw-tip__game';
+            const kind = gameTypeLabel(detail.lastGame.type);
+            const bits = [
+                kind,
+                detail.lastGame.opponents,
+                detail.lastGame.dateFormatted,
+            ].filter(Boolean);
+            game.textContent = `Ostatnio: ${bits.join(' · ')}`;
+            this.tip.appendChild(game);
+            if (detail.lastGame.tournamentName) {
+                const eventName = document.createElement('div');
+                eventName.className = 'cw-tip__event';
+                eventName.textContent = detail.lastGame.tournamentName;
+                this.tip.appendChild(eventName);
+            }
+        } else if (times > 0 && detail.lastEarnedAt) {
+            const when = document.createElement('div');
+            when.className = 'cw-tip__game';
+            when.textContent = `Ostatnio: ${formatTipDate(detail.lastEarnedAt)}`;
+            this.tip.appendChild(when);
+        }
+        this.tip.hidden = false;
+        this.moveTip(event);
+    }
+
+    moveTip(event) {
+        if (!this.tip || this.tip.hidden) return;
+        const rect = this.host.getBoundingClientRect();
+        const x = event.clientX - rect.left + 14;
+        const y = event.clientY - rect.top + 16;
+        this.tip.style.left = `${Math.min(x, rect.width - 200)}px`;
+        this.tip.style.top = `${Math.min(y, rect.height - 80)}px`;
+    }
+
+    hideTip() {
+        if (this.tip) {
+            this.tip.hidden = true;
         }
     }
 }
