@@ -336,7 +336,10 @@ class TournamentService
         }
 
         if ($formatsByStage === []) {
-            $formatsByStage = TournamentMatchFormatRequestParser::defaultsForEliminationBracketSize($bracketSize);
+            $formatsByStage = TournamentMatchFormatRequestParser::defaultsForEliminationBracketSize(
+                $bracketSize,
+                includeThird: false,
+            );
         }
 
         try {
@@ -425,6 +428,7 @@ class TournamentService
                 $requestAll,
                 $bracketSize,
                 includeGroupStage: false,
+                includeThird: false,
             );
             $grandFinalMode = GrandFinalMode::from(
                 $validated['grandFinalMode'] ?? GrandFinalMode::Reset->value,

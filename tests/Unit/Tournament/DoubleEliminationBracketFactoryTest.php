@@ -61,4 +61,23 @@ class DoubleEliminationBracketFactoryTest extends TestCase
         $this->assertSame(0, $games->where('slot', 'GF2')->count());
         $this->assertSame(1, $games->where('slot', 'GF1')->count());
     }
+
+    public function test_wb_champion_and_lb_champion_feed_grand_final(): void
+    {
+        $pairs = [[1, 2], [3, 4], [5, 6], [7, 8]];
+        $games = $this->factory->create(1, 8, $pairs, resetGrandFinal: true);
+
+        $wbFinal = $games->firstWhere('slot', 'W2-1');
+        $this->assertSame('GF1-A', $wbFinal->winnerDestinationSlot);
+        $this->assertSame('L3-1-B', $wbFinal->loserDestinationSlot);
+
+        $lbFinal = $games->firstWhere('slot', 'L3-1');
+        $this->assertSame('GF1-B', $lbFinal->winnerDestinationSlot);
+
+        $pairs4 = [[1, 2], [3, 4]];
+        $games4 = $this->factory->create(1, 4, $pairs4, resetGrandFinal: true);
+        $this->assertSame('GF1-A', $games4->firstWhere('slot', 'W1-1')->winnerDestinationSlot);
+        $this->assertSame('L1-1-B', $games4->firstWhere('slot', 'W1-1')->loserDestinationSlot);
+        $this->assertSame('GF1-B', $games4->firstWhere('slot', 'L1-1')->winnerDestinationSlot);
+    }
 }

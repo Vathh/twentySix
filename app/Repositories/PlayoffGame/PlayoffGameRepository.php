@@ -125,18 +125,30 @@ class PlayoffGameRepository
 
     public function setPlayer1Slot(int $tournamentId, string $slot, int $playerId): void
     {
-        PlayoffGame::where('tournament_id', $tournamentId)
-            ->where('slot', $slot)
-            ->where('status', GameStatus::SCHEDULED)
-            ->update(['player1_id' => $playerId]);
+        $this->assignPlayerToSlot($tournamentId, $slot, $playerId, 'player1_id');
     }
 
     public function setPlayer2Slot(int $tournamentId, string $slot, int $playerId): void
     {
-        PlayoffGame::where('tournament_id', $tournamentId)
+        $this->assignPlayerToSlot($tournamentId, $slot, $playerId, 'player2_id');
+    }
+
+    private function assignPlayerToSlot(int $tournamentId, string $slot, int $playerId, string $column): void
+    {
+        $game = PlayoffGame::where('tournament_id', $tournamentId)
             ->where('slot', $slot)
-            ->where('status', GameStatus::SCHEDULED)
-            ->update(['player2_id' => $playerId]);
+            ->first();
+
+        if ($game === null) {
+            throw new \DomainException("Brak meczu w slocie {$slot}.");
+        }
+
+        if ($game->status !== GameStatus::SCHEDULED) {
+            throw new \DomainException("Nie można wpisać zawodnika do meczu, który nie jest oczekujący ({$slot}).");
+        }
+
+        $game->{$column} = $playerId;
+        $game->save();
     }
 
     public function resetFinishedBranchFromSlot(int $tournamentId, string $slot): void

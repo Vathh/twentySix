@@ -505,6 +505,58 @@ class TournamentControllerTest extends TestCase
         );
     }
 
+    public function test_run_double_elimination_applies_stage_formats_to_playoff_games(): void
+    {
+        $this->actingAs($this->adminUser);
+        $tournament = Tournament::create([
+            'name' => 'DE Format Test',
+            'season_id' => $this->season->id,
+            'date' => '2024-06-01',
+        ]);
+
+        $this->addPlayersToTournamentPool($tournament, [
+            $this->player1,
+            $this->player2,
+            $this->player3,
+            $this->player4,
+        ], $this->adminUser);
+
+        $response = $this->post("/tournaments/{$tournament->id}/run", [
+            'tournamentFormat' => 'double_elimination',
+            'grandFinalMode' => 'reset',
+            'matchFormats' => [
+                'SEMI' => [
+                    'startingScore' => 101,
+                    'legsToWinSet' => 1,
+                    'setsToWinMatch' => 1,
+                ],
+                'FINAL' => [
+                    'startingScore' => 101,
+                    'legsToWinSet' => 1,
+                    'setsToWinMatch' => 1,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect("/tournaments/{$tournament->id}");
+        $response->assertSessionHas('success');
+
+        $this->assertSame(
+            0,
+            \App\Models\PlayoffGame\PlayoffGame::where('tournament_id', $tournament->id)
+                ->where('starting_score', 501)
+                ->where('legs_to_win_set', 2)
+                ->count(),
+        );
+        $this->assertGreaterThan(
+            0,
+            \App\Models\PlayoffGame\PlayoffGame::where('tournament_id', $tournament->id)
+                ->where('starting_score', 101)
+                ->where('legs_to_win_set', 1)
+                ->count(),
+        );
+    }
+
     public function test_group_stage_opens_groups_tab_by_default(): void
     {
         $tournament = $this->startedTournament(TournamentStatus::GROUP);

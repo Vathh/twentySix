@@ -12,11 +12,15 @@ final class TournamentMatchFormatRequestParser
      * @param  array<string, mixed>  $input
      * @return array<string, array<string, int|string>>
      */
-    public static function fromRunInput(array $input, int $playoffBracketSize, bool $includeGroupStage = true): array
-    {
+    public static function fromRunInput(
+        array $input,
+        int $playoffBracketSize,
+        bool $includeGroupStage = true,
+        bool $includeThird = true,
+    ): array {
         $requiredStages = $includeGroupStage
             ? GameStage::forPlayoffBracketSize($playoffBracketSize)
-            : GameStage::forEliminationBracketSize($playoffBracketSize);
+            : GameStage::forEliminationBracketSize($playoffBracketSize, $includeThird);
         $raw = $input['matchFormats'] ?? [];
 
         if (! is_array($raw)) {
@@ -71,12 +75,15 @@ final class TournamentMatchFormatRequestParser
      * @param  array<string, array<string, int|string>>|null  $organizationPresets
      * @return array<string, array<string, int|string>>
      */
-    public static function defaultsForEliminationBracketSize(int $bracketSize, ?array $organizationPresets = null): array
-    {
+    public static function defaultsForEliminationBracketSize(
+        int $bracketSize,
+        ?array $organizationPresets = null,
+        bool $includeThird = true,
+    ): array {
         $byStage = \App\Support\Organization\OrganizationMatchFormatPresets::defaultsByStage($organizationPresets);
         $formatsByStage = [];
 
-        foreach (GameStage::forEliminationBracketSize($bracketSize) as $stage) {
+        foreach (GameStage::forEliminationBracketSize($bracketSize, $includeThird) as $stage) {
             $formatsByStage[$stage->value] = $byStage[$stage->value]
                 ?? MatchFormat::default()->toArray();
         }

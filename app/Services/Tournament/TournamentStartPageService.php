@@ -93,6 +93,7 @@ class TournamentStartPageService
 
         $matchFormatStagesByBracket = [];
         $matchFormatStagesByBracketSe = [];
+        $matchFormatStagesByBracketDe = [];
         foreach ([2, 4, 8, 16, 32, 64, 128] as $bracketSize) {
             $matchFormatStagesByBracket[$bracketSize] = array_map(
                 static fn (GameStage $stage): array => [
@@ -107,6 +108,13 @@ class TournamentStartPageService
                     'label' => $stage->label(),
                 ],
                 GameStage::forEliminationBracketSize($bracketSize),
+            );
+            $matchFormatStagesByBracketDe[$bracketSize] = array_map(
+                static fn (GameStage $stage): array => [
+                    'value' => $stage->value,
+                    'label' => $stage->label(),
+                ],
+                GameStage::forEliminationBracketSize($bracketSize, includeThird: false),
             );
         }
 
@@ -168,6 +176,7 @@ class TournamentStartPageService
             'hasOrganizationFormatPresets' => $hasOrganizationFormatPresets,
             'matchFormatStagesByBracket' => $matchFormatStagesByBracket,
             'matchFormatStagesByBracketSe' => $matchFormatStagesByBracketSe,
+            'matchFormatStagesByBracketDe' => $matchFormatStagesByBracketDe,
             'oldMatchFormats' => old('matchFormats', []),
         ];
     }

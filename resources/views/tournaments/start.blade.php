@@ -3,7 +3,7 @@
 @section('title', 'Start turnieju')
 
 @section('content')
-    <div class="container mx-auto py-6 sm:py-8 max-w-5xl min-w-0">
+    <div class="container mx-auto py-4 sm:py-5 max-w-5xl min-w-0">
 
         <h1 class="page-title mb-4 break-words">
             Start turnieju: {{ $tournament->name }}
@@ -522,6 +522,7 @@
                     'startConfigPreview' => $startConfigPreview,
                     'matchFormatStagesByBracket' => $matchFormatStagesByBracket,
                     'matchFormatStagesByBracketSe' => $matchFormatStagesByBracketSe,
+                    'matchFormatStagesByBracketDe' => $matchFormatStagesByBracketDe,
                     'startingScoreOptions' => $startingScoreOptions,
                     'defaultMatchFormat' => $defaultMatchFormat,
                     'defaultMatchFormatsByStage' => $defaultMatchFormatsByStage,
@@ -792,6 +793,7 @@
                 startConfigPreview: config.startConfigPreview ?? {},
                 matchFormatStagesByBracket: config.matchFormatStagesByBracket ?? {},
                 matchFormatStagesByBracketSe: config.matchFormatStagesByBracketSe ?? {},
+                matchFormatStagesByBracketDe: config.matchFormatStagesByBracketDe ?? {},
                 startingScoreOptions: config.startingScoreOptions ?? [],
                 defaultMatchFormat: config.defaultMatchFormat ?? {},
                 defaultMatchFormatsByStage: config.defaultMatchFormatsByStage ?? {},
@@ -979,7 +981,12 @@
                         ?? null;
                 },
                 get activeFormatStages() {
-                    if (this.tournamentFormat === 'single_elimination' || this.tournamentFormat === 'double_elimination') {
+                    if (this.tournamentFormat === 'double_elimination') {
+                        return this.matchFormatStagesByBracketDe[this.seBracketSize]
+                            ?? this.matchFormatStagesByBracketDe[String(this.seBracketSize)]
+                            ?? [];
+                    }
+                    if (this.tournamentFormat === 'single_elimination') {
                         return this.matchFormatStagesByBracketSe[this.seBracketSize]
                             ?? this.matchFormatStagesByBracketSe[String(this.seBracketSize)]
                             ?? [];

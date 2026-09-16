@@ -5,6 +5,8 @@ namespace App\Services\PlayoffGame;
 use App\Domain\Game\PlayoffBye;
 use App\Domain\Game\PlayoffGameDomain;
 use App\Domain\Game\WinnerDestination;
+use App\Domain\GameScoring\MatchFormat;
+use App\Domain\Tournament\DoubleEliminationMatchFormatMap;
 use App\DTO\GameResultDTO;
 use App\Enums\GameType;
 use App\Enums\GrandFinalMode;
@@ -19,6 +21,7 @@ use App\Repositories\Tournament\TournamentRepository;
 use App\Support\Tournament\PlayoffByePairing;
 use App\Support\Tournament\PlayoffFirstRoundPairing;
 use App\Support\Tournament\PlayoffSlotIds;
+use Illuminate\Support\Collection;
 
 class PlayoffService
 {
@@ -102,7 +105,10 @@ class PlayoffService
             ->mapWithKeys(fn ($row) => [$row->stage => $row->toMatchFormat()])
             ->all();
 
-        $this->gameRepository->createMany($playoffGames, $formatsByStage);
+        $this->gameRepository->createMany(
+            $playoffGames,
+            $this->formatsForDoubleEliminationRounds($playoffGames, $formatsByStage, $bracketSize),
+        );
         $this->resolveScheduledByes($tournamentId);
     }
 
@@ -245,5 +251,28 @@ class PlayoffService
             PlayerSlot::A => $this->gameRepository->setPlayer1Slot($tournamentId, $playoffSlot, $winnerId),
             PlayerSlot::B => $this->gameRepository->setPlayer2Slot($tournamentId, $playoffSlot, $winnerId),
         };
+    }
+
+    /**
+     * @param  Collection<int, PlayoffGameDomain>  $games
+     * @param  array<string, MatchFormat>  $formatsByStage
+     * @return array<string, MatchFormat>
+     */
+    private function formatsForDoubleEliminationRounds(Collection $games, array $formatsByStage, int $bracketSize): array
+    {
+        $byRound = [];
+
+        foreach ($games as $game) {
+            if (isset($byRound[$game->round])) {
+                continue;
+            }
+
+            $stage = DoubleEliminationMatchFormatMap::stageForRound($game->round, $bracketSize);
+            $byRound[$game->round] = $formatsByStage[$game->round]
+                ?? $formatsByStage[$stage->value]
+                ?? MatchFormat::default();
+        }
+
+        return $byRound;
     }
 }
