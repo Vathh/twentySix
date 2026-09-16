@@ -10,7 +10,7 @@
             && $game->deadline_at->isPast();
     @endphp
 
-    <div class="container mx-auto py-6 sm:py-8 max-w-4xl text-text">
+    <div class="container mx-auto py-4 sm:py-5 max-w-4xl text-text">
         <a href="{{ route('league-seasons.show', $season) }}" class="link-back mb-4 inline-block">← Powrót do sezonu</a>
 
         <h1 class="page-title mb-6">

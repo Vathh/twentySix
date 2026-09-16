@@ -3,7 +3,7 @@
 @section('title', 'Mecz — '.$player1->name.' vs '.$player2->name)
 
 @section('content')
-    <div class="container mx-auto py-6 sm:py-8 max-w-4xl text-text px-0 sm:px-0">
+    <div class="container mx-auto py-4 sm:py-5 max-w-4xl text-text px-0 sm:px-0">
         <a href="{{ $backUrl }}" class="link-back mb-4 inline-block">← Powrót</a>
 
         <div class="flex flex-wrap items-center gap-3 mb-2">

@@ -12,7 +12,7 @@
     @include('components.notifications')
 
     <header class="border-b border-border bg-bg-deep/90 backdrop-blur-md sticky top-0 z-40">
-        <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div class="max-w-3xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
             <div class="flex items-center gap-2 min-w-0">
                 <a href="{{ route('pages.home') }}" class="flex items-center no-underline hover:opacity-95">
                     <img
@@ -33,7 +33,7 @@
         </div>
     </header>
 
-    <main class="max-w-3xl mx-auto px-4 py-5 pb-10">
+    <main class="max-w-3xl mx-auto px-4 py-4 pb-8">
         @yield('content')
     </main>
 </body>

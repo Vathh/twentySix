@@ -3,11 +3,11 @@
 @section('title', 'Panel platformy')
 
 @section('content')
-<div class="max-w-6xl mx-auto px-4 pt-10 pb-16">
-    <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
+<div class="max-w-6xl mx-auto px-4 pt-6 pb-12">
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
             <p class="text-text-secondary text-sm mb-1">twentySix — właściciel aplikacji</p>
-            <h1 class="text-2xl sm:text-3xl font-semibold text-accent">Panel platformy</h1>
+            <h1 class="text-xl sm:text-2xl font-semibold text-accent">Panel platformy</h1>
         </div>
         <a href="{{ route('admin.users') }}" class="btn btn-primary">Użytkownicy</a>
     </div>
@@ -15,27 +15,27 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         <div class="card p-4">
             <p class="text-text-secondary text-xs mb-1">Użytkownicy</p>
-            <p class="text-2xl font-semibold text-text">{{ $stats['usersTotal'] }}</p>
+            <p class="text-xl font-semibold text-text">{{ $stats['usersTotal'] }}</p>
             <p class="text-text-muted text-xs mt-1">dziś +{{ $stats['usersRegisteredToday'] }} · 7 dni +{{ $stats['usersRegisteredLast7Days'] }}</p>
         </div>
         <div class="card p-4">
             <p class="text-text-secondary text-xs mb-1">Zweryfikowani e-mail</p>
-            <p class="text-2xl font-semibold text-text">{{ $stats['usersVerified'] }}</p>
+            <p class="text-xl font-semibold text-text">{{ $stats['usersVerified'] }}</p>
         </div>
         <div class="card p-4">
             <p class="text-text-secondary text-xs mb-1">Mogą tworzyć organizacje</p>
-            <p class="text-2xl font-semibold text-text">{{ $stats['usersCanCreateOrganizations'] }}</p>
+            <p class="text-xl font-semibold text-text">{{ $stats['usersCanCreateOrganizations'] }}</p>
         </div>
         <div class="card p-4">
             <p class="text-text-secondary text-xs mb-1">Organizacje / sezony</p>
-            <p class="text-2xl font-semibold text-text">{{ $stats['organizationsTotal'] }} <span class="text-text-muted text-lg">/</span> {{ $stats['seasonsTotal'] }}</p>
+            <p class="text-xl font-semibold text-text">{{ $stats['organizationsTotal'] }} <span class="text-text-muted text-base">/</span> {{ $stats['seasonsTotal'] }}</p>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div class="card p-5">
             <h2 class="text-accent font-semibold mb-4">Turnieje</h2>
-            <p class="text-3xl font-semibold text-text mb-4">{{ $stats['tournamentsTotal'] }}</p>
+            <p class="text-2xl font-semibold text-text mb-4">{{ $stats['tournamentsTotal'] }}</p>
             <ul class="space-y-2 text-sm text-text-secondary">
                 <li class="flex justify-between gap-3 border-b border-border/60 pb-2">
                     <span>Zaplanowane</span>

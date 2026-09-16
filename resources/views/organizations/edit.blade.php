@@ -18,7 +18,7 @@
 
                 <label class="form-label text-accent" for="organizationName">Nazwa organizacji</label>
                 <input
-                    class="mb-5 input-field"
+                    class="mb-3 input-field"
                     type="text"
                     id="organizationName"
                     name="organizationName"

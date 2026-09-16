@@ -3,7 +3,7 @@
 @section('title', 'Szukaj graczy')
 
 @section('content')
-    <div class="py-8 max-w-3xl">
+    <div class="py-5 max-w-3xl">
         <h1 class="page-title">Szukaj graczy</h1>
 
         <form action="{{ route('players.search') }}" method="GET" class="flex gap-3 mb-8">

@@ -20,7 +20,7 @@
 
                     <div class="flex flex-col items-stretch">
                         <label class="form-label text-accent" for="current_password">Aktualne hasło</label>
-                        <input class="mb-5 input-field"
+                        <input class="mb-3 input-field"
                                type="password"
                                id="current_password"
                                name="current_password"
@@ -28,7 +28,7 @@
                                required>
 
                         <label class="form-label text-accent" for="password">Nowe hasło</label>
-                        <input class="mb-5 input-field"
+                        <input class="mb-3 input-field"
                                type="password"
                                id="password"
                                name="password"
@@ -37,7 +37,7 @@
                                required>
 
                         <label class="form-label text-accent" for="password_confirmation">Powtórz nowe hasło</label>
-                        <input class="mb-5 input-field"
+                        <input class="mb-3 input-field"
                                type="password"
                                id="password_confirmation"
                                name="password_confirmation"

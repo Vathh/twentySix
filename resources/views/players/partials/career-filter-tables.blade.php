@@ -1,6 +1,6 @@
 {{-- Szczegóły kariery: te same filtry źródła i okna co kafelki powyżej. --}}
 <section>
-    <h2 class="text-xl font-bold text-accent mb-4">Szczegóły</h2>
+    <h2 class="text-base font-bold text-accent mb-2.5">Szczegóły</h2>
     <div class="career-panel">
         <dl class="career-highlight-grid">
             <div class="overview-form-stat">

@@ -11,7 +11,7 @@
                 <h1 class="page-title text-center">Tworzenie nowej organizacji</h1>
 
                 <label class="form-label text-accent" for="organizationName">Nazwa organizacji</label>
-                <input class="mb-5 input-field"
+                <input class="mb-3 input-field"
                        type="text"
                        id="organizationName"
                        placeholder="Wprowadź nazwę organizacji"

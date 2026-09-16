@@ -1,5 +1,5 @@
 <header class="site-header" x-data="{ navOpen: false }">
-    <div class="container mx-auto flex flex-wrap items-center justify-between gap-3 px-4">
+    <div class="container mx-auto flex flex-wrap items-center justify-between gap-2 px-4">
         <a href="{{ route('pages.home') }}" class="flex items-center gap-2 sm:gap-3 no-underline hover:opacity-95 transition min-w-0">
             <img
                 class="brand-logo"
@@ -9,15 +9,15 @@
                 height="44"
             >
             @auth
-                <span class="text-text-muted font-normal text-lg sm:text-2xl shrink-0" aria-hidden="true">/</span>
-                <span class="text-accent text-base sm:text-lg font-semibold truncate max-w-[9rem] sm:max-w-[14rem]">
+                <span class="text-text-muted font-normal text-sm shrink-0" aria-hidden="true">/</span>
+                <span class="text-accent text-xs sm:text-sm font-semibold truncate max-w-[8rem] sm:max-w-[12rem]">
                     {{ Auth::user()->player?->name ?? 'Użytkownik' }}
                 </span>
             @endauth
         </a>
 
         <button type="button"
-                class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-border text-text-secondary hover:text-accent hover:border-accent/40 transition"
+                class="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-md border border-border text-text-secondary hover:text-accent hover:border-accent/40 transition"
                 @click="navOpen = !navOpen"
                 :aria-expanded="navOpen.toString()"
                 aria-controls="site-nav"

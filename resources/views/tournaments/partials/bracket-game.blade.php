@@ -25,10 +25,10 @@
         data-playoff-game-card
         @if($gameUrl)
             href="{{ $gameUrl }}"
-            class="block card-glass p-3 hover:border-success/50 transition cursor-pointer"
+            class="bracket-game-card is-link"
         @else
             href="#"
-            class="block card-glass p-3"
+            class="bracket-game-card"
             aria-disabled="true"
             tabindex="-1"
             style="pointer-events: none"
@@ -36,24 +36,24 @@
     >
         <div
             data-playoff-p1-row
-            class="flex justify-between items-center mb-1 {{ ! $byeVsBye && $game->winnerId === $game->player1Id ? 'text-accent font-semibold' : '' }}"
+            class="bracket-game-row {{ ! $byeVsBye && $game->winnerId === $game->player1Id ? 'text-accent font-semibold' : '' }}"
         >
             <span class="truncate" data-playoff-p1-name>
                 {{ $game->player1?->name ?? '—' }}
             </span>
-            <span class="ml-2" data-playoff-p1-score>
+            <span class="ml-1 tabular-nums shrink-0" data-playoff-p1-score>
                 {{ $formatLegScore($game->player1Score) }}
             </span>
         </div>
 
         <div
             data-playoff-p2-row
-            class="flex justify-between items-center {{ ! $byeVsBye && $game->winnerId === $game->player2Id ? 'text-accent font-semibold' : '' }}"
+            class="bracket-game-row {{ ! $byeVsBye && $game->winnerId === $game->player2Id ? 'text-accent font-semibold' : '' }}"
         >
             <span class="truncate" data-playoff-p2-name>
                 {{ $game->player2?->name ?? '—' }}
             </span>
-            <span class="ml-2" data-playoff-p2-score>
+            <span class="ml-1 tabular-nums shrink-0" data-playoff-p2-score>
                 {{ $formatLegScore($game->player2Score) }}
             </span>
         </div>

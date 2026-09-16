@@ -3,7 +3,7 @@
 @section('title', 'Edycja powiązanych użytkowników')
 
 @section('content')
-    <div class="container mx-auto py-8 max-w-4xl">
+    <div class="container mx-auto py-5 max-w-4xl">
         <a href="{{ route('organizations.show', $organization->id) }}" class="link-back mb-4 inline-block">← {{ $organization->name }}</a>
 
         <h1 class="page-title">Użytkownicy organizacji: {{ $organization->name }}</h1>

@@ -18,7 +18,7 @@
 
                 <label class="form-label text-accent" for="seasonName">Nazwa sezonu</label>
                 <input
-                    class="mb-5 input-field"
+                    class="mb-3 input-field"
                     type="text"
                     id="seasonName"
                     name="seasonName"
@@ -27,7 +27,7 @@
                 >
 
                 <label class="form-label text-accent" for="startDate">Data rozpoczęcia</label>
-                <input class="mb-5 input-field"
+                <input class="mb-3 input-field"
                        type="date"
                        id="startDate"
                        name="startDate"
@@ -35,7 +35,7 @@
                        required>
 
                 <label class="form-label text-accent" for="endDate">Data zakończenia</label>
-                <input class="mb-5 input-field"
+                <input class="mb-3 input-field"
                        type="date"
                        id="endDate"
                        name="endDate"

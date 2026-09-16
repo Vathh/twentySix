@@ -11,7 +11,7 @@
                     <h1 class="page-title text-center">Zaloguj się</h1>
 
                     <label class="form-label text-accent" for="login">Email</label>
-                    <input class="mb-5 input-field"
+                    <input class="mb-3 input-field"
                            type="email"
                            placeholder="Wprowadź email"
                            name="email"
@@ -19,7 +19,7 @@
                            required>
 
                     <label class="form-label text-accent" for="password">Hasło</label>
-                    <input class="mb-5 input-field"
+                    <input class="mb-3 input-field"
                            type="password"
                            placeholder="Wprowadź hasło"
                            name="password"
@@ -31,7 +31,7 @@
                     <x-errors/>
                 </div>
             </form>
-            <p class="text-accent mt-7 text-center">
+            <p class="text-accent mt-5 text-center">
                 Nie masz jeszcze konta?
                 <a href="{{ route('pages.registerPanel') }}" class="font-bold hover:underline">Zarejestruj się</a>
             </p>

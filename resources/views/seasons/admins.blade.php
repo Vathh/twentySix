@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container mx-auto py-8">
+    <div class="container mx-auto py-5">
         <h1 class="page-title">Zarządzanie administratorami sezonu: {{ $season->name }}</h1>
 
         <div class="card mb-8">

@@ -11,7 +11,7 @@
                     <h1 class="page-title text-center">Rejestracja</h1>
 
                     <label class="form-label text-accent" for="name">Nazwa użytkownika</label>
-                    <input class="mb-5 input-field"
+                    <input class="mb-3 input-field"
                            type="text"
                            placeholder="Wprowadź nazwę użytkownika"
                            name="name"
@@ -20,7 +20,7 @@
                            required>
 
                     <label class="form-label text-accent" for="email">Email</label>
-                    <input class="mb-5 input-field"
+                    <input class="mb-3 input-field"
                            type="email"
                            placeholder="Wprowadź email"
                            name="email"
@@ -29,7 +29,7 @@
                            required>
 
                     <label class="form-label text-accent" for="password">Hasło</label>
-                    <input class="mb-5 input-field"
+                    <input class="mb-3 input-field"
                            type="password"
                            placeholder="Wprowadź hasło"
                            name="password"
@@ -37,7 +37,7 @@
                            required>
 
                     <label class="form-label text-accent" for="password_confirmation">Powtórz hasło</label>
-                    <input class="mb-5 input-field"
+                    <input class="mb-3 input-field"
                            type="password"
                            placeholder="Powtórz hasło"
                            name="password_confirmation"
@@ -49,7 +49,7 @@
                     <x-errors/>
                 </div>
             </form>
-            <p class="text-accent mt-7 text-center">
+            <p class="text-accent mt-5 text-center">
                 Masz już konto?
                 <a href="{{ route('pages.loginPanel') }}" class="font-bold hover:underline">Zaloguj się</a>
             </p>

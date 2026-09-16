@@ -3,7 +3,7 @@
 @section('title', 'Edycja profilu')
 
 @section('content')
-    <div class="flex justify-center items-start min-h-[70vh] px-4 py-8">
+    <div class="flex justify-center items-start min-h-[70vh] px-4 py-5">
         <form class="form-card w-full max-w-3xl"
               action="{{ route('players.update', $player) }}"
               method="POST"

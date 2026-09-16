@@ -1,6 +1,6 @@
 {{-- Przegląd: historia meczów --}}
 <section>
-    <h2 class="text-xl font-bold text-accent mb-4">Ostatnie mecze</h2>
+    <h2 class="text-base font-bold text-accent mb-2.5">Ostatnie mecze</h2>
     <div class="history-panel">
         <p class="history-empty" x-show="gameHistory.items.length === 0">Brak meczów w historii.</p>
 

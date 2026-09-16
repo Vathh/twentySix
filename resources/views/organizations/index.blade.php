@@ -5,7 +5,7 @@
 @section('content')
 
     <div
-        class="max-w-6xl mx-auto px-4 pt-10 pb-28"
+        class="max-w-6xl mx-auto px-4 pt-6 pb-24"
         x-data="indexLoadMore(@js([
             'items' => $items,
             'hasMore' => $hasMore,
@@ -27,7 +27,7 @@
                    class="block"
                    :style="'--stagger: ' + index">
                     <div class="index-card">
-                        <h3 class="text-lg font-semibold text-text leading-snug mb-3" x-text="item.title"></h3>
+                        <h3 class="text-base font-semibold text-text leading-snug mb-2" x-text="item.title"></h3>
                         <p class="card-description mb-0" x-text="item.subtitle"></p>
                     </div>
                 </a>

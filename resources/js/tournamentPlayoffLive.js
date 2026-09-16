@@ -1,8 +1,8 @@
 import Pusher from 'pusher-js';
 
 const BRACKET_EVENTS = ['playoff.bracket.updated', '.playoff.bracket.updated'];
-const CARD_BASE = 'block card-glass p-3';
-const CARD_CLICKABLE = 'hover:border-success/50 transition cursor-pointer';
+const CARD_BASE = 'bracket-game-card';
+const CARD_CLICKABLE = 'is-link';
 
 function normalizePayload(payload) {
 	if (payload == null) {

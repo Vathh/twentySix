@@ -13,7 +13,7 @@
             @csrf
 
             <label class="form-label text-accent" for="leagueName">Nazwa ligi</label>
-            <input class="mb-5 input-field" type="text" id="leagueName" name="leagueName"
+            <input class="mb-3 input-field" type="text" id="leagueName" name="leagueName"
                    value="{{ old('leagueName') }}" required maxlength="80">
 
             <label class="form-label text-accent" for="description">Opis</label>

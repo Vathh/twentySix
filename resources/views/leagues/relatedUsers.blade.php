@@ -3,7 +3,7 @@
 @section('title', 'Powiązani użytkownicy ligi')
 
 @section('content')
-    <div class="container mx-auto py-8 max-w-4xl">
+    <div class="container mx-auto py-5 max-w-4xl">
         <a href="{{ route('leagues.show', $league) }}" class="link-back mb-4 inline-block">← {{ $league->name }}</a>
 
         <h1 class="page-title">Użytkownicy ligi: {{ $league->name }}</h1>

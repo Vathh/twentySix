@@ -5,7 +5,7 @@
 @section('content')
 
     <div
-        class="max-w-6xl mx-auto px-4 pt-10 pb-28"
+        class="max-w-6xl mx-auto px-4 pt-6 pb-24"
         x-data="indexLoadMore(@js([
             'items' => $items,
             'hasMore' => $hasMore,
@@ -28,7 +28,7 @@
                    :style="'--stagger: ' + index">
                     <div class="index-card">
                         <div class="flex items-start justify-between gap-3 mb-3">
-                            <h3 class="text-lg font-semibold text-text leading-snug" x-text="item.title"></h3>
+                            <h3 class="text-base font-semibold text-text leading-snug" x-text="item.title"></h3>
                             <span
                                 class="shrink-0"
                                 :class="{

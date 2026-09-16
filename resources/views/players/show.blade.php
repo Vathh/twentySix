@@ -76,7 +76,7 @@ document.addEventListener('alpine:init', () => {
 @endsection
 
 @section('content')
-    <div class="py-6 sm:py-8" x-data="playerProfileData()">
+    <div class="py-3 sm:py-4" x-data="playerProfileData()">
         @include('players.partials.profile-hero')
 
         {{-- Zakładki --}}
@@ -84,31 +84,31 @@ document.addEventListener('alpine:init', () => {
             <button type="button"
                     @click="activeTab = 'overview'"
                     :class="activeTab === 'overview' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
-                    class="px-4 py-2 rounded-t border font-medium transition whitespace-nowrap shrink-0">
+                    class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
                 Przegląd
             </button>
             <button type="button"
                     @click="activeTab = 'history'"
                     :class="activeTab === 'history' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
-                    class="px-4 py-2 rounded-t border font-medium transition whitespace-nowrap shrink-0">
+                    class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
                 Historia meczów
             </button>
             <button type="button"
                     @click="activeTab = 'stats'"
                     :class="activeTab === 'stats' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
-                    class="px-4 py-2 rounded-t border font-medium transition whitespace-nowrap shrink-0">
+                    class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
                 Statystyki
             </button>
             <button type="button"
                     @click="activeTab = 'badges'"
                     :class="activeTab === 'badges' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
-                    class="px-4 py-2 rounded-t border font-medium transition whitespace-nowrap shrink-0">
+                    class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
                 Odznaczenia
             </button>
         </div>
 
         {{-- Zakładka: Przegląd --}}
-        <div x-show="activeTab === 'overview'" x-cloak class="space-y-8">
+        <div x-show="activeTab === 'overview'" x-cloak class="space-y-4">
             @include('players.partials.stats-tables')
             @include('players.partials.overview-record')
             @include('players.partials.overview-activity')

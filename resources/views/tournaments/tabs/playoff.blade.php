@@ -91,27 +91,28 @@
     @else
         @php
             $seRounds = $buildRounds($seRoundOrder);
+            $seThird = null;
+            $seMain = [];
+            foreach ($seRounds as $round) {
+                if ($round['key'] === 'THIRD') {
+                    $seThird = $round;
+                    continue;
+                }
+                $seMain[] = $round;
+            }
         @endphp
 
-        <div class="flex items-stretch gap-8 sm:gap-10 overflow-x-auto pb-6">
-            @foreach($seRounds as $round)
-                <div @class([
-                    'bracket-round flex flex-col',
-                    'min-w-[240px]' => $round['key'] === 'FINAL',
-                    'min-w-[220px]' => $round['key'] !== 'FINAL',
-                ])>
-                    <p class="text-center text-sm text-text-muted mb-2 shrink-0 h-6 leading-6">
-                        {{ $round['label'] }}
-                    </p>
-                    <div class="bracket-round-slots flex flex-col flex-1">
-                        @foreach($round['games'] as $game)
-                            <div class="bracket-slot flex flex-1 items-center py-1.5">
-                                @include('tournaments.partials.bracket-game', ['game' => $game])
-                            </div>
-                        @endforeach
+        @include('tournaments.partials.bracket-tree', ['rounds' => $seMain])
+
+        @if($seThird !== null)
+            <div class="bracket-third">
+                <p class="bracket-third-label">{{ $seThird['label'] }}</p>
+                @foreach($seThird['games'] as $game)
+                    <div class="bracket-slot-body">
+                        @include('tournaments.partials.bracket-game', ['game' => $game])
                     </div>
-                </div>
-            @endforeach
-        </div>
+                @endforeach
+            </div>
+        @endif
     @endif
 </div>

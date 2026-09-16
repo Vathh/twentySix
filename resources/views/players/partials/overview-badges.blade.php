@@ -7,7 +7,7 @@
 @endphp
 <section>
     <div class="career-section-head">
-        <h2 class="text-xl font-bold text-accent">Checkouty 100+</h2>
+        <h2 class="text-base font-bold text-accent">Checkouty 100+</h2>
         <p class="text-sm text-text-muted">{{ $unlocked }} / {{ $total }} odblokowanych</p>
     </div>
     <p class="text-sm text-text-secondary mb-4">

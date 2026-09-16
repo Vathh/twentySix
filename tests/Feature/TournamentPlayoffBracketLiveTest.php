@@ -56,7 +56,7 @@ class TournamentPlayoffBracketLiveTest extends TestCase
             ->assertJsonPath('games.0.id', $game->id);
     }
 
-    public function test_playoff_tab_renders_third_place_before_final(): void
+    public function test_playoff_tab_renders_third_place_outside_main_tree(): void
     {
         [$tournament] = $this->seedPlayoffGame();
 
@@ -77,12 +77,15 @@ class TournamentPlayoffBracketLiveTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $thirdPos = strpos($html, 'Mecz o 3. miejsce');
-        $finalPos = strpos($html, 'Finał');
+        $this->assertNotFalse(strpos($html, 'Mecz o 3. miejsce'));
+        $this->assertNotFalse(strpos($html, 'Finał'));
+        $this->assertNotFalse(strpos($html, 'bracket-third'));
 
-        $this->assertNotFalse($thirdPos);
-        $this->assertNotFalse($finalPos);
-        $this->assertLessThan($finalPos, $thirdPos);
+        $thirdBlock = strpos($html, 'bracket-third');
+        $finalLabel = strpos($html, 'Finał');
+        $this->assertNotFalse($thirdBlock);
+        $this->assertNotFalse($finalLabel);
+        $this->assertGreaterThan($finalLabel, $thirdBlock);
     }
 
     /**

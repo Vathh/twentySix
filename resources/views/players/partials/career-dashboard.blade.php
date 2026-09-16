@@ -12,11 +12,11 @@
         table: @js($career['table'] ?? null),
         fetchUrl: @js(route('players.career', $player)),
     })"
-    class="space-y-8"
+    class="space-y-4"
 >
     <div>
         <div class="career-section-head">
-            <h2 class="text-xl font-bold text-accent">Kariera</h2>
+            <h2 class="text-base font-bold text-accent">Kariera</h2>
             <p class="text-xs text-text-muted" x-show="loading">Aktualizuję…</p>
         </div>
         <div

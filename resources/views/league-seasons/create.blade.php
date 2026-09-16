@@ -16,10 +16,10 @@
             <p class="text-text-muted text-sm text-center mb-6">{{ $league->name }}</p>
 
             <label class="form-label text-accent" for="seasonName">Nazwa sezonu</label>
-            <input class="mb-5 input-field" type="text" id="seasonName" name="seasonName" value="{{ old('seasonName') }}" required maxlength="80">
+            <input class="mb-3 input-field" type="text" id="seasonName" name="seasonName" value="{{ old('seasonName') }}" required maxlength="80">
 
             <label class="form-label text-accent" for="calendar_mode">Kalendarz</label>
-            <select class="mb-5 input-field" id="calendar_mode" name="calendar_mode" x-model="mode">
+            <select class="mb-3 input-field" id="calendar_mode" name="calendar_mode" x-model="mode">
                 @foreach($calendarModes as $calendarMode)
                     <option value="{{ $calendarMode->value }}">{{ $calendarMode->label() }}</option>
                 @endforeach
@@ -69,7 +69,7 @@
             </div>
 
             <label class="form-label text-accent" for="rounds_each">Spotkania każdy z każdym</label>
-            <select class="mb-5 input-field" id="rounds_each" name="rounds_each">
+            <select class="mb-3 input-field" id="rounds_each" name="rounds_each">
                 <option value="1" @selected(old('rounds_each', '1') === '1')>1 (bez rewanżu)</option>
                 <option value="2" @selected(old('rounds_each') === '2')>2 (z rewanżem)</option>
             </select>
@@ -90,7 +90,7 @@
 
             <div x-show="allowsDraws !== '1'">
                 <label class="form-label text-accent" for="win_length_ft">First to (legi)</label>
-                <select class="mb-5 input-field" id="win_length_ft" name="win_length" :disabled="allowsDraws === '1'">
+                <select class="mb-3 input-field" id="win_length_ft" name="win_length" :disabled="allowsDraws === '1'">
                     @foreach(range(1, 15) as $n)
                         <option value="{{ $n }}" @selected((int) old('win_length', 2) === $n)>do {{ $n }}</option>
                     @endforeach
@@ -98,7 +98,7 @@
             </div>
             <div x-show="allowsDraws === '1'" x-cloak>
                 <label class="form-label text-accent" for="win_length_bo">Best of (legi)</label>
-                <select class="mb-5 input-field" id="win_length_bo" name="win_length" :disabled="allowsDraws !== '1'">
+                <select class="mb-3 input-field" id="win_length_bo" name="win_length" :disabled="allowsDraws !== '1'">
                     @foreach([2, 4, 6, 8, 10, 12, 14, 16] as $n)
                         <option value="{{ $n }}" @selected((int) old('win_length', 6) === $n)>best of {{ $n }}</option>
                     @endforeach
@@ -106,11 +106,11 @@
             </div>
 
             <label class="form-label text-accent" for="startDate">Data rozpoczęcia</label>
-            <input class="mb-5 input-field" type="date" id="startDate" name="startDate" value="{{ old('startDate') }}" required>
+            <input class="mb-3 input-field" type="date" id="startDate" name="startDate" value="{{ old('startDate') }}" required>
 
             <div x-show="mode === 'matchdays' && planning === 'equal_span'" x-cloak>
                 <label class="form-label text-accent" for="endDate">Data zakończenia</label>
-                <input class="mb-5 input-field" type="date" id="endDate" name="endDate" value="{{ old('endDate') }}"
+                <input class="mb-3 input-field" type="date" id="endDate" name="endDate" value="{{ old('endDate') }}"
                        :required="mode === 'matchdays' && planning === 'equal_span'">
             </div>
 

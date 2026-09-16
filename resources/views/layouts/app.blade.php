@@ -17,7 +17,7 @@
     @include('layouts.header')
 
     <div class="flex flex-grow relative">
-        <main class="container mx-auto flex-grow py-4 px-4 min-w-0">
+        <main class="container mx-auto flex-grow py-2 px-4 min-w-0">
             @yield('content')
         </main>
 
@@ -40,14 +40,14 @@
                  style="display: none;">
                 <div class="friends-panel-header">
                     <div class="flex items-center gap-2.5 min-w-0">
-                        <span class="brand-logotyp !h-9 !w-[3.6rem]" aria-hidden="true">
-                            <img src="{{ asset('images/logotyp.svg') }}" alt="" width="58" height="36">
+                        <span class="brand-logotyp !h-8 !w-[3.2rem]" aria-hidden="true">
+                            <img src="{{ asset('images/logotyp.svg') }}" alt="" width="51" height="32">
                         </span>
-                        <h2 class="text-lg font-bold text-text truncate">Znajomi</h2>
+                        <h2 class="text-base font-bold text-text truncate">Znajomi</h2>
                     </div>
-                    <button type="button" @click="hide()" class="text-text-muted hover:text-accent transition p-1 text-lg leading-none" aria-label="Zamknij">✕</button>
+                    <button type="button" @click="hide()" class="text-text-muted hover:text-accent transition p-1 text-base leading-none" aria-label="Zamknij">✕</button>
                 </div>
-                <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                <div class="flex-1 overflow-y-auto p-3 space-y-5">
                     <p x-show="loading" x-cloak class="text-sm text-text-muted">Ładowanie…</p>
                     <p x-show="error" x-cloak class="text-sm text-text-muted">Nie udało się załadować listy znajomych.</p>
                     <div x-show="!loading && !error" x-html="html"></div>

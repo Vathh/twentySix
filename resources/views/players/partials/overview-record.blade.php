@@ -20,11 +20,11 @@
 @endphp
 <section>
     <div class="flex items-center gap-3">
-        <h2 class="text-xl font-bold text-accent">Bilans</h2>
+        <h2 class="text-base font-bold text-accent">Bilans</h2>
         @include('players.partials.overview-scope', ['kind' => 'all'])
     </div>
 
-    <div class="overview-sources mt-4">
+    <div class="overview-sources mt-2.5">
         <article class="overview-source overview-source--tournament">
             <header class="overview-source-head">
                 <span class="overview-source-icon" aria-hidden="true">

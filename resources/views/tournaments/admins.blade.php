@@ -3,7 +3,7 @@
 @section('title', 'Administratorzy — '.$tournament->name)
 
 @section('content')
-    <div class="container mx-auto py-8 max-w-3xl">
+    <div class="container mx-auto py-5 max-w-3xl">
         <a href="{{ route('tournaments.show', $tournament->id) }}" class="link-back mb-4 inline-block">← Powrót do turnieju</a>
 
         <h1 class="page-title">Administratorzy turnieju: {{ $tournament->name }}</h1>

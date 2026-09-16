@@ -86,7 +86,7 @@
 
                         @foreach($tabs as $key => $label)
                             <a href="{{ route('tournaments.show', [$tournament->id, 'tab' => $key]) }}"
-                               class="px-4 sm:px-5 py-3 text-sm font-semibold transition border-b-2 -mb-px whitespace-nowrap
+                               class="px-3 sm:px-4 py-2 text-sm font-semibold transition border-b-2 -mb-px whitespace-nowrap
                       {{ $tab === $key
                             ? 'border-accent text-accent'
                             : 'border-transparent text-text-muted hover:text-accent' }}">

@@ -14,9 +14,9 @@
                 height="580"
                 aria-hidden="true"
             >
-            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-accent mb-4">twentySix</p>
-            <h2 class="text-2xl sm:text-4xl font-bold text-text mb-4 tracking-tight">Organizacje, turnieje, wyniki na żywo</h2>
-            <p class="text-base sm:text-lg mb-8 sm:mb-10 text-text-secondary max-w-md mx-auto">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent mb-2">twentySix</p>
+            <h2 class="text-lg sm:text-xl font-bold text-text mb-2 tracking-tight">Organizacje, turnieje, wyniki na żywo</h2>
+            <p class="text-xs sm:text-sm mb-4 sm:mb-5 text-text-secondary max-w-md mx-auto">
                 Śledź rankingi i rozgrywki — wszystko w jednym miejscu.
             </p>
             <div class="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center">

@@ -51,9 +51,9 @@
     ];
 @endphp
 <section>
-    <h2 class="text-xl font-bold text-accent">Forma</h2>
+    <h2 class="text-base font-bold text-accent">Forma</h2>
 
-    <div class="overview-pair mt-4">
+    <div class="overview-pair mt-2.5">
         <div class="overview-summary" style="--win-pct: {{ $winRatePct }}%;">
             <div class="overview-card-head">
                 <p class="overview-summary-kicker">Wyniki</p>

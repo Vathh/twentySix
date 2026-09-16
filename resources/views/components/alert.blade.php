@@ -20,7 +20,7 @@
         },
     }"
     @app-toast.window="push($event.detail)"
-    class="fixed top-5 right-5 z-50 space-y-2 w-96 max-w-[calc(100vw-2rem)]"
+    class="fixed top-4 right-4 z-50 space-y-2 w-80 max-w-[calc(100vw-2rem)] text-sm"
 >
     <template x-for="toast in toasts" :key="toast.id">
         <div

@@ -19,7 +19,7 @@
                 @endif
 
                 <label class="form-label text-accent" for="tournamentName">Nazwa turnieju</label>
-                <input class="mb-5 input-field"
+                <input class="mb-3 input-field"
                        id="tournamentName"
                        type="text"
                        placeholder="Wprowadź nazwę turnieju"
@@ -28,7 +28,7 @@
                        required>
 
                 <label class="form-label text-accent" for="date">Data wydarzenia</label>
-                <input class="mb-5 input-field"
+                <input class="mb-3 input-field"
                        id="date"
                        type="date"
                        name="date"

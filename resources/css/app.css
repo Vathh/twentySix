@@ -15,6 +15,25 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+@theme {
+    --text-lg: 1rem;
+    --text-xl: 1.125rem;
+    --text-2xl: 1.25rem;
+    --text-3xl: 1.5rem;
+    --text-4xl: 1.75rem;
+    --text-5xl: 2.15rem;
+}
+
+@layer base {
+    html {
+        font-size: 81.25%; /* 13px — gęstsza skala jak w typowym UI webowym */
+    }
+
+    body {
+        line-height: 1.4;
+    }
+}
+
 @layer components {
     button {
         @apply cursor-pointer;
@@ -22,7 +41,7 @@
 
     /* --- Przyciski --- */
     .btn {
-        @apply inline-flex items-center justify-center font-semibold py-3 px-6 rounded-lg transition-colors duration-150;
+        @apply inline-flex items-center justify-center font-medium py-1.5 px-3 rounded-md text-sm transition-colors duration-150;
     }
 
     .btn-primary {
@@ -52,28 +71,131 @@
     }
 
     .btn-mini {
-        @apply text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-150 bg-success text-on-success hover:bg-success-bright;
+        @apply text-xs font-semibold px-3.5 py-1.5 rounded-md transition-colors duration-150 bg-success text-on-success hover:bg-success-bright;
     }
 
     .btn-mini-danger {
-        @apply text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-150 bg-danger-muted text-danger-text border border-danger/30 hover:border-danger/50;
+        @apply text-xs font-semibold px-3.5 py-1.5 rounded-md transition-colors duration-150 bg-danger-muted text-danger-text border border-danger/30 hover:border-danger/50;
     }
 
     .btn-fab {
-        @apply inline-flex items-center justify-center font-bold py-3 px-5 sm:py-4 sm:px-8 rounded-xl shadow-lg
-            fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-20
+        @apply inline-flex items-center justify-center font-semibold py-2 px-3 sm:py-2.5 sm:px-4 rounded-lg shadow-lg
+            fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-20
             bg-accent text-on-accent hover:bg-accent-hover
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40
-            transition-colors duration-150 text-sm sm:text-base;
+            transition-colors duration-150 text-xs;
     }
 
     /* --- Powierzchnie --- */
     .card {
-        @apply bg-bg-elevated border border-border rounded-xl p-4 sm:p-6;
+        @apply bg-bg-elevated border border-border rounded-lg p-2.5 sm:p-3;
     }
 
     .card-glass {
         @apply bg-bg-elevated/40 border border-border-subtle rounded-xl backdrop-blur;
+    }
+
+    .bracket-tree {
+        --bracket-gutter: 1.25rem;
+        --bracket-line: color-mix(in srgb, var(--color-accent) 38%, var(--color-border));
+        @apply flex items-stretch overflow-x-auto pb-4;
+        gap: 0;
+    }
+
+    .bracket-round {
+        @apply flex flex-col min-w-[10.75rem];
+        padding-right: var(--bracket-gutter);
+        padding-left: var(--bracket-gutter);
+    }
+
+    .bracket-round:first-child {
+        padding-left: 0;
+    }
+
+    .bracket-round:last-child {
+        padding-right: 0;
+    }
+
+    .bracket-round-label {
+        @apply text-center text-[11px] font-medium uppercase tracking-wide text-text-muted mb-1.5 shrink-0 h-5 leading-5;
+    }
+
+    .bracket-round-slots {
+        @apply flex flex-col flex-1;
+    }
+
+    .bracket-slot {
+        @apply relative flex flex-1 items-center py-0.5;
+    }
+
+    .bracket-slot-body {
+        @apply relative w-full z-[1];
+    }
+
+    .bracket-round:not(:last-child) .bracket-slot::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 100%;
+        width: var(--bracket-gutter);
+        border-top: 1px solid var(--bracket-line);
+    }
+
+    .bracket-round:not(:first-child) .bracket-slot-body::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: 100%;
+        width: var(--bracket-gutter);
+        border-top: 1px solid var(--bracket-line);
+    }
+
+    .bracket-round[data-feed="pair"]:not(:last-child) .bracket-slot:nth-child(odd)::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: calc(100% + var(--bracket-gutter) - 1px);
+        height: 50%;
+        border-left: 1px solid var(--bracket-line);
+    }
+
+    .bracket-round[data-feed="pair"]:not(:last-child) .bracket-slot:nth-child(even)::after {
+        content: '';
+        position: absolute;
+        bottom: 50%;
+        left: calc(100% + var(--bracket-gutter) - 1px);
+        height: 50%;
+        border-left: 1px solid var(--bracket-line);
+    }
+
+    .bracket-game-card {
+        @apply block w-full rounded-md border border-border bg-bg-elevated/70 px-2 py-1 text-xs leading-tight;
+        box-shadow: inset 2px 0 0 color-mix(in srgb, var(--color-accent) 35%, transparent);
+    }
+
+    .bracket-game-card.is-link {
+        @apply hover:border-accent/50 hover:bg-bg-elevated transition cursor-pointer;
+    }
+
+    .bracket-game-row {
+        @apply flex justify-between items-center gap-2 min-h-0;
+    }
+
+    .bracket-game-row + .bracket-game-row {
+        @apply mt-0.5 pt-0.5;
+        border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .bracket-third {
+        @apply mt-6 flex flex-col items-center;
+    }
+
+    .bracket-third-label {
+        @apply text-[11px] font-medium uppercase tracking-wide text-text-muted mb-1.5;
+    }
+
+    .bracket-third .bracket-slot-body {
+        @apply min-w-[10.75rem];
     }
 
     .surface-glass {
@@ -81,11 +203,11 @@
     }
 
     .list-item {
-        @apply bg-bg-elevated/50 p-4 rounded-lg border border-border-subtle hover:bg-bg-elevated-hover transition;
+        @apply bg-bg-elevated/50 p-2 rounded-md border border-border-subtle hover:bg-bg-elevated-hover transition text-sm;
     }
 
     .tile {
-        @apply bg-bg rounded-lg p-6 border border-border;
+        @apply bg-bg rounded-lg p-3 border border-border;
     }
 
     .roster-dropzone {
@@ -97,7 +219,7 @@
     }
 
     .roster-chip {
-        @apply inline-flex items-center rounded-lg border border-border bg-bg px-3 py-2 text-sm font-semibold text-text-muted select-none;
+        @apply inline-flex items-center rounded-md border border-border bg-bg px-2.5 py-1.5 text-sm font-semibold text-text-muted select-none;
         -webkit-user-drag: none;
     }
 
@@ -138,11 +260,11 @@
 
     /* --- Formularze --- */
     .form-label {
-        @apply mb-2 block text-base font-semibold text-text-secondary;
+        @apply mb-1.5 block text-sm font-semibold text-text-secondary;
     }
 
     .input-field {
-        @apply w-full min-w-0 bg-bg-elevated text-text px-4 py-3 rounded-lg border border-border
+        @apply w-full min-w-0 bg-bg-elevated text-text text-sm px-2.5 py-1.5 rounded-md border border-border
             focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-colors;
         color-scheme: dark;
     }
@@ -154,12 +276,12 @@
     }
 
     .select-field {
-        @apply w-full appearance-none cursor-pointer rounded-lg border border-border bg-bg-elevated text-text;
-        padding: 0.75rem 2.5rem 0.75rem 0.75rem;
+        @apply w-full appearance-none cursor-pointer rounded-md border border-border bg-bg-elevated text-text text-sm;
+        padding: 0.375rem 2rem 0.375rem 0.625rem;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f59e0b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
-        background-position: right 0.65rem center;
-        background-size: 1.1rem;
+        background-position: right 0.55rem center;
+        background-size: 1rem;
         color-scheme: dark;
     }
 
@@ -175,29 +297,14 @@
 
     /* --- Nawigacja --- */
     .nav-btn {
-        @apply relative px-3 py-2 md:py-1.5 rounded-md text-text-muted hover:text-text hover:bg-bg-elevated/40 md:hover:bg-transparent transition-colors duration-150;
+        @apply relative px-2 py-1 md:py-0.5 rounded-md text-sm text-text-muted hover:text-text hover:bg-bg-elevated/40 md:hover:bg-transparent transition-colors duration-150;
     }
 
     .nav-btn.active {
         @apply text-accent font-semibold;
     }
 
-    .nav-btn.active::after {
-        content: '';
-        position: absolute;
-        left: 0.75rem;
-        right: 0.75rem;
-        bottom: 0.15rem;
-        height: 2px;
-        border-radius: 999px;
-        background-color: var(--color-accent);
-    }
-
     @media (max-width: 767px) {
-        .nav-btn.active::after {
-            display: none;
-        }
-
         .nav-btn.active {
             @apply bg-accent-muted;
         }
@@ -216,7 +323,7 @@
     }
 
     .nav-dropdown-item {
-        @apply block px-3 py-2 md:py-1.5 rounded-md text-text-muted hover:text-text hover:bg-bg-elevated/50 transition-colors duration-150;
+        @apply block px-2 py-1 md:py-0.5 rounded-md text-sm text-text-muted hover:text-text hover:bg-bg-elevated/50 transition-colors duration-150;
     }
 
     .nav-dropdown-item.active {
@@ -245,12 +352,12 @@
 
     /* Pełne logo = logotyp 26 + napis twentySix (proporcje ~2750×580) */
     .brand-logo {
-        @apply h-10 sm:h-11 w-auto max-w-[min(100%,14rem)] sm:max-w-[16rem] shrink-0 object-contain;
+        @apply h-7 w-auto max-w-[min(100%,10.5rem)] sm:max-w-[12rem] shrink-0 object-contain;
     }
 
     /* Sam logotyp „26” (proporcje ~920×580) */
     .brand-logotyp {
-        @apply inline-flex items-center justify-center h-11 w-[4.4rem] rounded-lg shrink-0 overflow-hidden bg-bg-deep;
+        @apply inline-flex items-center justify-center h-7 w-[2.85rem] rounded-md shrink-0 overflow-hidden bg-bg-deep;
     }
 
     .brand-logotyp img {
@@ -258,13 +365,13 @@
     }
 
     .site-header {
-        @apply sticky top-0 z-40 bg-bg-deep/90 backdrop-blur-md text-text-secondary py-3 sm:py-4 border-b border-border;
+        @apply sticky top-0 z-40 bg-bg-deep/90 backdrop-blur-md text-text-secondary py-1 border-b border-border;
     }
 
     .profile-tabs {
-        @apply sticky z-30 -mx-4 px-4 mb-6 flex gap-2 border-b border-border pt-2 pb-2 overflow-x-auto;
+        @apply sticky z-30 -mx-4 px-4 mb-3 flex gap-1 border-b border-border pt-1 pb-1 overflow-x-auto;
         @apply bg-bg-deep/90 backdrop-blur-md;
-        top: var(--site-header-h, 4.25rem);
+        top: var(--site-header-h, 2.75rem);
     }
 
     .career-section-head {
@@ -272,11 +379,11 @@
     }
 
     .career-hero {
-        @apply grid grid-cols-1 sm:grid-cols-3 gap-4;
+        @apply grid grid-cols-1 sm:grid-cols-3 gap-2.5;
     }
 
     .career-stat-card {
-        @apply rounded-xl border border-border px-5 py-4 sm:px-6 sm:py-5 flex flex-col;
+        @apply rounded-lg border border-border px-3 py-2.5 sm:px-4 sm:py-3 flex flex-col;
         box-shadow: inset 3px 0 0 var(--career-tone, var(--color-accent));
         background: linear-gradient(
             165deg,
@@ -298,7 +405,7 @@
     }
 
     .career-stat-card .overview-summary-rate {
-        @apply text-3xl sm:text-4xl;
+        @apply text-xl sm:text-2xl;
     }
 
     .career-stat-delta {
@@ -310,12 +417,12 @@
     }
 
     .career-charts {
-        @apply grid grid-cols-1 lg:grid-cols-2 gap-4;
+        @apply grid grid-cols-1 lg:grid-cols-2 gap-2.5;
     }
 
     .career-chart,
     .career-panel {
-        @apply rounded-xl border border-border p-5;
+        @apply rounded-lg border border-border p-3;
         box-shadow: inset 3px 0 0 var(--color-accent);
         background: linear-gradient(
             165deg,
@@ -333,7 +440,7 @@
     }
 
     .profile-hero {
-        @apply rounded-xl border border-border p-5 sm:p-6 mb-6 flex flex-col gap-4;
+        @apply rounded-lg border border-border p-3 sm:p-3.5 mb-3 flex flex-col gap-2;
         box-shadow: inset 3px 0 0 var(--color-accent);
         background: linear-gradient(
             165deg,
@@ -343,11 +450,11 @@
     }
 
     .profile-hero-top {
-        @apply flex flex-wrap items-start gap-4;
+        @apply flex flex-wrap items-start gap-3;
     }
 
     .profile-hero-mono {
-        @apply flex h-16 w-16 shrink-0 items-center justify-center rounded-xl text-lg font-bold tracking-wide;
+        @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-sm font-bold tracking-wide;
         color: var(--color-accent);
         background: color-mix(in srgb, var(--color-accent) 16%, transparent);
     }
@@ -357,11 +464,11 @@
     }
 
     .profile-hero-name {
-        @apply text-2xl sm:text-3xl font-bold text-text break-words leading-tight;
+        @apply text-lg font-bold text-text break-words leading-tight;
     }
 
     .profile-hero-meta {
-        @apply mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-text-secondary;
+        @apply mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-secondary;
     }
 
     .profile-hero-actions {
@@ -369,7 +476,7 @@
     }
 
     .profile-hero-bio {
-        @apply text-text-secondary whitespace-pre-wrap break-words leading-relaxed;
+        @apply text-sm text-text-secondary whitespace-pre-wrap break-words leading-snug;
     }
 
     .profile-hero-bio--empty {
@@ -382,7 +489,7 @@
     }
 
     .profile-hero-live-link {
-        @apply flex flex-wrap items-center justify-between gap-3 rounded-lg border border-accent/40 bg-accent/10 px-4 py-3 hover:bg-accent/15 transition no-underline;
+        @apply flex flex-wrap items-center justify-between gap-3 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 hover:bg-accent/15 transition no-underline;
     }
 
     .history-panel {
@@ -410,7 +517,7 @@
     }
 
     .history-table thead th {
-        @apply px-4 py-3 font-semibold whitespace-nowrap;
+        @apply px-2.5 py-1.5 font-semibold whitespace-nowrap;
     }
 
     .history-table tbody tr {
@@ -423,7 +530,7 @@
     }
 
     .history-table tbody td {
-        @apply px-4 py-3.5 align-middle;
+        @apply px-2.5 py-2 align-middle;
     }
 
     .history-row--link {
@@ -515,7 +622,7 @@
     }
 
     .overview-pair {
-        @apply grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5;
+        @apply grid grid-cols-1 lg:grid-cols-2 gap-2.5 mb-3;
     }
 
     section > .overview-pair:last-child {
@@ -525,7 +632,7 @@
     .overview-summary,
     .overview-recent,
     .overview-panel {
-        @apply rounded-xl border border-border px-5 py-4 sm:px-6 sm:py-5 h-full flex flex-col;
+        @apply rounded-lg border border-border px-3 py-2.5 sm:px-3.5 sm:py-3 h-full flex flex-col;
     }
 
     .overview-summary {
@@ -561,11 +668,11 @@
     }
 
     .overview-pair--pack > .overview-panel {
-        @apply gap-4;
+        @apply gap-2.5;
     }
 
     .overview-panel-body {
-        @apply grid grid-cols-2 gap-4 items-end flex-1;
+        @apply grid grid-cols-2 gap-2.5 items-end flex-1;
     }
 
     .overview-panel--social .overview-panel-body {
@@ -586,23 +693,23 @@
     }
 
     .overview-summary-main {
-        @apply flex flex-col gap-4 mb-4 mt-auto;
+        @apply flex flex-col gap-2 mb-2 mt-auto;
     }
 
     .overview-summary-kicker {
-        @apply text-[10px] uppercase tracking-wider text-text-muted mb-1;
+        @apply text-[10px] uppercase tracking-wider text-text-muted mb-0.5;
     }
 
     .overview-summary-rate {
-        @apply text-4xl font-bold text-text tabular-nums leading-none;
+        @apply text-2xl font-bold text-text tabular-nums leading-none;
     }
 
     .overview-summary-rate-label {
-        @apply text-xs uppercase tracking-wide text-text-muted mt-1.5;
+        @apply text-[10px] uppercase tracking-wide text-text-muted mt-1;
     }
 
     .overview-summary-counts {
-        @apply flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-text-secondary;
+        @apply flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-xs text-text-secondary;
     }
 
     .overview-summary-counts strong {
@@ -627,7 +734,7 @@
     }
 
     .overview-recent-meta {
-        @apply grid grid-cols-2 gap-3 mt-auto pt-4;
+        @apply grid grid-cols-2 gap-2 mt-auto pt-2.5;
         border-top: 1px solid var(--color-border-subtle);
     }
 
@@ -707,7 +814,7 @@
     }
 
     .overview-form {
-        @apply rounded-xl border border-border p-5 flex flex-col gap-5 h-full;
+        @apply rounded-lg border border-border p-3 flex flex-col gap-3 h-full;
         box-shadow: inset 3px 0 0 var(--overview-tone, var(--color-accent));
         background: linear-gradient(
             165deg,
@@ -737,7 +844,7 @@
     }
 
     .overview-form-source .overview-source-icon {
-        @apply h-9 w-9;
+        @apply h-7 w-7;
     }
 
     .overview-form-source--league .overview-source-icon {
@@ -746,11 +853,11 @@
     }
 
     .overview-form-games {
-        @apply text-right text-sm text-text-secondary;
+        @apply text-right text-xs text-text-secondary;
     }
 
     .overview-form-games strong {
-        @apply block text-2xl font-bold tabular-nums text-text leading-none;
+        @apply block text-lg font-bold tabular-nums text-text leading-none;
     }
 
     .overview-form-grid {
@@ -758,7 +865,7 @@
     }
 
     .overview-form-stat {
-        @apply rounded-lg px-2.5 py-2;
+        @apply rounded-md px-2 py-1.5;
         background: color-mix(in srgb, var(--color-bg) 55%, transparent);
         border: 1px solid var(--color-border-subtle);
     }
@@ -768,15 +875,15 @@
     }
 
     .overview-form-stat dd {
-        @apply text-sm font-semibold tabular-nums text-text mt-0.5;
+        @apply text-xs font-semibold tabular-nums text-text mt-0.5;
     }
 
     .overview-sources {
-        @apply grid grid-cols-1 md:grid-cols-3 gap-4;
+        @apply grid grid-cols-1 md:grid-cols-3 gap-2.5;
     }
 
     .overview-source {
-        @apply rounded-xl border border-border bg-bg-elevated p-5 flex flex-col gap-4;
+        @apply rounded-lg border border-border bg-bg-elevated p-3 flex flex-col gap-2;
         box-shadow: inset 3px 0 0 var(--overview-tone, var(--color-accent));
     }
 
@@ -824,17 +931,17 @@
     }
 
     .overview-source-icon {
-        @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-lg;
+        @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-md;
         color: var(--overview-tone);
         background: color-mix(in srgb, var(--overview-tone) 16%, transparent);
     }
 
     .overview-source-icon svg {
-        @apply h-5 w-5;
+        @apply h-4 w-4;
     }
 
     .overview-source-title {
-        @apply text-base font-semibold text-text leading-tight;
+        @apply text-sm font-semibold text-text leading-tight;
     }
 
     .overview-source-stats {
@@ -842,7 +949,7 @@
     }
 
     .overview-source-played {
-        @apply text-2xl font-bold text-text tabular-nums leading-none;
+        @apply text-lg font-bold text-text tabular-nums leading-none;
     }
 
     .overview-source-played-label {
@@ -893,11 +1000,11 @@
     }
 
     .overview-honor-icon svg {
-        @apply block h-7 w-7;
+        @apply block h-5 w-5;
     }
 
     .overview-honor-value {
-        @apply block text-base font-bold tabular-nums text-text leading-none;
+        @apply block text-sm font-bold tabular-nums text-text leading-none;
     }
 
     .overview-honor-label {
@@ -968,16 +1075,16 @@
     }
 
     .admin-sidebar {
-        @apply w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-border-subtle
-            p-4 sm:p-6 flex flex-col bg-bg-deep/25 backdrop-blur-sm;
+        @apply w-full lg:w-52 shrink-0 border-b lg:border-b-0 lg:border-r border-border-subtle
+            p-2.5 sm:p-3 flex flex-col bg-bg-deep/25 backdrop-blur-sm;
     }
 
     .admin-sidebar-title {
-        @apply text-text font-bold text-base sm:text-lg mb-4 sm:mb-6 tracking-wide;
+        @apply text-text font-bold text-sm sm:text-base mb-3 sm:mb-4 tracking-wide;
     }
 
     .admin-sidebar-link {
-        @apply flex items-center gap-3 bg-bg-elevated/35 hover:bg-bg-elevated-hover/80 px-4 py-3 rounded-lg transition text-text-secondary hover:text-text border border-transparent hover:border-border-subtle;
+        @apply flex items-center gap-2.5 bg-bg-elevated/35 hover:bg-bg-elevated-hover/80 px-3 py-2 rounded-md transition text-sm text-text-secondary hover:text-text border border-transparent hover:border-border-subtle;
     }
 
     .admin-sidebar-link-disabled {
@@ -990,7 +1097,7 @@
     }
 
     .detail-main {
-        @apply flex-1 px-4 py-6 sm:px-8 sm:py-10 lg:px-12 flex justify-center min-w-0;
+        @apply flex-1 px-4 py-3 sm:px-5 sm:py-4 lg:px-6 flex justify-center min-w-0;
     }
 
     .detail-content {
@@ -1023,32 +1130,32 @@
     }
 
     .badge-accent {
-        @apply px-2 py-0.5 rounded text-xs font-semibold bg-accent-muted text-accent;
+        @apply px-2.5 py-1 rounded text-xs font-semibold bg-accent-muted text-accent;
     }
 
     .badge-planned {
-        @apply px-2.5 py-0.5 rounded-full text-xs font-semibold bg-bg-deep/60 text-text-muted border border-border;
+        @apply px-3 py-1 rounded-full text-xs font-semibold bg-bg-deep/60 text-text-muted border border-border;
     }
 
     .badge-finished {
-        @apply px-2.5 py-0.5 rounded-full text-xs font-semibold bg-bg-elevated text-text-secondary border border-border;
+        @apply px-3 py-1 rounded-full text-xs font-semibold bg-bg-elevated text-text-secondary border border-border;
     }
 
     .badge-status-live {
-        @apply px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success-muted text-success-bright border border-success/40;
+        @apply px-3 py-1 rounded-full text-xs font-semibold bg-success-muted text-success-bright border border-success/40;
     }
 
     /* --- Empty states --- */
     .empty-panel {
-        @apply flex flex-col items-center justify-center text-center py-16 px-6 max-w-md mx-auto;
+        @apply flex flex-col items-center justify-center text-center py-10 px-5 max-w-md mx-auto;
     }
 
     .empty-panel-icon {
-        @apply w-16 h-16 mb-5 text-text-muted;
+        @apply w-12 h-12 mb-4 text-text-muted;
     }
 
     .empty-panel-title {
-        @apply text-lg font-semibold text-text-secondary mb-2;
+        @apply text-base font-semibold text-text-secondary mb-1.5;
     }
 
     .empty-panel-desc {
@@ -1065,23 +1172,23 @@
     }
 
     .page-title {
-        @apply text-2xl font-bold text-text mb-6 tracking-tight;
+        @apply text-lg font-bold text-text mb-3 tracking-tight;
     }
 
     .page-title-accent {
-        @apply text-3xl sm:text-4xl font-bold text-text mb-6 tracking-tight;
+        @apply text-xl sm:text-2xl font-bold text-text mb-3 tracking-tight;
     }
 
     .card-title {
-        @apply text-xl font-semibold text-text mb-2;
+        @apply text-base font-semibold text-text mb-1;
     }
 
     .card-description {
-        @apply text-sm text-text-muted mb-2;
+        @apply text-xs text-text-muted mb-1.5;
     }
 
     .section-title {
-        @apply text-xl font-semibold text-text mb-4 tracking-tight;
+        @apply text-base font-semibold text-text mb-2 tracking-tight;
     }
 
     /*
@@ -1089,15 +1196,15 @@
      | eyebrow → tytuł → cienka kreska accent → dystans do meta.
      */
     .entity-header {
-        @apply mb-8;
+        @apply mb-4;
     }
 
     .entity-eyebrow {
-        @apply text-xs font-semibold uppercase tracking-[0.18em] text-accent mb-3;
+        @apply text-xs font-semibold uppercase tracking-[0.18em] text-accent mb-2;
     }
 
     .entity-breadcrumb {
-        @apply flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-muted mb-4;
+        @apply flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-muted mb-3;
     }
 
     .entity-breadcrumb a {
@@ -1109,11 +1216,11 @@
     }
 
     .entity-title {
-        @apply text-2xl sm:text-4xl font-bold text-text tracking-tight leading-tight mb-4 break-words;
+        @apply text-lg sm:text-xl font-bold text-text tracking-tight leading-tight mb-2 break-words;
     }
 
     .entity-title-row {
-        @apply flex flex-wrap items-center gap-3 mb-4;
+        @apply flex flex-wrap items-center gap-2.5 mb-3;
     }
 
     .entity-title-row .entity-title {
@@ -1125,11 +1232,11 @@
     }
 
     .entity-meta {
-        @apply bg-bg-elevated/40 border border-border-subtle rounded-xl backdrop-blur p-6 sm:p-7;
+        @apply bg-bg-elevated/40 border border-border-subtle rounded-lg backdrop-blur p-3 sm:p-4;
     }
 
     .entity-meta-grid {
-        @apply grid gap-5 sm:gap-6;
+        @apply grid gap-3 sm:gap-4;
     }
 
     .entity-meta-grid.cols-2 {
@@ -1149,12 +1256,12 @@
     }
 
     .entity-meta-value {
-        @apply text-base text-text-secondary leading-relaxed;
+        @apply text-sm text-text-secondary leading-snug;
     }
 
     /* --- Tabele --- */
     .table-wrap {
-        @apply overflow-x-auto rounded-lg p-4 bg-bg-deep border border-border;
+        @apply overflow-x-auto rounded-lg p-3 bg-bg-deep border border-border;
     }
 
     .table-surface {
@@ -1166,7 +1273,7 @@
     }
 
     .table-surface thead th {
-        @apply px-3 py-2 font-medium text-left;
+        @apply px-2 py-1.5 font-medium text-left;
     }
 
     .table-surface tbody {
@@ -1178,7 +1285,7 @@
     }
 
     .table-surface tbody td {
-        @apply px-3 py-2;
+        @apply px-2 py-1.5;
     }
 
     .score-num {
@@ -1187,11 +1294,11 @@
 
     /* --- Layout --- */
     .auth-card {
-        @apply bg-bg-elevated border border-border rounded-2xl p-6 sm:p-12 max-w-md w-full;
+        @apply bg-bg-elevated border border-border rounded-lg p-4 sm:p-5 max-w-md w-full;
     }
 
     .form-card {
-        @apply bg-bg-elevated border border-border rounded-2xl p-6 sm:p-12 max-w-lg w-full mx-auto;
+        @apply bg-bg-elevated border border-border rounded-lg p-4 sm:p-5 max-w-lg w-full mx-auto;
     }
 
     .overlay {
@@ -1200,7 +1307,7 @@
     }
 
     .index-grid {
-        @apply grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4;
+        @apply grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5;
     }
 
     .index-grid > * {
@@ -1220,7 +1327,7 @@
     }
 
     .index-card {
-        @apply bg-bg-elevated border border-border rounded-xl p-6 h-full min-h-[120px] flex flex-col justify-center
+        @apply bg-bg-elevated border border-border rounded-lg p-3 h-full min-h-0 flex flex-col justify-center
             hover:border-accent/40 hover:bg-bg-elevated-hover transition-all duration-200 cursor-pointer
             hover:-translate-y-0.5;
     }
@@ -1244,14 +1351,14 @@
     }
 
     .live-connecting-banner {
-        @apply mb-4 flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-bg-elevated/60 text-sm text-text-muted;
+        @apply mb-3 flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border bg-bg-elevated/60 text-sm text-text-muted;
     }
 
     /* --- Friends panel --- */
     .friends-fab {
-        @apply fixed right-3 top-[4.5rem] sm:right-4 sm:top-24 z-30 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-border
+        @apply fixed right-3 top-[3.15rem] sm:right-4 sm:top-16 z-30 px-2 py-0.5 sm:px-2 sm:py-1 rounded-md border border-border
             bg-bg-deep/80 backdrop-blur-md text-accent hover:border-accent/50 hover:bg-bg-elevated
-            transition text-xs sm:text-sm font-semibold shadow-lg;
+            transition text-[11px] font-semibold shadow-lg;
     }
 
     .friends-panel {
@@ -1260,11 +1367,11 @@
     }
 
     .friends-panel-header {
-        @apply p-4 border-b border-border flex justify-between items-center gap-3;
+        @apply p-3 border-b border-border flex justify-between items-center gap-3;
     }
 
     .friends-link {
-        @apply block py-2.5 px-3 rounded-lg border border-border-subtle bg-bg-elevated/40
+        @apply block py-2 px-2.5 rounded-md border border-border-subtle bg-bg-elevated/40
             hover:border-accent/40 hover:bg-bg-elevated-hover text-text-secondary hover:text-accent
             transition text-sm;
     }
@@ -1283,7 +1390,7 @@
     }
 
     .home-hero {
-        @apply relative text-center py-10 px-5 sm:py-16 sm:px-8 max-w-xl w-full rounded-2xl border border-border overflow-hidden;
+        @apply relative text-center py-6 px-4 sm:py-8 sm:px-6 max-w-lg w-full rounded-lg border border-border overflow-hidden;
         background: linear-gradient(
             160deg,
             color-mix(in srgb, var(--color-bg-elevated) 92%, var(--color-accent)),
