@@ -67,8 +67,7 @@
                 <tbody class="divide-y divide-border">
                 @foreach($players[$number] as $rowPlayer)
                     @php
-                        $advances = $groupComplete
-                            && in_array((int) $rowPlayer->id, array_map('intval', $advancingIds), true);
+                        $advances = in_array((int) $rowPlayer->id, array_map('intval', $advancingIds), true);
                     @endphp
                     <tr
                         data-group-row-player-id="{{ $rowPlayer->id }}"
@@ -86,8 +85,9 @@
                             @endif
                             <span
                                 data-playoff-badge
-                                class="ml-2 inline-block align-middle text-[10px] uppercase tracking-wide font-semibold text-accent border border-success/40 rounded px-1.5 py-0.5 {{ $advances ? '' : 'hidden' }}"
+                                class="ml-2 align-middle text-[10px] uppercase tracking-wide font-semibold text-accent border border-success/40 rounded px-1.5 py-0.5"
                                 title="Awans do playoff"
+                                @if(! $advances) hidden @endif
                             >Playoff</span>
                         </td>
 

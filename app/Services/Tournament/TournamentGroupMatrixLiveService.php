@@ -3,6 +3,7 @@
 namespace App\Services\Tournament;
 
 use App\Enums\GameStatus;
+use App\Enums\TournamentStatus;
 use App\Events\TournamentGroupMatrixUpdated;
 use App\Models\Game\Game;
 use App\Models\GroupStanding\GroupStanding;
@@ -108,8 +109,13 @@ class TournamentGroupMatrixLiveService
             $playoffHighlights = $viewModel->groupPlayoffHighlights();
         }
 
+        $status = $tournament?->status;
+
         return [
             'tournamentId' => $tournamentId,
+            'tournamentStatus' => $status instanceof TournamentStatus
+                ? $status->value
+                : ($status !== null ? (string) $status : null),
             'games' => $gamePayload,
             'standingsByGroup' => $standingsByGroup,
             'playoffHighlights' => $playoffHighlights,

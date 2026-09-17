@@ -4,7 +4,17 @@
 
 @section('content')
 
-    <div x-data="{ cancelOpen: {{ $errors->has('current_password') ? 'true' : 'false' }} }">
+    <div
+        @if($tournament->isLiveOnWeb())
+            x-data="tournamentPageLive(@js([
+                'cancelOpen' => $errors->has('current_password'),
+                'channel' => 'tournament.'.$tournament->id,
+                'reverb' => \App\Support\Broadcasting\ReverbClientConfig::forWeb(),
+            ]))"
+        @else
+            x-data="{ cancelOpen: {{ $errors->has('current_password') ? 'true' : 'false' }} }"
+        @endif
+    >
     <div class="detail-layout">
 
         @if($canManageTournament)
@@ -63,38 +73,31 @@
                         Turniej jeszcze się nie rozpoczął. Wyniki i tabele pojawią się po starcie.
                     </p>
                 @else
-                    <div class="overflow-x-auto -mx-1 px-1 mb-8 mt-10">
-                        <div class="flex border-b border-border min-w-max">
+                    <nav class="tournament-show-tabs" aria-label="Zakładki turnieju">
                         @php
                             $isEliminationOnly = $tournament->format->isEliminationOnly();
                             if ($isEliminationOnly && $tab === 'groups') {
                                 $tab = 'playoff';
                             }
-                            $tabs = $isEliminationOnly
-                                ? [
+                            $tabs = [];
+                            foreach ($tournament->allowedShowTabs() as $key) {
+                                $tabs[$key] = match ($key) {
                                     'results' => 'Wyniki',
-                                    'playoff' => 'Drabinka',
-                                    'achievements' => 'Osiągnięcia',
-                                ]
-                                : [
-                                    'results' => 'Wyniki',
-                                    'playoff' => 'Playoff',
+                                    'playoff' => $isEliminationOnly ? 'Drabinka' : 'Playoff',
                                     'groups' => 'Grupy',
                                     'achievements' => 'Osiągnięcia',
-                                ];
+                                    default => $key,
+                                };
+                            }
                         @endphp
 
                         @foreach($tabs as $key => $label)
                             <a href="{{ route('tournaments.show', [$tournament->id, 'tab' => $key]) }}"
-                               class="px-3 sm:px-4 py-2 text-sm font-semibold transition border-b-2 -mb-px whitespace-nowrap
-                      {{ $tab === $key
-                            ? 'border-accent text-accent'
-                            : 'border-transparent text-text-muted hover:text-accent' }}">
+                               class="{{ $tab === $key ? 'is-active' : '' }}">
                                 {{ $label }}
                             </a>
                         @endforeach
-                        </div>
-                    </div>
+                    </nav>
 
                     @if($tab === 'playoff')
                         @if($tournament->hasPlayoffBracket())

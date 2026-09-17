@@ -164,6 +164,22 @@ class TournamentDomain
         return in_array($this->status, [TournamentStatus::PLAYOFF, TournamentStatus::FINISHED]);
     }
 
+    /** Faza grupowa albo playoff — strona WWW nasłuchuje końca turnieju. */
+    public function isLiveOnWeb(): bool
+    {
+        return in_array($this->status, [TournamentStatus::GROUP, TournamentStatus::PLAYOFF], true);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function allowedShowTabs(): array
+    {
+        return $this->format->isEliminationOnly()
+            ? ['results', 'playoff', 'achievements']
+            : ['results', 'playoff', 'groups', 'achievements'];
+    }
+
     public function tracksSeasonPoints(): bool
     {
         return $this->season !== null && $this->pointScheme !== null;

@@ -59,11 +59,19 @@ class GameOverlayWebTest extends TestCase
             player2Score: 0,
         );
 
-        $this->get(route('games.overlay', ['type' => 'playoff', 'id' => $game->id]))
+        $html = $this->get(route('games.overlay', ['type' => 'playoff', 'id' => $game->id]))
             ->assertOk()
             ->assertSee('Finished Alice')
             ->assertSee('Finished Bob')
-            ->assertSee('Koniec');
+            ->assertSee('Koniec')
+            ->getContent();
+
+        $this->assertSame(2, substr_count($html, 'game-overlay-remaining'));
+        $this->assertMatchesRegularExpression(
+            '/game-overlay-remaining[^>]*>\s*—\s*</',
+            $html,
+        );
+        $this->assertSame(2, preg_match_all('/game-overlay-remaining[^>]*>\s*—\s*</', $html));
 
         $this->get(route('games.live', ['type' => 'playoff', 'id' => $game->id]))
             ->assertRedirect(route('games.show', ['type' => 'playoff', 'id' => $game->id]));
@@ -97,7 +105,9 @@ class GameOverlayWebTest extends TestCase
         $this->get(route('games.live', ['type' => 'playoff', 'id' => $game->id]))
             ->assertOk()
             ->assertSee('Kopiuj link overlay')
-            ->assertSee($overlayUrl, false);
+            ->assertSee('Podgląd overlay')
+            ->assertSee($overlayUrl, false)
+            ->assertDontSee('preview=1');
     }
 
     public function test_overlay_shows_sets_and_legs_for_multi_set_format(): void
@@ -136,6 +146,52 @@ class GameOverlayWebTest extends TestCase
         $this->getJson(route('games.live.state', ['type' => 'playoff', 'id' => $finished->id]))
             ->assertStatus(410)
             ->assertJsonPath('message', 'Mecz zakończony.');
+    }
+
+    public function test_live_state_reports_darts_thrown_in_current_leg(): void
+    {
+        $game = $this->playoffGame(GameStatus::IN_PROGRESS, 'Darts Alice', 'Darts Bob');
+        $leg = GameLeg::create([
+            'playoff_game_id' => $game->id,
+            'leg_number' => 1,
+            'started_at' => now(),
+        ]);
+        GameVisit::create([
+            'game_leg_id' => $leg->id,
+            'player_id' => $game->player1_id,
+            'visit_number' => 1,
+            'score' => 60,
+            'remaining_before' => 501,
+            'remaining_after' => 441,
+            'darts_in_visit' => 3,
+            'closed_leg' => false,
+            'bust' => false,
+            'is_voided' => false,
+            'client_visit_id' => 'overlay-darts-p1',
+        ]);
+        GameVisit::create([
+            'game_leg_id' => $leg->id,
+            'player_id' => $game->player2_id,
+            'visit_number' => 2,
+            'score' => 45,
+            'remaining_before' => 501,
+            'remaining_after' => 456,
+            'darts_in_visit' => 2,
+            'closed_leg' => false,
+            'bust' => false,
+            'is_voided' => false,
+            'client_visit_id' => 'overlay-darts-p2',
+        ]);
+
+        $this->getJson(route('games.live.state', ['type' => 'playoff', 'id' => $game->id]))
+            ->assertOk()
+            ->assertJsonPath('players.0.dartsThrownInLeg', 3)
+            ->assertJsonPath('players.1.dartsThrownInLeg', 2);
+
+        $this->get(route('games.overlay', ['type' => 'playoff', 'id' => $game->id]))
+            ->assertOk()
+            ->assertSee('game-overlay-meta-stats', false)
+            ->assertSee('dartsThrownInLeg', false);
     }
 
     public function test_overlay_queries_game_visits_once(): void

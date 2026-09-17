@@ -101,7 +101,8 @@ class TournamentDataViewModel
     }
 
     /**
-     * Podświetlenie awansu do playoff w tabelach grup (gdy grupa domknięta).
+     * Plakietka PLAYOFF: zawodnik już rozegrał mecz i zajmuje miejsce awansu.
+     * Przed pierwszym meczem nikt nie jest wyróżniony (miejsca startowe nie liczą się).
      *
      * @return array<int, array{complete: bool, advanceCount: int, advancingPlayerIds: list<int>}>
      */
@@ -121,9 +122,13 @@ class TournamentDataViewModel
             $complete = $this->isGroupFinished($gamesByGroup[$groupNumber] ?? []);
             $advancingPlayerIds = [];
 
-            if ($complete && $advanceCount > 0) {
+            if ($advanceCount > 0) {
                 foreach ($standingsByGroup[$groupNumber] ?? [] as $playerId => $standing) {
-                    if ($standing->place > 0 && $standing->place <= $advanceCount) {
+                    if (
+                        $standing->gamesPlayed > 0
+                        && $standing->place > 0
+                        && $standing->place <= $advanceCount
+                    ) {
                         $advancingPlayerIds[] = (int) $playerId;
                     }
                 }

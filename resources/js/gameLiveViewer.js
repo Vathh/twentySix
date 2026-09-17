@@ -1,8 +1,8 @@
 import Pusher from 'pusher-js';
 import { formatAverage as formatAverageValue } from './formatAverage.js';
+import { animateScoreDown } from './tickingScore.js';
 
 const GAME_STATE_EVENTS = ['game.state', '.game.state'];
-const CHECKOUT_BOGEYS = [159, 162, 163, 165, 166, 168, 169];
 
 function normalizePayload(payload) {
     if (payload == null) {
@@ -34,10 +34,13 @@ export function registerGameLiveViewer(Alpine) {
         previewDemo: Boolean(config.previewDemo),
         flash180: false,
         flash180Timer: null,
+        remainingShown: [null, null],
+        remainingTickCancel: [null, null],
 
         init() {
             this.connectWebSocket(config);
             this.pollTimer = setInterval(() => this.fetchState(), 30000);
+            this.snapRemainingFromState();
             this.$watch(
                 () => this.state?.game?.status,
                 (status) => {
@@ -49,6 +52,10 @@ export function registerGameLiveViewer(Alpine) {
             this.$watch(
                 () => this.lastVisitSignature,
                 () => this.onLastVisitChanged(),
+            );
+            this.$watch(
+                () => this.remainingSignature,
+                () => this.tickRemainingFromState(),
             );
             if (this.isFinished) {
                 this.redirectToShow();
@@ -64,6 +71,7 @@ export function registerGameLiveViewer(Alpine) {
                 clearTimeout(this.flash180Timer);
                 this.flash180Timer = null;
             }
+            this.cancelRemainingTicks();
             if (this.pusher) {
                 this.pusher.unsubscribe(config.channel);
                 this.pusher.disconnect();
@@ -332,19 +340,16 @@ export function registerGameLiveViewer(Alpine) {
         },
 
         dartsInCurrentLeg(playerId) {
-            if (this.previewDemo) {
-                if (this.player1 && Number(playerId) === Number(this.player1.playerId)) {
-                    return 9;
-                }
-                if (this.player2 && Number(playerId) === Number(this.player2.playerId)) {
-                    return 6;
-                }
+            const player = this.players.find((x) => Number(x.playerId) === Number(playerId));
+            if (player?.dartsThrownInLeg != null) {
+                return Number(player.dartsThrownInLeg);
             }
 
-            return this.visitsForPlayer(playerId).reduce(
-                (total, visit) => total + Number(visit.dartsInVisit ?? 0),
-                0,
-            );
+            return this.visitsForPlayer(playerId).reduce((total, visit) => {
+                const darts = visit.dartsInVisit ?? visit.darts_in_visit;
+
+                return total + Number(darts ?? 3);
+            }, 0);
         },
 
         get latestVisit() {
@@ -379,16 +384,9 @@ export function registerGameLiveViewer(Alpine) {
             }, 2200);
         },
 
-        remainingDisplay(player, index) {
+        remainingTarget(player, index) {
             if (this.isFinished) {
-                const score1 = this.matchScore(this.player1);
-                const score2 = this.matchScore(this.player2);
-                if (score1 === score2) {
-                    return '—';
-                }
-                const leader = score1 > score2 ? 0 : 1;
-
-                return Number(index) === leader ? 0 : '—';
+                return '—';
             }
             if (player?.remaining == null) {
                 return '—';
@@ -397,13 +395,54 @@ export function registerGameLiveViewer(Alpine) {
             return player.remaining;
         },
 
-        isCheckoutRemaining(remaining) {
-            const value = Number(remaining);
-            if (!Number.isFinite(value) || value < 2 || value > 170) {
-                return false;
-            }
+        remainingDisplay(player, index) {
+            const shown = this.remainingShown[Number(index)];
 
-            return !CHECKOUT_BOGEYS.includes(value);
+            return shown == null ? this.remainingTarget(player, index) : shown;
+        },
+
+        get remainingSignature() {
+            return `${this.remainingTarget(this.player1, 0)}|${this.remainingTarget(this.player2, 1)}`;
+        },
+
+        snapRemainingFromState() {
+            this.cancelRemainingTicks();
+            this.remainingShown = [
+                this.remainingTarget(this.player1, 0),
+                this.remainingTarget(this.player2, 1),
+            ];
+        },
+
+        tickRemainingFromState() {
+            this.animateRemainingSlot(0, this.player1);
+            this.animateRemainingSlot(1, this.player2);
+        },
+
+        animateRemainingSlot(index, player) {
+            const to = this.remainingTarget(player, index);
+            const from = this.remainingShown[index] ?? to;
+            if (from === to) {
+                return;
+            }
+            if (this.remainingTickCancel[index]) {
+                this.remainingTickCancel[index]();
+            }
+            const cancelList = [...this.remainingTickCancel];
+            cancelList[index] = animateScoreDown(from, to, (value) => {
+                const next = [...this.remainingShown];
+                next[index] = value;
+                this.remainingShown = next;
+            });
+            this.remainingTickCancel = cancelList;
+        },
+
+        cancelRemainingTicks() {
+            this.remainingTickCancel.forEach((cancel) => {
+                if (typeof cancel === 'function') {
+                    cancel();
+                }
+            });
+            this.remainingTickCancel = [null, null];
         },
 
         get overlayPrimaryLeft() {

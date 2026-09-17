@@ -46,6 +46,7 @@ class TournamentPlayoffBracketLiveTest extends TestCase
         $snapshot = app(TournamentPlayoffBracketLiveService::class)->snapshot($tournament->id);
 
         $this->assertSame($tournament->id, $snapshot['tournamentId']);
+        $this->assertSame(TournamentStatus::PLAYOFF->value, $snapshot['tournamentStatus']);
         $this->assertCount(1, $snapshot['games']);
         $this->assertSame($game->id, $snapshot['games'][0]['id']);
         $this->assertSame(1, $snapshot['games'][0]['player1Score']);

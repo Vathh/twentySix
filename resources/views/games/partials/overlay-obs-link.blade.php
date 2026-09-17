@@ -1,6 +1,5 @@
 @php
     $overlayUrl = route('games.overlay', ['type' => $kind, 'id' => $gameId]);
-    $overlayPreviewUrl = route('games.overlay', ['type' => $kind, 'id' => $gameId, 'preview' => 1]);
 @endphp
 <div
     class="flex flex-wrap items-center gap-2"
@@ -18,7 +17,7 @@
     >
         <span x-text="overlayCopied ? 'Skopiowano' : 'Kopiuj link overlay'">Kopiuj link overlay</span>
     </button>
-    <a href="{{ $overlayPreviewUrl }}"
+    <a href="{{ $overlayUrl }}"
        class="px-3 py-1 rounded text-xs font-semibold border border-border text-text-muted hover:text-accent hover:border-accent/40 transition"
        target="_blank"
        rel="noopener noreferrer">

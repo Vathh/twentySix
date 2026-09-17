@@ -4,8 +4,10 @@ namespace App\Services\Tournament;
 
 use App\Domain\Game\PlayoffGameDomain;
 use App\Enums\GameStatus;
+use App\Enums\TournamentStatus;
 use App\Events\TournamentPlayoffBracketUpdated;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
+use App\Repositories\Tournament\TournamentRepository;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -15,6 +17,7 @@ class TournamentPlayoffBracketLiveService
 {
     public function __construct(
         private PlayoffGameRepository $playoffGameRepository,
+        private TournamentRepository $tournamentRepository,
     ) {}
 
     public function pushTournament(int $tournamentId): void
@@ -40,7 +43,7 @@ class TournamentPlayoffBracketLiveService
     }
 
     /**
-     * @return array{tournamentId: int, games: list<array<string, mixed>>}
+     * @return array{tournamentId: int, tournamentStatus: string|null, games: list<array<string, mixed>>}
      */
     public function snapshot(int $tournamentId): array
     {
@@ -49,8 +52,14 @@ class TournamentPlayoffBracketLiveService
             ->values()
             ->all();
 
+        $tournament = $this->tournamentRepository->findModelOrNull($tournamentId);
+        $status = $tournament?->status;
+
         return [
             'tournamentId' => $tournamentId,
+            'tournamentStatus' => $status instanceof TournamentStatus
+                ? $status->value
+                : ($status !== null ? (string) $status : null),
             'games' => $games,
         ];
     }

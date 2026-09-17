@@ -7,7 +7,7 @@
                 ➕ Rozpocznij turniej
             </a>
         @elseif($tournament->canCancelPlay())
-            <button type="button" class="admin-sidebar-link w-full text-left text-danger" @click="cancelOpen = true">
+            <button type="button" data-cancel-play class="admin-sidebar-link w-full text-left text-danger" @click="cancelOpen = true">
                 Anuluj rozgrywki
             </button>
         @endif

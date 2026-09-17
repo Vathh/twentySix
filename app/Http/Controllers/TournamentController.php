@@ -542,9 +542,7 @@ class TournamentController extends Controller
     private function resolveShowTab(TournamentDomain $tournament): string
     {
         $requested = request()->query('tab');
-        $allowed = $tournament->format->isEliminationOnly()
-            ? ['results', 'playoff', 'achievements']
-            : ['results', 'playoff', 'groups', 'achievements'];
+        $allowed = $tournament->allowedShowTabs();
 
         if (is_string($requested) && in_array($requested, $allowed, true)) {
             return $requested;

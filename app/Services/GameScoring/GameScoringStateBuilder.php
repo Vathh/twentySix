@@ -176,6 +176,7 @@ class GameScoringStateBuilder
             'legsWonInSet' => $legsWonInSet,
             'setsWon' => $setsWon,
             'remaining' => $remaining,
+            'dartsThrownInLeg' => GameStatisticsCalculator::dartsThrown($openLegVisits),
             'legAverage' => GameStatisticsCalculator::legAverage($openLegVisits),
             'gameAverage' => GameStatisticsCalculator::gameAverage($gameVisits),
             'firstNineAverage' => GameStatisticsCalculator::firstNineAverage($openLegVisits),

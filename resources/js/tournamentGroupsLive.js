@@ -217,7 +217,7 @@ export function registerTournamentGroupsLive(Alpine) {
 
 				const badge = tr.querySelector('[data-playoff-badge]');
 				if (badge) {
-					badge.classList.toggle('hidden', !advances);
+					badge.hidden = !advances;
 				}
 			});
 		},

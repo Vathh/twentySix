@@ -575,13 +575,29 @@ class TournamentControllerTest extends TestCase
         $this->assertShowTabActive($html, 'playoff');
     }
 
-    public function test_finished_tournament_opens_results_tab_by_default(): void
+    public function test_finished_groups_playoff_keeps_groups_tab_and_hides_cancel(): void
     {
+        $this->actingAs($this->adminUser);
         $tournament = $this->startedTournament(TournamentStatus::FINISHED);
 
         $html = $this->get("/tournaments/{$tournament->id}")->assertOk()->getContent();
 
         $this->assertShowTabActive($html, 'results');
+        $this->assertMatchesRegularExpression('/tab=groups/', $html);
+        $this->assertStringContainsString('Grupy', $html);
+        $this->assertStringNotContainsString('Anuluj rozgrywki', $html);
+        $this->assertStringNotContainsString('tournamentPageLive', $html);
+    }
+
+    public function test_playoff_page_listens_for_tournament_finished(): void
+    {
+        $this->actingAs($this->adminUser);
+        $tournament = $this->startedTournament(TournamentStatus::PLAYOFF);
+
+        $html = $this->get("/tournaments/{$tournament->id}?tab=playoff")->assertOk()->getContent();
+
+        $this->assertStringContainsString('tournamentPageLive', $html);
+        $this->assertStringContainsString('Anuluj rozgrywki', $html);
     }
 
     public function test_explicit_tab_query_overrides_default(): void
@@ -600,6 +616,7 @@ class TournamentControllerTest extends TestCase
             'season_id' => $this->season->id,
             'date' => '2024-06-01',
             'status' => $status,
+            'format' => \App\Enums\TournamentFormat::GroupsPlayoff,
             'groups_count' => 2,
             'playoff_bracket_size' => 4,
             'group_advances' => [2, 2],
@@ -610,7 +627,7 @@ class TournamentControllerTest extends TestCase
     private function assertShowTabActive(string $html, string $tab): void
     {
         $this->assertMatchesRegularExpression(
-            '/tab='.preg_quote($tab, '/').'[^>]*border-accent/',
+            '/tab='.preg_quote($tab, '/').'[^>]*is-active/',
             $html,
         );
     }

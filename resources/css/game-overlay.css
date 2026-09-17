@@ -73,9 +73,9 @@ body.game-overlay-preview {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 232px minmax(0, 1fr);
-    grid-template-rows: 158px;
+    grid-template-rows: 168px;
     align-items: stretch;
-    height: 158px;
+    height: 168px;
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 28%),
         linear-gradient(90deg, #121217 0%, #1a1a21 50%, #121217 100%);
@@ -187,14 +187,20 @@ body.game-overlay-preview {
 
 .game-overlay-meta {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 10px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 8px;
 }
 
 .game-overlay-player.is-right .game-overlay-meta {
-    justify-content: flex-end;
+    align-items: flex-end;
+}
+
+.game-overlay-meta-stats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .game-overlay-avg {
@@ -319,11 +325,6 @@ body.game-overlay-preview {
 
 .game-overlay-player.is-right .game-overlay-remaining {
     text-align: left;
-}
-
-.game-overlay-remaining.is-checkout {
-    color: var(--color-accent);
-    text-shadow: 0 0 28px rgba(245, 158, 11, 0.45);
 }
 
 .game-overlay-hub {
@@ -506,8 +507,8 @@ body.game-overlay-preview {
     }
 
     .game-overlay-scorebug {
-        height: 128px;
-        grid-template-rows: 128px;
+        height: 140px;
+        grid-template-rows: 140px;
         grid-template-columns: minmax(0, 1fr) 168px minmax(0, 1fr);
     }
 

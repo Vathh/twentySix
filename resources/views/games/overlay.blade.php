@@ -27,6 +27,9 @@
             : '—';
         $liveAvg1 = \App\Support\AverageFormat::display($liveP1['gameAverage'] ?? null);
         $liveAvg2 = \App\Support\AverageFormat::display($liveP2['gameAverage'] ?? null);
+        $liveFinished = ($initialState['game']['status'] ?? '') === 'finished';
+        $liveRemaining1 = $liveFinished ? '—' : ($liveP1['remaining'] ?? '—');
+        $liveRemaining2 = $liveFinished ? '—' : ($liveP2['remaining'] ?? '—');
         $overlayEvent = $subtitle;
         $overlayRound = match ($kind) {
             'group' => 'Faza grupowa'.(! empty($groupNumber) ? ' · Grupa '.$groupNumber : ''),
@@ -60,14 +63,16 @@
                             @include('games.partials.overlay-opener-icon', ['index' => 0])
                         </div>
                         <div class="game-overlay-meta">
-                            <span class="game-overlay-avg">
-                                <span class="game-overlay-avg-label">Avg</span>
-                                <span x-text="formatAverage(player1?.gameAverage)">{{ $liveAvg1 }}</span>
-                            </span>
-                            <span class="game-overlay-darts">
-                                <span class="game-overlay-avg-label">Lotki</span>
-                                <span x-text="dartsInCurrentLeg(player1?.playerId)">0</span>
-                            </span>
+                            <div class="game-overlay-meta-stats">
+                                <span class="game-overlay-avg">
+                                    <span class="game-overlay-avg-label">Avg</span>
+                                    <span x-text="formatAverage(player1?.gameAverage)">{{ $liveAvg1 }}</span>
+                                </span>
+                                <span class="game-overlay-darts">
+                                    <span class="game-overlay-avg-label">Lotki</span>
+                                    <span x-text="dartsInCurrentLeg(player1?.playerId)">{{ $liveP1['dartsThrownInLeg'] ?? 0 }}</span>
+                                </span>
+                            </div>
                             <span
                                 class="game-overlay-visit"
                                 x-show="lastVisitLabel(player1?.playerId)"
@@ -84,9 +89,8 @@
                         <span class="game-overlay-score-caption">Pozostało</span>
                         <p
                             class="game-overlay-remaining"
-                            x-bind:class="{ 'is-checkout': isCheckoutRemaining(remainingDisplay(player1, 0)) }"
                             x-text="remainingDisplay(player1, 0)"
-                        >{{ $liveP1['remaining'] ?? '—' }}</p>
+                        >{{ $liveRemaining1 }}</p>
                     </div>
                 </div>
 
@@ -133,9 +137,8 @@
                         <span class="game-overlay-score-caption">Pozostało</span>
                         <p
                             class="game-overlay-remaining"
-                            x-bind:class="{ 'is-checkout': isCheckoutRemaining(remainingDisplay(player2, 1)) }"
                             x-text="remainingDisplay(player2, 1)"
-                        >{{ $liveP2['remaining'] ?? '—' }}</p>
+                        >{{ $liveRemaining2 }}</p>
                     </div>
                     <div class="game-overlay-copy">
                         <div class="game-overlay-name-row">
@@ -143,6 +146,16 @@
                             <p class="game-overlay-name" x-text="player2?.name">{{ $liveP2['name'] ?? $player2->name }}</p>
                         </div>
                         <div class="game-overlay-meta">
+                            <div class="game-overlay-meta-stats">
+                                <span class="game-overlay-darts">
+                                    <span class="game-overlay-avg-label">Lotki</span>
+                                    <span x-text="dartsInCurrentLeg(player2?.playerId)">{{ $liveP2['dartsThrownInLeg'] ?? 0 }}</span>
+                                </span>
+                                <span class="game-overlay-avg">
+                                    <span class="game-overlay-avg-label">Avg</span>
+                                    <span x-text="formatAverage(player2?.gameAverage)">{{ $liveAvg2 }}</span>
+                                </span>
+                            </div>
                             <span
                                 class="game-overlay-visit"
                                 x-show="lastVisitLabel(player2?.playerId)"
@@ -153,14 +166,6 @@
                                 x-text="lastVisitLabel(player2?.playerId)"
                                 x-cloak
                             ></span>
-                            <span class="game-overlay-darts">
-                                <span class="game-overlay-avg-label">Lotki</span>
-                                <span x-text="dartsInCurrentLeg(player2?.playerId)">0</span>
-                            </span>
-                            <span class="game-overlay-avg">
-                                <span class="game-overlay-avg-label">Avg</span>
-                                <span x-text="formatAverage(player2?.gameAverage)">{{ $liveAvg2 }}</span>
-                            </span>
                         </div>
                     </div>
                     <span class="game-overlay-rail" aria-hidden="true"></span>

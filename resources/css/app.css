@@ -195,7 +195,16 @@
     }
 
     .bracket-third .bracket-slot-body {
-        @apply min-w-[10.75rem];
+        width: 10.75rem;
+        max-width: 10.75rem;
+    }
+
+    [data-playoff-badge] {
+        display: inline-block;
+    }
+
+    [data-playoff-badge][hidden] {
+        display: none !important;
     }
 
     .surface-glass {
@@ -1102,6 +1111,18 @@
 
     .detail-content {
         @apply w-full max-w-3xl min-w-0;
+    }
+
+    .tournament-show-tabs {
+        @apply flex flex-wrap items-end gap-x-1 border-b border-border mb-8 mt-10 overflow-x-hidden overflow-y-hidden;
+    }
+
+    .tournament-show-tabs a {
+        @apply px-3 sm:px-4 py-2 text-sm font-semibold transition border-b-2 -mb-px whitespace-nowrap border-transparent text-text-muted hover:text-accent;
+    }
+
+    .tournament-show-tabs a.is-active {
+        @apply border-accent text-accent;
     }
 
     /* --- Alerty / badge --- */
