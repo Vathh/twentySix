@@ -8,19 +8,23 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
- * Jedna mapa DomainException → HTTP. 422 domyślnie; 409 gdy getCode() === CONFLICT.
+ * Jedna mapa DomainException → HTTP. 422 domyślnie; 409/403 gdy getCode() to CONFLICT/FORBIDDEN.
  */
 final class DomainExceptionHttp
 {
+    public const FORBIDDEN = 403;
+
     public const CONFLICT = 409;
 
     public const UNPROCESSABLE = 422;
 
     public static function status(DomainException $e): int
     {
-        return $e->getCode() === self::CONFLICT
-            ? self::CONFLICT
-            : self::UNPROCESSABLE;
+        return match ($e->getCode()) {
+            self::FORBIDDEN => self::FORBIDDEN,
+            self::CONFLICT => self::CONFLICT,
+            default => self::UNPROCESSABLE,
+        };
     }
 
     public static function render(DomainException $e, Request $request): JsonResponse|RedirectResponse

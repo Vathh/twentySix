@@ -10,11 +10,14 @@ use App\Events\QuickGameLobbyUpdated;
 use App\Events\QuickGameRematchCreated;
 use App\Events\QuickGameRematchIntentUpdated;
 use App\Models\QuickGame\QuickGameLobby;
+use App\Models\Users\User;
 use App\Repositories\Friends\FriendshipRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameLobbyRepository;
 use App\Services\Push\InvitationPushService;
+use App\Support\Http\DomainExceptionHttp;
 use App\Support\QuickGameLobbyPayload;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 
 class QuickGameLobbyService
@@ -27,6 +30,7 @@ class QuickGameLobbyService
         private QuickGameFfaScoringService $ffaScoringService,
         private FriendshipRepository $friendshipRepository,
         private InvitationPushService $invitationPushService,
+        private QuickGameLobbyAuthorizationService $lobbyAuthorization,
     ) {}
 
     /**
@@ -187,6 +191,16 @@ class QuickGameLobbyService
     public function get(int $lobbyId): QuickGameLobby
     {
         return $this->lobbyRepository->find($lobbyId);
+    }
+
+    public function getVisibleToUser(int $lobbyId, User $user): QuickGameLobby
+    {
+        $lobby = $this->get($lobbyId);
+        if ($this->lobbyAuthorization->canSubscribe($user, $lobbyId) === false) {
+            throw new DomainException('Nie masz dostępu do tego lobby.', DomainExceptionHttp::FORBIDDEN);
+        }
+
+        return $lobby;
     }
 
     public function addGuest(int $lobbyId, int $hostUserId, string $tempPlayerName): QuickGameLobby

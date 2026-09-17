@@ -69,9 +69,7 @@ class TournamentPlayoffBracketLiveService
      */
     private function serializeGame(PlayoffGameDomain $game): array
     {
-        $status = $game->status instanceof GameStatus
-            ? $game->status->value
-            : (string) $game->status;
+        $status = $game->status->value;
         $hideScores = $game->isByeVsBye();
         $showScores = ! $hideScores && $game->status !== GameStatus::SCHEDULED;
 

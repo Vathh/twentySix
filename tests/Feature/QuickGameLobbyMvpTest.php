@@ -198,6 +198,16 @@ class QuickGameLobbyMvpTest extends TestCase
             ->assertJsonPath('pendingInvites.0.id', $this->friendPlayer->id);
 
         Sanctum::actingAs($this->friend);
+        $this->getJson("/api/quick-game/lobby/{$lobbyId}")
+            ->assertOk()
+            ->assertJsonCount(1, 'pendingInvites');
+
+        Sanctum::actingAs($this->stranger);
+        $this->getJson("/api/quick-game/lobby/{$lobbyId}")
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Nie masz dostępu do tego lobby.');
+
+        Sanctum::actingAs($this->friend);
         $join = $this->postJson("/api/quick-game/lobby/{$lobbyId}/join");
 
         $join->assertOk()

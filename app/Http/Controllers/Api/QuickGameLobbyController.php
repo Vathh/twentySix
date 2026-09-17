@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Domain\GameScoring\MatchFormat;
+use App\Models\Users\User;
 use App\Services\QuickGame\QuickGameLobbyService;
 use App\Support\GameScoring\MatchFormatRequestParser;
 use App\Support\QuickGameLobbyPayload;
@@ -33,10 +34,13 @@ class QuickGameLobbyController
 
     public function get(Request $request, string $lobbyId): JsonResponse
     {
-        $lobby = $this->lobbyService->get((int) $lobbyId);
-        $currentUserId = $request->user()?->id;
+        $user = $request->user();
+        if (! $user instanceof User) {
+            abort(401);
+        }
+        $lobby = $this->lobbyService->getVisibleToUser((int) $lobbyId, $user);
 
-        return response()->json(QuickGameLobbyPayload::fromLobby($lobby, $currentUserId));
+        return response()->json(QuickGameLobbyPayload::fromLobby($lobby, $user->id));
     }
 
     public function joinById(Request $request, string $lobbyId): JsonResponse

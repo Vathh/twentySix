@@ -54,7 +54,10 @@ class CheckoutWheelAssembler
                 continue;
             }
             $hits[$key] = (int) $badge->times_earned;
-            $lastAt[$key] = $badge->last_earned_at?->toIso8601String();
+            $earnedAt = $badge->last_earned_at;
+            $lastAt[$key] = $earnedAt instanceof \DateTimeInterface
+                ? $earnedAt->format(\DateTimeInterface::ATOM)
+                : (is_string($earnedAt) ? $earnedAt : null);
         }
 
         $latest = $this->playerBadgeRepository->latestEventsByBadgeKey($playerId, BadgeCategory::Checkout->value);
@@ -77,7 +80,9 @@ class CheckoutWheelAssembler
             $times = $hits[$key] ?? 0;
             $event = $latest[(string) $key] ?? null;
             $game = null;
-            if ($event !== null) {
+            $eventCreatedAt = null;
+            if (is_array($event)) {
+                $eventCreatedAt = $event['created_at'] ?? null;
                 $summary = $games[$event['source_kind'].':'.$event['source_id']] ?? null;
                 if (is_array($summary)) {
                     $game = [
@@ -94,7 +99,7 @@ class CheckoutWheelAssembler
                 'timesEarned' => $times,
                 'level' => CheckoutLevelPolicy::levelForHits($times),
                 'levelName' => CheckoutLevelPolicy::nameForHits($times),
-                'lastEarnedAt' => $lastAt[$key] ?? ($event['created_at'] ?? null),
+                'lastEarnedAt' => $lastAt[$key] ?? $eventCreatedAt,
                 'lastGame' => $game,
             ];
         }
