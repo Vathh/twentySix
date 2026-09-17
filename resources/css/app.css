@@ -15,25 +15,6 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
-@theme {
-    --text-lg: 1rem;
-    --text-xl: 1.125rem;
-    --text-2xl: 1.25rem;
-    --text-3xl: 1.5rem;
-    --text-4xl: 1.75rem;
-    --text-5xl: 2.15rem;
-}
-
-@layer base {
-    html {
-        font-size: 81.25%; /* 13px — gęstsza skala jak w typowym UI webowym */
-    }
-
-    body {
-        line-height: 1.4;
-    }
-}
-
 @layer components {
     button {
         @apply cursor-pointer;
@@ -41,7 +22,7 @@
 
     /* --- Przyciski --- */
     .btn {
-        @apply inline-flex items-center justify-center font-medium py-1.5 px-3 rounded-md text-sm transition-colors duration-150;
+        @apply inline-flex items-center justify-center font-semibold py-3 px-6 rounded-lg transition-colors duration-150;
     }
 
     .btn-primary {
@@ -71,24 +52,24 @@
     }
 
     .btn-mini {
-        @apply text-xs font-semibold px-3.5 py-1.5 rounded-md transition-colors duration-150 bg-success text-on-success hover:bg-success-bright;
+        @apply text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-150 bg-success text-on-success hover:bg-success-bright;
     }
 
     .btn-mini-danger {
-        @apply text-xs font-semibold px-3.5 py-1.5 rounded-md transition-colors duration-150 bg-danger-muted text-danger-text border border-danger/30 hover:border-danger/50;
+        @apply text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-150 bg-danger-muted text-danger-text border border-danger/30 hover:border-danger/50;
     }
 
     .btn-fab {
-        @apply inline-flex items-center justify-center font-semibold py-2 px-3 sm:py-2.5 sm:px-4 rounded-lg shadow-lg
-            fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-20
+        @apply inline-flex items-center justify-center font-bold py-3 px-5 sm:py-4 sm:px-8 rounded-xl shadow-lg
+            fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-20
             bg-accent text-on-accent hover:bg-accent-hover
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40
-            transition-colors duration-150 text-xs;
+            transition-colors duration-150 text-sm sm:text-base;
     }
 
     /* --- Powierzchnie --- */
     .card {
-        @apply bg-bg-elevated border border-border rounded-lg p-2.5 sm:p-3;
+        @apply bg-bg-elevated border border-border rounded-xl p-4 sm:p-6;
     }
 
     .card-glass {
@@ -212,7 +193,7 @@
     }
 
     .list-item {
-        @apply bg-bg-elevated/50 p-2 rounded-md border border-border-subtle hover:bg-bg-elevated-hover transition text-sm;
+        @apply bg-bg-elevated/50 p-4 rounded-lg border border-border-subtle hover:bg-bg-elevated-hover transition;
     }
 
     .tile {
@@ -273,7 +254,7 @@
     }
 
     .input-field {
-        @apply w-full min-w-0 bg-bg-elevated text-text text-sm px-2.5 py-1.5 rounded-md border border-border
+        @apply w-full min-w-0 bg-bg-elevated text-text px-4 py-3 rounded-lg border border-border
             focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-colors;
         color-scheme: dark;
     }
@@ -306,7 +287,7 @@
 
     /* --- Nawigacja --- */
     .nav-btn {
-        @apply relative px-2 py-1 md:py-0.5 rounded-md text-sm text-text-muted hover:text-text hover:bg-bg-elevated/40 md:hover:bg-transparent transition-colors duration-150;
+        @apply relative px-3 py-2 md:py-1.5 rounded-md text-text-muted hover:text-text hover:bg-bg-elevated/40 md:hover:bg-transparent transition-colors duration-150;
     }
 
     .nav-btn.active {
@@ -332,7 +313,7 @@
     }
 
     .nav-dropdown-item {
-        @apply block px-2 py-1 md:py-0.5 rounded-md text-sm text-text-muted hover:text-text hover:bg-bg-elevated/50 transition-colors duration-150;
+        @apply block px-3 py-2 md:py-1.5 rounded-md text-text-muted hover:text-text hover:bg-bg-elevated/50 transition-colors duration-150;
     }
 
     .nav-dropdown-item.active {
@@ -361,12 +342,12 @@
 
     /* Pełne logo = logotyp 26 + napis twentySix (proporcje ~2750×580) */
     .brand-logo {
-        @apply h-7 w-auto max-w-[min(100%,10.5rem)] sm:max-w-[12rem] shrink-0 object-contain;
+        @apply h-10 sm:h-11 w-auto max-w-[min(100%,14rem)] sm:max-w-[16rem] shrink-0 object-contain;
     }
 
     /* Sam logotyp „26” (proporcje ~920×580) */
     .brand-logotyp {
-        @apply inline-flex items-center justify-center h-7 w-[2.85rem] rounded-md shrink-0 overflow-hidden bg-bg-deep;
+        @apply inline-flex items-center justify-center h-11 w-[4.4rem] rounded-lg shrink-0 overflow-hidden bg-bg-deep;
     }
 
     .brand-logotyp img {
@@ -374,13 +355,13 @@
     }
 
     .site-header {
-        @apply sticky top-0 z-40 bg-bg-deep/90 backdrop-blur-md text-text-secondary py-1 border-b border-border;
+        @apply sticky top-0 z-40 bg-bg-deep/90 backdrop-blur-md text-text-secondary py-3 sm:py-4 border-b border-border;
     }
 
     .profile-tabs {
-        @apply sticky z-30 -mx-4 px-4 mb-3 flex gap-1 border-b border-border pt-1 pb-1 overflow-x-auto;
+        @apply sticky z-30 -mx-4 px-4 mb-6 flex gap-2 border-b border-border pt-2 pb-2 overflow-x-auto;
         @apply bg-bg-deep/90 backdrop-blur-md;
-        top: var(--site-header-h, 2.75rem);
+        top: var(--site-header-h, 4.25rem);
     }
 
     .career-section-head {
@@ -1084,16 +1065,16 @@
     }
 
     .admin-sidebar {
-        @apply w-full lg:w-52 shrink-0 border-b lg:border-b-0 lg:border-r border-border-subtle
-            p-2.5 sm:p-3 flex flex-col bg-bg-deep/25 backdrop-blur-sm;
+        @apply w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-border-subtle
+            p-4 sm:p-6 flex flex-col bg-bg-deep/25 backdrop-blur-sm;
     }
 
     .admin-sidebar-title {
-        @apply text-text font-bold text-sm sm:text-base mb-3 sm:mb-4 tracking-wide;
+        @apply text-text font-bold text-base sm:text-lg mb-4 sm:mb-6 tracking-wide;
     }
 
     .admin-sidebar-link {
-        @apply flex items-center gap-2.5 bg-bg-elevated/35 hover:bg-bg-elevated-hover/80 px-3 py-2 rounded-md transition text-sm text-text-secondary hover:text-text border border-transparent hover:border-border-subtle;
+        @apply flex items-center gap-3 bg-bg-elevated/35 hover:bg-bg-elevated-hover/80 px-4 py-3 rounded-lg transition text-text-secondary hover:text-text border border-transparent hover:border-border-subtle;
     }
 
     .admin-sidebar-link-disabled {
@@ -1106,7 +1087,7 @@
     }
 
     .detail-main {
-        @apply flex-1 px-4 py-3 sm:px-5 sm:py-4 lg:px-6 flex justify-center min-w-0;
+        @apply flex-1 px-4 py-6 sm:px-8 sm:py-10 lg:px-12 flex justify-center min-w-0;
     }
 
     .detail-content {
@@ -1168,15 +1149,15 @@
 
     /* --- Empty states --- */
     .empty-panel {
-        @apply flex flex-col items-center justify-center text-center py-10 px-5 max-w-md mx-auto;
+        @apply flex flex-col items-center justify-center text-center py-16 px-6 max-w-md mx-auto;
     }
 
     .empty-panel-icon {
-        @apply w-12 h-12 mb-4 text-text-muted;
+        @apply w-16 h-16 mb-5 text-text-muted;
     }
 
     .empty-panel-title {
-        @apply text-base font-semibold text-text-secondary mb-1.5;
+        @apply text-lg font-semibold text-text-secondary mb-2;
     }
 
     .empty-panel-desc {
@@ -1193,23 +1174,23 @@
     }
 
     .page-title {
-        @apply text-lg font-bold text-text mb-3 tracking-tight;
+        @apply text-2xl font-bold text-text mb-6 tracking-tight;
     }
 
     .page-title-accent {
-        @apply text-xl sm:text-2xl font-bold text-text mb-3 tracking-tight;
+        @apply text-3xl sm:text-4xl font-bold text-text mb-6 tracking-tight;
     }
 
     .card-title {
-        @apply text-base font-semibold text-text mb-1;
+        @apply text-xl font-semibold text-text mb-2;
     }
 
     .card-description {
-        @apply text-xs text-text-muted mb-1.5;
+        @apply text-sm text-text-muted mb-2;
     }
 
     .section-title {
-        @apply text-base font-semibold text-text mb-2 tracking-tight;
+        @apply text-xl font-semibold text-text mb-4 tracking-tight;
     }
 
     /*
@@ -1217,15 +1198,15 @@
      | eyebrow → tytuł → cienka kreska accent → dystans do meta.
      */
     .entity-header {
-        @apply mb-4;
+        @apply mb-8;
     }
 
     .entity-eyebrow {
-        @apply text-xs font-semibold uppercase tracking-[0.18em] text-accent mb-2;
+        @apply text-xs font-semibold uppercase tracking-[0.18em] text-accent mb-3;
     }
 
     .entity-breadcrumb {
-        @apply flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-muted mb-3;
+        @apply flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-muted mb-4;
     }
 
     .entity-breadcrumb a {
@@ -1237,11 +1218,11 @@
     }
 
     .entity-title {
-        @apply text-lg sm:text-xl font-bold text-text tracking-tight leading-tight mb-2 break-words;
+        @apply text-2xl sm:text-4xl font-bold text-text tracking-tight leading-tight mb-4 break-words;
     }
 
     .entity-title-row {
-        @apply flex flex-wrap items-center gap-2.5 mb-3;
+        @apply flex flex-wrap items-center gap-3 mb-4;
     }
 
     .entity-title-row .entity-title {
@@ -1253,11 +1234,11 @@
     }
 
     .entity-meta {
-        @apply bg-bg-elevated/40 border border-border-subtle rounded-lg backdrop-blur p-3 sm:p-4;
+        @apply bg-bg-elevated/40 border border-border-subtle rounded-xl backdrop-blur p-6 sm:p-7;
     }
 
     .entity-meta-grid {
-        @apply grid gap-3 sm:gap-4;
+        @apply grid gap-5 sm:gap-6;
     }
 
     .entity-meta-grid.cols-2 {
@@ -1277,12 +1258,12 @@
     }
 
     .entity-meta-value {
-        @apply text-sm text-text-secondary leading-snug;
+        @apply text-base text-text-secondary leading-relaxed;
     }
 
     /* --- Tabele --- */
     .table-wrap {
-        @apply overflow-x-auto rounded-lg p-3 bg-bg-deep border border-border;
+        @apply overflow-x-auto rounded-lg p-4 bg-bg-deep border border-border;
     }
 
     .table-surface {
@@ -1294,7 +1275,7 @@
     }
 
     .table-surface thead th {
-        @apply px-2 py-1.5 font-medium text-left;
+        @apply px-3 py-2 font-medium text-left;
     }
 
     .table-surface tbody {
@@ -1306,7 +1287,7 @@
     }
 
     .table-surface tbody td {
-        @apply px-2 py-1.5;
+        @apply px-3 py-2;
     }
 
     .score-num {
@@ -1315,11 +1296,11 @@
 
     /* --- Layout --- */
     .auth-card {
-        @apply bg-bg-elevated border border-border rounded-lg p-4 sm:p-5 max-w-md w-full;
+        @apply bg-bg-elevated border border-border rounded-2xl p-6 sm:p-12 max-w-md w-full;
     }
 
     .form-card {
-        @apply bg-bg-elevated border border-border rounded-lg p-4 sm:p-5 max-w-lg w-full mx-auto;
+        @apply bg-bg-elevated border border-border rounded-2xl p-6 sm:p-12 max-w-lg w-full mx-auto;
     }
 
     .overlay {
@@ -1328,7 +1309,7 @@
     }
 
     .index-grid {
-        @apply grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5;
+        @apply grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4;
     }
 
     .index-grid > * {
@@ -1348,7 +1329,7 @@
     }
 
     .index-card {
-        @apply bg-bg-elevated border border-border rounded-lg p-3 h-full min-h-0 flex flex-col justify-center
+        @apply bg-bg-elevated border border-border rounded-xl p-6 h-full min-h-[120px] flex flex-col justify-center
             hover:border-accent/40 hover:bg-bg-elevated-hover transition-all duration-200 cursor-pointer
             hover:-translate-y-0.5;
     }
@@ -1377,9 +1358,9 @@
 
     /* --- Friends panel --- */
     .friends-fab {
-        @apply fixed right-3 top-[3.15rem] sm:right-4 sm:top-16 z-30 px-2 py-0.5 sm:px-2 sm:py-1 rounded-md border border-border
+        @apply fixed right-3 top-[4.5rem] sm:right-4 sm:top-24 z-30 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-border
             bg-bg-deep/80 backdrop-blur-md text-accent hover:border-accent/50 hover:bg-bg-elevated
-            transition text-[11px] font-semibold shadow-lg;
+            transition text-xs sm:text-sm font-semibold shadow-lg;
     }
 
     .friends-panel {
@@ -1411,7 +1392,7 @@
     }
 
     .home-hero {
-        @apply relative text-center py-6 px-4 sm:py-8 sm:px-6 max-w-lg w-full rounded-lg border border-border overflow-hidden;
+        @apply relative text-center py-10 px-5 sm:py-16 sm:px-8 max-w-xl w-full rounded-2xl border border-border overflow-hidden;
         background: linear-gradient(
             160deg,
             color-mix(in srgb, var(--color-bg-elevated) 92%, var(--color-accent)),
