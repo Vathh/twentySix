@@ -224,6 +224,7 @@ class CompetitionShowApiTest extends TestCase
                 'results',
                 'groups',
                 'playoff',
+                'consolationPlayoff',
                 'achievements',
             ]);
     }

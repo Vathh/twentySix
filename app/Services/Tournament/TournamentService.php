@@ -150,6 +150,9 @@ class TournamentService
         int $groupsCount,
         int $playoffBracketSize,
         array $formatsByStage = [],
+        bool $hasConsolationBracket = false,
+        ?int $consolationBracketSize = null,
+        array $consolationFormatsByStage = [],
     ): bool {
         $this->startValidator->validate(
             playerCount: count($playerIds),
@@ -201,9 +204,19 @@ class TournamentService
                 $playoffBracketSize,
                 $groupAdvances,
                 $formatsByStage,
+                $hasConsolationBracket,
+                $consolationBracketSize,
+                $consolationFormatsByStage,
             ) {
                 if ($this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId)) {
                     $this->matchFormatRepository->saveForTournament($tournamentId, $formatsByStage);
+                    if ($hasConsolationBracket && $consolationFormatsByStage !== []) {
+                        $this->matchFormatRepository->saveForTournament(
+                            $tournamentId,
+                            $consolationFormatsByStage,
+                            \App\Enums\BracketSide::Consolation,
+                        );
+                    }
                     $this->tournamentRepository->saveStartConfiguration(
                         tournamentId: $tournamentId,
                         playoffBracketSize: $playoffBracketSize,
@@ -211,6 +224,8 @@ class TournamentService
                         format: \App\Enums\TournamentFormat::GroupsPlayoff,
                         groupsCount: $groupsCount,
                         groupAdvances: $groupAdvances,
+                        hasConsolationBracket: $hasConsolationBracket,
+                        consolationBracketSize: $consolationBracketSize,
                     );
                     $this->updatePointSchemeId($tournamentId, $playersAmount);
                     $this->groupStandingRepository->createEmptyStandings($tournamentId, $groups);
@@ -449,13 +464,57 @@ class TournamentService
             $playoffBracketSize,
         );
 
+        $remaining = count($playerIds) - $playoffBracketSize;
+        $hasConsolationBracket = $this->wantsConsolationBracket($validated, $requestAll);
+        $consolationBracketSize = null;
+        $consolationFormatsByStage = [];
+
+        if ($hasConsolationBracket) {
+            if ($remaining < 2) {
+                throw ValidationException::withMessages([
+                    'hasConsolationBracket' => 'Drabinka pocieszenia wymaga co najmniej 2 zawodników bez awansu.',
+                ]);
+            }
+
+            $consolationBracketSize = PlayoffByePairing::nextPowerOfTwo($remaining);
+            if ($consolationBracketSize > TournamentStartRules::MAX_BRACKET_SIZE) {
+                throw ValidationException::withMessages([
+                    'hasConsolationBracket' => 'Za dużo zawodników na drabinkę pocieszenia (max '
+                        .TournamentStartRules::MAX_BRACKET_SIZE.').',
+                ]);
+            }
+
+            $rawConsolation = $requestAll['consolationMatchFormats'] ?? [];
+            $consolationFormatsByStage = is_array($rawConsolation) && $rawConsolation !== []
+                ? TournamentMatchFormatRequestParser::fromRunInput(
+                    ['matchFormats' => $rawConsolation],
+                    $consolationBracketSize,
+                    includeGroupStage: false,
+                )
+                : TournamentMatchFormatRequestParser::defaultsForEliminationBracketSize($consolationBracketSize);
+        }
+
         return $this->tryCreateGroupGames(
             $tournamentId,
             $playerIds,
             $groupsCount,
             $playoffBracketSize,
             $formatsByStage,
+            $hasConsolationBracket,
+            $consolationBracketSize,
+            $consolationFormatsByStage,
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @param  array<string, mixed>  $requestAll
+     */
+    private function wantsConsolationBracket(array $validated, array $requestAll): bool
+    {
+        $raw = $validated['hasConsolationBracket'] ?? $requestAll['hasConsolationBracket'] ?? false;
+
+        return filter_var($raw, FILTER_VALIDATE_BOOLEAN);
     }
 
     private function generateGamesForGroup(array $group): array

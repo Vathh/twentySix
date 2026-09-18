@@ -279,6 +279,12 @@ class GameService
             return;
         }
 
+        if ($game->bracketSide === \App\Enums\BracketSide::Consolation) {
+            $this->recordConsolationResults($dto, $game);
+
+            return;
+        }
+
         if (! in_array($round, [
             GameStage::FINAL->value,
             GameStage::THIRD->value,
@@ -312,6 +318,53 @@ class GameService
                 1,
             );
         }
+    }
+
+    private function recordConsolationResults(
+        \App\DTO\GameResultDTO $dto,
+        \App\Domain\Game\PlayoffGameDomain $game,
+    ): void {
+        $round = $game->round;
+        if (in_array($round, [GameStage::SEMI->value], true)) {
+            return;
+        }
+
+        $tournament = $this->tournamentRepository->findModel($game->tournamentId);
+        $mainSize = (int) $tournament->playoff_bracket_size;
+        $consolationSize = (int) ($tournament->consolation_bracket_size ?? $mainSize);
+
+        if ($round === GameStage::FINAL->value || $round === GameStage::THIRD->value) {
+            $stage = GameStage::from($round);
+            $winnerPlace = \App\Domain\Tournament\ConsolationPlacement::podiumWinnerPlace($stage, $mainSize);
+            if ($winnerPlace === null) {
+                return;
+            }
+
+            $this->handleTournamentResultCreating(
+                $dto->winnerId,
+                $dto->player1Id,
+                $dto->player2Id,
+                $game->tournamentId,
+                $stage,
+                $winnerPlace,
+            );
+
+            return;
+        }
+
+        $stage = $game->roundStage() ?? GameStage::QUARTER;
+        $sharedPlace = \App\Domain\Tournament\ConsolationPlacement::sharedPlace(
+            $stage,
+            $mainSize,
+            $consolationSize,
+        );
+        $loserId = $dto->winnerId === $dto->player1Id ? $dto->player2Id : $dto->player1Id;
+        $this->tournamentResultService->createForPlayoff(
+            $game->tournamentId,
+            $loserId,
+            $stage,
+            $sharedPlace,
+        );
     }
 
     private function recordDoubleElimResults(
@@ -547,8 +600,14 @@ class GameService
     private function handlePlayoffStart(int $tournamentId): void
     {
         if ($this->gameRepository->checkIfPlayoffShouldBeStarted($tournamentId)) {
-            $this->tournamentResultService->createForGroupLosers($tournamentId);
+            $tournament = $this->tournamentRepository->findModel($tournamentId);
+            if (! $tournament->has_consolation_bracket) {
+                $this->tournamentResultService->createForGroupLosers($tournamentId);
+            }
             $this->playoffService->generateBracket($tournamentId);
+            if ($tournament->has_consolation_bracket) {
+                $this->playoffService->generateConsolationBracket($tournamentId);
+            }
             try {
                 $tournament = $this->tournamentRepository->findModel($tournamentId);
                 if (TournamentDomain::fromEloquent($tournament)->canTransitionTo(TournamentStatus::PLAYOFF)) {

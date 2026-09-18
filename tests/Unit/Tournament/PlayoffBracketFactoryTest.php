@@ -43,6 +43,29 @@ class PlayoffBracketFactoryTest extends TestCase
         );
     }
 
+    public function test_consolation_prefix_namespaces_slots(): void
+    {
+        $pairs = $this->buildDistinctGroupPairs(4);
+
+        $games = $this->factory->create(
+            1,
+            4,
+            $pairs,
+            \App\Enums\BracketSide::Consolation,
+            \App\Support\Tournament\PlayoffSlotIds::CONSOLATION_PREFIX,
+        );
+
+        $slots = $games->pluck('slot')->all();
+        $this->assertContains('C_FINAL', $slots);
+        $this->assertContains('C_THIRD', $slots);
+        $this->assertContains('C_SEMI_1', $slots);
+        $this->assertNotContains('FINAL', $slots);
+
+        $semi = $games->firstWhere('slot', 'C_SEMI_1');
+        $this->assertSame(\App\Enums\BracketSide::Consolation, $semi->bracketSide);
+        $this->assertSame('C_FINAL-A', $semi->winnerDestinationSlot);
+    }
+
     public static function bracketSizeProvider(): array
     {
         return [

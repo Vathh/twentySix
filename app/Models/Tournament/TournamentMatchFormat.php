@@ -11,11 +11,16 @@ class TournamentMatchFormat extends Model
 {
     protected $fillable = [
         'tournament_id',
+        'bracket_side',
         'stage',
         'starting_score',
         'legs_to_win_set',
         'sets_to_win_match',
         'game_type',
+    ];
+
+    protected $casts = [
+        'bracket_side' => \App\Enums\BracketSide::class,
     ];
 
     /** @return BelongsTo<Tournament, $this> */

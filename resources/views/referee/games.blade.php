@@ -56,7 +56,22 @@
         </div>
     </div>
 
-    <div x-show="!loading && playoffGames.length > 0" x-cloak>
+    <div x-show="!loading && playoffGames.length > 0 && hasSplitPlayoff" class="mb-6" x-cloak>
+        <h2 class="text-sm font-semibold text-accent mb-2">Playoff</h2>
+        <div class="grid gap-2">
+            <template x-for="side in playoffSides" :key="side.id">
+                <button
+                    type="button"
+                    class="w-full text-left px-4 py-3 rounded-lg bg-bg-elevated border border-border hover:border-accent/40 transition"
+                    @click="openPlayoffSide(side.id)"
+                >
+                    <span class="font-semibold text-accent" x-text="side.title"></span>
+                </button>
+            </template>
+        </div>
+    </div>
+
+    <div x-show="!loading && playoffGames.length > 0 && !hasSplitPlayoff" x-cloak>
         <h2 class="text-sm font-semibold text-accent mb-2">Playoff</h2>
         <div class="grid gap-2">
             <template x-for="game in playoffGames" :key="'p-'+game.id">
@@ -75,7 +90,7 @@
     </div>
 
     <div
-        x-show="selectedGroup != null"
+        x-show="selectedGroup != null || selectedPlayoffSide != null"
         x-cloak
         class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-4"
         @keydown.escape.window="closeGroup()"
@@ -83,24 +98,23 @@
     >
         <div class="w-full max-w-md rounded-xl border border-border bg-bg-deep shadow-xl p-4" @click.stop>
             <div class="flex items-center justify-between mb-3">
-                <h3 class="text-lg font-semibold text-accent">
-                    Grupa <span x-text="selectedGroup"></span>
-                </h3>
+                <h3 class="text-lg font-semibold text-accent" x-text="modalTitle"></h3>
                 <button type="button" class="text-text-muted hover:text-accent text-xl leading-none" @click="closeGroup()" aria-label="Zamknij">✕</button>
             </div>
             <div class="grid gap-2 max-h-[60vh] overflow-y-auto">
-                <template x-for="game in gamesInSelectedGroup" :key="'g-'+game.id">
+                <template x-for="game in modalGames" :key="(game.type || 'g')+'-'+game.id">
                     <button
                         type="button"
                         class="w-full text-left px-4 py-3 rounded-lg bg-bg-elevated border border-border hover:border-accent/40 transition disabled:opacity-50"
                         @click="startGame(game)"
                         :disabled="lockingId != null"
                     >
+                        <div class="text-xs text-text-muted mb-0.5" x-show="selectedPlayoffSide != null" x-text="game.roundLabel || game.round || ''"></div>
                         <div class="font-semibold text-text" x-text="playerLabel(game)"></div>
-                        <div class="text-xs text-accent mt-1" x-show="lockingId === ('group-'+game.id)">Blokowanie…</div>
+                        <div class="text-xs text-accent mt-1" x-show="lockingId === ((game.type || 'group')+'-'+game.id)">Blokowanie…</div>
                     </button>
                 </template>
-                <p class="text-text-muted text-sm" x-show="gamesInSelectedGroup.length === 0">Brak meczów w grupie.</p>
+                <p class="text-text-muted text-sm" x-show="modalGames.length === 0">Brak meczów.</p>
             </div>
         </div>
     </div>

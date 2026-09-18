@@ -9,6 +9,7 @@ use App\Domain\GroupStandingDomain;
 use App\Domain\OrganizationDomain;
 use App\Domain\SeasonDomain;
 use App\Domain\Tournament\TournamentDomain;
+use App\Enums\BracketSide;
 use App\Enums\GameStage;
 use App\Models\League\League;
 use App\Models\Organization\Organization;
@@ -178,6 +179,7 @@ class CompetitionShowSerializer
             'results' => $this->mapResults($viewModel->results(), $showStageInResults),
             'groups' => $this->mapGroups($viewModel),
             'playoff' => $this->mapPlayoff($viewModel->playoffGames()),
+            'consolationPlayoff' => $this->mapPlayoff($viewModel->playoffGames(BracketSide::Consolation)),
             'achievements' => $this->mapAchievements($viewModel->achievements()),
         ];
     }
@@ -200,7 +202,7 @@ class CompetitionShowSerializer
     }
 
     /**
-     * @param  Collection<int, array{player: mixed, place: mixed, points: mixed, stage: mixed}>  $results
+     * @param  Collection<int, array{player: mixed, place: mixed, points: mixed, stage: mixed, stageLabel?: ?string}>  $results
      * @return list<array<string, mixed>>
      */
     private function mapResults(Collection $results, bool $showStageInResults = true): array
@@ -215,8 +217,9 @@ class CompetitionShowSerializer
                 'playerName' => $player?->name ?? '—',
                 'userId' => $player?->userId,
                 'points' => $result['points'] ?? null,
-                'stageLabel' => ($showStageInResults && $stage instanceof GameStage)
-                    ? $stage->label()
+                'stageLabel' => $showStageInResults
+                    ? ($result['stageLabel']
+                        ?? (($stage instanceof GameStage) ? $stage->label() : null))
                     : null,
             ];
         })->values()->all();

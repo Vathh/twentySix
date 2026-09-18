@@ -528,6 +528,8 @@
                     'defaultMatchFormatsByStage' => $defaultMatchFormatsByStage,
                     'hasOrganizationFormatPresets' => $hasOrganizationFormatPresets,
                     'oldMatchFormats' => $oldMatchFormats,
+                    'oldConsolationMatchFormats' => old('consolationMatchFormats', []),
+                    'hasConsolationBracket' => (bool) old('hasConsolationBracket', false),
                     'minPlayers' => $minPlayers,
                     'minPlayersPerGroup' => $minPlayersPerGroup,
                     'participantCount' => $participantCount,
@@ -698,6 +700,34 @@
                             Drabinka playoff: <span x-text="$data.playoffBracketSize"></span> graczy awansujących
                         </p>
 
+                        <div class="w-full max-w-2xl rounded-lg border border-border bg-bg/40 p-4"
+                             x-show="tournamentFormat === 'groups_playoff' && canEnableConsolation"
+                             x-cloak>
+                            <label class="flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox"
+                                       class="mt-1"
+                                       x-model="hasConsolationBracket"
+                                       @change="onConsolationToggle()">
+                                <span>
+                                    <span class="font-medium text-text-primary">Drabinka pocieszenia</span>
+                                    <span class="block text-text-secondary/70 text-xs mt-0.5">
+                                        Osobna drabinka dla zawodników, którzy nie awansowali z grup
+                                    </span>
+                                </span>
+                            </label>
+                            <input type="hidden" name="hasConsolationBracket"
+                                   x-bind:value="hasConsolationBracket ? 1 : 0">
+                            <p class="text-sm text-text-secondary mt-3"
+                               x-show="hasConsolationBracket"
+                               x-cloak>
+                                <span x-text="remainingAfterAdvance"></span> nieawansujących → drabinka
+                                <span class="text-accent font-semibold" x-text="consolationBracketSize"></span>
+                                <template x-if="consolationByeCount > 0">
+                                    <span> (<span x-text="consolationByeCount"></span> wolnych losów)</span>
+                                </template>
+                            </p>
+                        </div>
+
                         <div class="w-full max-w-3xl rounded-lg border border-border bg-bg/40 p-4"
                              x-show="activeFormatStages.length"
                              x-cloak>
@@ -755,6 +785,61 @@
                             </div>
                         </div>
 
+                        <div class="w-full max-w-3xl rounded-lg border border-border bg-bg/40 p-4"
+                             x-show="tournamentFormat === 'groups_playoff' && hasConsolationBracket && consolationFormatStages.length"
+                             x-cloak>
+                            <p class="text-accent font-semibold text-sm mb-1">Format gry — drabinka pocieszenia</p>
+                            <p class="text-text-secondary/70 text-xs mb-4">
+                                Punkty, legi i sety osobno dla etapów drabinki pocieszenia.
+                            </p>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-text-secondary">
+                                    <thead class="text-accent">
+                                        <tr class="border-b border-border">
+                                            <th class="text-left py-2 pr-3 font-semibold">Etap</th>
+                                            <th class="text-left py-2 px-2 font-semibold">Punkty</th>
+                                            <th class="text-left py-2 px-2 font-semibold">Legi / set (pierwszy do)</th>
+                                            <th class="text-left py-2 pl-2 font-semibold">Sety / mecz (pierwszy do)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="stage in consolationFormatStages" x-bind:key="'c-'+stage.value">
+                                            <tr class="border-b border-border/60 last:border-0">
+                                                <td class="py-2 pr-3 whitespace-nowrap" x-text="stage.label"></td>
+                                                <td class="py-2 px-2">
+                                                    <select class="select-field w-full min-w-[5rem]"
+                                                            x-bind:name="'consolationMatchFormats[' + stage.value + '][startingScore]'"
+                                                            x-model.number="consolationMatchFormats[stage.value].startingScore">
+                                                        <template x-for="score in startingScoreOptions" x-bind:key="'cs-'+score">
+                                                            <option x-bind:value="score" x-text="score"></option>
+                                                        </template>
+                                                    </select>
+                                                </td>
+                                                <td class="py-2 px-2">
+                                                    <select class="select-field w-full min-w-[4rem]"
+                                                            x-bind:name="'consolationMatchFormats[' + stage.value + '][legsToWinSet]'"
+                                                            x-model.number="consolationMatchFormats[stage.value].legsToWinSet">
+                                                        <template x-for="n in 15" x-bind:key="'cl-'+n">
+                                                            <option x-bind:value="n" x-text="n"></option>
+                                                        </template>
+                                                    </select>
+                                                </td>
+                                                <td class="py-2 pl-2">
+                                                    <select class="select-field w-full min-w-[4rem]"
+                                                            x-bind:name="'consolationMatchFormats[' + stage.value + '][setsToWinMatch]'"
+                                                            x-model.number="consolationMatchFormats[stage.value].setsToWinMatch">
+                                                        <template x-for="n in 5" x-bind:key="'cset-'+n">
+                                                            <option x-bind:value="n" x-text="n"></option>
+                                                        </template>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary px-8 py-2"
                                 x-bind:disabled="participantCount < minPlayers">
                             Start turnieju
@@ -799,13 +884,17 @@
                 defaultMatchFormatsByStage: config.defaultMatchFormatsByStage ?? {},
                 hasOrganizationFormatPresets: !!config.hasOrganizationFormatPresets,
                 oldMatchFormats: config.oldMatchFormats ?? {},
+                oldConsolationMatchFormats: config.oldConsolationMatchFormats ?? {},
                 matchFormats: {},
+                consolationMatchFormats: {},
+                hasConsolationBracket: !!config.hasConsolationBracket,
                 minPlayers: config.minPlayers ?? 4,
                 minPlayersPerGroup: config.minPlayersPerGroup ?? 3,
                 minGroups: 2,
                 participantCount: config.participantCount ?? 0,
                 init() {
                     this.onParticipantCountChange(this.participantCount, { preserveUserEdits: false });
+                    this.primeConsolationMatchFormats();
                     window.addEventListener('tournament-participant-count', (e) => {
                         const next = Number(e.detail?.participantCount);
                         if (!Number.isNaN(next)) {
@@ -813,13 +902,17 @@
                         }
                     });
                     // Po zamontowaniu <select> Alpine potrafi nadpisać model pierwszą opcją (101/1/1).
-                    this.$nextTick(() => this.syncMatchFormats({ preserveUserEdits: false }));
+                    this.$nextTick(() => {
+                        this.syncMatchFormats({ preserveUserEdits: false });
+                        this.syncConsolationMatchFormats({ preserveUserEdits: false });
+                    });
                 },
                 onParticipantCountChange(next, { preserveUserEdits = true } = {}) {
                     this.participantCount = next;
                     this.refreshSeBracket();
                     this.refreshGroupAvailability();
                     this.syncMatchFormats({ preserveUserEdits });
+                    this.syncConsolationMatchFormats({ preserveUserEdits });
                     this.$nextTick(() => {
                         this.syncGroupsCount();
                         this.syncBracketSelect();
@@ -980,6 +1073,34 @@
                         ?? byGroup[String(this.playoffBracketSize)]
                         ?? null;
                 },
+                get remainingAfterAdvance() {
+                    return Math.max(0, this.participantCount - Number(this.playoffBracketSize || 0));
+                },
+                get canEnableConsolation() {
+                    return this.tournamentFormat === 'groups_playoff' && this.remainingAfterAdvance >= 2;
+                },
+                get consolationBracketSize() {
+                    const n = this.remainingAfterAdvance;
+                    if (n < 2) {
+                        return 0;
+                    }
+                    let power = 1;
+                    while (power < n) {
+                        power *= 2;
+                    }
+                    return power;
+                },
+                get consolationByeCount() {
+                    return Math.max(0, this.consolationBracketSize - this.remainingAfterAdvance);
+                },
+                get consolationFormatStages() {
+                    if (!this.hasConsolationBracket || !this.canEnableConsolation) {
+                        return [];
+                    }
+                    return this.matchFormatStagesByBracketSe[this.consolationBracketSize]
+                        ?? this.matchFormatStagesByBracketSe[String(this.consolationBracketSize)]
+                        ?? [];
+                },
                 get activeFormatStages() {
                     if (this.tournamentFormat === 'double_elimination') {
                         return this.matchFormatStagesByBracketDe[this.seBracketSize]
@@ -1007,6 +1128,39 @@
                         };
                     }
                     this.matchFormats = next;
+                },
+                primeConsolationMatchFormats() {
+                    const next = { ...this.consolationMatchFormats };
+                    for (const size of [2, 4, 8, 16, 32, 64, 128]) {
+                        const stages = this.matchFormatStagesByBracketSe[size]
+                            ?? this.matchFormatStagesByBracketSe[String(size)]
+                            ?? [];
+                        for (const stage of stages) {
+                            next[stage.value] = {
+                                ...this.defaultMatchFormat,
+                                ...(this.defaultMatchFormatsByStage[stage.value] ?? {}),
+                                ...(this.oldConsolationMatchFormats[stage.value] ?? {}),
+                                ...(this.consolationMatchFormats[stage.value] ?? {}),
+                            };
+                        }
+                    }
+                    this.consolationMatchFormats = next;
+                },
+                syncConsolationMatchFormats({ preserveUserEdits = true } = {}) {
+                    if (!this.canEnableConsolation) {
+                        this.hasConsolationBracket = false;
+                    }
+                    const stages = this.consolationFormatStages;
+                    const next = { ...this.consolationMatchFormats };
+                    for (const stage of stages) {
+                        next[stage.value] = {
+                            ...this.defaultMatchFormat,
+                            ...(this.defaultMatchFormatsByStage[stage.value] ?? {}),
+                            ...(this.oldConsolationMatchFormats[stage.value] ?? {}),
+                            ...(preserveUserEdits ? (this.consolationMatchFormats[stage.value] ?? {}) : {}),
+                        };
+                    }
+                    this.consolationMatchFormats = next;
                 },
                 syncGroupsCount() {
                     const sel = this.$refs.groupsSelect;
@@ -1046,13 +1200,19 @@
                 },
                 onFormatChange() {
                     this.syncMatchFormats({ preserveUserEdits: false });
+                    this.syncConsolationMatchFormats({ preserveUserEdits: false });
                 },
                 onGroupsChange() {
                     this.syncBracketSelect();
                     this.syncMatchFormats();
+                    this.syncConsolationMatchFormats();
                 },
                 onBracketChange() {
                     this.syncMatchFormats();
+                    this.syncConsolationMatchFormats();
+                },
+                onConsolationToggle() {
+                    this.syncConsolationMatchFormats();
                 },
             };
         }

@@ -1,10 +1,12 @@
 @php
     use App\Support\Tournament\PlayoffRoundLabel;
 
+    $consolationPlayoffGames = $consolationPlayoffGames ?? [];
     $roundKeys = array_keys($playoffGames);
     $isDe = collect($roundKeys)->contains(
         fn ($k) => preg_match('/^W\d+$/', $k) || preg_match('/^L\d+$/', $k) || in_array($k, ['GF', 'GF2'], true)
     );
+    $hasConsolation = $consolationPlayoffGames !== [];
 
     $sortDeRoundKeys = static function (array $keys, string $prefix): array {
         return collect($keys)
@@ -14,13 +16,13 @@
             ->all();
     };
 
-    $buildRounds = static function (array $keys) use ($playoffGames): array {
+    $buildRounds = static function (array $keys, array $gamesByRound): array {
         $rounds = [];
         foreach ($keys as $key) {
-            if (! isset($playoffGames[$key]) || count($playoffGames[$key]) === 0) {
+            if (! isset($gamesByRound[$key]) || count($gamesByRound[$key]) === 0) {
                 continue;
             }
-            $games = collect($playoffGames[$key])
+            $games = collect($gamesByRound[$key])
                 ->sortBy(fn ($game) => $game->slot ?? $game->id ?? 0)
                 ->values()
                 ->all();
@@ -70,49 +72,48 @@
             <div>
                 <h3 class="text-center text-lg font-semibold text-accent mb-4">Drabinka wygranych</h3>
                 @include('tournaments.partials.bracket-tree', [
-                    'rounds' => $buildRounds($sortDeRoundKeys($roundKeys, 'W')),
+                    'rounds' => $buildRounds($sortDeRoundKeys($roundKeys, 'W'), $playoffGames),
                 ])
             </div>
 
             <div>
                 <h3 class="text-center text-lg font-semibold text-accent mb-4">Drabinka przegranych</h3>
                 @include('tournaments.partials.bracket-tree', [
-                    'rounds' => $buildRounds($sortDeRoundKeys($roundKeys, 'L')),
+                    'rounds' => $buildRounds($sortDeRoundKeys($roundKeys, 'L'), $playoffGames),
                 ])
             </div>
 
             <div>
                 <h3 class="text-center text-lg font-semibold text-accent mb-4">Grand Final</h3>
                 @include('tournaments.partials.bracket-tree', [
-                    'rounds' => $buildRounds(['GF', 'GF2']),
+                    'rounds' => $buildRounds(['GF', 'GF2'], $playoffGames),
+                ])
+            </div>
+        </div>
+    @elseif($hasConsolation)
+        <div class="space-y-12">
+            <div>
+                <h3 class="text-center text-lg font-semibold text-accent mb-4">Drabinka główna</h3>
+                @include('tournaments.partials.se-bracket', [
+                    'gamesByRound' => $playoffGames,
+                    'buildRounds' => $buildRounds,
+                    'seRoundOrder' => $seRoundOrder,
+                ])
+            </div>
+            <div>
+                <h3 class="text-center text-lg font-semibold text-accent mb-4">Drabinka pocieszenia</h3>
+                @include('tournaments.partials.se-bracket', [
+                    'gamesByRound' => $consolationPlayoffGames,
+                    'buildRounds' => $buildRounds,
+                    'seRoundOrder' => $seRoundOrder,
                 ])
             </div>
         </div>
     @else
-        @php
-            $seRounds = $buildRounds($seRoundOrder);
-            $seThird = null;
-            $seMain = [];
-            foreach ($seRounds as $round) {
-                if ($round['key'] === 'THIRD') {
-                    $seThird = $round;
-                    continue;
-                }
-                $seMain[] = $round;
-            }
-        @endphp
-
-        @include('tournaments.partials.bracket-tree', ['rounds' => $seMain])
-
-        @if($seThird !== null)
-            <div class="bracket-third">
-                <p class="bracket-third-label">{{ $seThird['label'] }}</p>
-                @foreach($seThird['games'] as $game)
-                    <div class="bracket-slot-body">
-                        @include('tournaments.partials.bracket-game', ['game' => $game])
-                    </div>
-                @endforeach
-            </div>
-        @endif
+        @include('tournaments.partials.se-bracket', [
+            'gamesByRound' => $playoffGames,
+            'buildRounds' => $buildRounds,
+            'seRoundOrder' => $seRoundOrder,
+        ])
     @endif
 </div>

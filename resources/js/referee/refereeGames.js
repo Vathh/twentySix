@@ -27,6 +27,7 @@ export function registerRefereeGames(Alpine) {
         lockingId: null,
         error: '',
         selectedGroup: null,
+        selectedPlayoffSide: null,
 
         init() {
             this.session = requireRefereeSessionOrRedirect();
@@ -51,6 +52,28 @@ export function registerRefereeGames(Alpine) {
                 );
         },
 
+        get mainPlayoffGames() {
+            return this.playoffGames.filter((g) => g.bracketSide !== 'consolation');
+        },
+
+        get consolationPlayoffGames() {
+            return this.playoffGames.filter((g) => g.bracketSide === 'consolation');
+        },
+
+        get hasSplitPlayoff() {
+            return this.mainPlayoffGames.length > 0 && this.consolationPlayoffGames.length > 0;
+        },
+
+        get playoffSides() {
+            if (!this.hasSplitPlayoff) {
+                return [];
+            }
+            return [
+                { id: 'main', title: 'Drabinka główna' },
+                { id: 'consolation', title: 'Drabinka pocieszenia' },
+            ];
+        },
+
         get groups() {
             const set = new Set(
                 this.groupGames
@@ -67,6 +90,35 @@ export function registerRefereeGames(Alpine) {
             return this.groupGames.filter(
                 (g) => g.groupNumber === this.selectedGroup,
             );
+        },
+
+        get gamesInSelectedPlayoffSide() {
+            if (this.selectedPlayoffSide === 'consolation') {
+                return this.consolationPlayoffGames;
+            }
+            if (this.selectedPlayoffSide === 'main') {
+                return this.mainPlayoffGames;
+            }
+            return [];
+        },
+
+        get modalGames() {
+            return this.selectedPlayoffSide != null
+                ? this.gamesInSelectedPlayoffSide
+                : this.gamesInSelectedGroup;
+        },
+
+        get modalTitle() {
+            if (this.selectedPlayoffSide === 'consolation') {
+                return 'Drabinka pocieszenia';
+            }
+            if (this.selectedPlayoffSide === 'main') {
+                return 'Drabinka główna';
+            }
+            if (this.selectedGroup != null) {
+                return `Grupa ${this.selectedGroup}`;
+            }
+            return 'Wybierz mecz';
         },
 
         async handleUnauthorized() {
@@ -99,11 +151,18 @@ export function registerRefereeGames(Alpine) {
         },
 
         openGroup(group) {
+            this.selectedPlayoffSide = null;
             this.selectedGroup = group;
+        },
+
+        openPlayoffSide(side) {
+            this.selectedGroup = null;
+            this.selectedPlayoffSide = side;
         },
 
         closeGroup() {
             this.selectedGroup = null;
+            this.selectedPlayoffSide = null;
         },
 
         async startGame(game) {

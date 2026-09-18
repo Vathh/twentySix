@@ -61,7 +61,7 @@ class TournamentDataViewModel
         return $result;
     }
 
-    public function playoffGames(): array
+    public function playoffGames(?\App\Enums\BracketSide $side = null): array
     {
         $result = [];
 
@@ -70,10 +70,23 @@ class TournamentDataViewModel
             ->map(fn ($game) => PlayoffGameDomain::fromEloquent($game, ['player1', 'player2', 'winner']));
 
         foreach ($playoffGameDomains as $game) {
+            if ($side !== null) {
+                if ($game->bracketSide !== $side) {
+                    continue;
+                }
+            } elseif ($game->bracketSide === \App\Enums\BracketSide::Consolation) {
+                continue;
+            }
             $result[$game->round][] = $game;
         }
 
         return $result;
+    }
+
+    public function hasConsolationPlayoff(): bool
+    {
+        return $this->tournament->playoffGames
+            ->contains(fn ($game) => ($game->bracket_side?->value ?? (string) $game->bracket_side) === 'consolation');
     }
 
     /**
@@ -295,6 +308,27 @@ class TournamentDataViewModel
                 'place' => $result->place,
                 'points' => $result->points,
                 'stage' => $result->eliminationStage,
+                'stageLabel' => $this->resultStageLabel($result),
             ]);
+    }
+
+    private function resultStageLabel(\App\Domain\Tournament\TournamentResultDomain $result): ?string
+    {
+        $stage = $result->eliminationStage;
+        if ($stage === null) {
+            return null;
+        }
+
+        $mainSize = $this->tournament->playoff_bracket_size;
+        $isConsolation = (bool) $this->tournament->has_consolation_bracket
+            && $mainSize !== null
+            && $result->place !== null
+            && $result->place > (int) $mainSize
+            && $stage !== \App\Enums\GameStage::GROUP;
+
+        return \App\Support\Tournament\PlayoffRoundLabel::resultLabel(
+            $stage->value,
+            $isConsolation ? \App\Enums\BracketSide::Consolation : \App\Enums\BracketSide::Main,
+        );
     }
 }

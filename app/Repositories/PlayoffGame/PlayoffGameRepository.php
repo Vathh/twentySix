@@ -184,6 +184,7 @@ class PlayoffGameRepository
     public function countByRoundForTournament(int $tournamentId): Collection
     {
         return PlayoffGame::where('tournament_id', $tournamentId)
+            ->where('bracket_side', '!=', \App\Enums\BracketSide::Consolation->value)
             ->get()
             ->countBy(fn (PlayoffGame $game) => $game->round instanceof \App\Enums\GameStage
                 ? $game->round->value

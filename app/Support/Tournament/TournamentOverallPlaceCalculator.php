@@ -33,6 +33,9 @@ final class TournamentOverallPlaceCalculator
             foreach ($eliminated->filter(
                 fn (array $row) => $row['elimination_stage'] === $stage,
             ) as $row) {
+                if ($row['current_place'] !== null) {
+                    continue;
+                }
                 $assignments[$row['player_id']] = $sharedPlace;
             }
         }
@@ -50,6 +53,9 @@ final class TournamentOverallPlaceCalculator
 
         foreach ($groupEliminated as $players) {
             foreach ($players as $row) {
+                if ($row['current_place'] !== null || isset($assignments[$row['player_id']])) {
+                    continue;
+                }
                 $assignments[$row['player_id']] = $nextPlace;
             }
 
@@ -73,6 +79,11 @@ final class TournamentOverallPlaceCalculator
         }
 
         return $places;
+    }
+
+    public function sharedPlace(int $playoffBracketSize, GameStage $stage): ?int
+    {
+        return $this->playoffSharedPlaces($playoffBracketSize)[$stage->value] ?? null;
     }
 
     private function losersCountAtStage(GameStage $stage, int $playoffBracketSize): int

@@ -8,6 +8,7 @@ use App\Domain\Game\WinnerDestination;
 use App\Domain\GameScoring\MatchFormat;
 use App\Domain\Tournament\DoubleEliminationMatchFormatMap;
 use App\DTO\GameResultDTO;
+use App\Enums\BracketSide;
 use App\Enums\GameType;
 use App\Enums\GrandFinalMode;
 use App\Enums\PlayerSlot;
@@ -51,11 +52,89 @@ class PlayoffService
 
         $playoffGames = $this->bracketFactory->create($tournamentId, $bracketSize, $firstRoundPairs);
 
-        $formatsByStage = $this->matchFormatRepository->getForTournament($tournamentId)
-            ->mapWithKeys(fn ($row) => [$row->stage => $row->toMatchFormat()])
+        $this->gameRepository->createMany(
+            $playoffGames,
+            $this->formatsByStage($tournamentId, BracketSide::Main),
+        );
+    }
+
+    public function generateConsolationBracket(int $tournamentId): void
+    {
+        $tournament = $this->tournamentRepository->findModel($tournamentId);
+        if (! $tournament->has_consolation_bracket) {
+            return;
+        }
+
+        $consolationSize = (int) ($tournament->consolation_bracket_size ?? 0);
+        if ($consolationSize < 2) {
+            return;
+        }
+
+        $advancesByGroup = $this->tournamentRepository->getGroupAdvancesByGroupNumber($tournamentId);
+        $remaining = $this->groupStandingRepository
+            ->getGroupLosers($tournamentId, $advancesByGroup)
+            ->map(fn ($standing) => [
+                'player_id' => $standing->player->id,
+                'group_number' => $standing->groupNumber,
+            ])
+            ->values()
             ->all();
 
-        $this->gameRepository->createMany($playoffGames, $formatsByStage);
+        if (count($remaining) < 2) {
+            return;
+        }
+
+        $firstRoundPairs = $this->pairConsolationFirstRound($remaining, $consolationSize);
+        $playoffGames = $this->bracketFactory->create(
+            $tournamentId,
+            $consolationSize,
+            $firstRoundPairs,
+            BracketSide::Consolation,
+            PlayoffSlotIds::CONSOLATION_PREFIX,
+        );
+
+        $this->gameRepository->createMany(
+            $playoffGames,
+            $this->formatsByStage($tournamentId, BracketSide::Consolation),
+        );
+        $this->resolveScheduledByes($tournamentId);
+    }
+
+    /**
+     * @param  list<array{player_id: int, group_number: int}>  $remaining
+     * @return list<array{0: int, 1: int}>
+     */
+    private function pairConsolationFirstRound(array $remaining, int $bracketSize): array
+    {
+        $byePlayerId = $this->playerRepository->byePlayerId();
+
+        if (count($remaining) === $bracketSize) {
+            try {
+                return PlayoffFirstRoundPairing::pair($remaining);
+            } catch (\Throwable) {
+                return PlayoffByePairing::pair(
+                    array_column($remaining, 'player_id'),
+                    $bracketSize,
+                    $byePlayerId,
+                );
+            }
+        }
+
+        return PlayoffByePairing::pair(
+            array_column($remaining, 'player_id'),
+            $bracketSize,
+            $byePlayerId,
+        );
+    }
+
+    /**
+     * @return array<string, MatchFormat>
+     */
+    private function formatsByStage(int $tournamentId, BracketSide $side): array
+    {
+        return $this->matchFormatRepository->getForTournament($tournamentId, $side)
+            ->mapWithKeys(fn ($row) => [$row->stage => $row->toMatchFormat()])
+            ->all();
     }
 
     /**
@@ -71,11 +150,10 @@ class PlayoffService
         );
         $playoffGames = $this->bracketFactory->create($tournamentId, $bracketSize, $firstRoundPairs);
 
-        $formatsByStage = $this->matchFormatRepository->getForTournament($tournamentId)
-            ->mapWithKeys(fn ($row) => [$row->stage => $row->toMatchFormat()])
-            ->all();
-
-        $this->gameRepository->createMany($playoffGames, $formatsByStage);
+        $this->gameRepository->createMany(
+            $playoffGames,
+            $this->formatsByStage($tournamentId, BracketSide::Main),
+        );
         $this->resolveScheduledByes($tournamentId);
     }
 
@@ -101,9 +179,7 @@ class PlayoffService
             $reset,
         );
 
-        $formatsByStage = $this->matchFormatRepository->getForTournament($tournamentId)
-            ->mapWithKeys(fn ($row) => [$row->stage => $row->toMatchFormat()])
-            ->all();
+        $formatsByStage = $this->formatsByStage($tournamentId, BracketSide::Main);
 
         $this->gameRepository->createMany(
             $playoffGames,
@@ -211,13 +287,12 @@ class PlayoffService
         } elseif (
             $loserId > 0
             && $gameToUpdate->winnerDestinationSlot !== null
-            && WinnerDestination::parse($gameToUpdate->winnerDestinationSlot)->playoffSlot === PlayoffSlotIds::FINAL
+            && PlayoffSlotIds::isFinalSlot(WinnerDestination::parse($gameToUpdate->winnerDestinationSlot)->playoffSlot)
         ) {
-            // SE: przegrany półfinału → mecz o 3.
             $winnerDestination = WinnerDestination::parse($gameToUpdate->winnerDestinationSlot);
             $this->advancePlayer(
                 $gameToUpdate->tournamentId,
-                PlayoffSlotIds::THIRD,
+                PlayoffSlotIds::thirdSlotForFinal($winnerDestination->playoffSlot),
                 $loserId,
                 $winnerDestination->playerSlot,
             );

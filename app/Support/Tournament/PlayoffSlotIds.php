@@ -14,6 +14,32 @@ final class PlayoffSlotIds
 
     public const THIRD = 'THIRD';
 
+    public const CONSOLATION_PREFIX = 'C_';
+
+    public static function withPrefix(string $slot, string $prefix): string
+    {
+        return $prefix === '' ? $slot : $prefix.$slot;
+    }
+
+    public static function unprefixed(string $slot): string
+    {
+        return str_starts_with($slot, self::CONSOLATION_PREFIX)
+            ? substr($slot, strlen(self::CONSOLATION_PREFIX))
+            : $slot;
+    }
+
+    public static function isFinalSlot(string $slot): bool
+    {
+        return self::unprefixed($slot) === self::FINAL;
+    }
+
+    public static function thirdSlotForFinal(string $finalSlot): string
+    {
+        return str_starts_with($finalSlot, self::CONSOLATION_PREFIX)
+            ? self::CONSOLATION_PREFIX.self::THIRD
+            : self::THIRD;
+    }
+
     public static function forStage(GameStage $stage, int $index1Based): string
     {
         return match ($stage) {
@@ -52,6 +78,8 @@ final class PlayoffSlotIds
 
     public static function isTerminal(string $slot): bool
     {
-        return $slot === self::FINAL || $slot === self::THIRD;
+        $bare = self::unprefixed($slot);
+
+        return $bare === self::FINAL || $bare === self::THIRD;
     }
 }

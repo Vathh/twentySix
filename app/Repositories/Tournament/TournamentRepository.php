@@ -169,6 +169,8 @@ class TournamentRepository
         ?int $groupsCount = null,
         ?array $groupAdvances = null,
         ?\App\Enums\GrandFinalMode $grandFinalMode = null,
+        bool $hasConsolationBracket = false,
+        ?int $consolationBracketSize = null,
     ): void {
         Tournament::where('id', $tournamentId)->update([
             'format' => $format,
@@ -176,6 +178,8 @@ class TournamentRepository
             'groups_count' => $groupsCount,
             'playoff_bracket_size' => $playoffBracketSize,
             'group_advances' => $groupAdvances,
+            'has_consolation_bracket' => $hasConsolationBracket,
+            'consolation_bracket_size' => $consolationBracketSize,
             'tablets_count' => $tabletsCount,
         ]);
     }
@@ -282,6 +286,8 @@ class TournamentRepository
             'groups_count' => null,
             'playoff_bracket_size' => null,
             'group_advances' => null,
+            'has_consolation_bracket' => false,
+            'consolation_bracket_size' => null,
             'tablets_count' => null,
         ]);
     }

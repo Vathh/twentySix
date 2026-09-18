@@ -40,7 +40,7 @@
                     <td class="px-2 py-2 text-center tabular-nums">{{ $result['points'] ?? '—' }}</td>
                 @endif
                 @if($showStageColumn ?? true)
-                    <td class="px-2 py-2 text-center flex-wrap">{{ $result['stage']?->label() ?? '—' }}</td>
+                    <td class="px-2 py-2 text-center flex-wrap">{{ $result['stageLabel'] ?? $result['stage']?->label() ?? '—' }}</td>
                 @endif
             </tr>
         @empty

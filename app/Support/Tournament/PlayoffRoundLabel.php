@@ -2,6 +2,7 @@
 
 namespace App\Support\Tournament;
 
+use App\Enums\BracketSide;
 use App\Enums\GameStage;
 
 /**
@@ -51,6 +52,16 @@ final class PlayoffRoundLabel
         }
 
         return $round;
+    }
+
+    public static function resultLabel(string $round, BracketSide $side = BracketSide::Main): string
+    {
+        $base = self::label($round);
+        if ($side === BracketSide::Consolation) {
+            return 'Pocieszenie — '.$base;
+        }
+
+        return $base;
     }
 
     /** Etykieta dla widza (overlay / transmisja). */

@@ -4,6 +4,7 @@ namespace App\Factories;
 
 use App\Domain\Game\PlayoffGameDomain;
 use App\Domain\Tournament\TournamentStartRules;
+use App\Enums\BracketSide;
 use App\Enums\GameStage;
 use App\Support\Tournament\PlayoffSlotIds;
 use Illuminate\Support\Collection;
@@ -15,8 +16,13 @@ class PlayoffBracketFactory
      * @param  list<array{0: int|null, 1: int|null}>  $firstRoundPairs  null = TBD (nie BYE)
      * @return Collection<int, PlayoffGameDomain>
      */
-    public function create(int $tournamentId, int $bracketSize, array $firstRoundPairs): Collection
-    {
+    public function create(
+        int $tournamentId,
+        int $bracketSize,
+        array $firstRoundPairs,
+        BracketSide $bracketSide = BracketSide::Main,
+        string $slotPrefix = '',
+    ): Collection {
         if (! TournamentStartRules::isPowerOfTwo($bracketSize)
             || $bracketSize < 2
             || $bracketSize > TournamentStartRules::MAX_BRACKET_SIZE
@@ -38,7 +44,7 @@ class PlayoffBracketFactory
             ));
         }
 
-        $games = $this->buildTree($tournamentId, $bracketSize);
+        $games = $this->buildTree($tournamentId, $bracketSize, $bracketSide, $slotPrefix);
 
         return $this->assignFirstRoundPlayers($games, $firstRoundPairs, $bracketSize);
     }
@@ -46,8 +52,12 @@ class PlayoffBracketFactory
     /**
      * @return Collection<int, PlayoffGameDomain>
      */
-    private function buildTree(int $tournamentId, int $bracketSize): Collection
-    {
+    private function buildTree(
+        int $tournamentId,
+        int $bracketSize,
+        BracketSide $bracketSide,
+        string $slotPrefix,
+    ): Collection {
         $games = collect();
         $matchCount = intdiv($bracketSize, 2);
 
@@ -58,14 +68,16 @@ class PlayoffBracketFactory
                 $games->push(PlayoffGameDomain::createForBracket(
                     tournamentId: $tournamentId,
                     round: GameStage::FINAL,
-                    slot: PlayoffSlotIds::FINAL,
+                    slot: PlayoffSlotIds::withPrefix(PlayoffSlotIds::FINAL, $slotPrefix),
+                    bracketSide: $bracketSide,
                 ));
 
                 if ($bracketSize >= 4) {
                     $games->push(PlayoffGameDomain::createForBracket(
                         tournamentId: $tournamentId,
                         round: GameStage::THIRD,
-                        slot: PlayoffSlotIds::THIRD,
+                        slot: PlayoffSlotIds::withPrefix(PlayoffSlotIds::THIRD, $slotPrefix),
+                        bracketSide: $bracketSide,
                     ));
                 }
 
@@ -78,13 +90,17 @@ class PlayoffBracketFactory
             for ($index = 1; $index <= $matchCount; $index++) {
                 $nextIndex = intdiv($index - 1, 2) + 1;
                 $playerSlot = $index % 2 === 1 ? 'A' : 'B';
-                $targetSlot = PlayoffSlotIds::forStage($nextStage, $nextIndex);
+                $targetSlot = PlayoffSlotIds::withPrefix(
+                    PlayoffSlotIds::forStage($nextStage, $nextIndex),
+                    $slotPrefix,
+                );
 
                 $games->push(PlayoffGameDomain::createForBracket(
                     tournamentId: $tournamentId,
                     round: $stage,
-                    slot: PlayoffSlotIds::forStage($stage, $index),
+                    slot: PlayoffSlotIds::withPrefix(PlayoffSlotIds::forStage($stage, $index), $slotPrefix),
                     winnerDestinationSlot: PlayoffSlotIds::destination($targetSlot, $playerSlot),
+                    bracketSide: $bracketSide,
                 ));
             }
 

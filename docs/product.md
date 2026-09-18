@@ -153,6 +153,9 @@ Wybór **tylko przy starcie** (kreator) — po wystartowaniu bez zmiany typu.
 
 - Faza grupowa + playoff; playoff **bez bye** (pełna drabinka z awansujących).
 - Limit awansujących do drabinki: **max 128** (wcześniej MVP: 32 — podnosimy wraz z generycznym silnikiem).
+- **Opcjonalna drabinka pocieszenia** (checkbox przy starcie, domyślnie wyłączony): po grupach powstają **dwie niezależne drabinki SE** — główna dla awansujących (o tytuł) oraz pocieszenia dla pozostałych. To **nie** jest double elimination (przegrana w głównej nie zrzuca do pocieszenia).
+- Pocieszenie: rozmiar `nextPowerOfTwo(N − awansujący)`; **bye dozwolone**; format meczu per etap osobno. Miejsca pocieszenia zaczynają się od `playoff_bracket_size + 1` (mistrz pocieszenia nie jest mistrzem turnieju).
+- UI: **Drabinka główna** / **Drabinka pocieszenia**. Na tablecie sędziowskim — dwa kafelki jak grupy.
 
 #### `single_elimination`
 
@@ -191,6 +194,7 @@ Dla **`groups_playoff`:**
    - Maksymalnie **128 awansujących** do drabinki.
    - Awansujących musi być **≥ liczba grup** (minimum 1 z każdej grupy) i **≤ liczba zawodników**.
    - Miejsca awansujące rozkładane **proporcjonalnie** do wielkości grup; nadwyżka trafia do większych (wcześniejszych) grup. Przy starcie zapisywany jest rozkład per grupa (`group_advances`).
+   - **Drabinka pocieszenia** — opcjonalny checkbox (domyślnie nie). Wymaga ≥ 2 zawodników bez awansu. Po włączeniu: podgląd rozmiaru (+ wolne losy) i osobna tabela formatu gry per etap.
 3. **Kod logowania tabletu** — jeden wspólny kod 8-znakowy + QR (niezależnie od grup/drabinki).
 4. Losowy podział puli zawodników do grup (reguła wielkości — patrz niżej).
 5. Round-robin w każdej grupie.

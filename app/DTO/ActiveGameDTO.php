@@ -19,6 +19,7 @@ class ActiveGameDTO
         public ?int $groupNumber,
         public ?string $round = null,
         public ?string $roundLabel = null,
+        public ?string $bracketSide = null,
     ) {}
 
     public static function fromGame(GroupGameDomain $game): ActiveGameDTO
@@ -38,6 +39,7 @@ class ActiveGameDTO
             groupNumber: $game->groupNumber,
             round: null,
             roundLabel: null,
+            bracketSide: null,
         );
     }
 
@@ -77,6 +79,7 @@ class ActiveGameDTO
             groupNumber: null,
             round: $game->round,
             roundLabel: $game->roundLabel(),
+            bracketSide: $game->bracketSide->value,
         );
     }
 }

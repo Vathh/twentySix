@@ -116,6 +116,7 @@ class TournamentController extends Controller
             'players' => $viewModel->players(),
             'games' => $viewModel->games(),
             'playoffGames' => $viewModel->playoffGames(),
+            'consolationPlayoffGames' => $viewModel->playoffGames(\App\Enums\BracketSide::Consolation),
             'groupNumbers' => $viewModel->groupNumbers(),
             'groupPlayoffHighlights' => $viewModel->groupPlayoffHighlights(),
             'achievements' => $viewModel->achievements(),
@@ -433,6 +434,7 @@ class TournamentController extends Controller
             'groupsCount' => ['required_if:tournamentFormat,groups_playoff', 'nullable', 'integer', 'min:2'],
             'playoffBracketSize' => ['required_if:tournamentFormat,groups_playoff', 'nullable', 'integer', 'min:4'],
             'grandFinalMode' => ['required_if:tournamentFormat,double_elimination', 'nullable', 'string', 'in:single,reset'],
+            'hasConsolationBracket' => ['sometimes', 'boolean'],
         ]);
 
         try {

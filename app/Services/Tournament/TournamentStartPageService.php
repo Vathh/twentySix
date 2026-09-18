@@ -178,6 +178,7 @@ class TournamentStartPageService
             'matchFormatStagesByBracketSe' => $matchFormatStagesByBracketSe,
             'matchFormatStagesByBracketDe' => $matchFormatStagesByBracketDe,
             'oldMatchFormats' => old('matchFormats', []),
+            'oldConsolationMatchFormats' => old('consolationMatchFormats', []),
         ];
     }
 
