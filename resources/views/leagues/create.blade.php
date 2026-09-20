@@ -16,7 +16,7 @@
             <input class="mb-3 input-field" type="text" id="leagueName" name="leagueName"
                    value="{{ old('leagueName') }}" required maxlength="80">
 
-            <label class="form-label text-accent" for="description">Opis</label>
+            <label class="form-label text-accent" for="description">Opis (opcjonalnie)</label>
             <textarea class="input-field mb-6 h-24 resize-none" id="description" name="description" maxlength="500">{{ old('description') }}</textarea>
 
             <h2 class="section-title">Szczeble</h2>

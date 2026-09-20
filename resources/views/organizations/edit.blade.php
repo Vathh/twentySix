@@ -26,11 +26,12 @@
                     required
                 >
 
-                <label class="form-label text-accent" for="description">Opis organizacji</label>
+                <label class="form-label text-accent" for="description">Opis organizacji (opcjonalnie)</label>
                 <textarea
                     class="input-field mb-2 h-32 resize-none"
                     id="description"
                     name="description"
+                    placeholder="Opis organizacji (np. lokalizacja, terminy spotkań, poziom, zasady…)"
                     maxlength="500"
                     oninput="updateCounter()"
                 >{{ old('description', $organization->description) }}</textarea>

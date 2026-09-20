@@ -47,11 +47,11 @@ class OrganizationRepository
         return $organization ? OrganizationDomain::fromEloquent($organization, ['admins']) : null;
     }
 
-    public function create(string $name, string $description, int $userId): OrganizationDomain
+    public function create(string $name, ?string $description, int $userId): OrganizationDomain
     {
         $organization = Organization::create([
             'name' => $name,
-            'description' => $description,
+            'description' => self::normalizeDescription($description),
         ]);
 
         if (! empty($userId)) {
@@ -97,12 +97,12 @@ class OrganizationRepository
     public function update(
         int $organizationId,
         string $name,
-        string $description,
+        ?string $description,
         ?array $matchFormatPresets = null,
     ): void {
         $organization = Organization::findOrFail($organizationId);
         $organization->name = $name;
-        $organization->description = $description;
+        $organization->description = self::normalizeDescription($description);
 
         if ($matchFormatPresets !== null) {
             $organization->match_format_presets = $matchFormatPresets;
@@ -126,5 +126,12 @@ class OrganizationRepository
     public function findModel(int $organizationId, array $relations = []): Organization
     {
         return Organization::with($relations)->findOrFail($organizationId);
+    }
+
+    private static function normalizeDescription(?string $description): ?string
+    {
+        $trimmed = trim((string) $description);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

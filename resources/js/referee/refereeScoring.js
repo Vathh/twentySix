@@ -13,6 +13,32 @@ import {
 
 const GAME_STATE_EVENTS = ['game.state', '.game.state'];
 
+function hasMatchProgress(state) {
+    if (!state) {
+        return false;
+    }
+    if ((state.visits?.length ?? 0) > 0) {
+        return true;
+    }
+    if ((state.legs?.length ?? 0) > 0) {
+        return true;
+    }
+    if (
+        (state.game?.player1LegsWon ?? 0) + (state.game?.player2LegsWon ?? 0) >
+        0
+    ) {
+        return true;
+    }
+    if ((state.players ?? []).some((p) => (p.legsWon ?? 0) > 0)) {
+        return true;
+    }
+    const legNumber =
+        state.currentLeg?.legNumber
+        ?? state.turn?.legNumber
+        ?? 0;
+    return Number(legNumber) > 1;
+}
+
 function normalizePayload(payload) {
     if (payload == null) {
         return null;
@@ -44,6 +70,9 @@ export function registerRefereeScoring(Alpine) {
         checkoutDartsOpen: false,
         pendingCheckoutScore: null,
         leaving: false,
+        openerOpen: false,
+        openerChosen: false,
+        chosenOpenerIndex: null,
 
         init() {
             this.session = requireRefereeSessionOrRedirect();
@@ -88,7 +117,17 @@ export function registerRefereeScoring(Alpine) {
             return this.players[1] ?? null;
         },
 
+        get hasProgress() {
+            return hasMatchProgress(this.state);
+        },
+
         get turnIndex() {
+            if (!this.hasProgress && this.chosenOpenerIndex != null) {
+                return this.chosenOpenerIndex;
+            }
+            if (!this.hasProgress && !this.openerChosen) {
+                return -1;
+            }
             const idx = this.state?.turn?.currentPlayerIndex;
             return typeof idx === 'number' ? idx : 0;
         },
@@ -168,6 +207,7 @@ export function registerRefereeScoring(Alpine) {
                 const data = await this.api('/scoring/state');
                 this.state = data;
                 this.error = '';
+                this.maybeAskOpener();
                 if (this.isFinished && !quiet) {
                     // stay on screen until user leaves
                 }
@@ -176,6 +216,36 @@ export function registerRefereeScoring(Alpine) {
                     this.error = e.message || 'Nie udało się wczytać stanu meczu.';
                 }
             }
+        },
+
+        maybeAskOpener() {
+            if (this.isFinished) {
+                this.openerOpen = false;
+                return;
+            }
+            if (this.hasProgress) {
+                this.openerChosen = true;
+                this.openerOpen = false;
+                return;
+            }
+            if (this.openerChosen) {
+                this.openerOpen = false;
+                return;
+            }
+            if ((this.players?.length ?? 0) < 2) {
+                return;
+            }
+            this.openerOpen = true;
+        },
+
+        selectOpener(index) {
+            const idx = Number(index);
+            if (!Number.isInteger(idx) || idx < 0 || idx > 1) {
+                return;
+            }
+            this.chosenOpenerIndex = idx;
+            this.openerChosen = true;
+            this.openerOpen = false;
         },
 
         connectWebSocket() {
@@ -207,13 +277,21 @@ export function registerRefereeScoring(Alpine) {
                     if (next) {
                         this.state = next;
                         this.connection = 'live';
+                        this.maybeAskOpener();
                     }
                 });
             });
         },
 
         pressDigit(d) {
-            if (this.busy || this.isFinished || this.checkoutOpen || this.checkoutDartsOpen) {
+            if (
+                this.busy
+                || this.isFinished
+                || this.openerOpen
+                || !this.openerChosen
+                || this.checkoutOpen
+                || this.checkoutDartsOpen
+            ) {
                 return;
             }
             if (this.input.length >= 3) {
@@ -228,6 +306,55 @@ export function registerRefereeScoring(Alpine) {
 
         backspace() {
             this.input = this.input.slice(0, -1);
+        },
+
+        handleWindowKey(event) {
+            if (this.busy || this.isFinished) {
+                return;
+            }
+
+            if (this.checkoutOpen) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    this.confirmCheckout();
+                }
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    this.cancelCheckout();
+                }
+                return;
+            }
+
+            if (this.checkoutDartsOpen) {
+                if (event.key === '1' || event.key === '2' || event.key === '3') {
+                    event.preventDefault();
+                    this.finishCheckout(Number(event.key));
+                }
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    this.cancelCheckout();
+                }
+                return;
+            }
+
+            if (this.openerOpen || !this.openerChosen) {
+                return;
+            }
+
+            if (event.key >= '0' && event.key <= '9') {
+                this.pressDigit(event.key);
+            }
+            if (event.key === 'Backspace') {
+                event.preventDefault();
+                this.backspace();
+            }
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                this.submitVisit();
+            }
+            if (event.key === 'Escape') {
+                this.clearInput();
+            }
         },
 
         async ensureLegId() {
@@ -260,7 +387,7 @@ export function registerRefereeScoring(Alpine) {
         },
 
         async submitVisit() {
-            if (this.busy || this.isFinished) {
+            if (this.busy || this.isFinished || this.openerOpen || !this.openerChosen) {
                 return;
             }
             const score = this.inputValue();
@@ -322,12 +449,15 @@ export function registerRefereeScoring(Alpine) {
         },
 
         confirmCheckout() {
+            if (!this.checkoutOpen) {
+                return;
+            }
             this.checkoutOpen = false;
             this.checkoutDartsOpen = true;
         },
 
         async finishCheckout(dartsInVisit) {
-            if (this.busy) {
+            if (this.busy || !this.checkoutDartsOpen) {
                 return;
             }
             const score = this.pendingCheckoutScore;
@@ -399,7 +529,7 @@ export function registerRefereeScoring(Alpine) {
         },
 
         async undo() {
-            if (this.busy || this.isFinished) {
+            if (this.busy || this.isFinished || this.openerOpen || !this.openerChosen) {
                 return;
             }
             const legId = this.resolveUndoLegId();

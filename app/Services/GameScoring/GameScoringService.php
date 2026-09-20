@@ -171,6 +171,16 @@ class GameScoringService
             }
         }
 
+        if (
+            $existing === null
+            && $dto->closedLeg
+            && ! $dto->bust
+            && $dto->remainingAfter === 0
+            && $this->gameVisitRepository->hasActiveCheckout($leg->id)
+        ) {
+            return $this->broadcastState($context, $game);
+        }
+
         $legVisits = $this->gameVisitRepository->getActiveForLeg($leg->id)
             ->where('player_id', $dto->playerId);
         if ($existing !== null) {
@@ -274,7 +284,9 @@ class GameScoringService
             throw new DomainException('Zwycięzca lega musi być uczestnikiem meczu.');
         }
 
-        return DB::transaction(function () use ($context, $game, $leg, $winnerId, $playerStats) {
+        $finishedGroupMatch = false;
+
+        $state = DB::transaction(function () use ($context, $game, $leg, $winnerId, $playerStats, &$finishedGroupMatch) {
             $legVisits = $this->gameVisitRepository->getActiveForLeg($leg->id);
 
             foreach ($playerStats as $statsDto) {
@@ -321,6 +333,7 @@ class GameScoringService
                 && $context->kind !== GameKind::LEAGUE
             ) {
                 $this->gameService->finalizeTournamentGameFromScoring($context, $freshGame);
+                $finishedGroupMatch = $context->kind === GameKind::GROUP;
             }
 
             if ($this->isFinished($freshGame)) {
@@ -342,6 +355,12 @@ class GameScoringService
 
             return $state;
         });
+
+        if ($finishedGroupMatch && $context->tournamentId !== null) {
+            $this->gameService->tryStartPlayoff($context->tournamentId);
+        }
+
+        return $state;
     }
 
     private function mergeStatsWithVisits(CloseLegPlayerStatsDTO $dto, $playerLegVisits): CloseLegPlayerStatsDTO

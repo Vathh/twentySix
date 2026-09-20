@@ -86,6 +86,11 @@ class TournamentRepository
         return Tournament::with($relations)->findOrFail($tournamentId);
     }
 
+    public function lockForUpdate(int $tournamentId): Tournament
+    {
+        return Tournament::query()->where('id', $tournamentId)->lockForUpdate()->firstOrFail();
+    }
+
     public function addAdmin(int $tournamentId, int $userId): void
     {
         Tournament::findOrFail($tournamentId)->admins()->syncWithoutDetaching([$userId]);

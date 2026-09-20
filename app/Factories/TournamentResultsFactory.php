@@ -28,7 +28,7 @@ class TournamentResultsFactory
             player: null,
             playerId: $standing->player->id,
             points: null,
-            place: $standing->place,
+            place: null,
             eliminationStage: GameStage::GROUP,
         ));
     }

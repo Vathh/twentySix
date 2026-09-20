@@ -94,7 +94,10 @@ class TournamentRefereeWebTest extends TestCase
 
         $this->get(route('referee.score', ['type' => 'group', 'id' => $game->id]))
             ->assertOk()
-            ->assertSee('Wynik wizyty', false);
+            ->assertSee('Wynik wizyty', false)
+            ->assertSee('Kto zaczyna mecz?', false)
+            ->assertSee('Enter — Tak', false)
+            ->assertSee('Klawiatura: 1 / 2 / 3', false);
 
         $this->get(route('referee.score', ['type' => 'invalid', 'id' => 1]))
             ->assertNotFound();

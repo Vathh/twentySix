@@ -47,6 +47,7 @@
             'reverb' => $reverb,
             'redirectOnFinish' => false,
             'previewDemo' => (bool) $overlayPreview,
+            'overlayFx' => true,
         ]))"
         x-init="init()"
     >
@@ -68,10 +69,6 @@
                                     <span class="game-overlay-avg-label">Avg</span>
                                     <span x-text="formatAverage(player1?.gameAverage)">{{ $liveAvg1 }}</span>
                                 </span>
-                                <span class="game-overlay-darts">
-                                    <span class="game-overlay-avg-label">Lotki</span>
-                                    <span x-text="dartsInCurrentLeg(player1?.playerId)">{{ $liveP1['dartsThrownInLeg'] ?? 0 }}</span>
-                                </span>
                             </div>
                             <span
                                 class="game-overlay-visit"
@@ -79,6 +76,9 @@
                                 x-bind:class="{
                                     'is-bust': lastVisitIsBust(player1?.playerId),
                                     'is-one-eighty': lastVisitIs180(player1?.playerId),
+                                    'is-ton-plus': lastVisitTier(player1?.playerId) === '170',
+                                    'is-high': lastVisitTier(player1?.playerId) === '140',
+                                    'is-checkout': lastVisitIsCheckout(player1?.playerId),
                                 }"
                                 x-text="lastVisitLabel(player1?.playerId)"
                                 x-cloak
@@ -147,10 +147,6 @@
                         </div>
                         <div class="game-overlay-meta">
                             <div class="game-overlay-meta-stats">
-                                <span class="game-overlay-darts">
-                                    <span class="game-overlay-avg-label">Lotki</span>
-                                    <span x-text="dartsInCurrentLeg(player2?.playerId)">{{ $liveP2['dartsThrownInLeg'] ?? 0 }}</span>
-                                </span>
                                 <span class="game-overlay-avg">
                                     <span class="game-overlay-avg-label">Avg</span>
                                     <span x-text="formatAverage(player2?.gameAverage)">{{ $liveAvg2 }}</span>
@@ -162,6 +158,9 @@
                                 x-bind:class="{
                                     'is-bust': lastVisitIsBust(player2?.playerId),
                                     'is-one-eighty': lastVisitIs180(player2?.playerId),
+                                    'is-ton-plus': lastVisitTier(player2?.playerId) === '170',
+                                    'is-high': lastVisitTier(player2?.playerId) === '140',
+                                    'is-checkout': lastVisitIsCheckout(player2?.playerId),
                                 }"
                                 x-text="lastVisitLabel(player2?.playerId)"
                                 x-cloak
@@ -171,7 +170,25 @@
                     <span class="game-overlay-rail" aria-hidden="true"></span>
                 </div>
 
-                <div class="game-overlay-180" x-show="flash180" x-cloak x-transition.opacity.duration.200ms>180</div>
+                <div
+                    class="game-overlay-callout"
+                    x-show="flashCallout"
+                    x-cloak
+                    x-bind:class="calloutClass"
+                >
+                    <span
+                        class="game-overlay-callout-kicker"
+                        x-show="flashCallout?.type === 'shot'"
+                        x-cloak
+                    >GAME SHOT</span>
+                    <span class="game-overlay-callout-main" x-text="calloutMainText"></span>
+                    <span
+                        class="game-overlay-callout-sub"
+                        x-show="calloutSubText"
+                        x-text="calloutSubText"
+                        x-cloak
+                    ></span>
+                </div>
             </div>
             @if(filled($overlayEvent) || filled($overlayRound))
                 <div class="game-overlay-footer">

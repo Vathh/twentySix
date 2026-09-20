@@ -83,6 +83,24 @@ class OrganizationControllerTest extends TestCase
         ]);
     }
 
+    public function test_organization_can_be_created_without_description(): void
+    {
+        $this->actingAs($this->adminUser);
+
+        $response = $this->post('/organizations', [
+            'organizationName' => 'Org bez opisu',
+            'description' => '',
+        ]);
+
+        $response->assertRedirect('/organizations');
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('organizations', [
+            'name' => 'Org bez opisu',
+            'description' => null,
+        ]);
+    }
+
     public function test_user_without_permission_cannot_create_organization(): void
     {
         $this->actingAs($this->regularUser);
@@ -126,6 +144,26 @@ class OrganizationControllerTest extends TestCase
             'id' => $organization->id,
             'name' => 'Updated Organization',
             'description' => 'New Description',
+        ]);
+    }
+
+    public function test_admin_can_clear_organization_description(): void
+    {
+        $this->actingAs($this->adminUser);
+        $organization = Organization::create(['name' => 'Test Organization', 'description' => 'Old']);
+        $organization->admins()->attach($this->adminUser->id);
+
+        $response = $this->put("/organizations/{$organization->id}", [
+            'organizationName' => 'Test Organization',
+            'description' => '',
+        ]);
+
+        $response->assertRedirect("/organizations/{$organization->id}");
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('organizations', [
+            'id' => $organization->id,
+            'description' => null,
         ]);
     }
 

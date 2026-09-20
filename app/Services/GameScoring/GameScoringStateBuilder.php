@@ -73,6 +73,7 @@ class GameScoringStateBuilder
             : 0;
 
         return ScoringStateContract::enrichH2h([
+            'stateVersion' => $this->gameVisitRepository->scoringStateVersionForGameLegs($legIds),
             'legOpenerIndex' => $legOpenerIndex,
             'game' => [
                 'id' => $context->gameId,
@@ -102,18 +103,11 @@ class GameScoringStateBuilder
                 'finishedAt' => $leg->finished_at?->toIso8601String(),
             ])->values()->all(),
             'visits' => $openLeg
-                ? $allVisits->where('game_leg_id', $openLeg->id)->map(fn ($v) => [
-                    'id' => $v->id,
-                    'playerId' => $v->player_id,
-                    'visitNumber' => $v->visit_number,
-                    'score' => $v->score,
-                    'remainingBefore' => $v->remaining_before,
-                    'remainingAfter' => $v->remaining_after,
-                    'dartsInVisit' => $v->darts_in_visit,
-                    'closedLeg' => $v->closed_leg,
-                    'bust' => $v->bust,
-                ])->values()->all()
+                ? $allVisits->where('game_leg_id', $openLeg->id)->map(
+                    fn ($visit) => $this->serializeVisit($visit),
+                )->values()->all()
                 : [],
+            'lastEvent' => $this->lastEventFromVisits($allVisits),
         ]);
     }
 
@@ -185,5 +179,53 @@ class GameScoringStateBuilder
             'legsAverages' => $legsAverages,
             'dartsPerLeg' => $dartsPerLeg,
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeVisit(object $visit): array
+    {
+        return [
+            'id' => $visit->id,
+            'playerId' => $visit->player_id,
+            'visitNumber' => $visit->visit_number,
+            'score' => $visit->score,
+            'remainingBefore' => $visit->remaining_before,
+            'remainingAfter' => $visit->remaining_after,
+            'dartsInVisit' => $visit->darts_in_visit,
+            'closedLeg' => (bool) $visit->closed_leg,
+            'bust' => (bool) $visit->bust,
+        ];
+    }
+
+    /**
+     * Ostatnia wizyta w całym meczu (także po zamknięciu lega) — overlay / callout.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function lastEventFromVisits($allVisits): ?array
+    {
+        $last = $allVisits
+            ->sortBy([
+                ['id', 'asc'],
+            ])
+            ->last();
+
+        if ($last === null) {
+            return null;
+        }
+
+        $event = $this->serializeVisit($last);
+
+        if ((bool) $last->closed_leg) {
+            $event['legDarts'] = GameStatisticsCalculator::dartsThrown(
+                $allVisits
+                    ->where('game_leg_id', $last->game_leg_id)
+                    ->where('player_id', $last->player_id)
+            );
+        }
+
+        return $event;
     }
 }

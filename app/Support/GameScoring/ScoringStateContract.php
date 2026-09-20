@@ -109,6 +109,7 @@ final class ScoringStateContract
         $rev = (int) ($currentLeg['id'] ?? 0) * 1_000_000;
         $rev += (int) ($game['player1LegsWon'] ?? 0) * 10_000;
         $rev += (int) ($game['player2LegsWon'] ?? 0) * 1_000;
+        $rev += (int) ($payload['stateVersion'] ?? $game['stateVersion'] ?? 0) * 1_000_000_000;
         $rev += count($visits) * 100;
 
         $last = $visits !== [] ? $visits[array_key_last($visits)] : null;

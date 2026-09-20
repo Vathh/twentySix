@@ -40,6 +40,10 @@ class PlayoffService
 
     public function generateBracket(int $tournamentId): void
     {
+        if ($this->gameRepository->existsForTournament($tournamentId, BracketSide::Main)) {
+            return;
+        }
+
         $advancesByGroup = $this->tournamentRepository->getGroupAdvancesByGroupNumber($tournamentId);
 
         $advancingPlayers = $this->groupStandingRepository
@@ -67,6 +71,10 @@ class PlayoffService
 
         $consolationSize = (int) ($tournament->consolation_bracket_size ?? 0);
         if ($consolationSize < 2) {
+            return;
+        }
+
+        if ($this->gameRepository->existsForTournament($tournamentId, BracketSide::Consolation)) {
             return;
         }
 

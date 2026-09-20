@@ -16,7 +16,12 @@ final class TournamentOverallPlaceCalculator
         $assignments = [];
 
         foreach ($eliminated as $row) {
-            if ($row['current_place'] !== null) {
+            // current_place jest już końcowe tylko poza grupą (podium 1–4).
+            // Dla GROUP to miejsce w grupie, nie overall — mapujemy z group_place.
+            if (
+                $row['current_place'] !== null
+                && $row['elimination_stage'] !== GameStage::GROUP
+            ) {
                 $assignments[$row['player_id']] = $row['current_place'];
             }
         }
@@ -53,7 +58,7 @@ final class TournamentOverallPlaceCalculator
 
         foreach ($groupEliminated as $players) {
             foreach ($players as $row) {
-                if ($row['current_place'] !== null || isset($assignments[$row['player_id']])) {
+                if (isset($assignments[$row['player_id']])) {
                     continue;
                 }
                 $assignments[$row['player_id']] = $nextPlace;

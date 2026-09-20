@@ -72,6 +72,17 @@ class GameVisitRepository
             ->count();
     }
 
+    public function hasActiveCheckout(int $gameLegId): bool
+    {
+        return GameVisit::query()
+            ->where('game_leg_id', $gameLegId)
+            ->where('is_voided', false)
+            ->where('closed_leg', true)
+            ->where('bust', false)
+            ->where('remaining_after', 0)
+            ->exists();
+    }
+
     /**
      * @return Collection<int, GameVisit>
      */
@@ -88,6 +99,29 @@ class GameVisitRepository
             ->orderBy('visit_number')
             ->orderBy('id')
             ->get();
+    }
+
+    /**
+     * Monotoniczna generacja stanu (undo nie może jej zmniejszyć).
+     * max(id) zostaje po void, liczba voidów rośnie.
+     *
+     * @param  list<int>  $gameLegIds
+     */
+    public function scoringStateVersionForGameLegs(array $gameLegIds): int
+    {
+        if ($gameLegIds === []) {
+            return 0;
+        }
+
+        $maxId = (int) (GameVisit::query()
+            ->whereIn('game_leg_id', $gameLegIds)
+            ->max('id') ?? 0);
+        $voided = (int) GameVisit::query()
+            ->whereIn('game_leg_id', $gameLegIds)
+            ->where('is_voided', true)
+            ->count();
+
+        return ($maxId * 10_000) + $voided;
     }
 
     public function voidLastForLeg(int $gameLegId): ?GameVisit

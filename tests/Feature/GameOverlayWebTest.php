@@ -38,11 +38,13 @@ class GameOverlayWebTest extends TestCase
             ->assertDontSee('WB R1')
             ->assertSee('aria-label="Otwiera"', false)
             ->assertSee('game-overlay-opener', false)
-            ->assertSee('Lotki')
+            ->assertDontSee('Lotki')
             ->assertSee('LEGI')
             ->assertSee('images/logotyp.svg', false)
             ->assertSee('images/napis.svg', false)
             ->assertSee('game-overlay-scorebug', false)
+            ->assertSee('game-overlay-callout', false)
+            ->assertSee('GAME SHOT', false)
             ->assertDontSee('SETY')
             ->assertDontSee('Strona główna')
             ->assertDontSee('Zaloguj się')
@@ -90,6 +92,16 @@ class GameOverlayWebTest extends TestCase
         $this->get(route('games.overlay', ['type' => 'playoff', 'id' => $game->id, 'bg' => 'solid']))
             ->assertOk()
             ->assertSee('game-overlay-bg-solid', false);
+    }
+
+    public function test_overlay_keeps_polish_letters_in_player_names(): void
+    {
+        $game = $this->playoffGame(GameStatus::IN_PROGRESS, 'Wojtek Ż', 'Łukasz Ć');
+
+        $this->get(route('games.overlay', ['type' => 'playoff', 'id' => $game->id, 'preview' => 1]))
+            ->assertOk()
+            ->assertSee('Wojtek Ż', false)
+            ->assertSee('Łukasz Ć', false);
     }
 
     public function test_show_and_live_pages_include_overlay_link_when_in_progress(): void
@@ -186,12 +198,64 @@ class GameOverlayWebTest extends TestCase
         $this->getJson(route('games.live.state', ['type' => 'playoff', 'id' => $game->id]))
             ->assertOk()
             ->assertJsonPath('players.0.dartsThrownInLeg', 3)
-            ->assertJsonPath('players.1.dartsThrownInLeg', 2);
+            ->assertJsonPath('players.1.dartsThrownInLeg', 2)
+            ->assertJsonPath('lastEvent.score', 45)
+            ->assertJsonPath('lastEvent.closedLeg', false)
+            ->assertJsonPath('lastEvent.dartsInVisit', 2);
 
         $this->get(route('games.overlay', ['type' => 'playoff', 'id' => $game->id]))
             ->assertOk()
             ->assertSee('game-overlay-meta-stats', false)
-            ->assertSee('dartsThrownInLeg', false);
+            ->assertDontSee('Lotki');
+    }
+
+    public function test_live_state_last_event_reports_winner_leg_darts_on_checkout(): void
+    {
+        $game = $this->playoffGame(GameStatus::IN_PROGRESS, 'Shot Alice', 'Shot Bob');
+        $leg = GameLeg::create([
+            'playoff_game_id' => $game->id,
+            'leg_number' => 1,
+            'started_at' => now(),
+            'finished_at' => now(),
+            'winner_id' => $game->player1_id,
+        ]);
+
+        foreach (range(1, 6) as $visitNumber) {
+            GameVisit::create([
+                'game_leg_id' => $leg->id,
+                'player_id' => $game->player1_id,
+                'visit_number' => $visitNumber,
+                'score' => 60,
+                'remaining_before' => 501 - (($visitNumber - 1) * 60),
+                'remaining_after' => 501 - ($visitNumber * 60),
+                'darts_in_visit' => 3,
+                'closed_leg' => false,
+                'bust' => false,
+                'is_voided' => false,
+                'client_visit_id' => 'overlay-shot-'.$visitNumber,
+            ]);
+        }
+
+        GameVisit::create([
+            'game_leg_id' => $leg->id,
+            'player_id' => $game->player1_id,
+            'visit_number' => 7,
+            'score' => 32,
+            'remaining_before' => 32,
+            'remaining_after' => 0,
+            'darts_in_visit' => 1,
+            'closed_leg' => true,
+            'bust' => false,
+            'is_voided' => false,
+            'client_visit_id' => 'overlay-shot-checkout',
+        ]);
+
+        $this->getJson(route('games.live.state', ['type' => 'playoff', 'id' => $game->id]))
+            ->assertOk()
+            ->assertJsonPath('lastEvent.closedLeg', true)
+            ->assertJsonPath('lastEvent.dartsInVisit', 1)
+            ->assertJsonPath('lastEvent.legDarts', 19)
+            ->assertJsonPath('lastEvent.score', 32);
     }
 
     public function test_overlay_queries_game_visits_once(): void

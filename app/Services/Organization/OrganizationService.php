@@ -66,7 +66,7 @@ class OrganizationService
         Gate::authorize('createSeason', $organization);
     }
 
-    public function create(string $name, string $description, int $userId): OrganizationDomain
+    public function create(string $name, ?string $description, int $userId): OrganizationDomain
     {
         return $this->organizationRepository->create($name, $description, $userId);
     }
@@ -115,7 +115,7 @@ class OrganizationService
     public function update(
         int $organizationId,
         string $name,
-        string $description,
+        ?string $description,
         ?array $matchFormatPresets = null,
     ): void {
         $this->organizationRepository->update($organizationId, $name, $description, $matchFormatPresets);

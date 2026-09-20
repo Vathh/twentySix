@@ -85,10 +85,15 @@ class GameRepository
 
     public function checkIfPlayoffShouldBeStarted(int $tournamentId): bool
     {
-        return Game::where('tournament_id', $tournamentId)
-            ->where('status', GameStatus::SCHEDULED)
-            ->get()
-            ->count() === 0;
+        $groupGames = Game::query()->where('tournament_id', $tournamentId);
+
+        if (! (clone $groupGames)->exists()) {
+            return false;
+        }
+
+        return ! (clone $groupGames)
+            ->where('status', '!=', GameStatus::FINISHED)
+            ->exists();
     }
 
     public function find(int $id): ?GroupGameDomain

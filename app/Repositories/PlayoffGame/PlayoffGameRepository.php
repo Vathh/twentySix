@@ -6,6 +6,7 @@ use App\Domain\Game\PlayoffGameDomain;
 use App\Domain\Game\WinnerDestination;
 use App\Domain\GameScoring\MatchFormat;
 use App\DTO\GameResultDTO;
+use App\Enums\BracketSide;
 use App\Enums\GameStatus;
 use App\Models\PlayoffGame\PlayoffGame;
 use Illuminate\Support\Collection;
@@ -13,6 +14,16 @@ use Illuminate\Support\Facades\DB;
 
 class PlayoffGameRepository
 {
+    public function existsForTournament(int $tournamentId, ?BracketSide $side = null): bool
+    {
+        $query = PlayoffGame::query()->where('tournament_id', $tournamentId);
+        if ($side !== null) {
+            $query->where('bracket_side', $side);
+        }
+
+        return $query->exists();
+    }
+
     /**
      * @param  Collection<PlayoffGameDomain>  $games
      * @param  array<string, MatchFormat>  $formatsByStage

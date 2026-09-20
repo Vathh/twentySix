@@ -211,6 +211,61 @@ class TournamentGameScoringFinalizeTest extends TestCase
         }
     }
 
+    public function test_group_scoring_undo_raises_revision_and_accepts_fresh_visit(): void
+    {
+        $this->actAsTournamentTablet($this->tournament);
+
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $start = $this->postJson("/api/group-games/{$game->id}/legs", [
+            'player1DoubleTracked' => false,
+            'player2DoubleTracked' => false,
+        ]);
+        $start->assertOk();
+        $legId = $start->json('currentLeg.id');
+
+        $afterVisit = $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits", [
+            'playerId' => $this->player1->id,
+            'score' => 60,
+            'remainingBefore' => 501,
+            'remainingAfter' => 441,
+            'dartsInVisit' => 3,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => (string) Str::uuid(),
+        ]);
+        $afterVisit->assertOk();
+        $revisionAfterVisit = (int) $afterVisit->json('revision');
+        $this->assertSame(441, (int) $afterVisit->json('players.0.remaining'));
+
+        $afterUndo = $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits/undo");
+        $afterUndo->assertOk();
+        $this->assertSame(501, (int) $afterUndo->json('players.0.remaining'));
+        $this->assertSame([], $afterUndo->json('visits'));
+        $this->assertGreaterThan(
+            $revisionAfterVisit,
+            (int) $afterUndo->json('revision'),
+            'Undo must raise revision so other tablets apply the new remaining.',
+        );
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits", [
+            'playerId' => $this->player1->id,
+            'score' => 40,
+            'remainingBefore' => 501,
+            'remainingAfter' => 461,
+            'dartsInVisit' => 3,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => (string) Str::uuid(),
+        ])->assertOk()->assertJsonPath('players.0.remaining', 461);
+    }
+
     public function test_playoff_scoring_close_second_leg_advances_winner(): void
     {
         $quarterFinal = PlayoffGame::create([

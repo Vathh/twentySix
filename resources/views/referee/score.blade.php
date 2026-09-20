@@ -13,13 +13,7 @@
         'gamesUrl' => route('referee.games'),
     ]))"
     x-init="init()"
-    @keydown.window="
-        if (busy || isFinished || checkoutOpen || checkoutDartsOpen) return;
-        if ($event.key >= '0' && $event.key <= '9') { pressDigit($event.key); }
-        if ($event.key === 'Backspace') { $event.preventDefault(); backspace(); }
-        if ($event.key === 'Enter') { $event.preventDefault(); submitVisit(); }
-        if ($event.key === 'Escape') { clearInput(); }
-    "
+    @keydown.window="handleWindowKey($event)"
 >
     <div class="flex items-center justify-between gap-2 mb-4">
         <button type="button" class="link-back" @click="leave()">← Mecze</button>
@@ -92,7 +86,7 @@
                             'referee-numpad-key-accent': key === 'OK',
                             'referee-numpad-key-muted': key === 'C',
                         }"
-                        :disabled="busy"
+                        :disabled="busy || openerOpen || !openerChosen"
                         @click="
                             if (key === 'C') clearInput();
                             else if (key === 'OK') submitVisit();
@@ -110,7 +104,7 @@
             type="button"
             class="btn btn-secondary flex-1 !py-3"
             @click="undo()"
-            :disabled="busy"
+            :disabled="busy || openerOpen || !openerChosen"
         >
             Undo
         </button>
@@ -118,10 +112,31 @@
             type="button"
             class="btn btn-secondary flex-1 !py-3"
             @click="backspace()"
-            :disabled="busy || input === ''"
+            :disabled="busy || openerOpen || !openerChosen || input === ''"
         >
             ⌫
         </button>
+    </div>
+
+    {{-- Kto zaczyna (pierwszy leg, jak na tablecie) --}}
+    <div
+        x-show="openerOpen"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+    >
+        <div class="w-full max-w-sm rounded-xl border border-border bg-bg-deep p-5 text-center">
+            <p class="text-lg font-semibold text-accent mb-4">Kto zaczyna mecz?</p>
+            <div class="flex flex-col gap-2">
+                <template x-for="(player, index) in players" :key="player.playerId ?? index">
+                    <button
+                        type="button"
+                        class="btn btn-primary w-full !py-4"
+                        @click="selectOpener(index)"
+                        x-text="player.name ?? ('Gracz ' + (index + 1))"
+                    ></button>
+                </template>
+            </div>
+        </div>
     </div>
 
     {{-- Potwierdzenie checkout --}}
@@ -141,6 +156,7 @@
                 <button type="button" class="btn btn-secondary flex-1" @click="cancelCheckout()">Nie</button>
                 <button type="button" class="btn btn-primary flex-1" @click="confirmCheckout()">Tak</button>
             </div>
+            <p class="text-xs text-text-muted mt-3">Enter — Tak · Esc — Nie</p>
         </div>
     </div>
 
@@ -158,6 +174,7 @@
                 <button type="button" class="btn btn-primary !py-4 text-xl" :disabled="busy" @click="finishCheckout(2)">2</button>
                 <button type="button" class="btn btn-primary !py-4 text-xl" :disabled="busy" @click="finishCheckout(3)">3</button>
             </div>
+            <p class="text-xs text-text-muted mb-3">Klawiatura: 1 / 2 / 3</p>
             <button type="button" class="text-sm text-text-muted hover:text-accent" @click="cancelCheckout()" :disabled="busy">Anuluj</button>
         </div>
     </div>

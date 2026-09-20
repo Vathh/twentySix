@@ -53,6 +53,59 @@ class ScoringStateContractTest extends TestCase
         $this->assertGreaterThan(0, $out['revision']);
     }
 
+    public function test_h2h_revision_grows_after_undo_when_state_version_increases(): void
+    {
+        $base = [
+            'game' => [
+                'id' => 10,
+                'kind' => 'group',
+                'status' => 'in_progress',
+                'player1LegsWon' => 0,
+                'player2LegsWon' => 0,
+                'startingScore' => 501,
+                'matchFormat' => [
+                    'startingScore' => 501,
+                    'legsToWinSet' => 2,
+                    'setsToWinMatch' => 1,
+                    'gameType' => 'x01',
+                    'outRule' => 'double_out',
+                ],
+            ],
+            'players' => [
+                ['playerId' => 1, 'name' => 'A'],
+                ['playerId' => 2, 'name' => 'B'],
+            ],
+            'currentLeg' => ['id' => 5, 'legNumber' => 1, 'open' => true],
+            'legs' => [],
+        ];
+
+        $afterVisit = ScoringStateContract::enrichH2h([
+            ...$base,
+            'stateVersion' => 120_000,
+            'visits' => [
+                [
+                    'id' => 12,
+                    'playerId' => 1,
+                    'score' => 60,
+                    'dartsInVisit' => 3,
+                    'bust' => false,
+                    'closedLeg' => false,
+                ],
+            ],
+        ]);
+        $afterUndo = ScoringStateContract::enrichH2h([
+            ...$base,
+            'stateVersion' => 120_001,
+            'visits' => [],
+        ]);
+
+        $this->assertGreaterThan(
+            $afterVisit['revision'],
+            $afterUndo['revision'],
+            'Undo must not lower revision, or other tablets ignore the new state.',
+        );
+    }
+
     public function test_enrich_ffa_adds_unified_fields(): void
     {
         $payload = [

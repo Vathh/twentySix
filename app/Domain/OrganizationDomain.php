@@ -39,7 +39,7 @@ class OrganizationDomain
         return new self(
             id: $organization->id,
             name: $organization->name,
-            description: $organization->description,
+            description: $organization->description ?? '',
             createdAt: $organization->created_at,
             updatedAt: $organization->updated_at,
             admins: in_array('admins', $with)

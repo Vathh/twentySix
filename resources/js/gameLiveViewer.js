@@ -4,6 +4,33 @@ import { animateScoreDown } from './tickingScore.js';
 
 const GAME_STATE_EVENTS = ['game.state', '.game.state'];
 
+function visitHighlightTier(visit) {
+    if (!visit || visit.bust) {
+        return null;
+    }
+    const score = Number(visit.score);
+    if (score === 180) {
+        return '180';
+    }
+    if (score >= 170) {
+        return '170';
+    }
+    if (score >= 140) {
+        return '140';
+    }
+
+    return null;
+}
+
+function dartShotLabel(dartsInLeg) {
+    const n = Number(dartsInLeg);
+    if (!Number.isInteger(n) || n < 1) {
+        return '';
+    }
+
+    return `${n}. lotka`;
+}
+
 function normalizePayload(payload) {
     if (payload == null) {
         return null;
@@ -32,8 +59,9 @@ export function registerGameLiveViewer(Alpine) {
         redirecting: false,
         redirectOnFinish: config.redirectOnFinish !== false,
         previewDemo: Boolean(config.previewDemo),
-        flash180: false,
-        flash180Timer: null,
+        overlayFx: config.overlayFx === true,
+        flashCallout: null,
+        flashCalloutTimer: null,
         remainingShown: [null, null],
         remainingTickCancel: [null, null],
 
@@ -67,9 +95,9 @@ export function registerGameLiveViewer(Alpine) {
                 clearInterval(this.pollTimer);
                 this.pollTimer = null;
             }
-            if (this.flash180Timer) {
-                clearTimeout(this.flash180Timer);
-                this.flash180Timer = null;
+            if (this.flashCalloutTimer) {
+                clearTimeout(this.flashCalloutTimer);
+                this.flashCalloutTimer = null;
             }
             this.cancelRemainingTicks();
             if (this.pusher) {
@@ -334,22 +362,15 @@ export function registerGameLiveViewer(Alpine) {
         },
 
         lastVisitIs180(playerId) {
-            const visit = this.lastVisitForPlayer(playerId);
-
-            return Boolean(visit && !visit.bust && Number(visit.score) === 180);
+            return this.lastVisitTier(playerId) === '180';
         },
 
-        dartsInCurrentLeg(playerId) {
-            const player = this.players.find((x) => Number(x.playerId) === Number(playerId));
-            if (player?.dartsThrownInLeg != null) {
-                return Number(player.dartsThrownInLeg);
-            }
+        lastVisitTier(playerId) {
+            return visitHighlightTier(this.lastVisitForPlayer(playerId));
+        },
 
-            return this.visitsForPlayer(playerId).reduce((total, visit) => {
-                const darts = visit.dartsInVisit ?? visit.darts_in_visit;
-
-                return total + Number(darts ?? 3);
-            }, 0);
+        lastVisitIsCheckout(playerId) {
+            return Boolean(this.lastVisitForPlayer(playerId)?.closedLeg);
         },
 
         get latestVisit() {
@@ -361,27 +382,101 @@ export function registerGameLiveViewer(Alpine) {
             return list[list.length - 1];
         },
 
+        get highlightVisit() {
+            return this.state?.lastEvent ?? this.latestVisit;
+        },
+
         get lastVisitSignature() {
-            const visit = this.latestVisit;
+            const visit = this.overlayFx ? this.highlightVisit : this.latestVisit;
             if (!visit) {
                 return '';
             }
 
-            return `${visit.id}-${visit.score}-${visit.bust}`;
+            return [
+                visit.id,
+                visit.score,
+                visit.bust,
+                visit.closedLeg,
+                visit.dartsInVisit,
+                visit.legDarts,
+            ].join('-');
         },
 
         onLastVisitChanged() {
-            const visit = this.latestVisit;
-            if (!visit || visit.bust || Number(visit.score) !== 180) {
+            if (!this.overlayFx) {
                 return;
             }
-            this.flash180 = true;
-            if (this.flash180Timer) {
-                clearTimeout(this.flash180Timer);
+            const visit = this.highlightVisit;
+            if (!visit || visit.bust) {
+                return;
             }
-            this.flash180Timer = setTimeout(() => {
-                this.flash180 = false;
-            }, 2200);
+            if (visit.closedLeg) {
+                this.showCallout({
+                    type: 'shot',
+                    darts: Number(visit.legDarts || visit.dartsInVisit || 0),
+                    score: Number(visit.score),
+                }, 2800);
+                return;
+            }
+            const tier = visitHighlightTier(visit);
+            if (!tier) {
+                return;
+            }
+            const duration = {
+                140: 1600,
+                170: 2000,
+                180: 2400,
+            }[tier];
+            this.showCallout({
+                type: 'high',
+                tier,
+                score: Number(visit.score),
+            }, duration);
+        },
+
+        showCallout(callout, durationMs) {
+            this.flashCallout = callout;
+            if (this.flashCalloutTimer) {
+                clearTimeout(this.flashCalloutTimer);
+            }
+            this.flashCalloutTimer = setTimeout(() => {
+                this.flashCallout = null;
+            }, durationMs);
+        },
+
+        get calloutClass() {
+            const callout = this.flashCallout;
+            if (!callout) {
+                return {};
+            }
+
+            return {
+                'is-shot': callout.type === 'shot',
+                'is-180': callout.type === 'high' && callout.tier === '180',
+                'is-170': callout.type === 'high' && callout.tier === '170',
+                'is-140': callout.type === 'high' && callout.tier === '140',
+            };
+        },
+
+        get calloutMainText() {
+            const callout = this.flashCallout;
+            if (!callout) {
+                return '';
+            }
+            if (callout.type === 'shot') {
+                return dartShotLabel(callout.darts) || 'GAME SHOT';
+            }
+
+            return String(callout.score ?? '');
+        },
+
+        get calloutSubText() {
+            const callout = this.flashCallout;
+            if (!callout || callout.type !== 'shot') {
+                return '';
+            }
+
+            return callout.score ? String(callout.score) : '';
         },
 
         remainingTarget(player, index) {

@@ -109,4 +109,27 @@ class TournamentOverallPlaceCalculatorTest extends TestCase
             $this->assertSame(9, $places[$playerId]);
         }
     }
+
+    public function test_in_group_place_is_not_kept_as_overall_place(): void
+    {
+        $calculator = new TournamentOverallPlaceCalculator;
+
+        $places = $calculator->calculate(4, collect([
+            [
+                'player_id' => 1,
+                'elimination_stage' => GameStage::GROUP,
+                'group_place' => 3,
+                'current_place' => 3,
+            ],
+            [
+                'player_id' => 2,
+                'elimination_stage' => GameStage::GROUP,
+                'group_place' => 3,
+                'current_place' => 3,
+            ],
+        ]));
+
+        $this->assertSame(5, $places[1]);
+        $this->assertSame(5, $places[2]);
+    }
 }

@@ -56,10 +56,14 @@ class OrganizationController extends Controller
     {
         $validated = $request->validate([
             'organizationName' => 'required|string|max:255|unique:organizations,name',
-            'description' => 'string|max:500',
+            'description' => 'nullable|string|max:500',
         ]);
 
-        $this->organizationService->create($validated['organizationName'], $validated['description'], Auth::id());
+        $this->organizationService->create(
+            $validated['organizationName'],
+            $validated['description'] ?? null,
+            Auth::id(),
+        );
 
         return redirect()
             ->route('organizations.index')
@@ -101,7 +105,7 @@ class OrganizationController extends Controller
     {
         $validated = $request->validate([
             'organizationName' => 'required|string|max:255',
-            'description' => 'required|string|max:500',
+            'description' => 'nullable|string|max:500',
             'matchFormats' => 'nullable|array',
         ]);
 
@@ -112,7 +116,7 @@ class OrganizationController extends Controller
         $this->organizationService->update(
             $organization->id,
             $validated['organizationName'],
-            $validated['description'],
+            $validated['description'] ?? null,
             $presets,
         );
 

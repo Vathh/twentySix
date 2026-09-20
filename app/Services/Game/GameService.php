@@ -6,6 +6,7 @@ use App\Domain\Tournament\TournamentDomain;
 use App\DTO\ActiveGameDTO;
 use App\DTO\GameResultDTO;
 use App\DTO\UpdateGameDTO;
+use App\Enums\BracketSide;
 use App\Enums\GameKind;
 use App\Enums\GameStage;
 use App\Enums\GameStatus;
@@ -27,6 +28,7 @@ use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentResultService;
 use App\Support\GameScoring\GameScoringContext;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -478,9 +480,9 @@ class GameService
 
                 $this->recalculatePlayerStats($dto->gameResultDTO);
 
-                $this->handlePlayoffStart($dto->gameResultDTO->tournamentId);
-
             });
+
+            $this->tryStartPlayoff((int) $dto->gameResultDTO->tournamentId);
 
             $finishedGame = $this->gameRepository->findModelOrNull($dto->gameResultDTO->gameId);
             if ($finishedGame !== null) {
@@ -505,7 +507,6 @@ class GameService
             $this->groupStandingService->updateStandingsDetails($dto);
             $this->groupStandingService->updateGroupStandings($dto->tournamentId, $dto->groupNumber);
             $this->recalculatePlayerStats($dto);
-            $this->handlePlayoffStart($dto->tournamentId);
         });
 
         // Broadcast z standings jest w GameScoringService::closeLeg (afterCommit).
@@ -597,25 +598,65 @@ class GameService
         $this->playoffBracketLiveService->pushTournament($tournamentId);
     }
 
-    private function handlePlayoffStart(int $tournamentId): void
+    /**
+     * Losuje playoff dopiero gdy wszystkie mecze grupowe są finished.
+     * Wywoływać PO commicie wyniku meczu — błąd drabinki nie cofa checkoutu / walkowera.
+     */
+    public function tryStartPlayoff(int $tournamentId): void
     {
-        if ($this->gameRepository->checkIfPlayoffShouldBeStarted($tournamentId)) {
-            $tournament = $this->tournamentRepository->findModel($tournamentId);
-            if (! $tournament->has_consolation_bracket) {
-                $this->tournamentResultService->createForGroupLosers($tournamentId);
-            }
-            $this->playoffService->generateBracket($tournamentId);
-            if ($tournament->has_consolation_bracket) {
-                $this->playoffService->generateConsolationBracket($tournamentId);
-            }
-            try {
-                $tournament = $this->tournamentRepository->findModel($tournamentId);
-                if (TournamentDomain::fromEloquent($tournament)->canTransitionTo(TournamentStatus::PLAYOFF)) {
-                    $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::PLAYOFF);
-                }
-            } catch (Throwable $e) {
+        if ($tournamentId <= 0) {
+            return;
+        }
 
+        try {
+            DB::transaction(function () use ($tournamentId) {
+                $this->tournamentRepository->lockForUpdate($tournamentId);
+
+                if (! $this->gameRepository->checkIfPlayoffShouldBeStarted($tournamentId)) {
+                    return;
+                }
+
+                $tournament = $this->tournamentRepository->findModel($tournamentId);
+
+                if (! $this->playoffGameRepository->existsForTournament($tournamentId, BracketSide::Main)) {
+                    if (! $tournament->has_consolation_bracket) {
+                        $this->tournamentResultService->createForGroupLosers($tournamentId);
+                    }
+                    $this->playoffService->generateBracket($tournamentId);
+                }
+
+                if (
+                    $tournament->has_consolation_bracket
+                    && ! $this->playoffGameRepository->existsForTournament($tournamentId, BracketSide::Consolation)
+                ) {
+                    $this->playoffService->generateConsolationBracket($tournamentId);
+                }
+
+                $this->ensurePlayoffStatus($tournamentId);
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            \Log::info('Playoff bracket already exists', [
+                'tournamentId' => $tournamentId,
+                'error' => $e->getMessage(),
+            ]);
+            $this->ensurePlayoffStatus($tournamentId);
+        } catch (Throwable $e) {
+            \Log::error('Playoff start failed', [
+                'tournamentId' => $tournamentId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
+    private function ensurePlayoffStatus(int $tournamentId): void
+    {
+        try {
+            $tournament = $this->tournamentRepository->findModel($tournamentId);
+            if (TournamentDomain::fromEloquent($tournament)->canTransitionTo(TournamentStatus::PLAYOFF)) {
+                $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::PLAYOFF);
             }
+        } catch (Throwable $e) {
         }
     }
 }
