@@ -119,13 +119,15 @@
                                     class="px-2 py-2 text-center {{ (! $isFinished && ! $isLive && $advances) ? 'bg-success-muted/70' : '' }}"
                                     data-group-game-id="{{ $cellGame->id }}"
                                     data-row-player-id="{{ $rowPlayer->id }}"
+                                    @if($cellGame->sequence) data-sequence="{{ $cellGame->sequence }}" @endif
                                 >
                                     <a
                                         href="{{ $href }}"
                                         data-group-game-link
-                                        class="{{ $linkClass }}"
-                                        @if($title) title="{{ $title }}" @endif
-                                    >{{ $scoreText }}</a>
+                                        class="{{ ($cellGame->sequence && ! $isFinished && ! $isLive) ? 'inline-flex justify-center hover:opacity-80' : $linkClass }}"
+                                        @if($cellGame->sequence && ! $isFinished && ! $isLive) title="Mecz {{ $cellGame->sequence }}"
+                                        @elseif($title) title="{{ $title }}" @endif
+                                    >@if($cellGame->sequence && ! $isFinished && ! $isLive)<span class="sequence-badge">{{ $cellGame->sequence }}</span>@else{{ $scoreText }}@endif</a>
                                 </td>
                             @endif
                         @endforeach
@@ -140,6 +142,28 @@
                 </tbody>
             </table>
         </div>
+        @php
+            $groupSchedule = collect($games[$number] ?? [])
+                ->flatMap(fn ($row) => array_values($row))
+                ->unique(fn ($game) => $game->id)
+                ->filter(fn ($game) => $game->sequence !== null && $game->referee !== null)
+                ->sortBy(fn ($game) => $game->sequence)
+                ->values();
+        @endphp
+        @if($groupSchedule->isNotEmpty())
+            <p class="mt-3 text-sm text-text-secondary leading-relaxed text-center">
+                <span class="text-text-muted">Sędziowie:</span>
+                @foreach($groupSchedule as $scheduledGame)
+                    <span
+                        data-referee-game-id="{{ $scheduledGame->id }}"
+                        @class([
+                            'line-through text-text-muted' => $scheduledGame->isFinished(),
+                            'text-accent font-semibold' => $scheduledGame->status === \App\Enums\GameStatus::IN_PROGRESS,
+                        ])
+                    >{{ $scheduledGame->referee->name }}</span>@if(! $loop->last)<span class="text-text-muted">, </span>@endif
+                @endforeach
+            </p>
+        @endif
     </div>
 @endforeach
 </div>

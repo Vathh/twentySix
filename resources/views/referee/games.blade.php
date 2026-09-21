@@ -138,15 +138,33 @@
                                                 <span class="text-text-muted" x-show="cell.diagonal">X</span>
                                                 <button
                                                     type="button"
-                                                    class="min-w-[2.5rem] min-h-[2.5rem] px-2 font-bold text-accent hover:underline disabled:opacity-50"
+                                                    class="min-w-[2.5rem] min-h-[2.5rem] px-1 inline-flex items-center justify-center disabled:opacity-50"
+                                                    :class="cell.sequence ? '' : 'font-bold text-accent hover:underline'"
                                                     x-show="!cell.diagonal && cell.playable"
                                                     @click="startGame(cell.game)"
                                                     :disabled="lockingId != null"
-                                                    x-text="cell.game && lockingId === ('group-'+cell.game.id) ? '…' : cell.text"
-                                                ></button>
+                                                    :title="cell.sequence ? ('Mecz ' + cell.sequence) : null"
+                                                >
+                                                    <span x-show="cell.game && lockingId === ('group-'+cell.game.id)">…</span>
+                                                    <span
+                                                        class="sequence-badge"
+                                                        x-show="!(cell.game && lockingId === ('group-'+cell.game.id)) && cell.sequence"
+                                                        x-text="cell.sequence"
+                                                    ></span>
+                                                    <span
+                                                        x-show="!(cell.game && lockingId === ('group-'+cell.game.id)) && !cell.sequence"
+                                                        x-text="cell.text"
+                                                    ></span>
+                                                </button>
+                                                <span
+                                                    class="sequence-badge"
+                                                    x-show="!cell.diagonal && !cell.playable && cell.sequence"
+                                                    x-text="cell.sequence"
+                                                    :title="'Mecz ' + cell.sequence"
+                                                ></span>
                                                 <span
                                                     class="text-text-secondary tabular-nums"
-                                                    x-show="!cell.diagonal && !cell.playable"
+                                                    x-show="!cell.diagonal && !cell.playable && !cell.sequence"
                                                     x-text="cell.text"
                                                 ></span>
                                             </td>
@@ -160,6 +178,24 @@
                                     </template>
                                 </tbody>
                             </table>
+                            <div
+                                class="mt-3 text-sm text-text-secondary leading-relaxed"
+                                x-show="groupReferees.length > 0"
+                                x-cloak
+                            >
+                                <span class="text-text-muted">Sędziowie: </span>
+                                <template x-for="(slot, index) in groupReferees" :key="slot.id">
+                                    <span>
+                                        <span
+                                            :class="{
+                                                'line-through text-text-muted': slot.status === 'finished',
+                                                'text-accent font-semibold': slot.status === 'in_progress',
+                                            }"
+                                            x-text="slot.referee.name"
+                                        ></span><span x-text="index < groupReferees.length - 1 ? ', ' : ''"></span>
+                                    </span>
+                                </template>
+                            </div>
                         </div>
                     </template>
                     <p class="text-text-muted text-sm text-center py-6" x-show="!selectedGroupData">

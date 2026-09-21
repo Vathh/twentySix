@@ -102,10 +102,10 @@ class GameRepository
      */
     public function getAllWithPlayers(int $tournamentId): Collection
     {
-        return Game::with(['tournament', 'player1', 'player2', 'winner'])
+        return Game::with(['tournament', 'player1', 'player2', 'winner', 'referee'])
             ->where('tournament_id', $tournamentId)
             ->get()
-            ->map(fn ($game) => GroupGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2', 'winner']));
+            ->map(fn ($game) => GroupGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2', 'winner', 'referee']));
     }
 
     public function checkIfPlayoffShouldBeStarted(int $tournamentId): bool

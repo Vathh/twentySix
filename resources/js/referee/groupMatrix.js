@@ -21,18 +21,33 @@ function scoreForRow(game, rowPlayerId) {
 
 export function matrixCellForPair(game, rowPlayerId, { playableUnfinished = false } = {}) {
     if (!game) {
-        return { text: '—', playable: false, game: null };
+        return { text: '—', sequence: null, playable: false, game: null };
     }
     if (isFinishedStatus(game.status)) {
-        return { text: scoreForRow(game, rowPlayerId), playable: false, game };
+        return { text: scoreForRow(game, rowPlayerId), sequence: null, playable: false, game };
+    }
+    if (game.status === 'scheduled' && game.sequence != null) {
+        return {
+            text: String(game.sequence),
+            sequence: game.sequence,
+            playable: playableUnfinished,
+            game,
+        };
     }
     if (playableUnfinished) {
-        return { text: '—', playable: true, game };
+        return { text: '—', sequence: null, playable: true, game };
     }
     if (game.status === 'scheduled') {
-        return { text: '—', playable: false, game };
+        return { text: '—', sequence: null, playable: false, game };
     }
-    return { text: scoreForRow(game, rowPlayerId), playable: false, game };
+    return { text: scoreForRow(game, rowPlayerId), sequence: null, playable: false, game };
+}
+
+export function groupRefereeSlots(games) {
+    return (games ?? [])
+        .filter((game) => game.sequence != null && game.referee?.name)
+        .slice()
+        .sort((a, b) => a.sequence - b.sequence || a.id - b.id);
 }
 
 export function buildGroupMatrix(group, { playableUnfinished = false } = {}) {

@@ -226,11 +226,16 @@ class GameService
                 ->all();
 
             $gameRows = $groupGames
+                ->sortBy([
+                    fn (GroupGameDomain $game) => $game->sequence ?? PHP_INT_MAX,
+                    fn (GroupGameDomain $game) => $game->id,
+                ])
                 ->map(fn (GroupGameDomain $game) => [
                     'id' => $game->id,
                     'type' => 'group',
                     'tournamentId' => $game->tournament?->id ?? $tournamentId,
                     'groupNumber' => $game->groupNumber,
+                    'sequence' => $game->sequence,
                     'player1' => [
                         'id' => $game->player1?->id,
                         'name' => $game->player1?->name ?? 'TBD',
@@ -240,6 +245,10 @@ class GameService
                         'id' => $game->player2?->id,
                         'name' => $game->player2?->name ?? 'TBD',
                         'userId' => $game->player2?->userId,
+                    ],
+                    'referee' => $game->referee === null ? null : [
+                        'id' => $game->referee->id,
+                        'name' => $game->referee->name,
                     ],
                     'score1' => $game->player1Score,
                     'score2' => $game->player2Score,

@@ -3,6 +3,7 @@
 namespace App\Services\Tournament;
 
 use App\Domain\GameScoring\MatchFormat;
+use App\Domain\Tournament\GroupRoundRobinSchedule;
 use App\Domain\Tournament\TournamentDomain;
 use App\Domain\Tournament\TournamentGroupAdvanceDistribution;
 use App\Domain\Tournament\TournamentGroupDistribution;
@@ -187,6 +188,8 @@ class TournamentService
                     'player1_score' => 0,
                     'player2_score' => 0,
                     'group_number' => $groupIndex + 1,
+                    'sequence' => $game['sequence'],
+                    'referee_player_id' => $game['referee_player_id'],
                     'status' => GameStatus::SCHEDULED,
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -517,17 +520,13 @@ class TournamentService
         return filter_var($raw, FILTER_VALIDATE_BOOLEAN);
     }
 
+    /**
+     * @param  list<int>  $group
+     * @return list<array{player1_id: int, player2_id: int, sequence: int, referee_player_id: int}>
+     */
     private function generateGamesForGroup(array $group): array
     {
-        $games = [];
-
-        for ($i = 0; $i < count($group); $i++) {
-            for ($j = $i + 1; $j < count($group); $j++) {
-                $games[] = ['player1_id' => $group[$i], 'player2_id' => $group[$j]];
-            }
-        }
-
-        return $games;
+        return GroupRoundRobinSchedule::build(array_values($group));
     }
 
     private function updatePointSchemeId(int $tournamentId, int $playersAmount): void

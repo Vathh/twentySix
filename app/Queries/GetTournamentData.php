@@ -16,6 +16,7 @@ class GetTournamentData
             'games.player1',
             'games.player2',
             'games.winner',
+            'games.referee',
             'playoffGames.player1',
             'playoffGames.player2',
             'playoffGames.winner',

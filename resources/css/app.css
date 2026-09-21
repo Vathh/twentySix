@@ -1143,6 +1143,10 @@
         @apply px-3 py-1 rounded-full text-xs font-semibold bg-bg-elevated text-text-secondary border border-border;
     }
 
+    .sequence-badge {
+        @apply inline-flex min-w-[1.35rem] items-center justify-center rounded-md border border-border bg-bg-elevated px-1.5 py-0.5 text-xs font-semibold tabular-nums text-text-secondary;
+    }
+
     .badge-status-live {
         @apply px-3 py-1 rounded-full text-xs font-semibold bg-success-muted text-success-bright border border-success/40;
     }

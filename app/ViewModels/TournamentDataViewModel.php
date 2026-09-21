@@ -48,7 +48,14 @@ class TournamentDataViewModel
         $result = [];
 
         $gameDomains = $this->tournament
-            ->games->map(fn ($game) => GroupGameDomain::fromEloquent($game, ['player1', 'player2', 'winner']));
+            ->games->map(function ($game) {
+                $with = ['player1', 'player2', 'winner'];
+                if ($game->relationLoaded('referee')) {
+                    $with[] = 'referee';
+                }
+
+                return GroupGameDomain::fromEloquent($game, $with);
+            });
 
         foreach ($gameDomains as $game) {
             $result[$game->groupNumber][$game->player1->id][$game->player2->id] = $game;

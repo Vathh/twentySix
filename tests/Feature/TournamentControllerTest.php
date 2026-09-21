@@ -496,13 +496,32 @@ class TournamentControllerTest extends TestCase
             'sets_to_win_match' => 1,
         ]);
 
-        $this->assertSame(
-            6,
-            \App\Models\Game\Game::where('tournament_id', $tournament->id)
-                ->where('starting_score', 301)
-                ->where('legs_to_win_set', 3)
-                ->count(),
-        );
+        $games = \App\Models\Game\Game::where('tournament_id', $tournament->id)
+            ->where('starting_score', 301)
+            ->where('legs_to_win_set', 3)
+            ->get();
+
+        $this->assertCount(6, $games);
+
+        foreach ($games->groupBy('group_number') as $groupGames) {
+            $this->assertSame(
+                range(1, $groupGames->count()),
+                $groupGames->pluck('sequence')->map(fn ($sequence) => (int) $sequence)->sort()->values()->all(),
+            );
+
+            foreach ($groupGames as $game) {
+                $this->assertNotNull($game->referee_player_id);
+                $this->assertNotContains(
+                    (int) $game->referee_player_id,
+                    [(int) $game->player1_id, (int) $game->player2_id],
+                );
+            }
+        }
+
+        $this->get("/tournaments/{$tournament->id}")
+            ->assertOk()
+            ->assertSee('sequence-badge', false)
+            ->assertSee('Sędziowie:', false);
     }
 
     public function test_run_double_elimination_applies_stage_formats_to_playoff_games(): void

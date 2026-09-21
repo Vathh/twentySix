@@ -13,7 +13,7 @@ class GroupGameDomain extends GameDomain
     use AssertsRelationsLoaded;
 
     /** @var list<string> */
-    private const RELATIONS = ['tournament', 'player1', 'player2', 'winner'];
+    private const RELATIONS = ['tournament', 'player1', 'player2', 'winner', 'referee'];
 
     public function __construct(
         int $id,
@@ -24,7 +24,9 @@ class GroupGameDomain extends GameDomain
         int $player2Score,
         ?PlayerDomain $winner,
         public readonly int $groupNumber,
-        GameStatus $status
+        GameStatus $status,
+        public readonly ?int $sequence = null,
+        public readonly ?PlayerDomain $referee = null,
     ) {
         parent::__construct(
             id: $id,
@@ -50,6 +52,9 @@ class GroupGameDomain extends GameDomain
         $winner = in_array('winner', $with) && $game->winner
             ? PlayerDomain::fromEloquent($game->winner)
             : null;
+        $referee = in_array('referee', $with, true) && $game->referee
+            ? PlayerDomain::fromEloquent($game->referee)
+            : null;
 
         return new self(
             id: $game->id,
@@ -62,7 +67,9 @@ class GroupGameDomain extends GameDomain
             player2Score: $game->player2_score ?? 0,
             winner: $winner,
             groupNumber: $game->group_number,
-            status: $game->status
+            status: $game->status,
+            sequence: $game->sequence !== null ? (int) $game->sequence : null,
+            referee: $referee,
         );
     }
 

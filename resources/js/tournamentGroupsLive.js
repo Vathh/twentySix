@@ -143,10 +143,19 @@ export function registerTournamentGroupsLive(Alpine) {
 					return;
 				}
 				if (game.status === 'scheduled') {
-					link.textContent = '—';
-					link.setAttribute('title', 'Ustaw wynik / walkover');
+					const sequence = Number(td.getAttribute('data-sequence'));
+					if (Number.isInteger(sequence) && sequence > 0) {
+						link.className = 'inline-flex justify-center hover:opacity-80';
+						link.title = `Mecz ${sequence}`;
+						link.innerHTML = `<span class="sequence-badge">${sequence}</span>`;
+					} else {
+						link.className = cellClassForStatus(game);
+						link.textContent = '—';
+						link.setAttribute('title', 'Ustaw wynik / walkower');
+					}
 				} else {
 					link.textContent = scoreForRow(game, rowPlayerId);
+					link.className = cellClassForStatus(game);
 					if (game.status === 'in_progress') {
 						link.setAttribute('title', 'Podgląd na żywo');
 					} else {
@@ -154,7 +163,12 @@ export function registerTournamentGroupsLive(Alpine) {
 					}
 				}
 				link.setAttribute('href', hrefForGame(game, config.urls));
-				link.className = cellClassForStatus(game);
+			});
+			root.querySelectorAll(`[data-referee-game-id="${game.id}"]`).forEach((slot) => {
+				slot.classList.toggle('line-through', game.status === 'finished');
+				slot.classList.toggle('text-text-muted', game.status === 'finished');
+				slot.classList.toggle('text-accent', game.status === 'in_progress');
+				slot.classList.toggle('font-semibold', game.status === 'in_progress');
 			});
 		},
 

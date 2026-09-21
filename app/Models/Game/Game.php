@@ -21,6 +21,8 @@ class Game extends Model
         'current_set_number',
         'winner_id',
         'group_number',
+        'sequence',
+        'referee_player_id',
         'status',
         'starting_score',
         'legs_to_win_set',
@@ -56,5 +58,11 @@ class Game extends Model
     public function winner(): BelongsTo
     {
         return $this->belongsTo(Player::class, 'winner_id');
+    }
+
+    /** @return BelongsTo<Player, $this> */
+    public function referee(): BelongsTo
+    {
+        return $this->belongsTo(Player::class, 'referee_player_id');
     }
 }

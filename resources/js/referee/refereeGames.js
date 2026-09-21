@@ -4,7 +4,7 @@ import {
     requireRefereeSessionOrRedirect,
 } from './session.js';
 import { refereeFetch, RefereeApiError } from './api.js';
-import { buildGroupMatrix, playerNamesFromStandings } from './groupMatrix.js';
+import { buildGroupMatrix, groupRefereeSlots, playerNamesFromStandings } from './groupMatrix.js';
 
 const PLAYOFF_ROUND_ORDER = [
     'SIXTEEN',
@@ -96,6 +96,10 @@ export function registerRefereeGames(Alpine) {
                 return { columns: [], rows: [] };
             }
             return buildGroupMatrix(this.selectedGroupData, { playableUnfinished: true });
+        },
+
+        get groupReferees() {
+            return groupRefereeSlots(this.selectedGroupData?.games);
         },
 
         get gamesInSelectedPlayoffSide() {

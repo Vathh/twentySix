@@ -226,6 +226,8 @@ Logika zgodna z `GroupStandingService` w backendzie (`sortStandings` → `compar
 ### Grupy i playoff (`groups_playoff`)
 
 - Round-robin: każdy z każdym w grupie.
+- **Kolejność na jednej tarczy:** metoda koła, tak żeby zawodnicy jak najrzadziej grali jeden po drugim. Numer meczu widać w komórce tabeli (plakietka), dopóki mecz nie wystartuje.
+- **Sędzia z grupy:** zawodnik, który w tym meczu nie gra. Liczba sędziowanych meczów różni się co najwyżej o jeden. Pod tabelą lista sędziów w kolejności meczów; po zakończeniu meczu to sędziowanie jest przekreślone, a sędzia meczu w trakcie wyróżniony.
 - **Playoff startuje automatycznie** po rozegraniu **ostatniego meczu grupowego** (status turnieju → playoff).
 - Drabinka playoff po grupach: pełna, **bez wolnych losów**; auto przeliczenie po korekcie wyniku na webie.
 - Wariantach SE/DE bye są **dozwolone** (patrz sekcja „Warianty turnieju”).

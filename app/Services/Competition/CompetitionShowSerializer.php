@@ -418,6 +418,13 @@ class CompetitionShowSerializer
             'score2' => $game->player2Score,
             'winnerId' => $game->winner?->id,
             'status' => $game->status->value,
+            'sequence' => $game instanceof GroupGameDomain ? $game->sequence : null,
+            'referee' => $game instanceof GroupGameDomain && $game->referee !== null
+                ? [
+                    'id' => $game->referee->id,
+                    'name' => $game->referee->name,
+                ]
+                : null,
         ];
     }
 }
