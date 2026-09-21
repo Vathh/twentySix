@@ -20,9 +20,14 @@ class ActiveGameDTO
         public ?string $round = null,
         public ?string $roundLabel = null,
         public ?string $bracketSide = null,
+        /** @var list<string>|null */
+        public ?array $groupPlayerNames = null,
     ) {}
 
-    public static function fromGame(GroupGameDomain $game): ActiveGameDTO
+    /**
+     * @param  list<string>  $groupPlayerNames
+     */
+    public static function fromGame(GroupGameDomain $game, array $groupPlayerNames = []): ActiveGameDTO
     {
         return new self(
             id: $game->id,
@@ -40,6 +45,7 @@ class ActiveGameDTO
             round: null,
             roundLabel: null,
             bracketSide: null,
+            groupPlayerNames: $groupPlayerNames,
         );
     }
 

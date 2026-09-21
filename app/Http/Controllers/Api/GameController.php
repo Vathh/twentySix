@@ -84,4 +84,14 @@ class GameController
 
         return response()->json($games);
     }
+
+    public function getRemainingGroups(Request $request): JsonResponse
+    {
+        $tournamentId = (int) $request->query('tournamentId');
+        if ($tournamentId < 1) {
+            return response()->json([]);
+        }
+
+        return response()->json($this->gameService->getRemainingGroups($tournamentId));
+    }
 }

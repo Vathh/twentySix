@@ -2,6 +2,8 @@
 
 namespace App\Services\Game;
 
+use App\Domain\Game\GroupGameDomain;
+use App\Domain\GroupStandingDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\DTO\ActiveGameDTO;
 use App\DTO\GameResultDTO;
@@ -162,14 +164,99 @@ class GameService
      */
     public function getActiveGames(int $tournamentId): Collection
     {
+        $namesByGroup = $this->groupStandingService->playerNamesByGroupNumber($tournamentId);
+
         $groupGames = collect($this->gameRepository->getActive($tournamentId)
-            ->map(fn ($game) => ActiveGameDTO::fromGame($game)));
+            ->map(fn ($game) => ActiveGameDTO::fromGame(
+                $game,
+                $namesByGroup[$game->groupNumber] ?? [],
+            )));
 
         $playoffGames = collect($this->playoffGameRepository->getActive($tournamentId)
             ->map(fn ($game) => ActiveGameDTO::fromPlayoffGameDomain($game))
             ->filter());
 
         return $groupGames->merge($playoffGames);
+    }
+
+    /**
+     * Grupy z niedokończonymi meczami — pełna macierz (standings + wszystkie gry).
+     *
+     * @return list<array{groupNumber: int, standings: list<array<string, mixed>>, games: list<array<string, mixed>>}>
+     */
+    public function getRemainingGroups(int $tournamentId): array
+    {
+        $games = $this->gameRepository->getAllWithPlayers($tournamentId);
+        $standings = $this->groupStandingService->standingsForTournament($tournamentId);
+
+        $gamesByGroup = $games->groupBy(fn (GroupGameDomain $game) => $game->groupNumber);
+        $standingsByGroup = $standings->groupBy(fn (GroupStandingDomain $standing) => $standing->groupNumber);
+
+        $groupNumbers = $gamesByGroup->keys()
+            ->merge($standingsByGroup->keys())
+            ->unique()
+            ->sort(fn ($a, $b) => (int) $a <=> (int) $b)
+            ->values();
+
+        $result = [];
+        foreach ($groupNumbers as $groupNumber) {
+            $groupNumber = (int) $groupNumber;
+            $groupGames = $gamesByGroup->get($groupNumber, collect());
+            $hasRemaining = $groupGames->contains(
+                fn (GroupGameDomain $game) => $game->status !== GameStatus::FINISHED,
+            );
+            if (! $hasRemaining) {
+                continue;
+            }
+
+            $standingRows = ($standingsByGroup->get($groupNumber, collect()))
+                ->sortBy(fn (GroupStandingDomain $standing) => $standing->place > 0 ? $standing->place : PHP_INT_MAX)
+                ->values()
+                ->map(fn (GroupStandingDomain $standing) => [
+                    'playerId' => $standing->player?->id,
+                    'playerName' => $standing->player?->name ?? '—',
+                    'userId' => $standing->player?->userId,
+                    'gamesPlayed' => $standing->gamesPlayed,
+                    'gamesWon' => $standing->gamesWon,
+                    'gamesLost' => $standing->gamesLost,
+                    'matchUnitsDifference' => $standing->matchUnitsDifference,
+                    'points' => $standing->points,
+                    'place' => $standing->place,
+                ])
+                ->all();
+
+            $gameRows = $groupGames
+                ->map(fn (GroupGameDomain $game) => [
+                    'id' => $game->id,
+                    'type' => 'group',
+                    'tournamentId' => $game->tournament?->id ?? $tournamentId,
+                    'groupNumber' => $game->groupNumber,
+                    'player1' => [
+                        'id' => $game->player1?->id,
+                        'name' => $game->player1?->name ?? 'TBD',
+                        'userId' => $game->player1?->userId,
+                    ],
+                    'player2' => [
+                        'id' => $game->player2?->id,
+                        'name' => $game->player2?->name ?? 'TBD',
+                        'userId' => $game->player2?->userId,
+                    ],
+                    'score1' => $game->player1Score,
+                    'score2' => $game->player2Score,
+                    'winnerId' => $game->winner?->id,
+                    'status' => $game->status->value,
+                ])
+                ->values()
+                ->all();
+
+            $result[] = [
+                'groupNumber' => $groupNumber,
+                'standings' => $standingRows,
+                'games' => $gameRows,
+            ];
+        }
+
+        return $result;
     }
 
     private function handleTournamentResultCreating(int $winnerId,

@@ -386,6 +386,129 @@ class GameControllerApiTest extends TestCase
         $this->assertNotContains($finishedGame->id, $gameIds);
     }
 
+    public function test_active_group_games_include_full_group_player_names(): void
+    {
+        Sanctum::actingAs($this->user);
+
+        foreach ([$this->player1, $this->player2, $this->player3, $this->player4] as $player) {
+            GroupStanding::create([
+                'tournament_id' => $this->tournament->id,
+                'group_number' => 1,
+                'player_id' => $player->id,
+            ]);
+        }
+
+        Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::FINISHED,
+        ]);
+
+        $active = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player3->id,
+            'player2_id' => $this->player4->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $response = $this->getJson("/api/game/active?tournamentId={$this->tournament->id}");
+        $response->assertStatus(200);
+
+        $game = collect($response->json())->firstWhere('id', $active->id);
+        $this->assertNotNull($game);
+        $this->assertEqualsCanonicalizing(
+            [
+                $this->player1->name,
+                $this->player2->name,
+                $this->player3->name,
+                $this->player4->name,
+            ],
+            $game['groupPlayerNames'],
+        );
+    }
+
+    public function test_remaining_groups_include_full_matrix_and_omit_finished_groups(): void
+    {
+        Sanctum::actingAs($this->user);
+
+        foreach ([$this->player1, $this->player2, $this->player3, $this->player4] as $player) {
+            GroupStanding::create([
+                'tournament_id' => $this->tournament->id,
+                'group_number' => 1,
+                'player_id' => $player->id,
+            ]);
+        }
+        GroupStanding::create([
+            'tournament_id' => $this->tournament->id,
+            'group_number' => 2,
+            'player_id' => $this->player1->id,
+        ]);
+        GroupStanding::create([
+            'tournament_id' => $this->tournament->id,
+            'group_number' => 2,
+            'player_id' => $this->player2->id,
+        ]);
+
+        $finishedInOpenGroup = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'player1_score' => 0,
+            'player2_score' => 3,
+            'winner_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::FINISHED,
+        ]);
+        $openGame = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player3->id,
+            'player2_id' => $this->player4->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+        Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'player1_score' => 3,
+            'player2_score' => 1,
+            'winner_id' => $this->player1->id,
+            'group_number' => 2,
+            'status' => GameStatus::FINISHED,
+        ]);
+
+        $response = $this->getJson("/api/game/remaining-groups?tournamentId={$this->tournament->id}");
+        $response->assertStatus(200);
+
+        $groups = $response->json();
+        $this->assertCount(1, $groups);
+        $this->assertSame(1, $groups[0]['groupNumber']);
+        $this->assertCount(4, $groups[0]['standings']);
+        $this->assertEqualsCanonicalizing(
+            [
+                $this->player1->name,
+                $this->player2->name,
+                $this->player3->name,
+                $this->player4->name,
+            ],
+            collect($groups[0]['standings'])->pluck('playerName')->all(),
+        );
+
+        $gameIds = collect($groups[0]['games'])->pluck('id')->all();
+        $this->assertContains($finishedInOpenGroup->id, $gameIds);
+        $this->assertContains($openGame->id, $gameIds);
+
+        $openRow = collect($groups[0]['games'])->firstWhere('id', $openGame->id);
+        $this->assertSame('scheduled', $openRow['status']);
+        $finishedRow = collect($groups[0]['games'])->firstWhere('id', $finishedInOpenGroup->id);
+        $this->assertSame('finished', $finishedRow['status']);
+        $this->assertSame(0, $finishedRow['score1']);
+        $this->assertSame(3, $finishedRow['score2']);
+    }
+
     public function test_user_can_get_active_playoff_games_after_group_stage(): void
     {
         Sanctum::actingAs($this->user);

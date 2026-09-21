@@ -4,6 +4,7 @@ import {
     requireRefereeSessionOrRedirect,
 } from './session.js';
 import { refereeFetch, RefereeApiError } from './api.js';
+import { buildGroupMatrix, playerNamesFromStandings } from './groupMatrix.js';
 
 const PLAYOFF_ROUND_ORDER = [
     'SIXTEEN',
@@ -23,6 +24,7 @@ export function registerRefereeGames(Alpine) {
     Alpine.data('refereeGames', (config) => ({
         session: null,
         games: [],
+        remainingGroups: [],
         loading: true,
         lockingId: null,
         error: '',
@@ -35,10 +37,6 @@ export function registerRefereeGames(Alpine) {
                 return;
             }
             this.fetchGames();
-        },
-
-        get groupGames() {
-            return this.games.filter((g) => (g.type || 'group') === 'group');
         },
 
         get playoffGames() {
@@ -75,21 +73,29 @@ export function registerRefereeGames(Alpine) {
         },
 
         get groups() {
-            const set = new Set(
-                this.groupGames
-                    .map((g) => g.groupNumber)
-                    .filter((n) => n != null),
-            );
-            return [...set].sort((a, b) => a - b);
+            return this.remainingGroups
+                .map((g) => g.groupNumber)
+                .filter((n) => n != null)
+                .sort((a, b) => a - b);
         },
 
-        get gamesInSelectedGroup() {
+        groupPlayerNames(groupNumber) {
+            const group = this.remainingGroups.find((g) => g.groupNumber === groupNumber);
+            return playerNamesFromStandings(group?.standings).join(', ');
+        },
+
+        get selectedGroupData() {
             if (this.selectedGroup == null) {
-                return [];
+                return null;
             }
-            return this.groupGames.filter(
-                (g) => g.groupNumber === this.selectedGroup,
-            );
+            return this.remainingGroups.find((g) => g.groupNumber === this.selectedGroup) ?? null;
+        },
+
+        get selectedGroupMatrix() {
+            if (!this.selectedGroupData) {
+                return { columns: [], rows: [] };
+            }
+            return buildGroupMatrix(this.selectedGroupData, { playableUnfinished: true });
         },
 
         get gamesInSelectedPlayoffSide() {
@@ -100,12 +106,6 @@ export function registerRefereeGames(Alpine) {
                 return this.mainPlayoffGames;
             }
             return [];
-        },
-
-        get modalGames() {
-            return this.selectedPlayoffSide != null
-                ? this.gamesInSelectedPlayoffSide
-                : this.gamesInSelectedGroup;
         },
 
         get modalTitle() {
@@ -121,6 +121,10 @@ export function registerRefereeGames(Alpine) {
             return 'Wybierz mecz';
         },
 
+        get isGroupModal() {
+            return this.selectedGroup != null && this.selectedPlayoffSide == null;
+        },
+
         async handleUnauthorized() {
             clearRefereeSession();
             window.location.replace(refereeLoginUrl());
@@ -133,11 +137,20 @@ export function registerRefereeGames(Alpine) {
             this.loading = true;
             this.error = '';
             try {
-                const data = await refereeFetch(
-                    `/api/game/active?tournamentId=${this.session.tournamentId}`,
-                    { token: this.session.token },
-                );
-                this.games = Array.isArray(data) ? data : [];
+                const [active, groups] = await Promise.all([
+                    refereeFetch(
+                        `/api/game/active?tournamentId=${this.session.tournamentId}`,
+                        { token: this.session.token },
+                    ),
+                    refereeFetch(
+                        `/api/game/remaining-groups?tournamentId=${this.session.tournamentId}`,
+                        { token: this.session.token },
+                    ),
+                ]);
+                this.games = Array.isArray(active)
+                    ? active.filter((g) => g.type === 'playoff')
+                    : [];
+                this.remainingGroups = Array.isArray(groups) ? groups : [];
             } catch (e) {
                 if (e instanceof RefereeApiError && e.status === 401) {
                     await this.handleUnauthorized();
@@ -145,6 +158,7 @@ export function registerRefereeGames(Alpine) {
                 }
                 this.error = e.message || 'Nie udało się pobrać listy meczów.';
                 this.games = [];
+                this.remainingGroups = [];
             } finally {
                 this.loading = false;
             }
@@ -166,7 +180,7 @@ export function registerRefereeGames(Alpine) {
         },
 
         async startGame(game) {
-            if (!this.session || this.lockingId != null) {
+            if (!this.session || this.lockingId != null || !game) {
                 return;
             }
             const type = game.type === 'playoff' ? 'playoff' : 'group';

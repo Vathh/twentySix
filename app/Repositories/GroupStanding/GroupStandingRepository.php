@@ -117,6 +117,51 @@ class GroupStandingRepository
     }
 
     /**
+     * Standings całego turnieju z graczami.
+     *
+     * @return Collection<int, GroupStandingDomain>
+     */
+    public function getAllForTournamentWithPlayers(int $tournamentId): Collection
+    {
+        return GroupStanding::query()
+            ->with('player')
+            ->where('tournament_id', $tournamentId)
+            ->orderBy('group_number')
+            ->orderBy('place')
+            ->get()
+            ->map(fn ($standing) => GroupStandingDomain::fromEloquent($standing, ['player']))
+            ->values();
+    }
+
+    /**
+     * Pełny skład każdej grupy (niezależnie od statusu meczów).
+     *
+     * @return array<int, list<string>> group_number => names
+     */
+    public function getPlayerNamesByGroupNumber(int $tournamentId): array
+    {
+        $grouped = GroupStanding::query()
+            ->with('player')
+            ->where('tournament_id', $tournamentId)
+            ->get()
+            ->groupBy('group_number');
+
+        $result = [];
+        foreach ($grouped as $groupNumber => $standings) {
+            $names = $standings
+                ->map(fn (GroupStanding $standing) => $standing->player?->name)
+                ->filter(fn ($name) => is_string($name) && $name !== '')
+                ->unique()
+                ->sort(SORT_NATURAL | SORT_FLAG_CASE)
+                ->values()
+                ->all();
+            $result[(int) $groupNumber] = $names;
+        }
+
+        return $result;
+    }
+
+    /**
      * Uporządkowane (miejsce rosnąco) surowe modele standings grupy — do payloadu live/snapshot.
      *
      * @return Collection<int, GroupStanding>

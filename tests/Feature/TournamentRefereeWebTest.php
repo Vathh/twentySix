@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
 use App\Models\Game\Game;
+use App\Models\GroupStanding\GroupStanding;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
@@ -133,5 +134,40 @@ class TournamentRefereeWebTest extends TestCase
             ->getJson('/api/game/active?tournamentId='.$this->tournament->id)
             ->assertOk()
             ->assertJsonFragment(['type' => 'group']);
+    }
+
+    public function test_tournament_code_login_can_list_remaining_groups(): void
+    {
+        GroupStanding::create([
+            'tournament_id' => $this->tournament->id,
+            'group_number' => 1,
+            'player_id' => $this->player1->id,
+        ]);
+        GroupStanding::create([
+            'tournament_id' => $this->tournament->id,
+            'group_number' => 1,
+            'player_id' => $this->player2->id,
+        ]);
+        Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $login = $this->postJson('/api/login', ['code' => $this->code]);
+        $token = $login->json('token');
+
+        $response = $this->withToken($token)
+            ->getJson('/api/game/remaining-groups?tournamentId='.$this->tournament->id)
+            ->assertOk();
+
+        $groups = $response->json();
+        $this->assertSame(1, $groups[0]['groupNumber']);
+        $this->assertEqualsCanonicalizing(
+            [$this->player1->name, $this->player2->name],
+            collect($groups[0]['standings'])->pluck('playerName')->all(),
+        );
     }
 }

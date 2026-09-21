@@ -55,6 +55,7 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::post('/release', [GameController::class, 'releaseLock']);
         Route::post('/update', [GameController::class, 'update']);
         Route::get('/active', [GameController::class, 'getActiveGames']);
+        Route::get('/remaining-groups', [GameController::class, 'getRemainingGroups']);
     });
 
     Route::prefix('group-games/{game}')->whereNumber('game')->group(function () {

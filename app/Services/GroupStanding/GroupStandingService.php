@@ -185,4 +185,20 @@ class GroupStandingService
 
         return $this->groupStandingRepository->getGroupLosers($tournamentId, $advancesByGroup);
     }
+
+    /**
+     * @return array<int, list<string>> group_number => names
+     */
+    public function playerNamesByGroupNumber(int $tournamentId): array
+    {
+        return $this->groupStandingRepository->getPlayerNamesByGroupNumber($tournamentId);
+    }
+
+    /**
+     * @return Collection<int, GroupStandingDomain>
+     */
+    public function standingsForTournament(int $tournamentId): Collection
+    {
+        return $this->groupStandingRepository->getAllForTournamentWithPlayers($tournamentId);
+    }
 }
