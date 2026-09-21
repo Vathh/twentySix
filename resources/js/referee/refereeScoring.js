@@ -74,6 +74,8 @@ export function registerRefereeScoring(Alpine) {
         openerOpen: false,
         openerChosen: false,
         chosenOpenerIndex: null,
+        switchOpenerOpen: false,
+        pendingSwitchIndex: null,
         dismissedLossKey: null,
         cancelled: false,
 
@@ -137,6 +139,22 @@ export function registerRefereeScoring(Alpine) {
 
         get currentPlayer() {
             return this.players[this.turnIndex] ?? null;
+        },
+
+        get canSwitchOpener() {
+            return this.openerChosen
+                && !this.hasProgress
+                && !this.isFinished
+                && !this.isCancelled
+                && !this.bullOffRequired
+                && !this.openerOpen
+                && !this.busy
+                && !this.lossThresholdOpen;
+        },
+
+        get pendingSwitchName() {
+            const player = this.players[this.pendingSwitchIndex];
+            return player?.name ?? 'tego zawodnika';
         },
 
         get startingScore() {
@@ -243,6 +261,8 @@ export function registerRefereeScoring(Alpine) {
             this.cancelled = true;
             this.busy = false;
             this.openerOpen = false;
+            this.switchOpenerOpen = false;
+            this.pendingSwitchIndex = null;
             this.error = '';
         },
 
@@ -267,6 +287,10 @@ export function registerRefereeScoring(Alpine) {
         },
 
         maybeAskOpener() {
+            if (this.isFinished || this.cancelled || this.hasProgress) {
+                this.switchOpenerOpen = false;
+                this.pendingSwitchIndex = null;
+            }
             if (this.isFinished || this.cancelled) {
                 this.openerOpen = false;
                 return;
@@ -284,6 +308,33 @@ export function registerRefereeScoring(Alpine) {
                 return;
             }
             this.openerOpen = true;
+        },
+
+        askSwitchOpener(index) {
+            const idx = Number(index);
+            if (!this.canSwitchOpener || idx === this.turnIndex) {
+                return;
+            }
+            if (!Number.isInteger(idx) || idx < 0 || idx > 1) {
+                return;
+            }
+            this.pendingSwitchIndex = idx;
+            this.switchOpenerOpen = true;
+        },
+
+        confirmSwitchOpener() {
+            if (!this.switchOpenerOpen || this.pendingSwitchIndex == null) {
+                return;
+            }
+            this.selectOpener(this.pendingSwitchIndex);
+            this.input = '';
+            this.switchOpenerOpen = false;
+            this.pendingSwitchIndex = null;
+        },
+
+        cancelSwitchOpener() {
+            this.switchOpenerOpen = false;
+            this.pendingSwitchIndex = null;
         },
 
         selectOpener(index) {
@@ -346,6 +397,7 @@ export function registerRefereeScoring(Alpine) {
                 || !this.openerChosen
                 || this.checkoutOpen
                 || this.checkoutDartsOpen
+                || this.switchOpenerOpen
                 || this.bullOffRequired
                 || this.lossThresholdOpen
             ) {
@@ -395,6 +447,18 @@ export function registerRefereeScoring(Alpine) {
                 if (event.key === 'Escape') {
                     event.preventDefault();
                     this.cancelCheckout();
+                }
+                return;
+            }
+
+            if (this.switchOpenerOpen) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    this.confirmSwitchOpener();
+                }
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    this.cancelSwitchOpener();
                 }
                 return;
             }
@@ -449,7 +513,7 @@ export function registerRefereeScoring(Alpine) {
         },
 
         async submitVisit() {
-            if (this.busy || this.isFinished || this.cancelled || this.openerOpen || !this.openerChosen || this.bullOffRequired || this.lossThresholdOpen) {
+            if (this.busy || this.isFinished || this.cancelled || this.openerOpen || !this.openerChosen || this.switchOpenerOpen || this.bullOffRequired || this.lossThresholdOpen) {
                 return;
             }
             const score = this.inputValue();

@@ -97,6 +97,8 @@ class TournamentRefereeWebTest extends TestCase
             ->assertOk()
             ->assertSee('Wynik wizyty', false)
             ->assertSee('Kto zaczyna mecz?', false)
+            ->assertSee('Czy przełączyć zawodnika rozpoczynającego mecz na', false)
+            ->assertSee('Kliknij nazwę drugiego zawodnika, aby zmienić rozpoczynającego.', false)
             ->assertSee('Enter — Tak', false)
             ->assertSee('Klawiatura: 1 / 2 / 3', false);
 

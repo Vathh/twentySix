@@ -49,7 +49,19 @@
             class="rounded-xl border p-4 text-center transition"
             :class="turnIndex === 0 ? 'border-accent bg-accent/10' : 'border-border bg-bg-elevated/40'"
         >
-            <div class="text-sm font-semibold text-text truncate" x-text="player1?.name ?? 'Gracz 1'"></div>
+            <button
+                type="button"
+                x-show="canSwitchOpener && turnIndex !== 0"
+                x-cloak
+                class="text-sm font-semibold text-accent truncate max-w-full underline decoration-dotted underline-offset-2"
+                @click="askSwitchOpener(0)"
+                x-text="player1?.name ?? 'Gracz 1'"
+            ></button>
+            <div
+                class="text-sm font-semibold text-text truncate"
+                x-show="!(canSwitchOpener && turnIndex !== 0)"
+                x-text="player1?.name ?? 'Gracz 1'"
+            ></div>
             <div class="text-4xl font-bold text-accent my-2 tabular-nums" x-text="remaining(player1)"></div>
             <div class="text-xs text-text-muted">
                 <span x-show="isSingleSetFormat()">Legi: <span x-text="matchScore(player1)"></span></span>
@@ -63,7 +75,19 @@
             class="rounded-xl border p-4 text-center transition"
             :class="turnIndex === 1 ? 'border-accent bg-accent/10' : 'border-border bg-bg-elevated/40'"
         >
-            <div class="text-sm font-semibold text-text truncate" x-text="player2?.name ?? 'Gracz 2'"></div>
+            <button
+                type="button"
+                x-show="canSwitchOpener && turnIndex !== 1"
+                x-cloak
+                class="text-sm font-semibold text-accent truncate max-w-full underline decoration-dotted underline-offset-2"
+                @click="askSwitchOpener(1)"
+                x-text="player2?.name ?? 'Gracz 2'"
+            ></button>
+            <div
+                class="text-sm font-semibold text-text truncate"
+                x-show="!(canSwitchOpener && turnIndex !== 1)"
+                x-text="player2?.name ?? 'Gracz 2'"
+            ></div>
             <div class="text-4xl font-bold text-accent my-2 tabular-nums" x-text="remaining(player2)"></div>
             <div class="text-xs text-text-muted">
                 <span x-show="isSingleSetFormat()">Legi: <span x-text="matchScore(player2)"></span></span>
@@ -74,6 +98,12 @@
             </div>
         </div>
     </div>
+
+    <p
+        class="text-center text-xs text-text-muted -mt-2 mb-3"
+        x-show="canSwitchOpener"
+        x-cloak
+    >Kliknij nazwę drugiego zawodnika, aby zmienić rozpoczynającego.</p>
 
     <p class="text-center text-sm text-text-secondary mb-3">
         Tura:
@@ -146,6 +176,26 @@
                     ></button>
                 </template>
             </div>
+        </div>
+    </div>
+
+    {{-- Zamiana rozpoczynającego (tylko stan startowy) --}}
+    <div
+        x-show="switchOpenerOpen"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+    >
+        <div class="w-full max-w-sm rounded-xl border border-border bg-bg-deep p-5 text-center">
+            <p class="text-lg font-semibold text-accent mb-2">Zmiana rozpoczynającego</p>
+            <p class="text-text-secondary text-sm mb-4">
+                Czy przełączyć zawodnika rozpoczynającego mecz na
+                <span class="font-bold text-text" x-text="pendingSwitchName"></span>?
+            </p>
+            <div class="flex gap-2">
+                <button type="button" class="btn btn-secondary flex-1" @click="cancelSwitchOpener()">Nie</button>
+                <button type="button" class="btn btn-primary flex-1" @click="confirmSwitchOpener()">Tak</button>
+            </div>
+            <p class="text-xs text-text-muted mt-3">Enter — Tak · Esc — Nie</p>
         </div>
     </div>
 
