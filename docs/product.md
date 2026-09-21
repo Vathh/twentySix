@@ -251,6 +251,7 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 ### Zaproszenia do turnieju
 
 - Wysyłka: admin na **webie** — **na stronie startu turnieju** (bez osobnej podstrony): wyszukiwarka + lista zaproszonych + masowe zaproszenia ze składu organizacji.
+- **Dodaj mnie:** zalogowany admin wpisuje się od razu jako uczestnik (`accepted`), bez pusha i bez akceptacji w aplikacji. To samo, gdy wyśle zaproszenie turniejowe do siebie (wyszukiwarka albo masowy skład). Inni gracze nadal akceptują na mobile.
 - Akceptacja / wycofanie udziału: **mobile**.
 - Goście (nazwa od admina): edycja puli gości na ekranach sezonu/organizacji; na stronie startu admin **dodaje gościa do turnieju** z listy powiązanych.
 - **Zgłoszenia przez QR** (✅): gracz skanuje QR na starcie turnieju → admin Dołącz/Odrzuć.
@@ -260,8 +261,8 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - Organizacja (i opcjonalnie sezon) utrzymuje listę **powiązanych użytkowników** — **stali bywalcy**, którzy regularnie grają w turniejach tej organizacji.
 - Lista **nie wpisuje** nikogo automatycznie do turnieju — służy do **szybkiego masowego wysyłania zaproszeń** (zaznaczenie wielu osób → wyślij zaproszenia).
 - Na stronie startu turnieju skład do masowego invite = **suma `organization.relatedUsers` + `season.relatedUsers` bez duplikatów** (jak dziś `getRelatedPlayers`, ale tylko użytkownicy z kontem — bez gości).
-- **Skład organizacji:** admin na **webie** wysyła zaproszenie (ekran `relatedUsers`); gracz akceptuje na **mobile** (zakładka **Gra**). Do `relatedUsers` wpisuje się **dopiero po akceptacji**. Usunięcie ze składu zdejmuje powiązanie; można zaprosić ponownie.
-- **Skład sezonu** i **pula ligi** — ten sam flow co organizacja: zaproszenie z webu, akceptacja na mobile, wpis na listę dopiero po akceptacji.
+- **Skład organizacji:** admin na **webie** wysyła zaproszenie (ekran `relatedUsers`); gracz akceptuje na **mobile** (zakładka **Gra**). Do `relatedUsers` wpisuje się **dopiero po akceptacji**. Wyjątek: administrator organizacji jest w składzie od razu (także przy nadaniu roli i dla obecnych adminów). Dopóki jest administratorem, nie schodzi ze składu. Zdjęcie roli admina zostawia go w składzie. Usunięcie ze składu zdejmuje powiązanie; można zaprosić ponownie.
+- **Skład sezonu** i **pula ligi** — ten sam flow co organizacja: zaproszenie z webu, akceptacja na mobile, wpis na listę dopiero po akceptacji. Administrator sezonu jest od razu w składzie sezonu. Administrator organizacji jest od razu w puli każdej ligi tej organizacji (także przy tworzeniu ligi).
 
 #### Strona startu turnieju (web) — układ B
 
@@ -276,7 +277,7 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 | Status | Znaczenie | Kto ustawia |
 | ------ | --------- | ----------- |
 | `pending` | Oczekuje na odpowiedź gracza | — (po wysłaniu) |
-| `accepted` | Gracz potwierdził udział | gracz (mobile) |
+| `accepted` | Gracz potwierdził udział albo admin dodał siebie | gracz (mobile) / admin („Dodaj mnie”) |
 | `rejected` | Gracz odrzucił | gracz (mobile) |
 | `cancelled` | Admin anulował zaproszenie **pending** | admin (web) |
 | `withdrawn` | Gracz wycofał udział **po akceptacji** | gracz (mobile) |
@@ -341,7 +342,7 @@ Organizacja
 ```
 
 - Tylko **indywidualna**; format **X01** per szczebel (501 / legi / sety), zamrażany na start sezonu.
-- **Pula ligi** jest własna: powiązani użytkownicy i goście ligi (nie mieszanka ze składu organizacji). Admin zaprasza użytkowników do puli (akceptacja na mobile), gości dodaje od razu. **Skład szczebli:** przeciąganie znaczników z puli (powiązani / goście) na szczeble.
+- **Pula ligi** jest własna: powiązani użytkownicy i goście ligi (nie mieszanka ze składu organizacji). Admin zaprasza użytkowników do puli (akceptacja na mobile), gości dodaje od razu. Administrator organizacji jest w puli od razu. **Skład szczebli:** przeciąganie znaczników z puli (powiązani / goście) na szczeble.
 - Sezon ligowy i sezon turniejowy to **osobne byty**.
 - Kalendarz przy starcie sezonu ligowego:
   - **Kolejki:** albo **długość kolejki + data startu** (koniec sezonu wyliczany ze składu), albo **start i koniec sezonu** (długość kolejki = równy podział tego okresu).

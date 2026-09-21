@@ -207,6 +207,7 @@ Route::prefix('tournaments/{tournament}')->group(function () {
     Route::post('/cancel', [TournamentController::class, 'cancel'])->name('tournaments.cancel');
     Route::get('/invitations/search', [TournamentController::class, 'searchInvitationUsers'])->name('tournaments.invitations.search');
     Route::post('/invitations/send', [TournamentController::class, 'sendInvitation'])->name('tournaments.invitations.send');
+    Route::post('/invitations/join-self', [TournamentController::class, 'joinSelf'])->name('tournaments.invitations.join-self');
     Route::post('/invitations/bulk', [TournamentController::class, 'sendBulkInvitations'])->name('tournaments.invitations.bulk');
     Route::post('/invitations/{invitation}/cancel', [TournamentController::class, 'cancelInvitation'])->name('tournaments.invitations.cancel');
     Route::post('/invitations/{invitation}/remove', [TournamentController::class, 'removeParticipant'])->name('tournaments.invitations.remove');

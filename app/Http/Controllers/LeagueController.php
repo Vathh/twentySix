@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\RelatedRosterInvite;
 use App\Models\League\League;
 use App\Models\League\LeagueDivision;
 use App\Models\Organization\Organization;
@@ -235,10 +236,10 @@ class LeagueController extends Controller
         ]);
 
         try {
-            $invitation = $this->leagueInvitationService->send(
+            $result = $this->leagueInvitationService->send(
                 $league->id,
                 (int) $validated['user_id'],
-                Auth::id(),
+                (int) Auth::id(),
             );
         } catch (\RuntimeException $e) {
             if ($request->wantsJson()) {
@@ -249,6 +250,22 @@ class LeagueController extends Controller
                 ->route('leagues.relatedUsers', $league)
                 ->with('error', $e->getMessage());
         }
+
+        if ($result->joinedImmediately()) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'ok' => true,
+                    'user' => $result->member,
+                    'message' => RelatedRosterInvite::SELF_JOIN_MESSAGE,
+                ]);
+            }
+
+            return redirect()
+                ->route('leagues.relatedUsers', $league)
+                ->with('success', RelatedRosterInvite::SELF_JOIN_MESSAGE);
+        }
+
+        $invitation = $result->invitation;
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -302,7 +319,17 @@ class LeagueController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $this->leagueInvitationService->removeMember($league->id, (int) $validated['user_id']);
+        try {
+            $this->leagueInvitationService->removeMember($league->id, (int) $validated['user_id']);
+        } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            }
+
+            return redirect()
+                ->route('leagues.relatedUsers', $league)
+                ->with('error', $e->getMessage());
+        }
 
         if ($request->wantsJson()) {
             return response()->json([

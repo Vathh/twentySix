@@ -55,7 +55,8 @@ class OrganizationRepository
         ]);
 
         if (! empty($userId)) {
-            $organization->admins()->attach($userId);
+            $organization->admins()->syncWithoutDetaching([$userId]);
+            $organization->relatedUsers()->syncWithoutDetaching([$userId]);
         }
 
         return OrganizationDomain::fromEloquent($organization);
@@ -81,7 +82,17 @@ class OrganizationRepository
     public function addAdmin(int $organizationId, int $userId): void
     {
         $organization = Organization::findOrFail($organizationId);
-        $organization->admins()->attach($userId);
+        $organization->admins()->syncWithoutDetaching([$userId]);
+        $organization->relatedUsers()->syncWithoutDetaching([$userId]);
+    }
+
+    public function isAdmin(int $organizationId, int $userId): bool
+    {
+        return Organization::query()
+            ->findOrFail($organizationId)
+            ->admins()
+            ->where('users.id', $userId)
+            ->exists();
     }
 
     public function removeAdmin(int $organizationId, int $userId): void

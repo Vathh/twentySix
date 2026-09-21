@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Domain\GameScoring\MatchFormat;
 use App\Domain\OrganizationDomain;
+use App\Domain\RelatedRosterInvite;
 use App\Enums\AssignableEntityType;
 use App\Models\Organization\Organization;
 use App\Services\League\LeagueService;
@@ -175,10 +176,10 @@ class OrganizationController extends Controller
         ]);
 
         try {
-            $invitation = $this->organizationInvitationService->send(
+            $result = $this->organizationInvitationService->send(
                 $organizationId,
-                $validated['user_id'],
-                Auth::id(),
+                (int) $validated['user_id'],
+                (int) Auth::id(),
             );
         } catch (\RuntimeException $e) {
             if ($request->wantsJson()) {
@@ -189,6 +190,22 @@ class OrganizationController extends Controller
                 ->route('organizations.relatedUsers', $organizationId)
                 ->with('error', $e->getMessage());
         }
+
+        if ($result->joinedImmediately()) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'ok' => true,
+                    'user' => $result->member,
+                    'message' => RelatedRosterInvite::SELF_JOIN_MESSAGE,
+                ]);
+            }
+
+            return redirect()
+                ->route('organizations.relatedUsers', $organizationId)
+                ->with('success', RelatedRosterInvite::SELF_JOIN_MESSAGE);
+        }
+
+        $invitation = $result->invitation;
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -242,7 +259,17 @@ class OrganizationController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $this->organizationInvitationService->removeMember($organizationId, $validated['user_id']);
+        try {
+            $this->organizationInvitationService->removeMember($organizationId, (int) $validated['user_id']);
+        } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            }
+
+            return redirect()
+                ->route('organizations.relatedUsers', $organizationId)
+                ->with('error', $e->getMessage());
+        }
 
         if ($request->wantsJson()) {
             return response()->json([

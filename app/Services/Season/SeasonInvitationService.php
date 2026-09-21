@@ -2,6 +2,7 @@
 
 namespace App\Services\Season;
 
+use App\Domain\RelatedRosterInvite;
 use App\Domain\Season\SeasonInvitationDomain;
 use App\Repositories\Season\SeasonInvitationRepository;
 use App\Repositories\Season\SeasonRepository;
@@ -33,15 +34,17 @@ class SeasonInvitationService
         return $this->invitationRepository->getReceivedForUser($userId);
     }
 
-    public function send(int $seasonId, int $userId, int $invitedBy): SeasonInvitationDomain
+    public function send(int $seasonId, int $userId, int $invitedBy): RelatedRosterInvite
     {
-        if ($userId === $invitedBy) {
-            throw new \RuntimeException('Nie możesz zaprosić samego siebie');
-        }
-
         $relatedIds = $this->seasonRepository->getRelatedUsers($seasonId)->pluck('id');
         if ($relatedIds->contains($userId)) {
             throw new \RuntimeException('Użytkownik jest już powiązany z tym sezonem');
+        }
+
+        if ($userId === $invitedBy) {
+            return RelatedRosterInvite::member(
+                $this->seasonService->addRelatedUser($seasonId, $userId),
+            );
         }
 
         $invitation = $this->invitationRepository->createOrReinvite($seasonId, $userId, $invitedBy);
@@ -51,7 +54,7 @@ class SeasonInvitationService
             $invitation->seasonName,
         );
 
-        return $invitation;
+        return RelatedRosterInvite::invitation($invitation);
     }
 
     public function cancel(int $seasonId, int $invitationId): void
@@ -72,6 +75,10 @@ class SeasonInvitationService
 
     public function removeMember(int $seasonId, int $userId): void
     {
+        if ($this->seasonRepository->isAdmin($seasonId, $userId)) {
+            throw new \RuntimeException(RelatedRosterInvite::ADMIN_MEMBERSHIP_MESSAGE);
+        }
+
         $this->seasonService->removeRelatedUser($seasonId, $userId);
         $this->invitationRepository->markRemoved($seasonId, $userId);
     }

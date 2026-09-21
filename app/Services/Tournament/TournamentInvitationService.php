@@ -47,10 +47,26 @@ class TournamentInvitationService
         $skipped = 0;
 
         foreach (array_unique($userIds) as $userId) {
+            $userId = (int) $userId;
+
             try {
+                if ($userId === $invitedBy) {
+                    $existing = $this->invitationRepository->findByTournamentAndUser($tournamentId, $userId);
+                    if ($existing?->status === TournamentInvitationStatus::ACCEPTED) {
+                        $skipped++;
+
+                        continue;
+                    }
+
+                    $this->invitationRepository->acceptByAdmin($tournamentId, $userId, $invitedBy);
+                    $sent++;
+
+                    continue;
+                }
+
                 $invitation = $this->invitationRepository->createOrReinvite(
                     $tournamentId,
-                    (int) $userId,
+                    $userId,
                     $invitedBy,
                 );
                 $this->dispatchTournamentPush($invitation);
@@ -69,10 +85,29 @@ class TournamentInvitationService
 
     public function send(int $tournamentId, int $userId, int $invitedBy): TournamentInvitationDomain
     {
+        if ($userId === $invitedBy) {
+            return $this->joinSelf($tournamentId, $userId);
+        }
+
         $this->assertTournamentAcceptsInvitations($tournamentId);
 
         $invitation = $this->invitationRepository->createOrReinvite($tournamentId, $userId, $invitedBy);
         $this->dispatchTournamentPush($invitation);
+        $this->broadcastStartRoster($tournamentId);
+
+        return $invitation;
+    }
+
+    public function joinSelf(int $tournamentId, int $userId): TournamentInvitationDomain
+    {
+        $this->assertTournamentAcceptsInvitations($tournamentId);
+
+        $existing = $this->invitationRepository->findByTournamentAndUser($tournamentId, $userId);
+        if ($existing !== null && $existing->status === TournamentInvitationStatus::ACCEPTED) {
+            return $existing;
+        }
+
+        $invitation = $this->invitationRepository->acceptByAdmin($tournamentId, $userId, $userId);
         $this->broadcastStartRoster($tournamentId);
 
         return $invitation;

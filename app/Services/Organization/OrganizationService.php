@@ -3,8 +3,10 @@
 namespace App\Services\Organization;
 
 use App\Domain\OrganizationDomain;
+use App\Repositories\League\LeagueRepository;
 use App\Repositories\Organization\OrganizationRepository;
 use App\Repositories\Player\PlayerRepository;
+use App\Services\League\LeagueService;
 use App\Services\Player\PlayerService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
@@ -14,7 +16,9 @@ class OrganizationService
     public function __construct(
         private OrganizationRepository $organizationRepository,
         private PlayerService $playerService,
-        private PlayerRepository $playerRepository
+        private PlayerRepository $playerRepository,
+        private LeagueRepository $leagueRepository,
+        private LeagueService $leagueService,
     ) {}
 
     public function getAll(): Collection
@@ -68,10 +72,16 @@ class OrganizationService
 
     public function create(string $name, ?string $description, int $userId): OrganizationDomain
     {
-        return $this->organizationRepository->create($name, $description, $userId);
+        $organization = $this->organizationRepository->create($name, $description, $userId);
+        $this->addRelatedUser($organization->id, $userId);
+
+        return $organization;
     }
 
-    public function addRelatedUser(int $organizationId, int $userId): void
+    /**
+     * @return array{id: int, name: string}
+     */
+    public function addRelatedUser(int $organizationId, int $userId): array
     {
         // Pobierz gracza użytkownika (domenowy obiekt)
         $playerDomain = $this->playerRepository->findByUserId($userId);
@@ -92,6 +102,11 @@ class OrganizationService
         }
 
         $this->organizationRepository->addRelatedUser($organizationId, $userId);
+
+        return [
+            'id' => $userId,
+            'name' => $playerDomain?->name ?? '—',
+        ];
     }
 
     public function removeRelatedUser(int $organizationId, int $userId): void
@@ -101,7 +116,12 @@ class OrganizationService
 
     public function addAdmin(int $organizationId, int $userId): void
     {
+        $this->addRelatedUser($organizationId, $userId);
         $this->organizationRepository->addAdmin($organizationId, $userId);
+
+        foreach ($this->leagueRepository->idsForOrganization($organizationId) as $leagueId) {
+            $this->leagueService->addRelatedUser((int) $leagueId, $userId);
+        }
     }
 
     public function removeAdmin(int $organizationId, int $userId): void

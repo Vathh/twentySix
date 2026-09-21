@@ -136,6 +136,7 @@ class SeasonService
 
     public function addAdmin(int $seasonId, int $userId): void
     {
+        $this->addRelatedUser($seasonId, $userId);
         $this->seasonRepository->addAdmin($seasonId, $userId);
     }
 

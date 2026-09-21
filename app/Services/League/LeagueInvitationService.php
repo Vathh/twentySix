@@ -3,6 +3,7 @@
 namespace App\Services\League;
 
 use App\Domain\League\LeagueInvitationDomain;
+use App\Domain\RelatedRosterInvite;
 use App\Repositories\League\LeagueInvitationRepository;
 use App\Repositories\League\LeagueRepository;
 use App\Services\Push\InvitationPushService;
@@ -33,15 +34,17 @@ class LeagueInvitationService
         return $this->invitationRepository->getReceivedForUser($userId);
     }
 
-    public function send(int $leagueId, int $userId, int $invitedBy): LeagueInvitationDomain
+    public function send(int $leagueId, int $userId, int $invitedBy): RelatedRosterInvite
     {
-        if ($userId === $invitedBy) {
-            throw new \RuntimeException('Nie możesz zaprosić samego siebie');
-        }
-
         $relatedIds = $this->leagueRepository->getRelatedUserIds($leagueId);
         if ($relatedIds->contains($userId)) {
             throw new \RuntimeException('Użytkownik jest już powiązany z tą ligą');
+        }
+
+        if ($userId === $invitedBy) {
+            return RelatedRosterInvite::member(
+                $this->leagueService->addRelatedUser($leagueId, $userId),
+            );
         }
 
         $invitation = $this->invitationRepository->createOrReinvite($leagueId, $userId, $invitedBy);
@@ -51,7 +54,7 @@ class LeagueInvitationService
             $invitation->leagueName,
         );
 
-        return $invitation;
+        return RelatedRosterInvite::invitation($invitation);
     }
 
     public function cancel(int $leagueId, int $invitationId): void
@@ -72,6 +75,10 @@ class LeagueInvitationService
 
     public function removeMember(int $leagueId, int $userId): void
     {
+        if ($this->leagueRepository->isOrganizationAdmin($leagueId, $userId)) {
+            throw new \RuntimeException(RelatedRosterInvite::ADMIN_MEMBERSHIP_MESSAGE);
+        }
+
         $this->leagueService->removeRelatedUser($leagueId, $userId);
         $this->invitationRepository->markRemoved($leagueId, $userId);
     }

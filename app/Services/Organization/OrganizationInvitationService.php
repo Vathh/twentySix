@@ -3,6 +3,7 @@
 namespace App\Services\Organization;
 
 use App\Domain\Organization\OrganizationInvitationDomain;
+use App\Domain\RelatedRosterInvite;
 use App\Repositories\Organization\OrganizationInvitationRepository;
 use App\Repositories\Organization\OrganizationRepository;
 use App\Services\Push\InvitationPushService;
@@ -33,15 +34,17 @@ class OrganizationInvitationService
         return $this->invitationRepository->getReceivedForUser($userId);
     }
 
-    public function send(int $organizationId, int $userId, int $invitedBy): OrganizationInvitationDomain
+    public function send(int $organizationId, int $userId, int $invitedBy): RelatedRosterInvite
     {
-        if ($userId === $invitedBy) {
-            throw new \RuntimeException('Nie możesz zaprosić samego siebie');
-        }
-
         $relatedIds = $this->organizationRepository->getRelatedUsers($organizationId)->pluck('id');
         if ($relatedIds->contains($userId)) {
             throw new \RuntimeException('Użytkownik jest już powiązany z tą organizacją');
+        }
+
+        if ($userId === $invitedBy) {
+            return RelatedRosterInvite::member(
+                $this->organizationService->addRelatedUser($organizationId, $userId),
+            );
         }
 
         $invitation = $this->invitationRepository->createOrReinvite($organizationId, $userId, $invitedBy);
@@ -51,7 +54,7 @@ class OrganizationInvitationService
             $invitation->organizationName,
         );
 
-        return $invitation;
+        return RelatedRosterInvite::invitation($invitation);
     }
 
     public function cancel(int $organizationId, int $invitationId): void
@@ -72,6 +75,10 @@ class OrganizationInvitationService
 
     public function removeMember(int $organizationId, int $userId): void
     {
+        if ($this->organizationRepository->isAdmin($organizationId, $userId)) {
+            throw new \RuntimeException(RelatedRosterInvite::ADMIN_MEMBERSHIP_MESSAGE);
+        }
+
         $this->organizationService->removeRelatedUser($organizationId, $userId);
         $this->invitationRepository->markRemoved($organizationId, $userId);
     }

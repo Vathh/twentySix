@@ -67,7 +67,8 @@ class SeasonRepository
             ]);
 
             if (! empty($adminsIds)) {
-                $season->admins()->attach($adminsIds);
+                $season->admins()->syncWithoutDetaching($adminsIds);
+                $season->relatedUsers()->syncWithoutDetaching($adminsIds);
             }
         });
     }
@@ -90,7 +91,7 @@ class SeasonRepository
     public function addRelatedUser(int $seasonId, int $userId): void
     {
         $season = Season::findOrFail($seasonId);
-        $season->relatedUsers()->attach($userId);
+        $season->relatedUsers()->syncWithoutDetaching([$userId]);
     }
 
     public function removeRelatedUser(int $seasonId, int $userId): void
@@ -102,7 +103,17 @@ class SeasonRepository
     public function addAdmin(int $seasonId, int $userId): void
     {
         $season = Season::findOrFail($seasonId);
-        $season->admins()->attach($userId);
+        $season->admins()->syncWithoutDetaching([$userId]);
+        $season->relatedUsers()->syncWithoutDetaching([$userId]);
+    }
+
+    public function isAdmin(int $seasonId, int $userId): bool
+    {
+        return Season::query()
+            ->findOrFail($seasonId)
+            ->admins()
+            ->where('users.id', $userId)
+            ->exists();
     }
 
     public function removeAdmin(int $seasonId, int $userId): void

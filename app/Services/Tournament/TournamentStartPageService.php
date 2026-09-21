@@ -242,6 +242,7 @@ class TournamentStartPageService
             ->filter(fn ($inv) => $inv->status === TournamentInvitationStatus::ACCEPTED)
             ->map(fn ($inv) => [
                 'kind' => 'user',
+                'userId' => $inv->userId,
                 'playerId' => $inv->userPlayer?->id,
                 'name' => $inv->userPlayer?->name ?? '—',
                 'invitationId' => $inv->id,
@@ -249,6 +250,7 @@ class TournamentStartPageService
             ->merge(
                 $tournamentGuests->toBase()->map(fn ($guest) => [
                     'kind' => 'guest',
+                    'userId' => null,
                     'playerId' => $guest->id,
                     'name' => $guest->name,
                     'invitationId' => null,
@@ -274,13 +276,14 @@ class TournamentStartPageService
 
     /**
      * @param  \Illuminate\Support\Collection  $participants
-     * @return list<array{kind: string, playerId: int|null, name: string, invitationId: int|null, removeUrl: string|null}>
+     * @return list<array{kind: string, userId: int|null, playerId: int|null, name: string, invitationId: int|null, removeUrl: string|null}>
      */
     private function mapParticipantsLive($participants, int $tournamentId): array
     {
         return $participants
             ->map(fn ($p) => [
                 'kind' => $p['kind'],
+                'userId' => $p['userId'] ?? null,
                 'playerId' => $p['playerId'],
                 'name' => $p['name'],
                 'invitationId' => $p['invitationId'],

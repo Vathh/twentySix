@@ -51,6 +51,8 @@
                     'canManage' => true,
                     'csrfToken' => csrf_token(),
                     'inviteUrl' => route('tournaments.invitations.send', $tournament->id),
+                    'joinSelfUrl' => route('tournaments.invitations.join-self', $tournament->id),
+                    'currentUserId' => auth()->id(),
                     'invitationPipeline' => $invitationPipelineLive ?? [],
                 ]))"
             @endif
@@ -149,6 +151,8 @@
                     'snapshotUrl' => route('tournaments.join-requests-live', $tournament->id),
                     'csrfToken' => csrf_token(),
                     'inviteUrl' => route('tournaments.invitations.send', $tournament->id),
+                    'joinSelfUrl' => route('tournaments.invitations.join-self', $tournament->id),
+                    'currentUserId' => auth()->id(),
                     'createGuestUrl' => route('tournaments.participants.guests.create', $tournament->id),
                     'addGuestUrl' => route('tournaments.participants.guests.add', $tournament->id),
                     'invitationPipeline' => $invitationPipelineLive ?? [],
@@ -274,6 +278,21 @@
                         ]))"
                     >
                         <h3 class="text-accent font-semibold mb-2">Wyszukaj użytkownika</h3>
+                        <div
+                            class="mb-4"
+                            x-show="!$store.tournamentStartLive.isCurrentUserParticipant()"
+                            x-cloak
+                        >
+                            <button
+                                type="button"
+                                class="btn btn-primary"
+                                :disabled="$store.tournamentStartLive.inviteBusyKey === 'join-self'"
+                                @click="$store.tournamentStartLive.joinSelf()"
+                            >Dodaj mnie</button>
+                            <p class="text-text-secondary text-sm mt-2">
+                                Wejdziesz od razu na listę uczestników, bez akceptacji w aplikacji.
+                            </p>
+                        </div>
                         <p class="text-text-secondary text-sm mb-3">Wpisz imię lub fragment nazwy gracza i wyślij zaproszenie.</p>
                         <form @submit.prevent="search()" class="flex flex-wrap items-center gap-4">
                             <input

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\RelatedRosterInvite;
 use App\Domain\SeasonDomain;
 use App\Enums\AssignableEntityType;
 use App\Models\Season\Season;
@@ -151,10 +152,10 @@ class SeasonController extends Controller
         ]);
 
         try {
-            $invitation = $this->seasonInvitationService->send(
+            $result = $this->seasonInvitationService->send(
                 $seasonId,
-                $validated['user_id'],
-                Auth::id(),
+                (int) $validated['user_id'],
+                (int) Auth::id(),
             );
         } catch (\RuntimeException $e) {
             if ($request->wantsJson()) {
@@ -165,6 +166,22 @@ class SeasonController extends Controller
                 ->route('seasons.relatedUsers', $seasonId)
                 ->with('error', $e->getMessage());
         }
+
+        if ($result->joinedImmediately()) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'ok' => true,
+                    'user' => $result->member,
+                    'message' => RelatedRosterInvite::SELF_JOIN_MESSAGE,
+                ]);
+            }
+
+            return redirect()
+                ->route('seasons.relatedUsers', $seasonId)
+                ->with('success', RelatedRosterInvite::SELF_JOIN_MESSAGE);
+        }
+
+        $invitation = $result->invitation;
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -218,7 +235,17 @@ class SeasonController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $this->seasonInvitationService->removeMember($seasonId, $validated['user_id']);
+        try {
+            $this->seasonInvitationService->removeMember($seasonId, (int) $validated['user_id']);
+        } catch (\RuntimeException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            }
+
+            return redirect()
+                ->route('seasons.relatedUsers', $seasonId)
+                ->with('error', $e->getMessage());
+        }
 
         if ($request->wantsJson()) {
             return response()->json([

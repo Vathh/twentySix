@@ -7,6 +7,7 @@ use App\Models\League\League;
 use App\Models\League\LeagueDivision;
 use App\Models\League\LeagueDivisionMember;
 use App\Models\League\LeagueSeason;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -59,6 +60,21 @@ class LeagueRepository
     }
 
     /**
+     * @return Collection<int, int>
+     */
+    public function idsForOrganization(int $organizationId): Collection
+    {
+        return League::query()->where('organization_id', $organizationId)->pluck('id');
+    }
+
+    public function isOrganizationAdmin(int $leagueId, int $userId): bool
+    {
+        $league = League::query()->with('organization.admins')->findOrFail($leagueId);
+
+        return $league->organization->admins->contains('id', $userId);
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $divisions
      */
     public function create(int $organizationId, string $name, ?string $description, array $divisions): League
@@ -82,6 +98,14 @@ class LeagueRepository
                     'promote_direct' => $position === 0 ? 0 : ($division['promote_direct'] ?? 0),
                     'promote_playoff' => $position === 0 ? 0 : ($division['promote_playoff'] ?? 0),
                 ]);
+            }
+
+            $adminIds = Organization::query()
+                ->findOrFail($organizationId)
+                ->admins()
+                ->pluck('users.id');
+            if ($adminIds->isNotEmpty()) {
+                $league->relatedUsers()->syncWithoutDetaching($adminIds->all());
             }
 
             return $league->fresh(['divisions']);

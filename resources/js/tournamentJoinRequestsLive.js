@@ -39,6 +39,8 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 		canManage: true,
 		csrfToken: '',
 		inviteUrl: '',
+		joinSelfUrl: '',
+		currentUserId: null,
 		createGuestUrl: '',
 		addGuestUrl: '',
 		flash: null,
@@ -57,6 +59,10 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 			this.canManage = config.canManage !== false;
 			this.csrfToken = config.csrfToken || this.csrfToken || '';
 			this.inviteUrl = config.inviteUrl || this.inviteUrl || '';
+			this.joinSelfUrl = config.joinSelfUrl || this.joinSelfUrl || '';
+			if (config.currentUserId != null) {
+				this.currentUserId = Number(config.currentUserId);
+			}
 			this.createGuestUrl = config.createGuestUrl || this.createGuestUrl || '';
 			this.addGuestUrl = config.addGuestUrl || this.addGuestUrl || '';
 			if (Array.isArray(config.invitationPipeline)) {
@@ -123,6 +129,15 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 			}, 3500);
 		},
 
+		isCurrentUserParticipant() {
+			const id = Number(this.currentUserId);
+			if (!id) {
+				return false;
+			}
+
+			return this.participants.some((participant) => Number(participant.userId) === id);
+		},
+
 		participantKey(p) {
 			return `${p?.kind || ''}-${p?.invitationId || p?.playerId || ''}`;
 		},
@@ -186,12 +201,49 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 					this.showFlash(data.message || 'Nie udało się wysłać zaproszenia.', 'error');
 					return { ok: false };
 				}
-				this.applyInvitationPipeline(data);
+				if (Array.isArray(data.participants)) {
+					this.applyRoster(data);
+				} else {
+					this.applyInvitationPipeline(data);
+				}
 				this.showFlash(data.message || 'Zaproszenie wysłane', 'success');
 				return { ok: true, data };
 			} catch {
 				this.showFlash('Błąd sieci — spróbuj ponownie.', 'error');
 				return { ok: false };
+			} finally {
+				this.inviteBusyKey = null;
+			}
+		},
+
+		async joinSelf() {
+			if (!this.joinSelfUrl || this.inviteBusyKey || this.isCurrentUserParticipant()) {
+				return;
+			}
+			this.inviteBusyKey = 'join-self';
+			try {
+				const res = await fetch(toSameOriginUrl(this.joinSelfUrl), {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						Accept: 'application/json',
+						'Content-Type': 'application/json',
+						'X-CSRF-TOKEN': this.csrfToken,
+						'X-Requested-With': 'XMLHttpRequest',
+					},
+					body: JSON.stringify({}),
+				});
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) {
+					this.showFlash(data.message || 'Nie udało się dodać Cię do turnieju.', 'error');
+					return;
+				}
+				if (Array.isArray(data.participants)) {
+					this.applyRoster(data);
+				}
+				this.showFlash(data.message || 'Dodano Cię do turnieju', 'success');
+			} catch {
+				this.showFlash('Błąd sieci — spróbuj ponownie.', 'error');
 			} finally {
 				this.inviteBusyKey = null;
 			}
@@ -371,6 +423,8 @@ export function registerTournamentJoinRequestsLive(Alpine) {
 				canManage: config.canManage,
 				csrfToken: config.csrfToken,
 				inviteUrl: config.inviteUrl,
+				joinSelfUrl: config.joinSelfUrl,
+				currentUserId: config.currentUserId,
 				createGuestUrl: config.createGuestUrl,
 				addGuestUrl: config.addGuestUrl,
 				invitationPipeline: config.invitationPipeline,

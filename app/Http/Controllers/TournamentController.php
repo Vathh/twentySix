@@ -225,11 +225,27 @@ class TournamentController extends Controller
             'user_id' => 'required|integer|exists:users,id',
         ]);
 
+        $authId = (int) Auth::id();
+        $self = (int) $validated['user_id'] === $authId;
+        $message = $self ? 'Dodano Cię do turnieju' : 'Zaproszenie wysłane';
+
         return $this->respondToAction(
             $request,
-            fn () => $this->invitationService->send($tournamentId, (int) $validated['user_id'], (int) Auth::id()),
-            'Zaproszenie wysłane',
-            fn () => $this->invitationActionPayload($tournamentId, 'Zaproszenie wysłane'),
+            fn () => $this->invitationService->send($tournamentId, (int) $validated['user_id'], $authId),
+            $message,
+            fn () => $this->invitationActionPayload($tournamentId, $message),
+        );
+    }
+
+    public function joinSelf(Request $request, int $tournamentId): RedirectResponse|JsonResponse
+    {
+        $this->loadAndAuthorize($tournamentId);
+
+        return $this->respondToAction(
+            $request,
+            fn () => $this->invitationService->joinSelf($tournamentId, (int) Auth::id()),
+            'Dodano Cię do turnieju',
+            fn () => $this->invitationActionPayload($tournamentId, 'Dodano Cię do turnieju'),
         );
     }
 
@@ -570,13 +586,13 @@ class TournamentController extends Controller
     }
 
     /**
-     * @return array{message: string, invitationPipeline: list<array<string, mixed>>}
+     * @return array<string, mixed>
      */
     private function invitationActionPayload(int $tournamentId, string $message): array
     {
-        return [
-            'message' => $message,
-            'invitationPipeline' => $this->startPageService->buildInvitationPipelineLive($tournamentId),
-        ];
+        return array_merge(
+            $this->startPageService->rosterLiveSnapshot($tournamentId),
+            ['message' => $message],
+        );
     }
 }
