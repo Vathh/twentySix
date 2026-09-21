@@ -20,6 +20,7 @@ class GroupGameScoringController extends Controller
     public function state(int $gameId): JsonResponse
     {
         [$context, $game] = $this->gameScoringService->resolveGroupGame($gameId);
+        $this->gameScoringService->assertScoringActive($game);
 
         return response()->json($this->gameScoringService->getState($context, $game));
     }

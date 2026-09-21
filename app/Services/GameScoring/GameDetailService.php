@@ -231,6 +231,14 @@ class GameDetailService
                 $tournamentId,
                 $context->kind,
             ),
+            'canCancelGame' => $this->gameAuthorizationService->canCorrectTournamentGame(
+                $tournamentId,
+                $context->kind,
+            ) && (
+                $game->status instanceof GameStatus
+                    ? $game->status === GameStatus::IN_PROGRESS
+                    : (string) ($game->status instanceof \BackedEnum ? $game->status->value : $game->status) === 'in_progress'
+            ),
             'status' => $game->status instanceof \BackedEnum ? $game->status->value : (string) $game->status,
             'player1' => $game->player1,
             'player2' => $game->player2,

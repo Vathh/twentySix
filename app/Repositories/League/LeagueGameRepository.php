@@ -4,6 +4,7 @@ namespace App\Repositories\League;
 
 use App\Enums\LeagueGameStatus;
 use App\Enums\LeagueSeasonStatus;
+use App\Enums\LeagueWalkoverType;
 use App\Models\League\LeagueGame;
 use Illuminate\Support\Collection;
 
@@ -25,6 +26,19 @@ class LeagueGameRepository
     public function save(LeagueGame $game): void
     {
         $game->save();
+    }
+
+    public function resetToScheduled(LeagueGame $game): void
+    {
+        $game->status = LeagueGameStatus::SCHEDULED;
+        $game->player1_score = 0;
+        $game->player2_score = 0;
+        $game->winner_id = null;
+        $game->walkover_type = LeagueWalkoverType::NONE;
+        $game->lobby_host_player_id = null;
+        $game->opponent_accepted_at = null;
+        $game->scoring_host_player_id = null;
+        $this->save($game);
     }
 
     /**

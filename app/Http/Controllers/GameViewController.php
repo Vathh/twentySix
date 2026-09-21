@@ -6,6 +6,7 @@ use App\Enums\GameKind;
 use App\Enums\GameStatus;
 use App\Http\Requests\WebGameResultRequest;
 use App\Services\GameScoring\GameAuthorizationService;
+use App\Services\GameScoring\GameCancelService;
 use App\Services\GameScoring\GameDetailService;
 use App\Services\GameScoring\GameResultCorrectionService;
 use App\Services\GameScoring\GameScoringService;
@@ -22,6 +23,7 @@ class GameViewController extends Controller
         private GameDetailService $gameDetailService,
         private GameScoringService $gameScoringService,
         private GameResultCorrectionService $gameResultCorrectionService,
+        private GameCancelService $gameCancelService,
         private GameAuthorizationService $gameAuthorizationService,
     ) {}
 
@@ -64,6 +66,29 @@ class GameViewController extends Controller
             ->with('success', 'Wynik meczu został zapisany.');
     }
 
+    public function cancel(Request $request, string $type, int $id): RedirectResponse
+    {
+        $kind = GameDetailService::kindFromRoute($type);
+        $detail = $this->gameDetailService->build($kind, $id);
+
+        $this->gameAuthorizationService->authorizeTournamentGame(
+            $detail['tournamentId'] ?? null,
+            $kind,
+        );
+
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+        ], [
+            'current_password.current_password' => 'Hasło jest nieprawidłowe.',
+        ]);
+
+        $this->gameCancelService->cancel($kind, $id);
+
+        return redirect()
+            ->route('games.show', ['type' => $type, 'id' => $id])
+            ->with('success', 'Mecz anulowany. Można rozegrać go od nowa.');
+    }
+
     public function live(string $type, int $id): View|RedirectResponse
     {
         $kind = GameDetailService::kindFromRoute($type);
@@ -90,6 +115,9 @@ class GameViewController extends Controller
         $status = $game->status instanceof \BackedEnum ? $game->status->value : (string) $game->status;
         if ($status === GameStatus::FINISHED->value) {
             return response()->json(['message' => 'Mecz zakończony.'], 410);
+        }
+        if ($status !== GameStatus::IN_PROGRESS->value) {
+            return response()->json(['message' => 'Mecz nie jest w trakcie.'], 409);
         }
 
         return response()->json($this->gameScoringService->getState($context, $game));

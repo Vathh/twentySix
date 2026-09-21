@@ -134,6 +134,18 @@ class PlayoffGameRepository
         $game->save();
     }
 
+    public function resetToScheduled(PlayoffGame $game): void
+    {
+        $game->status = GameStatus::SCHEDULED;
+        $game->player1_score = 0;
+        $game->player2_score = 0;
+        $game->player1_legs_in_set = 0;
+        $game->player2_legs_in_set = 0;
+        $game->current_set_number = 1;
+        $game->winner_id = null;
+        $this->save($game);
+    }
+
     public function setPlayer1Slot(int $tournamentId, string $slot, int $playerId): void
     {
         $this->assignPlayerToSlot($tournamentId, $slot, $playerId, 'player1_id');

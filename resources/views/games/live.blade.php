@@ -38,6 +38,11 @@
             </a>
         </div>
 
+        @include('games.partials.cancel-game', [
+            'canCancelGame' => $canCancelGame ?? false,
+            'cancelAction' => route('games.cancel', ['type' => $kind, 'id' => $gameId]),
+        ])
+
         <div class="mb-4">
             @include('games.partials.overlay-obs-link')
         </div>

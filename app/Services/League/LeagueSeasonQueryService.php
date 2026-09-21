@@ -197,6 +197,8 @@ class LeagueSeasonQueryService
             'canManage' => $game->season->status->isOpen()
                 && $game->status !== LeagueGameStatus::VOIDED
                 && ! in_array($game->status, [LeagueGameStatus::LOBBY, LeagueGameStatus::IN_PROGRESS], true),
+            'canCancelGame' => $game->season->status->isOpen()
+                && in_array($game->status, [LeagueGameStatus::LOBBY, LeagueGameStatus::IN_PROGRESS], true),
         ];
     }
 

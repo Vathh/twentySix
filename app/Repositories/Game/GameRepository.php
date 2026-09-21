@@ -42,6 +42,18 @@ class GameRepository
             ->update(['status' => GameStatus::IN_PROGRESS]) === 1;
     }
 
+    public function resetToScheduled(Game $game): void
+    {
+        $game->status = GameStatus::SCHEDULED;
+        $game->player1_score = 0;
+        $game->player2_score = 0;
+        $game->player1_legs_in_set = 0;
+        $game->player2_legs_in_set = 0;
+        $game->current_set_number = 1;
+        $game->winner_id = null;
+        $this->save($game);
+    }
+
     public function tryUnlockInProgress(int $gameId): bool
     {
         return DB::table('games')
@@ -81,6 +93,19 @@ class GameRepository
             ->whereIn('status', [GameStatus::SCHEDULED, GameStatus::IN_PROGRESS])
             ->get()
             ->map(fn ($game) => GroupGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2']));
+    }
+
+    /**
+     * Wszystkie mecze grupowe turnieju (także finished) — macierz sędziego.
+     *
+     * @return Collection<int, GroupGameDomain>
+     */
+    public function getAllWithPlayers(int $tournamentId): Collection
+    {
+        return Game::with(['tournament', 'player1', 'player2', 'winner'])
+            ->where('tournament_id', $tournamentId)
+            ->get()
+            ->map(fn ($game) => GroupGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2', 'winner']));
     }
 
     public function checkIfPlayoffShouldBeStarted(int $tournamentId): bool

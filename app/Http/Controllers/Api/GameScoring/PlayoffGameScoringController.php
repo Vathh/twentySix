@@ -20,6 +20,7 @@ class PlayoffGameScoringController extends Controller
     public function state(int $playoffGameId): JsonResponse
     {
         [$context, $game] = $this->gameScoringService->resolvePlayoffGame($playoffGameId);
+        $this->gameScoringService->assertScoringActive($game);
 
         return response()->json($this->gameScoringService->getState($context, $game));
     }

@@ -24,6 +24,16 @@
     </div>
 
     <div
+        x-show="isCancelled"
+        x-cloak
+        class="mb-4 p-3 rounded-lg border border-danger/40 bg-danger/10 text-center"
+    >
+        <p class="text-danger font-semibold mb-2">Mecz został anulowany</p>
+        <p class="text-text-muted text-sm mb-3">Administrator anulował ten mecz.</p>
+        <button type="button" class="btn btn-primary !py-2" @click="goToGames()">OK</button>
+    </div>
+
+    <div
         x-show="isFinished"
         x-cloak
         class="mb-4 p-3 rounded-lg border border-success/40 bg-success-muted/30 text-center"
@@ -75,7 +85,7 @@
         <div class="text-5xl font-bold tabular-nums text-text tracking-wider min-h-[3.5rem]" x-text="input === '' ? '—' : input"></div>
     </div>
 
-    <div class="referee-numpad mb-4" x-show="!isFinished" x-cloak>
+    <div class="referee-numpad mb-4" x-show="!isFinished && !isCancelled" x-cloak>
         <template x-for="row in [['1','2','3'],['4','5','6'],['7','8','9'],['C','0','OK']]" :key="row.join('-')">
             <div class="grid grid-cols-3 gap-2 mb-2">
                 <template x-for="key in row" :key="key">

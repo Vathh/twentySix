@@ -31,6 +31,7 @@ use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
+use App\Support\Http\DomainExceptionHttp;
 use DomainException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -100,6 +101,31 @@ class GameScoringService
         return $this->gameScoringStateBuilder->build($context, $game);
     }
 
+    public function assertScoringActive(Game|PlayoffGame|QuickGame|LeagueGame $game): void
+    {
+        if ($game instanceof QuickGame) {
+            return;
+        }
+
+        if ($game instanceof LeagueGame) {
+            if ($game->status !== LeagueGameStatus::IN_PROGRESS) {
+                throw new DomainException(
+                    'Mecz nie jest w trakcie.',
+                    DomainExceptionHttp::CONFLICT,
+                );
+            }
+
+            return;
+        }
+
+        if ($game->status !== GameStatus::IN_PROGRESS) {
+            throw new DomainException(
+                'Mecz nie jest w trakcie.',
+                DomainExceptionHttp::CONFLICT,
+            );
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -150,6 +176,7 @@ class GameScoringService
         int $legId,
         RecordVisitDTO $dto,
     ): array {
+        $this->assertScoringActive($game);
         $leg = $this->resolveLegForContext($context, $legId);
 
         if (! $leg->isOpen()) {
@@ -215,6 +242,7 @@ class GameScoringService
         Game|PlayoffGame|QuickGame|LeagueGame $game,
         int $legId,
     ): array {
+        $this->assertScoringActive($game);
         $leg = $this->resolveLegForContext($context, $legId);
         $this->assertIsLatestLeg($context, $leg);
 
@@ -274,6 +302,7 @@ class GameScoringService
         array $playerStats,
         string $closeReason = DartLimitRules::CLOSE_CHECKOUT,
     ): array {
+        $this->assertScoringActive($game);
         $leg = $this->resolveLegForContext($context, $legId);
 
         if (! $leg->isOpen()) {

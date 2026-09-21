@@ -3,6 +3,7 @@ import { formatAverage as formatAverageValue } from './formatAverage.js';
 import { animateScoreDown } from './tickingScore.js';
 
 const GAME_STATE_EVENTS = ['game.state', '.game.state'];
+const GAME_CANCELLED_EVENTS = ['game.cancelled', '.game.cancelled'];
 
 function visitHighlightTier(visit) {
     if (!visit || visit.bust) {
@@ -152,6 +153,11 @@ export function registerGameLiveViewer(Alpine) {
                     }
                 });
             });
+            GAME_CANCELLED_EVENTS.forEach((eventName) => {
+                channel.bind(eventName, () => {
+                    this.redirectToShow();
+                });
+            });
 
             this.pusher.connection.bind('disconnected', () => {
                 if (this.connection === 'live') {
@@ -178,6 +184,10 @@ export function registerGameLiveViewer(Alpine) {
                     if (!this.redirectOnFinish) {
                         return;
                     }
+                    this.redirectToShow();
+                    return;
+                }
+                if (res.status === 409) {
                     this.redirectToShow();
                     return;
                 }

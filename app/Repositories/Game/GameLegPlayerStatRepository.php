@@ -62,6 +62,18 @@ class GameLegPlayerStatRepository
     }
 
     /**
+     * @param  list<int>  $gameLegIds
+     */
+    public function deleteForLegIds(array $gameLegIds): void
+    {
+        if ($gameLegIds === []) {
+            return;
+        }
+
+        GameLegPlayerStat::query()->whereIn('game_leg_id', $gameLegIds)->delete();
+    }
+
+    /**
      * @return Collection<int, GameLegPlayerStat>
      */
     public function getForLegIds(array $gameLegIds): Collection

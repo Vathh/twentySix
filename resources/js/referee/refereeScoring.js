@@ -12,6 +12,7 @@ import {
 } from './api.js';
 
 const GAME_STATE_EVENTS = ['game.state', '.game.state'];
+const GAME_CANCELLED_EVENTS = ['game.cancelled', '.game.cancelled'];
 
 function hasMatchProgress(state) {
     if (!state) {
@@ -74,6 +75,7 @@ export function registerRefereeScoring(Alpine) {
         openerChosen: false,
         chosenOpenerIndex: null,
         dismissedLossKey: null,
+        cancelled: false,
 
         init() {
             this.session = requireRefereeSessionOrRedirect();
@@ -147,6 +149,10 @@ export function registerRefereeScoring(Alpine) {
 
         get isFinished() {
             return this.state?.game?.status === 'finished';
+        },
+
+        get isCancelled() {
+            return this.cancelled === true;
         },
 
         get matchFormat() {
@@ -230,16 +236,30 @@ export function registerRefereeScoring(Alpine) {
             }
         },
 
+        markCancelled() {
+            if (this.cancelled) {
+                return;
+            }
+            this.cancelled = true;
+            this.busy = false;
+            this.openerOpen = false;
+            this.error = '';
+        },
+
         async loadState({ quiet = false } = {}) {
+            if (this.cancelled) {
+                return;
+            }
             try {
                 const data = await this.api('/scoring/state');
                 this.state = data;
                 this.error = '';
                 this.maybeAskOpener();
-                if (this.isFinished && !quiet) {
-                    // stay on screen until user leaves
-                }
             } catch (e) {
+                if (e instanceof RefereeApiError && e.status === 409) {
+                    this.markCancelled();
+                    return;
+                }
                 if (!quiet) {
                     this.error = e.message || 'Nie udało się wczytać stanu meczu.';
                 }
@@ -247,7 +267,7 @@ export function registerRefereeScoring(Alpine) {
         },
 
         maybeAskOpener() {
-            if (this.isFinished) {
+            if (this.isFinished || this.cancelled) {
                 this.openerOpen = false;
                 return;
             }
@@ -309,12 +329,19 @@ export function registerRefereeScoring(Alpine) {
                     }
                 });
             });
+            GAME_CANCELLED_EVENTS.forEach((eventName) => {
+                channel.bind(eventName, () => {
+                    this.markCancelled();
+                    this.connection = 'live';
+                });
+            });
         },
 
         pressDigit(d) {
             if (
                 this.busy
                 || this.isFinished
+                || this.cancelled
                 || this.openerOpen
                 || !this.openerChosen
                 || this.checkoutOpen
@@ -339,7 +366,7 @@ export function registerRefereeScoring(Alpine) {
         },
 
         handleWindowKey(event) {
-            if (this.busy || this.isFinished) {
+            if (this.busy || this.isFinished || this.cancelled) {
                 return;
             }
 
@@ -422,7 +449,7 @@ export function registerRefereeScoring(Alpine) {
         },
 
         async submitVisit() {
-            if (this.busy || this.isFinished || this.openerOpen || !this.openerChosen || this.bullOffRequired || this.lossThresholdOpen) {
+            if (this.busy || this.isFinished || this.cancelled || this.openerOpen || !this.openerChosen || this.bullOffRequired || this.lossThresholdOpen) {
                 return;
             }
             const score = this.inputValue();
@@ -646,7 +673,7 @@ export function registerRefereeScoring(Alpine) {
         },
 
         async undo() {
-            if (this.busy || this.isFinished || this.openerOpen || !this.openerChosen) {
+            if (this.busy || this.isFinished || this.cancelled || this.openerOpen || !this.openerChosen) {
                 return;
             }
             const legId = this.resolveUndoLegId();
@@ -726,7 +753,7 @@ export function registerRefereeScoring(Alpine) {
             if (this.leaving) {
                 return;
             }
-            if (this.isFinished) {
+            if (this.isFinished || this.cancelled) {
                 window.location.assign(config.gamesUrl);
                 return;
             }

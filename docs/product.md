@@ -242,6 +242,7 @@ Logika zgodna z `GroupStandingService` w backendzie (`sortStandings` → `compar
 - Admin na webie wchodzi w mecz i wpisuje **poprawny wynik** (nie osobny flow „cofnij”).
 - **Walkower:** wynik **do zera** — przy domyślnym formacie (1 set, 2 legi) = **2:0** w legach; przy wielu setach = wynik w **setach** (np. 2:0), zgodnie z `legsToWinSet` / `setsToWinMatch` meczu.
 - Po zapisie: **automatyczne przeliczenie** dalszych rund playoff i tabel.
+- **Anulowanie meczu w trakcie:** admin (hasło konta) kasuje przebieg sędziowania; mecz wraca do `oczekujący` jak nigdy nie rozpoczęty. Zakończony mecz zostaje przy korekcie / walkowerze. Dotyczy turnieju (grupa/playoff) i ligi (lobby albo w trakcie).
 
 ### Achievementy
 

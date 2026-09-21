@@ -142,6 +142,11 @@
             </div>
         @endif
 
+        @include('games.partials.cancel-game', [
+            'canCancelGame' => $canCancelGame ?? false,
+            'cancelAction' => route('games.cancel', ['type' => $kind, 'id' => $gameId]),
+        ])
+
         @php
             $p1 = $players[0];
             $p2 = $players[1];

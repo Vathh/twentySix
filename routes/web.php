@@ -48,6 +48,11 @@ Route::post('/games/{type}/{id}/result', [GameViewController::class, 'updateResu
     ->whereNumber('id')
     ->middleware('auth')
     ->name('games.result.update');
+Route::post('/games/{type}/{id}/cancel', [GameViewController::class, 'cancel'])
+    ->where('type', 'group|playoff')
+    ->whereNumber('id')
+    ->middleware('auth')
+    ->name('games.cancel');
 Route::get('/games/{type}/{id}/live', [GameViewController::class, 'live'])
     ->where('type', 'group|playoff|quick')
     ->whereNumber('id')
@@ -169,6 +174,7 @@ Route::get('/league-games/{leagueGame}', [LeagueSeasonController::class, 'showGa
 Route::post('/league-games/{leagueGame}/result', [LeagueSeasonController::class, 'updateResult'])->name('league-games.result')->middleware('auth');
 Route::post('/league-games/{leagueGame}/walkover', [LeagueSeasonController::class, 'walkover'])->name('league-games.walkover')->middleware('auth');
 Route::post('/league-games/{leagueGame}/extend', [LeagueSeasonController::class, 'extend'])->name('league-games.extend')->middleware('auth');
+Route::post('/league-games/{leagueGame}/cancel', [LeagueSeasonController::class, 'cancelGame'])->name('league-games.cancel')->middleware('auth');
 
 Route::resource('seasons', SeasonController::class);
 Route::prefix('seasons/{season}')->group(function () {

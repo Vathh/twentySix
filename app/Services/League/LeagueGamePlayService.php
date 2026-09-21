@@ -9,6 +9,7 @@ use App\Models\Player\Player;
 use App\Models\Users\User;
 use App\Repositories\League\LeagueGameRepository;
 use App\Services\Push\InvitationPushService;
+use App\Support\Http\DomainExceptionHttp;
 use Carbon\Carbon;
 use DomainException;
 
@@ -226,7 +227,10 @@ class LeagueGamePlayService
         $player = $this->requirePlayer($user);
         $this->assertParticipant($game, $player->id);
         if (! in_array($game->status, [LeagueGameStatus::IN_PROGRESS, LeagueGameStatus::FINISHED], true)) {
-            throw new DomainException('Scoring jest dostępny po starcie meczu.');
+            throw new DomainException(
+                'Mecz nie jest w trakcie.',
+                DomainExceptionHttp::CONFLICT,
+            );
         }
     }
 
@@ -238,7 +242,10 @@ class LeagueGamePlayService
             throw new DomainException('Wynik wpisuje gospodarz na jednym urządzeniu.');
         }
         if ($game->status !== LeagueGameStatus::IN_PROGRESS) {
-            throw new DomainException('Mecz nie jest w trakcie.');
+            throw new DomainException(
+                'Mecz nie jest w trakcie.',
+                DomainExceptionHttp::CONFLICT,
+            );
         }
     }
 

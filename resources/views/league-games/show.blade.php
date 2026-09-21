@@ -55,6 +55,11 @@
             @endif
         </div>
 
+        @include('games.partials.cancel-game', [
+            'canCancelGame' => ($canCancelGame ?? false) && $isAdmin,
+            'cancelAction' => route('league-games.cancel', $game),
+        ])
+
         @if($canManage && $isAdmin && $game->status->value !== 'voided')
             <div class="bg-bg-deep rounded-lg p-6 mb-8 border border-accent/40">
                 <h2 class="text-lg font-semibold text-accent mb-1">Wynik / walkower</h2>

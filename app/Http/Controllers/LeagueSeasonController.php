@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\GameKind;
 use App\Enums\LeagueCalendarMode;
 use App\Models\League\League;
 use App\Models\League\LeagueGame;
 use App\Models\League\LeagueSeason;
+use App\Services\GameScoring\GameCancelService;
 use App\Services\League\LeagueSeasonService;
 use App\Services\League\LeagueService;
 use Illuminate\Contracts\View\Factory;
@@ -19,6 +21,7 @@ class LeagueSeasonController extends Controller
     public function __construct(
         private LeagueSeasonService $leagueSeasonService,
         private LeagueService $leagueService,
+        private GameCancelService $gameCancelService,
     ) {}
 
     public function create(League $league): Factory|View|RedirectResponse
@@ -202,5 +205,22 @@ class LeagueSeasonController extends Controller
         $this->leagueSeasonService->extendGame($leagueGame->id, $validated['deadline_at']);
 
         return back()->with('success', 'Przedłużono termin meczu.');
+    }
+
+    public function cancelGame(Request $request, LeagueGame $leagueGame): RedirectResponse
+    {
+        $this->authorize('update', $this->leagueSeasonService->getGameForPolicy($leagueGame->id));
+
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+        ], [
+            'current_password.current_password' => 'Hasło jest nieprawidłowe.',
+        ]);
+
+        $this->gameCancelService->cancel(GameKind::LEAGUE, $leagueGame->id);
+
+        return redirect()
+            ->route('league-games.show', $leagueGame)
+            ->with('success', 'Mecz anulowany. Można rozegrać go od nowa.');
     }
 }

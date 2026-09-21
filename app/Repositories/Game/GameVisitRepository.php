@@ -142,6 +142,18 @@ class GameVisitRepository
         return $visit;
     }
 
+    /**
+     * @param  list<int>  $gameLegIds
+     */
+    public function deleteForLegIds(array $gameLegIds): void
+    {
+        if ($gameLegIds === []) {
+            return;
+        }
+
+        GameVisit::query()->whereIn('game_leg_id', $gameLegIds)->delete();
+    }
+
     public function nextVisitNumber(int $gameLegId): int
     {
         $max = GameVisit::query()
