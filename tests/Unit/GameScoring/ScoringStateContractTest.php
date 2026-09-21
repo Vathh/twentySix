@@ -51,6 +51,39 @@ class ScoringStateContractTest extends TestCase
         $this->assertArrayNotHasKey('legsToWin', $out['meta']);
         $this->assertSame(1, $out['turn']['currentPlayerIndex']);
         $this->assertGreaterThan(0, $out['revision']);
+        $this->assertFalse($out['meta']['bullOffRequired']);
+        $this->assertNull($out['meta']['lastLegClose']);
+    }
+
+    public function test_enrich_h2h_flags_bull_off_when_dart_limit_reached(): void
+    {
+        $payload = [
+            'game' => [
+                'id' => 10,
+                'kind' => 'group',
+                'status' => 'in_progress',
+                'startingScore' => 501,
+                'matchFormat' => [
+                    'startingScore' => 501,
+                    'legsToWinSet' => 2,
+                    'setsToWinMatch' => 1,
+                    'gameType' => 'x01',
+                    'dartLimit' => 15,
+                    'lossThreshold' => 50,
+                ],
+            ],
+            'players' => [
+                ['playerId' => 1, 'name' => 'A', 'remaining' => 80, 'dartsThrownInLeg' => 15],
+                ['playerId' => 2, 'name' => 'B', 'remaining' => 90, 'dartsThrownInLeg' => 15],
+            ],
+            'currentLeg' => ['id' => 5, 'legNumber' => 1, 'open' => true],
+            'visits' => [],
+            'legs' => [],
+        ];
+
+        $out = ScoringStateContract::enrichH2h($payload);
+
+        $this->assertTrue($out['meta']['bullOffRequired']);
     }
 
     public function test_h2h_revision_grows_after_undo_when_state_version_increases(): void

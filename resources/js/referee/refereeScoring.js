@@ -73,6 +73,7 @@ export function registerRefereeScoring(Alpine) {
         openerOpen: false,
         openerChosen: false,
         chosenOpenerIndex: null,
+        dismissedLossKey: null,
 
         init() {
             this.session = requireRefereeSessionOrRedirect();
@@ -172,6 +173,33 @@ export function registerRefereeScoring(Alpine) {
 
         remaining(player) {
             return player?.remaining ?? this.startingScore;
+        },
+
+        get bullOffRequired() {
+            return Boolean(this.state?.meta?.bullOffRequired) && !this.lossThresholdOpen;
+        },
+
+        get lossThresholdText() {
+            const close = this.state?.meta?.lastLegClose;
+            if (close?.reason !== 'loss_threshold') {
+                return '';
+            }
+            const key = `${close.legId ?? ''}:${close.winnerId ?? ''}`;
+            if (this.dismissedLossKey === key) {
+                return '';
+            }
+            const loser = this.players.find((p) => p.playerId === close.loserId);
+            const winner = this.players.find((p) => p.playerId === close.winnerId);
+            return `${loser?.name ?? 'Zawodnik'} przegrywa lega (próg przegranej). Wygrywa ${winner?.name ?? 'rywal'}.`;
+        },
+
+        get lossThresholdOpen() {
+            return this.lossThresholdText !== '';
+        },
+
+        dismissLossThreshold() {
+            const close = this.state?.meta?.lastLegClose;
+            this.dismissedLossKey = `${close?.legId ?? ''}:${close?.winnerId ?? ''}`;
         },
 
         inputValue() {
@@ -291,6 +319,8 @@ export function registerRefereeScoring(Alpine) {
                 || !this.openerChosen
                 || this.checkoutOpen
                 || this.checkoutDartsOpen
+                || this.bullOffRequired
+                || this.lossThresholdOpen
             ) {
                 return;
             }
@@ -310,6 +340,11 @@ export function registerRefereeScoring(Alpine) {
 
         handleWindowKey(event) {
             if (this.busy || this.isFinished) {
+                return;
+            }
+
+            if (this.bullOffRequired || this.lossThresholdOpen) {
+                event.preventDefault();
                 return;
             }
 
@@ -387,7 +422,7 @@ export function registerRefereeScoring(Alpine) {
         },
 
         async submitVisit() {
-            if (this.busy || this.isFinished || this.openerOpen || !this.openerChosen) {
+            if (this.busy || this.isFinished || this.openerOpen || !this.openerChosen || this.bullOffRequired || this.lossThresholdOpen) {
                 return;
             }
             const score = this.inputValue();
@@ -434,6 +469,17 @@ export function registerRefereeScoring(Alpine) {
                 });
                 this.state = state;
                 this.input = '';
+                if (
+                    state?.meta?.lastLegClose?.reason === 'loss_threshold'
+                    && state?.game?.status !== 'finished'
+                    && !state?.currentLeg?.id
+                ) {
+                    try {
+                        await this.ensureLegId();
+                    } catch {
+                        // next leg starts on first visit
+                    }
+                }
             } catch (e) {
                 this.error = e.message || 'Nie udało się zapisać wizyty.';
                 await this.loadState({ quiet: true });
@@ -522,6 +568,77 @@ export function registerRefereeScoring(Alpine) {
             } catch (e) {
                 this.error = e.message || 'Nie udało się zamknąć lega.';
                 this.cancelCheckout();
+                await this.loadState({ quiet: true });
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        async confirmBullOff(index) {
+            const player = this.players[index];
+            if (this.busy || !player?.playerId || !this.bullOffRequired) {
+                return;
+            }
+            this.busy = true;
+            this.error = '';
+            try {
+                const legId = await this.ensureLegId();
+                const playersPayload = this.players.map((p) => ({
+                    playerId: p.playerId,
+                    doubleTracked: false,
+                    doubleAttempts: null,
+                    doubleSuccesses: null,
+                    legAverage: null,
+                    firstNineAverage: null,
+                    highestVisit: null,
+                    highestFinish: null,
+                    dartsThrown: null,
+                    checkoutDart: null,
+                }));
+                const state = await this.api(`/legs/${legId}/close`, {
+                    method: 'POST',
+                    body: {
+                        winnerId: player.playerId,
+                        players: playersPayload,
+                        reason: 'bull_off',
+                    },
+                });
+                this.state = state;
+                this.input = '';
+                if (state?.game?.status !== 'finished' && !state?.currentLeg?.id) {
+                    try {
+                        await this.ensureLegId();
+                    } catch {
+                        // next leg starts on first visit
+                    }
+                }
+            } catch (e) {
+                this.error = e.message || 'Nie udało się zamknąć lega.';
+                await this.loadState({ quiet: true });
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        async undoFromBullOff() {
+            if (this.busy || !this.bullOffRequired) {
+                return;
+            }
+            const legId = this.resolveUndoLegId();
+            if (!legId) {
+                this.error = 'Brak wizyty do cofnięcia.';
+                return;
+            }
+            this.busy = true;
+            this.error = '';
+            try {
+                const state = await this.api(`/legs/${legId}/visits/undo`, {
+                    method: 'POST',
+                });
+                this.state = state;
+                this.input = '';
+            } catch (e) {
+                this.error = e.message || 'Nie udało się cofnąć wizyty.';
                 await this.loadState({ quiet: true });
             } finally {
                 this.busy = false;

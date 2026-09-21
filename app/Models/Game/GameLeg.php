@@ -28,6 +28,7 @@ class GameLeg extends Model
         'player1_darts_thrown',
         'player2_darts_thrown',
         'checkout_score',
+        'close_reason',
         'started_at',
         'finished_at',
     ];

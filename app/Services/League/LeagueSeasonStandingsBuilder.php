@@ -55,17 +55,34 @@ class LeagueSeasonStandingsBuilder
             ->isEmpty();
     }
 
-    public function seasonMatchFormat(LeagueSeason $season, int $startingScore, bool $mustHaveWinner = false): MatchFormat
-    {
+    public function seasonMatchFormat(
+        LeagueSeason $season,
+        int $startingScore,
+        bool $mustHaveWinner = false,
+        ?int $dartLimit = null,
+        ?int $lossThreshold = null,
+    ): MatchFormat {
         if ($mustHaveWinner || ! $season->allows_draws) {
             $length = $season->allows_draws
                 ? intdiv((int) $season->win_length, 2) + 1
                 : (int) $season->win_length;
 
-            return MatchFormat::forLeagueRules($startingScore, MatchWinMode::FIRST_TO, $length);
+            return MatchFormat::forLeagueRules(
+                $startingScore,
+                MatchWinMode::FIRST_TO,
+                $length,
+                $dartLimit,
+                $lossThreshold,
+            );
         }
 
-        return MatchFormat::forLeagueRules($startingScore, $season->win_mode, (int) $season->win_length);
+        return MatchFormat::forLeagueRules(
+            $startingScore,
+            $season->win_mode,
+            (int) $season->win_length,
+            $dartLimit,
+            $lossThreshold,
+        );
     }
 
     /**

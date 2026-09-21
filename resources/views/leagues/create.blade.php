@@ -53,6 +53,30 @@
                             <span class="form-label">Sety do wygrania meczu</span>
                             <input class="input-field" type="number" min="1" max="5" :name="'divisions['+index+'][setsToWinMatch]'" x-model.number="division.setsToWinMatch" required>
                         </label>
+                        <label class="block sm:col-span-2">
+                            <span class="flex items-center gap-2 form-label">
+                                <input type="checkbox" :checked="division.dartLimit != null"
+                                       @change="division.dartLimit = $event.target.checked ? (division.dartLimit || 45) : null; if (! $event.target.checked) division.lossThreshold = null">
+                                Ogranicznik lotek
+                            </span>
+                            <div class="flex items-center gap-2 mt-1" x-show="division.dartLimit != null" x-cloak>
+                                <button type="button" class="btn btn-secondary !py-1 !px-3" @click="division.dartLimit = Math.max(15, (division.dartLimit || 45) - 3)">−</button>
+                                <input class="input-field text-center w-24" type="number" min="15" max="99" step="3"
+                                       :name="'divisions['+index+'][dartLimit]'" x-model.number="division.dartLimit">
+                                <button type="button" class="btn btn-secondary !py-1 !px-3" @click="division.dartLimit = Math.min(99, (division.dartLimit || 45) + 3)">+</button>
+                            </div>
+                            <input type="hidden" :name="'divisions['+index+'][dartLimit]'" value="" x-show="division.dartLimit == null">
+                        </label>
+                        <label class="block sm:col-span-2" x-show="division.dartLimit != null" x-cloak>
+                            <span class="flex items-center gap-2 form-label">
+                                <input type="checkbox" :checked="division.lossThreshold != null"
+                                       @change="division.lossThreshold = $event.target.checked ? (division.lossThreshold || 50) : null">
+                                Próg przegranej
+                            </span>
+                            <input class="input-field mt-1" type="number" min="2" max="170"
+                                   :name="'divisions['+index+'][lossThreshold]'" x-show="division.lossThreshold != null" x-model.number="division.lossThreshold">
+                            <input type="hidden" :name="'divisions['+index+'][lossThreshold]'" value="" x-show="division.lossThreshold == null">
+                        </label>
                         <template x-if="index > 0">
                             <div class="grid sm:grid-cols-2 gap-3 sm:col-span-2">
                                 <label class="block">
@@ -91,6 +115,8 @@
                         setsToWinMatch: 1,
                         promoteDirect: 2,
                         promotePlayoff: 0,
+                        dartLimit: null,
+                        lossThreshold: null,
                     });
                 },
                 remove(index) {

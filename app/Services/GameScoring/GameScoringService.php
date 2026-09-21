@@ -2,6 +2,7 @@
 
 namespace App\Services\GameScoring;
 
+use App\Domain\GameScoring\DartLimitRules;
 use App\Domain\GameScoring\MatchFormatScoring;
 use App\Domain\GameScoring\VisitRecorder;
 use App\DTO\GameScoring\CloseLegPlayerStatsDTO;
@@ -194,14 +195,15 @@ class GameScoringService
         if ($existing !== null) {
             $this->gameVisitRepository->updateFromDto($existing, $dto);
 
-            return $this->broadcastState($context, $game);
+            return $this->applyDartLimitAfterVisit($context, $game, $leg, $dto);
         }
 
         return DB::transaction(function () use ($context, $game, $leg, $dto) {
+            $this->assertCanRecordVisitDuringDartLimit($context, $leg, $dto);
             $visitNumber = $this->gameVisitRepository->nextVisitNumber($leg->id);
             $this->gameVisitRepository->create($leg->id, $visitNumber, $dto);
 
-            return $this->broadcastState($context, $game);
+            return $this->applyDartLimitAfterVisit($context, $game, $leg, $dto);
         });
     }
 
@@ -270,6 +272,7 @@ class GameScoringService
         int $legId,
         int $winnerId,
         array $playerStats,
+        string $closeReason = DartLimitRules::CLOSE_CHECKOUT,
     ): array {
         $leg = $this->resolveLegForContext($context, $legId);
 
@@ -284,9 +287,13 @@ class GameScoringService
             throw new DomainException('Zwycięzca lega musi być uczestnikiem meczu.');
         }
 
+        if ($closeReason === DartLimitRules::CLOSE_BULL_OFF) {
+            $this->assertBullOffCloseAllowed($context, $leg, $winnerId);
+        }
+
         $finishedGroupMatch = false;
 
-        $state = DB::transaction(function () use ($context, $game, $leg, $winnerId, $playerStats, &$finishedGroupMatch) {
+        $state = DB::transaction(function () use ($context, $game, $leg, $winnerId, $playerStats, $closeReason, &$finishedGroupMatch) {
             $legVisits = $this->gameVisitRepository->getActiveForLeg($leg->id);
 
             foreach ($playerStats as $statsDto) {
@@ -298,7 +305,7 @@ class GameScoringService
             $p1Points = (int) $legVisits->where('player_id', $context->player1Id)->where('bust', false)->sum('score');
             $p2Points = (int) $legVisits->where('player_id', $context->player2Id)->where('bust', false)->sum('score');
 
-            $this->gameLegRepository->finishLeg($leg, $winnerId, $p1Points, $p2Points);
+            $this->gameLegRepository->finishLeg($leg, $winnerId, $p1Points, $p2Points, $closeReason);
 
             $result = MatchFormatScoring::applyLegWinToH2hGame(
                 $context->matchFormat,
@@ -361,6 +368,134 @@ class GameScoringService
         }
 
         return $state;
+    }
+
+    private function assertCanRecordVisitDuringDartLimit(
+        GameScoringContext $context,
+        GameLeg $leg,
+        RecordVisitDTO $dto,
+    ): void {
+        if ($dto->closedLeg) {
+            return;
+        }
+
+        $format = $context->matchFormat;
+        if (! DartLimitRules::isApplicable($format->dartLimit, $format->isX01())) {
+            return;
+        }
+
+        $visits = $this->gameVisitRepository->getActiveForLeg($leg->id);
+        $darts = DartLimitRules::dartsByPlayerId($visits, [$context->player1Id, $context->player2Id]);
+        if (! DartLimitRules::isReached($format->dartLimit, $darts)) {
+            return;
+        }
+
+        throw new DomainException('Najpierw rozstrzygnij rzut do bulla albo cofnij ostatnią kolejkę.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function applyDartLimitAfterVisit(
+        GameScoringContext $context,
+        Game|PlayoffGame|QuickGame|LeagueGame $game,
+        GameLeg $leg,
+        RecordVisitDTO $dto,
+    ): array {
+        if ($dto->closedLeg) {
+            return $this->broadcastState($context, $game);
+        }
+
+        $format = $context->matchFormat;
+        if (! DartLimitRules::isApplicable($format->dartLimit, $format->isX01())) {
+            return $this->broadcastState($context, $game);
+        }
+
+        $visits = $this->gameVisitRepository->getActiveForLeg($leg->id);
+        $playerIds = [$context->player1Id, $context->player2Id];
+        $darts = DartLimitRules::dartsByPlayerId($visits, $playerIds);
+        if (! DartLimitRules::isReached($format->dartLimit, $darts)) {
+            return $this->broadcastState($context, $game);
+        }
+
+        $p1Remaining = VisitRecorder::remainingFromLegVisits(
+            $visits->where('player_id', $context->player1Id),
+            $context->startingScore(),
+        );
+        $p2Remaining = VisitRecorder::remainingFromLegVisits(
+            $visits->where('player_id', $context->player2Id),
+            $context->startingScore(),
+        );
+        $outcome = DartLimitRules::resolveH2hOutcome($format->lossThreshold, $p1Remaining, $p2Remaining);
+        if ($outcome === DartLimitRules::OUTCOME_AUTO_P1) {
+            return $this->closeLeg(
+                $context,
+                $game,
+                $leg->id,
+                $context->player1Id,
+                $this->placeholderCloseStats($context),
+                DartLimitRules::CLOSE_LOSS_THRESHOLD,
+            );
+        }
+        if ($outcome === DartLimitRules::OUTCOME_AUTO_P2) {
+            return $this->closeLeg(
+                $context,
+                $game,
+                $leg->id,
+                $context->player2Id,
+                $this->placeholderCloseStats($context),
+                DartLimitRules::CLOSE_LOSS_THRESHOLD,
+            );
+        }
+
+        return $this->broadcastState($context, $game);
+    }
+
+    private function assertBullOffCloseAllowed(GameScoringContext $context, GameLeg $leg, int $winnerId): void
+    {
+        $format = $context->matchFormat;
+        if (! DartLimitRules::isApplicable($format->dartLimit, $format->isX01())) {
+            throw new DomainException('Rzut do bulla jest dostępny tylko przy włączonym ograniczniku lotek.');
+        }
+
+        $visits = $this->gameVisitRepository->getActiveForLeg($leg->id);
+        if ($this->gameVisitRepository->hasActiveCheckout($leg->id)) {
+            throw new DomainException('Leg został już zamknięty checkoutem.');
+        }
+
+        $playerIds = [$context->player1Id, $context->player2Id];
+        $darts = DartLimitRules::dartsByPlayerId($visits, $playerIds);
+        if (! DartLimitRules::isReached($format->dartLimit, $darts)) {
+            throw new DomainException('Nie wszyscy zawodnicy osiągnęli limit lotek.');
+        }
+
+        $p1Remaining = VisitRecorder::remainingFromLegVisits(
+            $visits->where('player_id', $context->player1Id),
+            $context->startingScore(),
+        );
+        $p2Remaining = VisitRecorder::remainingFromLegVisits(
+            $visits->where('player_id', $context->player2Id),
+            $context->startingScore(),
+        );
+        $outcome = DartLimitRules::resolveH2hOutcome($format->lossThreshold, $p1Remaining, $p2Remaining);
+        if ($outcome !== DartLimitRules::OUTCOME_BULL_OFF) {
+            throw new DomainException('Ten leg rozstrzyga próg przegranej, nie rzut do bulla.');
+        }
+
+        if (! in_array($winnerId, $playerIds, true)) {
+            throw new DomainException('Zwycięzca lega musi być uczestnikiem meczu.');
+        }
+    }
+
+    /**
+     * @return CloseLegPlayerStatsDTO[]
+     */
+    private function placeholderCloseStats(GameScoringContext $context): array
+    {
+        return [
+            new CloseLegPlayerStatsDTO($context->player1Id, false, null, null),
+            new CloseLegPlayerStatsDTO($context->player2Id, false, null, null),
+        ];
     }
 
     private function mergeStatsWithVisits(CloseLegPlayerStatsDTO $dto, $playerLegVisits): CloseLegPlayerStatsDTO

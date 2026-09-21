@@ -24,6 +24,8 @@ class QuickGameLobby extends Model
         'ffa_session_id',
         'player_order',
         'started_at',
+        'dart_limit',
+        'loss_threshold',
     ];
 
     protected $casts = [

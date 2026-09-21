@@ -62,7 +62,10 @@ class GameStatisticsCalculator
      */
     public static function highestFinish(Collection $legVisits): ?int
     {
-        $checkout = $legVisits->where('closed_leg', true)->where('bust', false)->first();
+        $checkout = $legVisits
+            ->where('closed_leg', true)
+            ->where('bust', false)
+            ->first(fn ($visit) => (int) $visit->remaining_after === 0);
 
         return $checkout ? (int) $checkout->score : null;
     }
@@ -80,7 +83,10 @@ class GameStatisticsCalculator
      */
     public static function checkoutDart(Collection $legVisits): ?int
     {
-        $checkout = $legVisits->where('closed_leg', true)->where('bust', false)->first();
+        $checkout = $legVisits
+            ->where('closed_leg', true)
+            ->where('bust', false)
+            ->first(fn ($visit) => (int) $visit->remaining_after === 0);
 
         return $checkout ? (int) $checkout->darts_in_visit : null;
     }

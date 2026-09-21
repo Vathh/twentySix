@@ -21,6 +21,7 @@ class GameVisit extends Model
         'is_voided',
         'client_visit_id',
         'darts',
+        'close_reason',
     ];
 
     protected $casts = [

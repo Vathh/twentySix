@@ -181,6 +181,7 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::post('/{lobbyId}/ffa/presence', [QuickGameFfaController::class, 'updatePresence']);
         Route::post('/{lobbyId}/ffa/visits', [QuickGameFfaController::class, 'recordVisit']);
         Route::post('/{lobbyId}/ffa/visits/undo', [QuickGameFfaController::class, 'undoVisit']);
+        Route::post('/{lobbyId}/ffa/close-leg', [QuickGameFfaController::class, 'closeLeg']);
         Route::post('/{lobbyId}/ffa/cricket/visits', [QuickGameFfaController::class, 'recordCricketVisit']);
         Route::post('/{lobbyId}/ffa/cricket/visits/undo', [QuickGameFfaController::class, 'undoCricketDart']);
         Route::post('/{lobbyId}/ffa/cricket/darts', [QuickGameFfaController::class, 'recordCricketDart']);

@@ -26,6 +26,8 @@ class Game extends Model
         'legs_to_win_set',
         'sets_to_win_match',
         'game_type',
+        'dart_limit',
+        'loss_threshold',
     ];
 
     protected $casts = [

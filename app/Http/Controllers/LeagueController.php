@@ -33,8 +33,8 @@ class LeagueController extends Controller
             'organization' => $organization,
             'startingScores' => [101, 201, 301, 401, 501, 601, 701, 801, 901, 1001],
             'defaultDivisions' => [
-                ['name' => 'Ekstraklasa', 'capacity' => 8, 'startingScore' => 501, 'legsToWinSet' => 2, 'setsToWinMatch' => 1, 'promoteDirect' => 0, 'promotePlayoff' => 0],
-                ['name' => '1. liga', 'capacity' => 8, 'startingScore' => 501, 'legsToWinSet' => 2, 'setsToWinMatch' => 1, 'promoteDirect' => 2, 'promotePlayoff' => 0],
+                ['name' => 'Ekstraklasa', 'capacity' => 8, 'startingScore' => 501, 'legsToWinSet' => 2, 'setsToWinMatch' => 1, 'promoteDirect' => 0, 'promotePlayoff' => 0, 'dartLimit' => null, 'lossThreshold' => null],
+                ['name' => '1. liga', 'capacity' => 8, 'startingScore' => 501, 'legsToWinSet' => 2, 'setsToWinMatch' => 1, 'promoteDirect' => 2, 'promotePlayoff' => 0, 'dartLimit' => null, 'lossThreshold' => null],
             ],
         ]);
     }
@@ -53,6 +53,8 @@ class LeagueController extends Controller
             'divisions.*.startingScore' => 'required|integer',
             'divisions.*.legsToWinSet' => 'required|integer|min:1|max:15',
             'divisions.*.setsToWinMatch' => 'required|integer|min:1|max:5',
+            'divisions.*.dartLimit' => 'nullable|integer',
+            'divisions.*.lossThreshold' => 'nullable|integer',
             'divisions.*.promoteDirect' => 'nullable|integer|min:0|max:8',
             'divisions.*.promotePlayoff' => 'nullable|integer|min:0|max:8',
         ]);
@@ -109,6 +111,8 @@ class LeagueController extends Controller
             'divisions.*.startingScore' => 'required|integer',
             'divisions.*.legsToWinSet' => 'required|integer|min:1|max:15',
             'divisions.*.setsToWinMatch' => 'required|integer|min:1|max:5',
+            'divisions.*.dartLimit' => 'nullable|integer',
+            'divisions.*.lossThreshold' => 'nullable|integer',
             'divisions.*.promoteDirect' => 'nullable|integer|min:0|max:8',
             'divisions.*.promotePlayoff' => 'nullable|integer|min:0|max:8',
         ]);

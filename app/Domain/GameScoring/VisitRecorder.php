@@ -252,7 +252,17 @@ final class VisitRecorder
         $visitList = self::collectVisits($legVisits);
 
         $winner = $visitList
-            ->filter(fn (array $v) => $v['closedLeg'] && ! $v['bust'] && $v['remainingAfter'] === 0)
+            ->filter(function (array $v) {
+                if ($v['bust'] || ! $v['closedLeg']) {
+                    return false;
+                }
+                if ($v['closeReason'] === DartLimitRules::CLOSE_BULL_OFF
+                    || $v['closeReason'] === DartLimitRules::CLOSE_LOSS_THRESHOLD) {
+                    return true;
+                }
+
+                return $v['remainingAfter'] === 0;
+            })
             ->sortBy([
                 ['visitNumber', 'desc'],
                 ['id', 'desc'],
@@ -284,7 +294,7 @@ final class VisitRecorder
 
     /**
      * @param  iterable<int, array<string, mixed>|object>  $visits
-     * @return Collection<int, array{playerId: int, score: int, remainingBefore: int, remainingAfter: int, dartsInVisit: int, closedLeg: bool, bust: bool, visitNumber: int, id: int, legKey: int|string}>
+     * @return Collection<int, array{playerId: int, score: int, remainingBefore: int, remainingAfter: int, dartsInVisit: int, closedLeg: bool, bust: bool, visitNumber: int, id: int, legKey: int|string, closeReason: ?string}>
      */
     private static function collectVisits(iterable $visits): Collection
     {
@@ -294,7 +304,7 @@ final class VisitRecorder
     }
 
     /**
-     * @return array{playerId: int, score: int, remainingBefore: int, remainingAfter: int, dartsInVisit: int, closedLeg: bool, bust: bool, visitNumber: int, id: int, legKey: int|string}
+     * @return array{playerId: int, score: int, remainingBefore: int, remainingAfter: int, dartsInVisit: int, closedLeg: bool, bust: bool, visitNumber: int, id: int, legKey: int|string, closeReason: ?string}
      */
     private static function normalizeVisit(array|object $visit): array
     {
@@ -312,6 +322,7 @@ final class VisitRecorder
                 'visitNumber' => (int) ($visit['visitNumber'] ?? 0),
                 'id' => (int) ($visit['id'] ?? 0),
                 'legKey' => $legKey,
+                'closeReason' => $visit['closeReason'] ?? $visit['close_reason'] ?? null,
             ];
         }
 
@@ -328,6 +339,7 @@ final class VisitRecorder
             'visitNumber' => (int) $visit->visit_number,
             'id' => (int) $visit->id,
             'legKey' => $legKey,
+            'closeReason' => $visit->close_reason ?? null,
         ];
     }
 }

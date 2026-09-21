@@ -48,6 +48,39 @@
                             <span class="form-label">Sety do wygrania meczu</span>
                             <input class="input-field" type="number" min="1" max="5" name="divisions[{{ $index }}][setsToWinMatch]" value="{{ old("divisions.$index.setsToWinMatch", $division->sets_to_win_match) }}" required>
                         </label>
+                        @php
+                            $dartLimit = old("divisions.$index.dartLimit", $division->dart_limit);
+                            $lossThreshold = old("divisions.$index.lossThreshold", $division->loss_threshold);
+                        @endphp
+                        <div class="sm:col-span-2 grid sm:grid-cols-2 gap-3" x-data="{
+                            dartOn: {{ $dartLimit ? 'true' : 'false' }},
+                            dartLimit: {{ $dartLimit ? (int) $dartLimit : 45 }},
+                            lossOn: {{ $lossThreshold ? 'true' : 'false' }},
+                            lossThreshold: {{ $lossThreshold ? (int) $lossThreshold : 50 }},
+                        }">
+                            <label class="block">
+                                <span class="flex items-center gap-2 form-label">
+                                    <input type="checkbox" x-model="dartOn" @change="if (!dartOn) lossOn = false">
+                                    Ogranicznik lotek
+                                </span>
+                                <div class="flex items-center gap-2 mt-1" x-show="dartOn" x-cloak>
+                                    <button type="button" class="btn btn-secondary !py-1 !px-3" @click="dartLimit = Math.max(15, dartLimit - 3)">−</button>
+                                    <input class="input-field text-center w-24" type="number" min="15" max="99" step="3"
+                                           name="divisions[{{ $index }}][dartLimit]" x-model.number="dartLimit">
+                                    <button type="button" class="btn btn-secondary !py-1 !px-3" @click="dartLimit = Math.min(99, dartLimit + 3)">+</button>
+                                </div>
+                                <input type="hidden" name="divisions[{{ $index }}][dartLimit]" value="" x-show="!dartOn">
+                            </label>
+                            <label class="block" x-show="dartOn" x-cloak>
+                                <span class="flex items-center gap-2 form-label">
+                                    <input type="checkbox" x-model="lossOn">
+                                    Próg przegranej
+                                </span>
+                                <input class="input-field mt-1" type="number" min="2" max="170" name="divisions[{{ $index }}][lossThreshold]"
+                                       x-show="lossOn" x-model.number="lossThreshold">
+                                <input type="hidden" name="divisions[{{ $index }}][lossThreshold]" value="" x-show="!lossOn">
+                            </label>
+                        </div>
                         @if($index > 0)
                             <label class="block">
                                 <span class="form-label">Awans bezpośredni</span>

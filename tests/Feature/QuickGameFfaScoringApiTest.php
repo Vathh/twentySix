@@ -218,7 +218,7 @@ class QuickGameFfaScoringApiTest extends TestCase
         ]);
     }
 
-    private function startTwoPlayerLobby(): int
+    private function startTwoPlayerLobby(?array $startPayload = null): int
     {
         $lobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
 
@@ -233,7 +233,7 @@ class QuickGameFfaScoringApiTest extends TestCase
         Sanctum::actingAs($this->host);
         $this->postJson("/api/quick-game/lobby/{$lobbyId}/ready")->assertOk();
 
-        $start = $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", [
+        $start = $this->postJson("/api/quick-game/lobby/{$lobbyId}/start", $startPayload ?? [
             'matchFormat' => ['legsToWinSet' => 2, 'setsToWinMatch' => 1, 'startingScore' => 501],
             'gameType' => '501',
             'scoringMode' => 'each_own',
@@ -245,5 +245,91 @@ class QuickGameFfaScoringApiTest extends TestCase
         $this->assertNotNull($start->json('ffaSessionId'));
 
         return $lobbyId;
+    }
+
+    public function test_one_device_dart_limit_requires_bull_off_then_close_leg(): void
+    {
+        $lobbyId = $this->startTwoPlayerLobby([
+            'matchFormat' => [
+                'legsToWinSet' => 2,
+                'setsToWinMatch' => 1,
+                'startingScore' => 501,
+                'dartLimit' => 15,
+            ],
+            'gameType' => '501',
+            'scoringMode' => 'one_device',
+        ]);
+
+        $this->assertDatabaseHas('quick_game_ffa_sessions', [
+            'lobby_id' => $lobbyId,
+            'dart_limit' => 15,
+            'scoring_mode' => 'one_device',
+        ]);
+
+        $remaining = [];
+        $state = $this->getJson("/api/quick-game/lobby/{$lobbyId}/ffa/state")->assertOk();
+        $playerIds = array_map(
+            static fn (array $player): int => (int) $player['playerId'],
+            $state->json('players'),
+        );
+        foreach ($playerIds as $playerId) {
+            $remaining[$playerId] = 501;
+        }
+
+        for ($i = 0; $i < 10; $i++) {
+            $playerId = $playerIds[$i % 2];
+            $before = $remaining[$playerId];
+            $state = $this->postJson("/api/quick-game/lobby/{$lobbyId}/ffa/visits", [
+                'playerId' => $playerId,
+                'score' => 0,
+                'remainingBefore' => $before,
+                'remainingAfter' => $before,
+                'dartsInVisit' => 3,
+                'closedLeg' => false,
+                'bust' => false,
+                'clientVisitId' => (string) Str::uuid(),
+            ]);
+            $state->assertOk();
+        }
+
+        $state->assertJsonPath('meta.bullOffRequired', true);
+
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/ffa/visits", [
+            'playerId' => $playerIds[0],
+            'score' => 0,
+            'remainingBefore' => 501,
+            'remainingAfter' => 501,
+            'dartsInVisit' => 3,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => (string) Str::uuid(),
+        ])->assertStatus(422);
+
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/ffa/close-leg", [
+            'winnerPlayerId' => $playerIds[0],
+        ])->assertOk()
+            ->assertJsonPath('meta.bullOffRequired', false)
+            ->assertJsonPath('meta.lastLegClose.reason', 'bull_off')
+            ->assertJsonPath('meta.lastLegClose.winnerId', $playerIds[0]);
+    }
+
+    public function test_each_own_start_strips_dart_limit(): void
+    {
+        $lobbyId = $this->startTwoPlayerLobby([
+            'matchFormat' => [
+                'legsToWinSet' => 2,
+                'setsToWinMatch' => 1,
+                'startingScore' => 501,
+                'dartLimit' => 45,
+            ],
+            'gameType' => '501',
+            'scoringMode' => 'each_own',
+        ]);
+
+        $this->assertDatabaseHas('quick_game_ffa_sessions', [
+            'lobby_id' => $lobbyId,
+            'dart_limit' => null,
+            'scoring_mode' => 'each_own',
+        ]);
     }
 }

@@ -783,6 +783,53 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <template x-for="stage in activeFormatStages" x-bind:key="'dl-'+stage.value">
+                                <div class="mt-4 pt-3 border-t border-border/40" x-show="matchFormats[stage.value]">
+                                    <p class="text-sm font-medium text-text mb-2" x-text="stage.label"></p>
+                                    <div class="grid sm:grid-cols-2 gap-3">
+                                        <label class="block">
+                                            <span class="flex items-center gap-2 text-sm mb-1">
+                                                <input type="checkbox"
+                                                       :checked="matchFormats[stage.value].dartLimit != null"
+                                                       @change="
+                                                           if ($event.target.checked) {
+                                                               matchFormats[stage.value].dartLimit = matchFormats[stage.value].dartLimit || 45;
+                                                           } else {
+                                                               matchFormats[stage.value].dartLimit = null;
+                                                               matchFormats[stage.value].lossThreshold = null;
+                                                           }
+                                                       ">
+                                                Ogranicznik lotek
+                                            </span>
+                                            <div class="flex items-center gap-2" x-show="matchFormats[stage.value].dartLimit != null" x-cloak>
+                                                <button type="button" class="btn btn-secondary !py-1 !px-3"
+                                                        @click="matchFormats[stage.value].dartLimit = Math.max(15, (matchFormats[stage.value].dartLimit || 45) - 3)">−</button>
+                                                <input class="input-field text-center w-24" type="number" min="15" max="99" step="3"
+                                                       x-bind:name="'matchFormats[' + stage.value + '][dartLimit]'"
+                                                       x-model.number="matchFormats[stage.value].dartLimit">
+                                                <button type="button" class="btn btn-secondary !py-1 !px-3"
+                                                        @click="matchFormats[stage.value].dartLimit = Math.min(99, (matchFormats[stage.value].dartLimit || 45) + 3)">+</button>
+                                            </div>
+                                            <input type="hidden" x-bind:name="'matchFormats[' + stage.value + '][dartLimit]'" value=""
+                                                   x-show="matchFormats[stage.value].dartLimit == null">
+                                        </label>
+                                        <label class="block" x-show="matchFormats[stage.value].dartLimit != null" x-cloak>
+                                            <span class="flex items-center gap-2 text-sm mb-1">
+                                                <input type="checkbox"
+                                                       :checked="matchFormats[stage.value].lossThreshold != null"
+                                                       @change="matchFormats[stage.value].lossThreshold = $event.target.checked ? (matchFormats[stage.value].lossThreshold || 50) : null">
+                                                Próg przegranej
+                                            </span>
+                                            <input class="input-field" type="number" min="2" max="170"
+                                                   x-bind:name="'matchFormats[' + stage.value + '][lossThreshold]'"
+                                                   x-show="matchFormats[stage.value].lossThreshold != null"
+                                                   x-model.number="matchFormats[stage.value].lossThreshold">
+                                            <input type="hidden" x-bind:name="'matchFormats[' + stage.value + '][lossThreshold]'" value=""
+                                                   x-show="matchFormats[stage.value].lossThreshold == null">
+                                        </label>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
 
                         <div class="w-full max-w-3xl rounded-lg border border-border bg-bg/40 p-4"
@@ -838,6 +885,53 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <template x-for="stage in consolationFormatStages" x-bind:key="'cdl-'+stage.value">
+                                <div class="mt-4 pt-3 border-t border-border/40" x-show="consolationMatchFormats[stage.value]">
+                                    <p class="text-sm font-medium text-text mb-2" x-text="stage.label"></p>
+                                    <div class="grid sm:grid-cols-2 gap-3">
+                                        <label class="block">
+                                            <span class="flex items-center gap-2 text-sm mb-1">
+                                                <input type="checkbox"
+                                                       :checked="consolationMatchFormats[stage.value].dartLimit != null"
+                                                       @change="
+                                                           if ($event.target.checked) {
+                                                               consolationMatchFormats[stage.value].dartLimit = consolationMatchFormats[stage.value].dartLimit || 45;
+                                                           } else {
+                                                               consolationMatchFormats[stage.value].dartLimit = null;
+                                                               consolationMatchFormats[stage.value].lossThreshold = null;
+                                                           }
+                                                       ">
+                                                Ogranicznik lotek
+                                            </span>
+                                            <div class="flex items-center gap-2" x-show="consolationMatchFormats[stage.value].dartLimit != null" x-cloak>
+                                                <button type="button" class="btn btn-secondary !py-1 !px-3"
+                                                        @click="consolationMatchFormats[stage.value].dartLimit = Math.max(15, (consolationMatchFormats[stage.value].dartLimit || 45) - 3)">−</button>
+                                                <input class="input-field text-center w-24" type="number" min="15" max="99" step="3"
+                                                       x-bind:name="'consolationMatchFormats[' + stage.value + '][dartLimit]'"
+                                                       x-model.number="consolationMatchFormats[stage.value].dartLimit">
+                                                <button type="button" class="btn btn-secondary !py-1 !px-3"
+                                                        @click="consolationMatchFormats[stage.value].dartLimit = Math.min(99, (consolationMatchFormats[stage.value].dartLimit || 45) + 3)">+</button>
+                                            </div>
+                                            <input type="hidden" x-bind:name="'consolationMatchFormats[' + stage.value + '][dartLimit]'" value=""
+                                                   x-show="consolationMatchFormats[stage.value].dartLimit == null">
+                                        </label>
+                                        <label class="block" x-show="consolationMatchFormats[stage.value].dartLimit != null" x-cloak>
+                                            <span class="flex items-center gap-2 text-sm mb-1">
+                                                <input type="checkbox"
+                                                       :checked="consolationMatchFormats[stage.value].lossThreshold != null"
+                                                       @change="consolationMatchFormats[stage.value].lossThreshold = $event.target.checked ? (consolationMatchFormats[stage.value].lossThreshold || 50) : null">
+                                                Próg przegranej
+                                            </span>
+                                            <input class="input-field" type="number" min="2" max="170"
+                                                   x-bind:name="'consolationMatchFormats[' + stage.value + '][lossThreshold]'"
+                                                   x-show="consolationMatchFormats[stage.value].lossThreshold != null"
+                                                   x-model.number="consolationMatchFormats[stage.value].lossThreshold">
+                                            <input type="hidden" x-bind:name="'consolationMatchFormats[' + stage.value + '][lossThreshold]'" value=""
+                                                   x-show="consolationMatchFormats[stage.value].lossThreshold == null">
+                                        </label>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
 
                         <button type="submit" class="btn btn-primary px-8 py-2"

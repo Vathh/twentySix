@@ -2,6 +2,7 @@
 
 namespace App\Support\QuickGameFfa;
 
+use App\Domain\GameScoring\DartLimitRules;
 use App\Domain\GameScoring\MatchFormat;
 use App\Domain\GameScoring\MatchFormatScoring;
 use App\Domain\GameScoring\VisitRecorder;
@@ -91,6 +92,7 @@ class QuickGameFfaStateBuilder
                 'dartsPerLeg' => $dartsPerLeg,
                 'matchDartsThrown' => (int) ($playerAll->sum('darts_in_visit') ?: ($playerAll->count() * 3)),
                 'matchPointsEarned' => (int) $playerAll->sum('score'),
+                'dartsThrownInLeg' => (int) $legVisits->sum('darts_in_visit'),
             ];
         }
 
@@ -149,6 +151,24 @@ class QuickGameFfaStateBuilder
         if ($presence !== null) {
             $out['presence'] = $presence;
         }
+
+        $activeIds = array_map('intval', $playerIds);
+        $darts = DartLimitRules::dartsByPlayerId($currentLegVisits, $activeIds);
+        $out['bullOffRequired'] = $session->isInProgress()
+            && DartLimitRules::isApplicable($format->dartLimit, $format->isX01(), (string) $session->scoring_mode)
+            && DartLimitRules::isReached($format->dartLimit, $darts);
+
+        $lastClosedVisit = $activeVisits
+            ->where('closed_leg', true)
+            ->sortByDesc('id')
+            ->first();
+        $out['lastLegClose'] = $lastClosedVisit
+            ? [
+                'reason' => $lastClosedVisit->close_reason ?: DartLimitRules::CLOSE_CHECKOUT,
+                'winnerId' => (int) $lastClosedVisit->player_id,
+                'legNumber' => (int) $lastClosedVisit->leg_number,
+            ]
+            : null;
 
         return ScoringStateContract::enrichFfa($out);
     }

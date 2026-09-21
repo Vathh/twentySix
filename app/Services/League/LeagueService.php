@@ -543,6 +543,8 @@ class LeagueService
                 'legsToWinSet' => $row['legsToWinSet'] ?? $row['legs_to_win_set'] ?? 2,
                 'setsToWinMatch' => $row['setsToWinMatch'] ?? $row['sets_to_win_match'] ?? 1,
                 'gameType' => 'x01',
+                'dartLimit' => $row['dartLimit'] ?? $row['dart_limit'] ?? null,
+                'lossThreshold' => $row['lossThreshold'] ?? $row['loss_threshold'] ?? null,
             ]);
             if (! $format->isX01()) {
                 throw ValidationException::withMessages([
@@ -578,6 +580,8 @@ class LeagueService
                 'game_type' => 'x01',
                 'promote_direct' => $promoteDirect,
                 'promote_playoff' => $promotePlayoff,
+                'dart_limit' => $format->dartLimit,
+                'loss_threshold' => $format->lossThreshold,
             ];
         }
 

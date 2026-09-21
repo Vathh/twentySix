@@ -39,6 +39,8 @@ class LeagueGame extends Model
         'tie_group_key',
         'bracket_round',
         'is_third_place',
+        'dart_limit',
+        'loss_threshold',
     ];
 
     protected function casts(): array

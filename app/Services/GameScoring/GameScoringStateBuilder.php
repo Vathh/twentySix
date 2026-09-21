@@ -72,6 +72,22 @@ class GameScoringStateBuilder
             )
             : 0;
 
+        $finishedLegs = $legs->whereNotNull('finished_at')->values();
+        $lastFinished = $finishedLegs->sortByDesc('leg_number')->first();
+        $lastLegClose = null;
+        if ($lastFinished instanceof GameLeg && $lastFinished->close_reason) {
+            $winnerId = $lastFinished->winner_id ? (int) $lastFinished->winner_id : null;
+            $lastLegClose = [
+                'reason' => $lastFinished->close_reason,
+                'winnerId' => $winnerId,
+                'loserId' => $winnerId === $context->player1Id
+                    ? $context->player2Id
+                    : ($winnerId === $context->player2Id ? $context->player1Id : null),
+                'legId' => (int) $lastFinished->id,
+                'legNumber' => (int) $lastFinished->leg_number,
+            ];
+        }
+
         return ScoringStateContract::enrichH2h([
             'stateVersion' => $this->gameVisitRepository->scoringStateVersionForGameLegs($legIds),
             'legOpenerIndex' => $legOpenerIndex,
@@ -96,12 +112,14 @@ class GameScoringStateBuilder
                 'legNumber' => $openLeg->leg_number,
                 'open' => true,
             ] : null,
-            'legs' => $legs->whereNotNull('finished_at')->map(fn (GameLeg $leg) => [
+            'legs' => $finishedLegs->map(fn (GameLeg $leg) => [
                 'id' => $leg->id,
                 'legNumber' => $leg->leg_number,
                 'winnerId' => $leg->winner_id,
+                'closeReason' => $leg->close_reason,
                 'finishedAt' => $leg->finished_at?->toIso8601String(),
             ])->values()->all(),
+            'lastLegClose' => $lastLegClose,
             'visits' => $openLeg
                 ? $allVisits->where('game_leg_id', $openLeg->id)->map(
                     fn ($visit) => $this->serializeVisit($visit),

@@ -2,6 +2,7 @@
 
 namespace App\Services\QuickGame;
 
+use App\Domain\GameScoring\DartLimitRules;
 use App\Domain\GameScoring\MatchFormat;
 use App\Domain\GameScoring\MatchFormatScoring;
 use App\Domain\GameScoring\VisitRecorder;
@@ -129,6 +130,10 @@ class QuickGameFfaScoringService
             'current_set_number' => 1,
             'state_version' => 1,
             'started_at' => now(),
+            'dart_limit' => ($scoringMode === 'each_own' || ! $matchFormat->isX01())
+                ? null
+                : $matchFormat->dartLimit,
+            'loss_threshold' => null,
         ]);
 
         $this->presenceRepository->initializeForSession($session, $playerIds);
@@ -355,6 +360,10 @@ class QuickGameFfaScoringService
 
             $this->normalizeTurnIndicesForLeftPlayers($session, $playerIds, $leftIds);
 
+            if ($this->isBullOffPending($session, $playerIds, $leftIds) && ! $dto->closedLeg) {
+                throw new DomainException('Najpierw rozstrzygnij rzut do bulla albo cofnij ostatnią kolejkę.');
+            }
+
             $currentPlayerId = (int) $playerIds[$session->current_player_index];
             if ($dto->playerId !== $currentPlayerId) {
                 throw new DomainException('Teraz rzuca inny gracz.');
@@ -396,6 +405,79 @@ class QuickGameFfaScoringService
 
             return $this->broadcastStateForSession($session->fresh(), $userId);
         });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function closeLegByBullOff(int $lobbyId, int $userId, int $winnerPlayerId): array
+    {
+        return DB::transaction(function () use ($lobbyId, $userId, $winnerPlayerId) {
+            $session = $this->sessionRepository->findOrFailForLobby($lobbyId);
+            $session->loadMissing('lobby');
+
+            if (! $session->isInProgress()) {
+                throw new DomainException('Mecz jest już zakończony.');
+            }
+
+            $format = MatchFormat::fromRecord($session);
+            $scoringMode = (string) $session->scoring_mode;
+            if (! DartLimitRules::isApplicable($format->dartLimit, $format->isX01(), $scoringMode)) {
+                throw new DomainException('Rzut do bulla jest dostępny tylko przy ograniczniku lotek na jednym urządzeniu.');
+            }
+
+            $playerIds = array_map('intval', $session->player_order ?? []);
+            $leftIds = $this->presenceRepository->getLeftPlayerIds($session);
+            if (! in_array($winnerPlayerId, $playerIds, true)) {
+                throw new DomainException('Zwycięzca lega musi być uczestnikiem meczu.');
+            }
+            if (in_array($winnerPlayerId, $leftIds, true)) {
+                throw new DomainException('Ten gracz opuścił mecz.');
+            }
+
+            $this->submitGuard->assert($session, $userId, null);
+
+            if (! $this->isBullOffPending($session, $playerIds, $leftIds)) {
+                throw new DomainException('Nie wszyscy zawodnicy osiągnęli limit lotek.');
+            }
+
+            $legNumber = (int) $session->current_leg_number;
+            $legVisits = $this->visitRepository->getActiveForLeg($session, $legNumber);
+            $remaining = VisitRecorder::remainingFromLegVisits(
+                $legVisits->where('player_id', $winnerPlayerId),
+                (int) $session->starting_score,
+            );
+            $this->visitRepository->createBullOffClose($session, $legNumber, $winnerPlayerId, $remaining);
+            $this->advanceAfterLegClosed($session, $winnerPlayerId, $playerIds, $leftIds);
+            $this->sessionRepository->incrementVersion($session);
+            $this->sessionRepository->save($session);
+
+            return $this->broadcastStateForSession($session->fresh(), $userId);
+        });
+    }
+
+    /**
+     * @param  array<int, int>  $playerIds
+     * @param  array<int, int>  $leftIds
+     */
+    private function isBullOffPending(
+        \App\Models\QuickGame\QuickGameFfaSession $session,
+        array $playerIds,
+        array $leftIds,
+    ): bool {
+        $format = MatchFormat::fromRecord($session);
+        if (! DartLimitRules::isApplicable($format->dartLimit, $format->isX01(), (string) $session->scoring_mode)) {
+            return false;
+        }
+
+        $activeIds = array_values(array_filter(
+            $playerIds,
+            static fn (int $id): bool => ! in_array($id, $leftIds, true),
+        ));
+        $visits = $this->visitRepository->getActiveForLeg($session, (int) $session->current_leg_number);
+        $darts = DartLimitRules::dartsByPlayerId($visits, $activeIds);
+
+        return DartLimitRules::isReached($format->dartLimit, $darts);
     }
 
     /**
@@ -465,7 +547,11 @@ class QuickGameFfaScoringService
             return;
         }
 
-        // Kompletna wizyta (w tym bust) — tura przechodzi dalej.
+        // Kompletna wizyta (w tym bust) — tura przechodzi dalej, chyba że zbito limit lotek.
+        if ($this->isBullOffPending($session, $playerIds, $leftIds)) {
+            return;
+        }
+
         $session->current_player_index = FfaTurnRotationDomain::nextIndexAfter(
             (int) $session->current_player_index,
             $playerIds,

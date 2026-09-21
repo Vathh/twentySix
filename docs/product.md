@@ -474,12 +474,25 @@ Już istniejący wybór w lobby mobilnym:
 | `outRule` | `double_out` (X01) | `double_out` |
 | `bob27Mode` | `hard` / `easy` (tylko Bob's 27) | `hard` |
 | `bob27Bull` | `with` / `without` (tylko Bob's 27; czy gra się inner bull po D20) | `with` |
+| `dartLimit` | Limit lotek na zawodnika **w legu** (X01). `null` = wyłączony. Włączenie ustawia **45**. Zakres 15–99, wielokrotność 3. | `null` |
+| `lossThreshold` | H2H: próg przegranej przy limicie lotek. `null` = wyłączony. Włączenie ustawia **50**. Zakres 2–170. | `null` |
 
 **Preset domyślny:** 501 · 1 set · 2 legi (= dotychczasowe BO3).
 
 **Punkty startowe (picker):** 101, 201, 301, 401, 501, 601, 701, 801, 901, 1001.
 
 **Zwycięzca meczu:** pierwszy gracz z `setsWon >= setsToWinMatch`. Przy `setsToWinMatch === 1` w UI można pokazać skrót „501 · do N legów”.
+
+### Ogranicznik lotek (X01)
+
+Opcjonalny limit `sum(darts_in_visit)` na zawodnika **w bieżącym legu**. Domyślnie wyłączony; checkbox ustawia 45. Checkout nadal wygrywa normalnie.
+
+- **Gdy wszyscy aktywni gracze osiągną limit** i nikt nie skończył checkoutem:
+  - **H2H** (turniej tablet + sędzia WWW, liga): włączony `lossThreshold` — dokładnie jeden zawodnik z `remaining >= próg` automatycznie przegrywa lega (komunikat). Obaj poniżej albo obaj na/powyżej progu → modal **„Rzut do bulla, kto trafił bliżej?”**.
+  - **Quick (`one_device`) i trening:** tylko modal rzutu do bulla (bez progu przegranej).
+- Modal blokuje grę (bez X/Esc): przyciski z imionami albo **„Cofnij ostatnią kolejkę”**. Po zamknięciu lega (bull-off lub auto-próg) cofnięcie działa jak zwykłe undo zamkniętego lega.
+- **Quick `each_own`:** ogranicznik ukryty i ignorowany (nie zapisuje się w sesji FFA).
+- Konfiguracja: start turnieju per etap; liga create/edit per szczebel (snapshot na start sezonu); quick/trening w pickerze formatu.
 
 ### Turniej
 

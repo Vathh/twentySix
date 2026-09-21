@@ -111,6 +111,46 @@
                             </tbody>
                         </table>
                     </div>
+                    @foreach($matchFormatStages as $stage)
+                        @php
+                            $format = $matchFormats[$stage['value']] ?? [];
+                            $dartLimit = $format['dartLimit'] ?? null;
+                            $lossThreshold = $format['lossThreshold'] ?? null;
+                        @endphp
+                        <div class="mt-4 pt-3 border-t border-border/40" x-data="{
+                            dartOn: {{ $dartLimit ? 'true' : 'false' }},
+                            dartLimit: {{ $dartLimit ? (int) $dartLimit : 45 }},
+                            lossOn: {{ $lossThreshold ? 'true' : 'false' }},
+                            lossThreshold: {{ $lossThreshold ? (int) $lossThreshold : 50 }},
+                        }">
+                            <p class="text-sm font-medium text-text mb-2">{{ $stage['label'] }}</p>
+                            <div class="grid sm:grid-cols-2 gap-3">
+                                <label class="block">
+                                    <span class="flex items-center gap-2 text-sm mb-1">
+                                        <input type="checkbox" x-model="dartOn" @change="if (!dartOn) lossOn = false">
+                                        Ogranicznik lotek
+                                    </span>
+                                    <div class="flex items-center gap-2" x-show="dartOn" x-cloak>
+                                        <button type="button" class="btn btn-secondary !py-1 !px-3" @click="dartLimit = Math.max(15, dartLimit - 3)">−</button>
+                                        <input class="input-field text-center w-24" type="number" min="15" max="99" step="3"
+                                               name="matchFormats[{{ $stage['value'] }}][dartLimit]" x-model.number="dartLimit">
+                                        <button type="button" class="btn btn-secondary !py-1 !px-3" @click="dartLimit = Math.min(99, dartLimit + 3)">+</button>
+                                    </div>
+                                    <input type="hidden" name="matchFormats[{{ $stage['value'] }}][dartLimit]" value="" x-show="!dartOn">
+                                </label>
+                                <label class="block" x-show="dartOn" x-cloak>
+                                    <span class="flex items-center gap-2 text-sm mb-1">
+                                        <input type="checkbox" x-model="lossOn">
+                                        Próg przegranej
+                                    </span>
+                                    <input class="input-field" type="number" min="2" max="170"
+                                           name="matchFormats[{{ $stage['value'] }}][lossThreshold]"
+                                           x-show="lossOn" x-model.number="lossThreshold">
+                                    <input type="hidden" name="matchFormats[{{ $stage['value'] }}][lossThreshold]" value="" x-show="!lossOn">
+                                </label>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
 
                 <button class="btn btn-primary" type="submit">Zapisz zmiany</button>

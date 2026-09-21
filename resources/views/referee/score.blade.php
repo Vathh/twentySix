@@ -178,5 +178,45 @@
             <button type="button" class="text-sm text-text-muted hover:text-accent" @click="cancelCheckout()" :disabled="busy">Anuluj</button>
         </div>
     </div>
+
+    {{-- Próg przegranej --}}
+    <div
+        x-show="lossThresholdOpen"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+    >
+        <div class="w-full max-w-sm rounded-xl border border-border bg-bg-deep p-5 text-center">
+            <p class="text-lg font-semibold text-accent mb-3" x-text="lossThresholdText"></p>
+            <button type="button" class="btn btn-primary w-full !py-3" @click="dismissLossThreshold()">OK</button>
+        </div>
+    </div>
+
+    {{-- Rzut do bulla --}}
+    <div
+        x-show="bullOffRequired"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+    >
+        <div class="w-full max-w-sm rounded-xl border border-border bg-bg-deep p-5 text-center">
+            <p class="text-lg font-semibold text-accent mb-2">Rzut do bulla, kto trafił bliżej?</p>
+            <div class="flex flex-col gap-2 mb-4">
+                <template x-for="(player, index) in players" :key="player.playerId ?? index">
+                    <button
+                        type="button"
+                        class="btn btn-primary w-full !py-4"
+                        :disabled="busy"
+                        @click="confirmBullOff(index)"
+                        x-text="player.name ?? ('Gracz ' + (index + 1))"
+                    ></button>
+                </template>
+            </div>
+            <button
+                type="button"
+                class="btn btn-secondary w-full !py-3"
+                :disabled="busy"
+                @click="undoFromBullOff()"
+            >Cofnij ostatnią kolejkę</button>
+        </div>
+    </div>
 </div>
 @endsection

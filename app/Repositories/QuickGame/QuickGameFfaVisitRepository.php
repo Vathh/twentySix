@@ -93,4 +93,27 @@ class QuickGameFfaVisitRepository
 
         return $visit;
     }
+
+    public function createBullOffClose(
+        QuickGameFfaSession $session,
+        int $legNumber,
+        int $winnerPlayerId,
+        int $remaining,
+    ): QuickGameFfaVisit {
+        return QuickGameFfaVisit::create([
+            'ffa_session_id' => $session->id,
+            'leg_number' => $legNumber,
+            'player_id' => $winnerPlayerId,
+            'visit_number' => $this->nextVisitNumber($session, $legNumber),
+            'score' => 0,
+            'remaining_before' => $remaining,
+            'remaining_after' => $remaining,
+            'darts_in_visit' => 0,
+            'closed_leg' => true,
+            'bust' => false,
+            'is_voided' => false,
+            'client_visit_id' => (string) \Illuminate\Support\Str::uuid(),
+            'close_reason' => \App\Domain\GameScoring\DartLimitRules::CLOSE_BULL_OFF,
+        ]);
+    }
 }

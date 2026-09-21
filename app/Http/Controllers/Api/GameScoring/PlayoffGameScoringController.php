@@ -86,6 +86,7 @@ class PlayoffGameScoringController extends Controller
             'players.*.highestFinish' => 'nullable|integer|min:0|max:180',
             'players.*.dartsThrown' => 'nullable|integer|min:0',
             'players.*.checkoutDart' => 'nullable|integer|min:1|max:3',
+            'reason' => 'nullable|string|in:checkout,bull_off,loss_threshold',
         ]);
 
         [$context, $game] = $this->gameScoringService->resolvePlayoffGame($playoffGameId);
@@ -102,6 +103,7 @@ class PlayoffGameScoringController extends Controller
                 $legId,
                 (int) $validated['winnerId'],
                 $playerStats,
+                (string) ($validated['reason'] ?? 'checkout'),
             )
         );
     }

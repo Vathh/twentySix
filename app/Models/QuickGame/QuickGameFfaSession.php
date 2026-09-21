@@ -38,6 +38,8 @@ class QuickGameFfaSession extends Model
         'atc_state',
         'catch40_state',
         'cricket56_state',
+        'dart_limit',
+        'loss_threshold',
     ];
 
     protected $casts = [

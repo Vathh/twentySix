@@ -2,6 +2,7 @@
 
 namespace App\Support\GameScoring;
 
+use App\Domain\GameScoring\DartLimitRules;
 use App\Domain\GameScoring\MatchFormat;
 use App\Domain\GameScoring\VisitRecorder;
 
@@ -51,6 +52,8 @@ final class ScoringStateContract
             'tournamentId' => isset($game['tournamentId']) ? (int) $game['tournamentId'] : null,
             'quickGameId' => null,
             'status' => ($game['status'] ?? '') === 'finished' ? 'finished' : 'in_progress',
+            'bullOffRequired' => self::h2hBullOffRequired($payload, $matchFormat),
+            'lastLegClose' => $payload['lastLegClose'] ?? null,
         ];
 
         return $payload;
@@ -84,6 +87,8 @@ final class ScoringStateContract
             'tournamentId' => null,
             'quickGameId' => isset($session['quickGameId']) ? (int) $session['quickGameId'] : null,
             'status' => self::ffaStatus($session, $game),
+            'bullOffRequired' => (bool) ($payload['bullOffRequired'] ?? false),
+            'lastLegClose' => $payload['lastLegClose'] ?? null,
         ];
 
         if ($session === [] || ($session['currentPlayerIndex'] ?? null) === null) {
@@ -152,6 +157,10 @@ final class ScoringStateContract
             $rev += 999_999_999;
         }
 
+        if (! empty($payload['bullOffRequired']) || ! empty($payload['meta']['bullOffRequired'])) {
+            $rev += 50;
+        }
+
         return $rev;
     }
 
@@ -176,5 +185,42 @@ final class ScoringStateContract
         }
 
         return 'in_progress';
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $matchFormat
+     */
+    private static function h2hBullOffRequired(array $payload, array $matchFormat): bool
+    {
+        $currentLeg = $payload['currentLeg'] ?? null;
+        if (! is_array($currentLeg) || empty($currentLeg['open'])) {
+            return false;
+        }
+
+        $format = MatchFormat::fromArray($matchFormat);
+        if (! DartLimitRules::isApplicable($format->dartLimit, $format->isX01())) {
+            return false;
+        }
+
+        $players = $payload['players'] ?? [];
+        if (count($players) < 2) {
+            return false;
+        }
+
+        $darts = [];
+        foreach ($players as $player) {
+            $playerId = (int) ($player['playerId'] ?? 0);
+            $darts[$playerId] = (int) ($player['dartsThrownInLeg'] ?? 0);
+        }
+        if (! DartLimitRules::isReached($format->dartLimit, $darts)) {
+            return false;
+        }
+
+        $p1 = (int) ($players[0]['remaining'] ?? 0);
+        $p2 = (int) ($players[1]['remaining'] ?? 0);
+        $outcome = DartLimitRules::resolveH2hOutcome($format->lossThreshold, $p1, $p2);
+
+        return $outcome === DartLimitRules::OUTCOME_BULL_OFF;
     }
 }

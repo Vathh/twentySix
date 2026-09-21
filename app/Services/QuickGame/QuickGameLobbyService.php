@@ -273,6 +273,12 @@ class QuickGameLobbyService
         $matchFormat = $matchFormatOverride ?? MatchFormat::fromRecord($lobby);
 
         $mode = $scoringMode ?? $lobby->scoring_mode ?? 'each_own';
+        if ($mode === 'each_own' || ! $matchFormat->isX01()) {
+            $matchFormat = MatchFormat::fromArray(array_merge($matchFormat->toArray(), [
+                'dartLimit' => null,
+                'lossThreshold' => null,
+            ]));
+        }
 
         if ($this->lobbyHasTempGuests($lobby) && $mode === 'each_own') {
             throw new \RuntimeException('Gracze tymczasowi wymagają trybu „na jednym urządzeniu”');

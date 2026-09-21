@@ -41,6 +41,8 @@ readonly class MatchFormat
 
     public int $winLength;
 
+    public ?int $lossThreshold;
+
     public function __construct(
         public int $startingScore = self::DEFAULT_STARTING_SCORE,
         public int $legsToWinSet = self::DEFAULT_LEGS_TO_WIN_SET,
@@ -51,12 +53,15 @@ readonly class MatchFormat
         public string $bob27Bull = self::BOB27_BULL_WITH,
         public MatchWinMode $winMode = MatchWinMode::FIRST_TO,
         ?int $winLength = null,
+        public ?int $dartLimit = null,
+        ?int $lossThreshold = null,
     ) {
         $this->winLength = $winLength ?? (
             $winMode === MatchWinMode::BEST_OF
                 ? max(1, ($legsToWinSet * 2) - 1)
                 : ($setsToWinMatch === 1 ? $legsToWinSet : $setsToWinMatch)
         );
+        $this->lossThreshold = $this->dartLimit === null ? null : $lossThreshold;
     }
 
     public static function default(): self
@@ -64,8 +69,13 @@ readonly class MatchFormat
         return new self;
     }
 
-    public static function forLeagueRules(int $startingScore, MatchWinMode $winMode, int $length): self
-    {
+    public static function forLeagueRules(
+        int $startingScore,
+        MatchWinMode $winMode,
+        int $length,
+        ?int $dartLimit = null,
+        ?int $lossThreshold = null,
+    ): self {
         if ($winMode === MatchWinMode::BEST_OF) {
             if ($length < 2 || $length > 16 || $length % 2 !== 0) {
                 throw new DomainException('Best of z remisami: parzysta liczba legów (2–16).');
@@ -77,6 +87,8 @@ readonly class MatchFormat
                 setsToWinMatch: 1,
                 winMode: MatchWinMode::BEST_OF,
                 winLength: $length,
+                dartLimit: $dartLimit,
+                lossThreshold: $lossThreshold,
             );
         }
 
@@ -90,6 +102,8 @@ readonly class MatchFormat
             setsToWinMatch: 1,
             winMode: MatchWinMode::FIRST_TO,
             winLength: $length,
+            dartLimit: $dartLimit,
+            lossThreshold: $lossThreshold,
         );
     }
 
@@ -105,16 +119,27 @@ readonly class MatchFormat
             $legs = intdiv((int) $explicitLength, 2) + 1;
         }
 
+        $gameType = self::normalizeGameType((string) ($data['gameType'] ?? $data['game_type'] ?? self::DEFAULT_GAME_TYPE));
+        $isX01 = $gameType === self::DEFAULT_GAME_TYPE;
+        $dartLimit = $isX01
+            ? DartLimitRules::normalizeDartLimit($data['dartLimit'] ?? $data['dart_limit'] ?? null)
+            : null;
+        $lossThreshold = $isX01 && $dartLimit !== null
+            ? DartLimitRules::normalizeLossThreshold($data['lossThreshold'] ?? $data['loss_threshold'] ?? null)
+            : null;
+
         return new self(
             startingScore: (int) ($data['startingScore'] ?? $data['starting_score'] ?? self::DEFAULT_STARTING_SCORE),
             legsToWinSet: $legs,
             setsToWinMatch: (int) ($data['setsToWinMatch'] ?? $data['sets_to_win_match'] ?? self::DEFAULT_SETS_TO_WIN_MATCH),
-            gameType: self::normalizeGameType((string) ($data['gameType'] ?? $data['game_type'] ?? self::DEFAULT_GAME_TYPE)),
+            gameType: $gameType,
             outRule: (string) ($data['outRule'] ?? $data['out_rule'] ?? self::DEFAULT_OUT_RULE),
             bob27Mode: self::normalizeBob27Mode((string) ($data['bob27Mode'] ?? $data['bob27_mode'] ?? self::BOB27_MODE_HARD)),
             bob27Bull: self::normalizeBob27Bull((string) ($data['bob27Bull'] ?? $data['bob27_bull'] ?? self::BOB27_BULL_WITH)),
             winMode: $winMode,
             winLength: $explicitLength !== null ? (int) $explicitLength : null,
+            dartLimit: $dartLimit,
+            lossThreshold: $lossThreshold,
         );
     }
 
@@ -127,11 +152,20 @@ readonly class MatchFormat
             $legs = intdiv((int) $explicitLength, 2) + 1;
         }
 
+        $gameType = self::normalizeGameType((string) ($record->game_type ?? self::DEFAULT_GAME_TYPE));
+        $isX01 = $gameType === self::DEFAULT_GAME_TYPE;
+        $dartLimit = $isX01
+            ? DartLimitRules::normalizeDartLimit($record->dart_limit ?? $record->dartLimit ?? null)
+            : null;
+        $lossThreshold = $isX01 && $dartLimit !== null
+            ? DartLimitRules::normalizeLossThreshold($record->loss_threshold ?? $record->lossThreshold ?? null)
+            : null;
+
         return new self(
             startingScore: (int) ($record->starting_score ?? self::DEFAULT_STARTING_SCORE),
             legsToWinSet: $legs,
             setsToWinMatch: (int) ($record->sets_to_win_match ?? self::DEFAULT_SETS_TO_WIN_MATCH),
-            gameType: self::normalizeGameType((string) ($record->game_type ?? self::DEFAULT_GAME_TYPE)),
+            gameType: $gameType,
             outRule: self::DEFAULT_OUT_RULE,
             bob27Mode: self::normalizeBob27Mode((string) (
                 (isset($record->bob27_mode) && $record->bob27_mode !== null)
@@ -145,6 +179,8 @@ readonly class MatchFormat
             )),
             winMode: $winMode,
             winLength: $explicitLength !== null ? (int) $explicitLength : null,
+            dartLimit: $dartLimit,
+            lossThreshold: $lossThreshold,
         );
     }
 
@@ -232,7 +268,7 @@ readonly class MatchFormat
     }
 
     /**
-     * @return array<string, int|string>
+     * @return array<string, int|string|null>
      */
     public function toArray(): array
     {
@@ -246,11 +282,13 @@ readonly class MatchFormat
             'bob27Bull' => $this->bob27Bull,
             'winMode' => $this->winMode->value,
             'winLength' => $this->winLength,
+            'dartLimit' => $this->dartLimit,
+            'lossThreshold' => $this->lossThreshold,
         ];
     }
 
     /**
-     * @return array<string, int|string>
+     * @return array<string, int|string|null>
      */
     public function toDatabaseColumns(): array
     {
@@ -259,6 +297,8 @@ readonly class MatchFormat
             'legs_to_win_set' => $this->legsToWinSet,
             'sets_to_win_match' => $this->setsToWinMatch,
             'game_type' => $this->gameType,
+            'dart_limit' => $this->dartLimit,
+            'loss_threshold' => $this->lossThreshold,
         ];
     }
 
@@ -358,6 +398,13 @@ readonly class MatchFormat
                 throw new DomainException('Best of: 2–16 legów.');
             }
         }
+
+        if (! $this->isX01() && ($this->dartLimit !== null || $this->lossThreshold !== null)) {
+            throw new DomainException('Ogranicznik lotek i próg przegranej są dostępne tylko w X01.');
+        }
+
+        DartLimitRules::assertValidDartLimit($this->dartLimit);
+        DartLimitRules::assertValidLossThreshold($this->lossThreshold, $this->dartLimit);
     }
 
     public function validateForStage(GameStage $stage): void

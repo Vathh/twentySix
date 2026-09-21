@@ -20,6 +20,8 @@ class LeagueSeasonDivision extends Model
         'game_type',
         'promote_direct',
         'promote_playoff',
+        'dart_limit',
+        'loss_threshold',
     ];
 
     /** @return BelongsTo<LeagueSeason, $this> */

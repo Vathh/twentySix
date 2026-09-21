@@ -3,6 +3,7 @@
 namespace App\Repositories\Game;
 
 use App\DTO\GameLegDTO;
+use App\Domain\GameScoring\DartLimitRules;
 use App\Enums\GameKind;
 use App\Models\Game\GameLeg;
 use App\Support\GameScoring\GameScoringContext;
@@ -119,13 +120,19 @@ class GameLegRepository
         return GameLeg::create($data);
     }
 
-    public function finishLeg(GameLeg $leg, int $winnerId, int $player1LegPoints, int $player2LegPoints): void
-    {
+    public function finishLeg(
+        GameLeg $leg,
+        int $winnerId,
+        int $player1LegPoints,
+        int $player2LegPoints,
+        ?string $closeReason = null,
+    ): void {
         $leg->update([
             'winner_id' => $winnerId,
             'player1_score' => $player1LegPoints,
             'player2_score' => $player2LegPoints,
             'finished_at' => now(),
+            'close_reason' => $closeReason ?? DartLimitRules::CLOSE_CHECKOUT,
         ]);
     }
 
@@ -136,6 +143,7 @@ class GameLegRepository
             'player1_score' => 0,
             'player2_score' => 0,
             'finished_at' => null,
+            'close_reason' => null,
         ]);
     }
 

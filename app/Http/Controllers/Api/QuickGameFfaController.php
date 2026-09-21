@@ -105,6 +105,23 @@ class QuickGameFfaController
         );
     }
 
+    public function closeLeg(Request $request, string $lobbyId): JsonResponse
+    {
+        $validated = $request->validate([
+            'winnerPlayerId' => 'required|integer|exists:players,id',
+        ]);
+
+        $this->assertLobbyParticipant((int) $lobbyId, $request->user()->id);
+
+        return response()->json(
+            $this->ffaScoringService->closeLegByBullOff(
+                (int) $lobbyId,
+                $request->user()->id,
+                (int) $validated['winnerPlayerId'],
+            )
+        );
+    }
+
     public function recordCricketDart(Request $request, string $lobbyId): JsonResponse
     {
         $validated = $request->validate([

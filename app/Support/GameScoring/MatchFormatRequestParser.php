@@ -27,6 +27,8 @@ final class MatchFormatRequestParser
             && ! $hasField('gameType')
             && ! $hasField('bob27Mode')
             && ! $hasField('bob27Bull')
+            && ! $hasField('dartLimit')
+            && ! $hasField('lossThreshold')
         ) {
             return null;
         }
@@ -54,6 +56,12 @@ final class MatchFormatRequestParser
         }
         if ($hasField('bob27Bull')) {
             $base['bob27Bull'] = (string) $input['bob27Bull'];
+        }
+        if (array_key_exists('dartLimit', $input)) {
+            $base['dartLimit'] = $input['dartLimit'];
+        }
+        if (array_key_exists('lossThreshold', $input)) {
+            $base['lossThreshold'] = $input['lossThreshold'];
         }
 
         $format = MatchFormat::fromArray($base);

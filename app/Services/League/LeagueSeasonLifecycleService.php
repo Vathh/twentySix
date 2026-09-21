@@ -180,6 +180,8 @@ class LeagueSeasonLifecycleService
                     'game_type' => $division->game_type,
                     'promote_direct' => $division->promote_direct,
                     'promote_playoff' => $division->promote_playoff,
+                    'dart_limit' => $division->dart_limit,
+                    'loss_threshold' => $division->loss_threshold,
                 ];
                 foreach ($division->members as $member) {
                     $participantsPayload[] = [
@@ -223,7 +225,12 @@ class LeagueSeasonLifecycleService
             $deadline = $season->deadline_at ?? Carbon::parse($season->end_date)->endOfDay();
 
             foreach ($season->divisions as $seasonDivision) {
-                $format = $this->standings->seasonMatchFormat($season, (int) $seasonDivision->starting_score);
+                $format = $this->standings->seasonMatchFormat(
+                    $season,
+                    (int) $seasonDivision->starting_score,
+                    dartLimit: $seasonDivision->dart_limit !== null ? (int) $seasonDivision->dart_limit : null,
+                    lossThreshold: $seasonDivision->loss_threshold !== null ? (int) $seasonDivision->loss_threshold : null,
+                );
                 foreach ($roundRobin[$seasonDivision->id] as $roundIndex => $pairs) {
                     $roundNumber = $roundIndex + 1;
                     $matchdayId = $matchdayIds[$roundNumber] ?? null;

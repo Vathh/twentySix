@@ -231,7 +231,13 @@ class LeagueSeasonAdvanceService
         string $key,
         array $pending,
     ): void {
-        $format = $this->standings->seasonMatchFormat($season, (int) $division->starting_score, mustHaveWinner: true);
+        $format = $this->standings->seasonMatchFormat(
+            $season,
+            (int) $division->starting_score,
+            mustHaveWinner: true,
+            dartLimit: $division->dart_limit !== null ? (int) $division->dart_limit : null,
+            lossThreshold: $division->loss_threshold !== null ? (int) $division->loss_threshold : null,
+        );
         $this->leagueSeasonRepository->createGames([[
             'league_season_id' => $season->id,
             'league_season_division_id' => $division->id,
@@ -383,7 +389,13 @@ class LeagueSeasonAdvanceService
         $divisions = $season->divisions->keyBy('id');
         foreach ($pairings as $pairing) {
             $higher = $divisions->get($pairing->higherDivisionId);
-            $format = $this->standings->seasonMatchFormat($season, (int) $higher->starting_score, mustHaveWinner: true);
+            $format = $this->standings->seasonMatchFormat(
+                $season,
+                (int) $higher->starting_score,
+                mustHaveWinner: true,
+                dartLimit: $higher->dart_limit !== null ? (int) $higher->dart_limit : null,
+                lossThreshold: $higher->loss_threshold !== null ? (int) $higher->loss_threshold : null,
+            );
             $games[] = [
                 'league_season_id' => $season->id,
                 'league_season_division_id' => $higher->id,
