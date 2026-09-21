@@ -40,9 +40,10 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 ### Zarejestrowany
 
 - Wszystko, co gość na webie.
-- Znajomi (zaproszenie + akceptacja — **mobile**; podstawowy invite/accept także na **webie** od lipca 2026).
+- Znajomi (zaproszenie + akceptacja — **mobile** i **web**).
+- Akceptacja zaproszeń (znajomi, turniej, skład organizacji/sezonu/ligi, lobby quick game, mecz ligowy) na **mobile** i na **webie** (Konto → Zaproszenia).
 - Własne statystyki i historia: turnieje, liga, quick oraz trening slotu JA (trening tylko na własnym profilu). **Trener osobisty** — w kodzie na później, **nie** w aplikacji.
-- **Mobile:** lobby quick game online, akceptacja zaproszeń (turniej, lobby, znajomi), tablet turniejowy, **mecz treningowy** (lokalny; zalogowany ze slotem JA zapisuje sesję na konto).
+- **Mobile:** lobby quick game online, akceptacja zaproszeń (turniej, lobby, znajomi), tablet turniejowy, **mecz treningowy** (lokalny; zalogowany ze slotem JA zapisuje sesję na konto). Ten sam ekran zaproszeń jest też na **webie** (Konto → Zaproszenia); samą rozgrywkę quick game i meczu ligowego gracz kontynuuje w aplikacji.
 - Docelowo: komunikator na webie, odznaczenia, link live quick game.
 
 ### Premium (docelowo)
@@ -63,11 +64,11 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 
 ### Cykl życia (skrót)
 
-Rejestracja → znajomi (mobile) → quick game → twórca organizacji = organizator → turniej → zaproszenia (akceptacja mobile) → start (wybór wariantu: grupy+drabinka / SE / DE) → … → punkty sezonu.
+Rejestracja → znajomi (mobile i web) → quick game → twórca organizacji = organizator → turniej → zaproszenia (akceptacja mobile i web) → start (wybór wariantu: grupy+drabinka / SE / DE) → … → punkty sezonu.
 
 ### Rozgrywka turniejowa
 
-Zaproszenia (web) + akceptacja (mobile) + goście → **start** możliwy **bez pełnej akceptacji** — w puli tylko **zaakceptowani + goście** → kreator startu → round-robin → tablet → playoff.
+Zaproszenia (web) + akceptacja (mobile i web) + goście → **start** możliwy **bez pełnej akceptacji** — w puli tylko **zaakceptowani + goście** → kreator startu → round-robin → tablet → playoff.
 
 **Korekta wyniku:** ręczny poprawny wynik na webie (w tym walkower) → auto przeliczenie playoff i tabel.
 
@@ -103,7 +104,7 @@ Wybór → API → `w trakcie` (lock); inne tablety nie widzą meczu; race → b
 | ---------------------- | ------------------------------------------------------------------- | ---------------------- |
 | Gość (web)             | Podgląd organizacji/turniejów                                               | + pojedyncze mecze     |
 | Gość (mobile)          | Trening (bez konta), turniej kodem tabletu                          | bez zmian              |
-| Użytkownik             | Quick game, turnieje, znajomi (akceptacja **mobile**; invite/accept także **web**); **push** zaproszeń | + komunikator |
+| Użytkownik             | Quick game, turnieje, znajomi; akceptacja zaproszeń **mobile** i **web** (Konto → Zaproszenia); **push** zaproszeń | + komunikator |
 | **Organizator**        | **Twórca organizacji = organizator**; uprawnienia w organizacji                  | premium                |
 | **Współadministrator** | Pełne prawa, cała organizacja (MVP)                                        | granularne uprawnienia |
 | Sędzia (tablet / web)  | Kod turnieju, wybór meczu (mobile lub `/referee`)                   | —                      |
@@ -253,8 +254,8 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 ### Zaproszenia do turnieju
 
 - Wysyłka: admin na **webie** — **na stronie startu turnieju** (bez osobnej podstrony): wyszukiwarka + lista zaproszonych + masowe zaproszenia ze składu organizacji.
-- **Dodaj mnie:** zalogowany admin wpisuje się od razu jako uczestnik (`accepted`), bez pusha i bez akceptacji w aplikacji. To samo, gdy wyśle zaproszenie turniejowe do siebie (wyszukiwarka albo masowy skład). Inni gracze nadal akceptują na mobile.
-- Akceptacja / wycofanie udziału: **mobile**.
+- **Dodaj mnie:** zalogowany admin wpisuje się od razu jako uczestnik (`accepted`), bez pusha i bez akceptacji w aplikacji. To samo, gdy wyśle zaproszenie turniejowe do siebie (wyszukiwarka albo masowy skład). Inni gracze akceptują na mobile albo na stronie Zaproszenia.
+- Akceptacja / wycofanie udziału: **mobile** i **web** (Konto → Zaproszenia).
 - Goście (nazwa od admina): edycja puli gości na ekranach sezonu/organizacji; na stronie startu admin **dodaje gościa do turnieju** z listy powiązanych.
 - **Zgłoszenia przez QR** (✅): gracz skanuje QR na starcie turnieju → admin Dołącz/Odrzuć.
 
@@ -263,8 +264,8 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - Organizacja (i opcjonalnie sezon) utrzymuje listę **powiązanych użytkowników** — **stali bywalcy**, którzy regularnie grają w turniejach tej organizacji.
 - Lista **nie wpisuje** nikogo automatycznie do turnieju — służy do **szybkiego masowego wysyłania zaproszeń** (zaznaczenie wielu osób → wyślij zaproszenia).
 - Na stronie startu turnieju skład do masowego invite = **suma `organization.relatedUsers` + `season.relatedUsers` bez duplikatów** (jak dziś `getRelatedPlayers`, ale tylko użytkownicy z kontem — bez gości).
-- **Skład organizacji:** admin na **webie** wysyła zaproszenie (ekran `relatedUsers`); gracz akceptuje na **mobile** (zakładka **Gra**). Do `relatedUsers` wpisuje się **dopiero po akceptacji**. Wyjątek: administrator organizacji jest w składzie od razu (także przy nadaniu roli i dla obecnych adminów). Dopóki jest administratorem, nie schodzi ze składu. Zdjęcie roli admina zostawia go w składzie. Usunięcie ze składu zdejmuje powiązanie; można zaprosić ponownie.
-- **Skład sezonu** i **pula ligi** — ten sam flow co organizacja: zaproszenie z webu, akceptacja na mobile, wpis na listę dopiero po akceptacji. Administrator sezonu jest od razu w składzie sezonu. Administrator organizacji jest od razu w puli każdej ligi tej organizacji (także przy tworzeniu ligi).
+- **Skład organizacji:** admin na **webie** wysyła zaproszenie (ekran `relatedUsers`); gracz akceptuje na **mobile** albo **webie** (zakładka **Gra**). Do `relatedUsers` wpisuje się **dopiero po akceptacji**. Wyjątek: administrator organizacji jest w składzie od razu (także przy nadaniu roli i dla obecnych adminów). Dopóki jest administratorem, nie schodzi ze składu. Zdjęcie roli admina zostawia go w składzie. Usunięcie ze składu zdejmuje powiązanie; można zaprosić ponownie.
+- **Skład sezonu** i **pula ligi** — ten sam flow co organizacja: zaproszenie z webu, akceptacja na mobile albo webie, wpis na listę dopiero po akceptacji. Administrator sezonu jest od razu w składzie sezonu. Administrator organizacji jest od razu w puli każdej ligi tej organizacji (także przy tworzeniu ligi).
 
 #### Strona startu turnieju (web) — układ B
 
@@ -279,10 +280,10 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 | Status | Znaczenie | Kto ustawia |
 | ------ | --------- | ----------- |
 | `pending` | Oczekuje na odpowiedź gracza | — (po wysłaniu) |
-| `accepted` | Gracz potwierdził udział albo admin dodał siebie | gracz (mobile) / admin („Dodaj mnie”) |
-| `rejected` | Gracz odrzucił | gracz (mobile) |
+| `accepted` | Gracz potwierdził udział albo admin dodał siebie | gracz (mobile / web) / admin („Dodaj mnie”) |
+| `rejected` | Gracz odrzucił | gracz (mobile / web) |
 | `cancelled` | Admin anulował zaproszenie **pending** | admin (web) |
-| `withdrawn` | Gracz wycofał udział **po akceptacji** | gracz (mobile) |
+| `withdrawn` | Gracz wycofał udział **po akceptacji** | gracz (mobile / web) |
 | `removed` | Admin usunął gracza **po akceptacji** | admin (web) |
 
 - Do puli startowej wchodzą wyłącznie uczestnicy z segmentu **„Uczestnicy turnieju”**: zaproszenia **`accepted`** + goście **jawnie dodani do turnieju** (`tournament_guest_participants`).
@@ -303,21 +304,22 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 #### Zaproszenia do organizacji (`relatedUsers`)
 
 - Wysyłka: admin na **webie** (ekran powiązanych użytkowników organizacji) — przycisk **Zaproś**.
-- Akceptacja / odrzucenie: **mobile** (zakładka **Gra**).
+- Akceptacja / odrzucenie: **mobile** i **web** (zakładka **Gra**, Konto → Zaproszenia).
 - `GET /api/organizations/invitations/received`
 - `POST /api/organizations/invitations/{id}/accept`
 - `POST /api/organizations/invitations/{id}/reject`
 
 #### Zaproszenia do sezonu i puli ligi (`relatedUsers`)
 
-- Ten sam flow co organizacja: **Zaproś** na webie, akceptacja na mobile (zakładka **Gra**).
+- Ten sam flow co organizacja: **Zaproś** na webie, akceptacja na mobile i webie (zakładka **Gra**).
 - Sezon: `GET/POST /api/seasons/invitations/received|{id}/accept|{id}/reject`
 - Liga: `GET/POST /api/leagues/invitations/received|{id}/accept|{id}/reject` (osobne od zaproszeń do **meczu** ligowego `/api/league-games/...`).
 
-#### Mobile — ekran zaproszeń
+#### Ekran zaproszeń (mobile i web)
 
-- **Jeden ekran** z zakładkami: **Gra** | **Znajomi**.
+- **Jeden ekran** z zakładkami: **Gra** | **Znajomi**. Na webie: Konto → Zaproszenia.
 - **Gra:** zaproszenia do turnieju, organizacji, sezonu, puli ligi, quick game i meczu ligowego.
+- Dołączenie do lobby quick game i akceptacja meczu ligowego na webie wykonują tę samą operację co w aplikacji; rozgrywkę gracz kontynuuje na telefonie.
 - Pull-to-refresh na liście. **Push** przy nowym zaproszeniu (znajomi / turniej / organizacja / sezon / liga / lobby / mecz ligowy) — ✅.
 
 ## Organizacja i punktacja (MVP)
@@ -344,7 +346,7 @@ Organizacja
 ```
 
 - Tylko **indywidualna**; format **X01** per szczebel (501 / legi / sety), zamrażany na start sezonu.
-- **Pula ligi** jest własna: powiązani użytkownicy i goście ligi (nie mieszanka ze składu organizacji). Admin zaprasza użytkowników do puli (akceptacja na mobile), gości dodaje od razu. Administrator organizacji jest w puli od razu. **Skład szczebli:** przeciąganie znaczników z puli (powiązani / goście) na szczeble.
+- **Pula ligi** jest własna: powiązani użytkownicy i goście ligi (nie mieszanka ze składu organizacji). Admin zaprasza użytkowników do puli (akceptacja na mobile albo webie), gości dodaje od razu. Administrator organizacji jest w puli od razu. **Skład szczebli:** przeciąganie znaczników z puli (powiązani / goście) na szczeble.
 - Sezon ligowy i sezon turniejowy to **osobne byty**.
 - Kalendarz przy starcie sezonu ligowego:
   - **Kolejki:** albo **długość kolejki + data startu** (koniec sezonu wyliczany ze składu), albo **start i koniec sezonu** (długość kolejki = równy podział tego okresu).
@@ -383,8 +385,8 @@ WO obustronny przy **pojedynczym** meczu: obaj porażka, 0:0. WO jednostronny: w
 
 ### Znajomi (MVP)
 
-- **Mobile:** zaproszenie + akceptacja (główny flow akceptacji zaproszeń turniejowych i lobby).
-- **Web (od lipca 2026):** invite → accept na profilu gracza i w panelu bocznym — **bez** komunikatora.
+- **Mobile:** zaproszenie + akceptacja (ekran Zaproszenia: turniej, lobby, znajomi i pozostałe typy).
+- **Web:** invite → accept na profilu gracza i w panelu bocznym oraz pełny ekran Zaproszenia (Konto) — **bez** komunikatora.
 - **Docelowo:** pełny komunikator.
 - **Push** przy zaproszeniach (znajomi / turniej / quick game): ✅.
 
@@ -393,7 +395,7 @@ WO obustronny przy **pojedynczym** meczu: obaj porażka, 0:0. WO jednostronny: w
 **Wymaga:** konto zalogowane, internet, lobby ze znajomymi.
 
 - Lobby zakłada zalogowany użytkownik (host).
-- **Dołączenie wyłącznie przez zaproszenie** — host zaprasza znajomego z listy znajomych; zaproszony **akceptuje** na mobile i wtedy dołącza do lobby (`POST …/lobby/{id}/join`).
+- **Dołączenie wyłącznie przez zaproszenie** — host zaprasza znajomego z listy znajomych; zaproszony **akceptuje** na mobile albo na stronie Zaproszenia i wtedy dołącza do lobby (`POST …/lobby/{id}/join`). Rozgrywkę kontynuuje w aplikacji.
 - **Brak kodów lobby** w quick game — kody 6-znakowe dotyczą **tylko turniejów** (logowanie tabletu / sędziowanie). Quick game nie generuje ani nie udostępnia kodu do dołączenia.
 - Tylko **znajomi**; max **8** zawodników.
 - **FFA** — każdy gra sam (1v1, 1v1v1v1…; nie drużyny 2v2).
@@ -604,9 +606,9 @@ Zarejestrowany gracz ma **jedną karierę** ze snapshotów (turniej, liga, quick
 
 ## Reguły meczu (MVP)
 
-- **Web (twentySix):** organizacje/turnieje, start turnieju, zaproszenia do turnieju (wysyłka), korekta wyników, live, publiczny podgląd, **znajomi** (invite/accept — bez komunikatora).
+- **Web (twentySix):** organizacje/turnieje, start turnieju, zaproszenia do turnieju (wysyłka), **akceptacja zaproszeń** (Konto → Zaproszenia), korekta wyników, live, publiczny podgląd, **znajomi** (invite/accept — bez komunikatora).
 - **API:** walidacja grup×awans, podział do grup, statusy meczów, quick game (oba tryby urządzeń), zaproszenia, achievementy, point schemes.
-- **Mobile:** tablet, quick game online, **trening (lokalny)**, znajomi (MVP), akceptacja zaproszeń (turniej, lobby, znajomi).
+- **Mobile:** tablet, quick game online, **trening (lokalny)**, znajomi (MVP), akceptacja zaproszeń (turniej, lobby, znajomi) — ten sam zestaw akcji co strona Zaproszenia na webie.
 
 ### Publiczny podgląd live (web)
 
@@ -664,7 +666,7 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 
 ## Kryterium „MVP jest gotowe”
 
-1. Znajomi + zaproszenia turniej/lobby — akceptacja na mobile.
+1. Znajomi + zaproszenia turniej/lobby — akceptacja na mobile i na webie (Konto → Zaproszenia).
 2. Start turnieju/quick game bez pełnej akceptacji; gra tylko zaakceptowani (+ goście w turnieju).
 3. Turniej min. 4 zawodników (łącznie z gośćmi); grupy, tie-breakery, round-robin; playoff bez bye; losowanie rundy 1 bez par z jednej grupy.
 4. Tablet + live web; achievementy; auto start playoff.
@@ -703,7 +705,7 @@ Historyczne rozbieżności z czasów przed `product.md` — **domknięte w MVP v
 | Losowanie playoff | Bez par z tej samej grupy (runda 1) | ✅ `PlayoffFirstRoundPairing` |
 | Rozmiar drabinki | Wybór etapu (`playoff_bracket_size`; **docelowo max 128**, dziś w kodzie jeszcze 32) | ⚠️ `PlayoffBracketFactory::create` (enumy) → generyczny silnik w planie SE/DE |
 | Warianty SE / DE | Typ przy starcie; bye; miejsca; GF | ✅ [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) |
-| Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile; `relatedUsers` org/sezon/liga = zaproszenie | ✅ `TournamentInvitation`, `OrganizationInvitation`, `SeasonInvitation`, `LeagueInvitation`, `InvitationsScreen` |
+| Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile i web (Konto → Zaproszenia); `relatedUsers` org/sezon/liga = zaproszenie | ✅ `TournamentInvitation`, `OrganizationInvitation`, `SeasonInvitation`, `LeagueInvitation`, `InvitationsScreen` |
 | Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ |
 | FFA 2–8 oba tryby urządzeń | `one_device` i `each_own` | ✅ unified FFA |
 | Rotacja openera lega | `(opener + 1) % N` | ✅ |

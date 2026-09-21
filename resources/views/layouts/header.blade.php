@@ -31,7 +31,7 @@
                 && Auth::user()->player
                 && $currentPlayer
                 && (int) $currentPlayer->id === (int) Auth::user()->player->id;
-            $kontoActive = request()->routeIs('me.*', 'settings.*');
+            $kontoActive = request()->routeIs('me.*', 'settings.*', 'invitations.*');
             $rozgrywkiActive = request()->routeIs('organizations.*', 'seasons.*', 'tournaments.*', 'leagues.*', 'league-seasons.*', 'league-games.*')
                 && ! $kontoActive;
         @endphp
@@ -122,6 +122,10 @@
                                class="nav-dropdown-item {{ request()->routeIs('me.*') ? 'active' : '' }}"
                                role="menuitem"
                                @click="navOpen = false; open = false">Gdzie gram</a>
+                            <a href="{{ route('invitations.index') }}"
+                               class="nav-dropdown-item {{ request()->routeIs('invitations.*') ? 'active' : '' }}"
+                               role="menuitem"
+                               @click="navOpen = false; open = false">Zaproszenia</a>
                             <a href="{{ route('settings.index') }}"
                                class="nav-dropdown-item {{ request()->routeIs('settings.*') ? 'active' : '' }}"
                                role="menuitem"

@@ -5,6 +5,7 @@ use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\FriendInvitationController;
 use App\Http\Controllers\FriendsController;
 use App\Http\Controllers\GameViewController;
+use App\Http\Controllers\InvitationsController;
 use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\LeagueSeasonController;
 use App\Http\Controllers\MyCompetitionsController;
@@ -110,6 +111,49 @@ Route::middleware('auth')->prefix('settings')->name('settings.')->group(function
 });
 
 Route::middleware('auth')->get('/me', [MyCompetitionsController::class, 'index'])->name('me.index');
+
+Route::middleware('auth')->prefix('invitations')->name('invitations.')->group(function () {
+    Route::get('/', [InvitationsController::class, 'index'])->name('index');
+    Route::post('/tournaments/{invitation}/accept', [InvitationsController::class, 'acceptTournament'])
+        ->whereNumber('invitation')
+        ->name('tournaments.accept');
+    Route::post('/tournaments/{invitation}/reject', [InvitationsController::class, 'rejectTournament'])
+        ->whereNumber('invitation')
+        ->name('tournaments.reject');
+    Route::post('/tournaments/{invitation}/withdraw', [InvitationsController::class, 'withdrawTournament'])
+        ->whereNumber('invitation')
+        ->name('tournaments.withdraw');
+    Route::post('/organizations/{invitation}/accept', [InvitationsController::class, 'acceptOrganization'])
+        ->whereNumber('invitation')
+        ->name('organizations.accept');
+    Route::post('/organizations/{invitation}/reject', [InvitationsController::class, 'rejectOrganization'])
+        ->whereNumber('invitation')
+        ->name('organizations.reject');
+    Route::post('/seasons/{invitation}/accept', [InvitationsController::class, 'acceptSeason'])
+        ->whereNumber('invitation')
+        ->name('seasons.accept');
+    Route::post('/seasons/{invitation}/reject', [InvitationsController::class, 'rejectSeason'])
+        ->whereNumber('invitation')
+        ->name('seasons.reject');
+    Route::post('/leagues/{invitation}/accept', [InvitationsController::class, 'acceptLeague'])
+        ->whereNumber('invitation')
+        ->name('leagues.accept');
+    Route::post('/leagues/{invitation}/reject', [InvitationsController::class, 'rejectLeague'])
+        ->whereNumber('invitation')
+        ->name('leagues.reject');
+    Route::post('/quick-game/lobby/{lobby}/join', [InvitationsController::class, 'joinQuickGame'])
+        ->whereNumber('lobby')
+        ->name('quick-game.join');
+    Route::post('/quick-game/{invitation}/reject', [InvitationsController::class, 'rejectQuickGame'])
+        ->whereNumber('invitation')
+        ->name('quick-game.reject');
+    Route::post('/league-games/{leagueGame}/accept', [InvitationsController::class, 'acceptLeagueGame'])
+        ->whereNumber('leagueGame')
+        ->name('league-games.accept');
+    Route::post('/league-games/{leagueGame}/reject', [InvitationsController::class, 'rejectLeagueGame'])
+        ->whereNumber('leagueGame')
+        ->name('league-games.reject');
+});
 
 Route::get('/players/search', [PlayerController::class, 'search'])->name('players.search');
 Route::get('/players/{player}/edit', [PlayerController::class, 'edit'])->middleware('auth')->name('players.edit');
