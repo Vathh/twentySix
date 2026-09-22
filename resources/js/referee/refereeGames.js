@@ -30,12 +30,19 @@ export function registerRefereeGames(Alpine) {
         error: '',
         selectedGroup: null,
         selectedPlayoffSide: null,
+        groupPane: 'matches',
+        groupBoardFull: false,
 
         init() {
             this.session = requireRefereeSessionOrRedirect();
             if (!this.session) {
                 return;
             }
+            this.syncGroupBoardMode();
+            window.addEventListener('resize', () => this.syncGroupBoardMode());
+            this.$watch('selectedGroup', (value) => {
+                document.body.style.overflow = value != null ? 'hidden' : '';
+            });
             this.fetchGames();
         },
 
@@ -165,12 +172,33 @@ export function registerRefereeGames(Alpine) {
                 this.remainingGroups = [];
             } finally {
                 this.loading = false;
+                this.syncGroupBoardMode();
             }
+        },
+
+        groupColumnKind(key) {
+            if (key === 'player') {
+                return 'group-col-player';
+            }
+            if (String(key).startsWith('vs_')) {
+                return 'group-col-match';
+            }
+            return 'group-col-standings';
+        },
+
+        syncGroupBoardMode() {
+            const players = (this.selectedGroupMatrix?.columns ?? []).filter((column) =>
+                String(column.key).startsWith('vs_'),
+            ).length;
+            const needed = 24 + 150 + players * 52 + 250;
+            this.groupBoardFull = players > 0 && window.innerWidth >= needed;
         },
 
         openGroup(group) {
             this.selectedPlayoffSide = null;
+            this.groupPane = 'matches';
             this.selectedGroup = group;
+            this.syncGroupBoardMode();
         },
 
         openPlayoffSide(side) {

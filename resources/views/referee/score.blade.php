@@ -62,7 +62,7 @@
                 x-show="!(canSwitchOpener && turnIndex !== 0)"
                 x-text="player1?.name ?? 'Gracz 1'"
             ></div>
-            <div class="text-4xl font-bold text-accent my-2 tabular-nums" x-text="remaining(player1)"></div>
+            <div class="referee-remaining font-bold text-accent my-2 tabular-nums" x-text="remaining(player1)"></div>
             <div class="text-xs text-text-muted">
                 <span x-show="isSingleSetFormat()">Legi: <span x-text="matchScore(player1)"></span></span>
                 <span x-show="!isSingleSetFormat()">
@@ -88,7 +88,7 @@
                 x-show="!(canSwitchOpener && turnIndex !== 1)"
                 x-text="player2?.name ?? 'Gracz 2'"
             ></div>
-            <div class="text-4xl font-bold text-accent my-2 tabular-nums" x-text="remaining(player2)"></div>
+            <div class="referee-remaining font-bold text-accent my-2 tabular-nums" x-text="remaining(player2)"></div>
             <div class="text-xs text-text-muted">
                 <span x-show="isSingleSetFormat()">Legi: <span x-text="matchScore(player2)"></span></span>
                 <span x-show="!isSingleSetFormat()">
@@ -109,6 +109,52 @@
         Tura:
         <span class="text-accent font-semibold" x-text="currentPlayer?.name ?? '—'"></span>
     </p>
+
+    <div
+        class="referee-leg-visits mb-4"
+        x-show="openerChosen"
+        x-cloak
+        :style="{ height: legVisitsHeight + 'px' }"
+    >
+        <div class="referee-leg-visits-names">
+            <span class="truncate" x-text="player1?.name ?? 'Gracz 1'"></span>
+            <span class="truncate" x-text="player2?.name ?? 'Gracz 2'"></span>
+        </div>
+        <div class="referee-leg-visits-body">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rzucone</th>
+                        <th>Pozostało</th>
+                        <th class="is-darts">Lotki</th>
+                        <th>Pozostało</th>
+                        <th>Rzucone</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="row in legVisitRows" :key="row.key">
+                        <tr>
+                            <td :class="row.leftBust && 'is-bust'" x-text="row.leftThrown"></td>
+                            <td x-text="row.leftRemaining"></td>
+                            <td class="is-darts" x-text="row.darts"></td>
+                            <td x-text="row.rightRemaining"></td>
+                            <td :class="row.rightBust && 'is-bust'" x-text="row.rightThrown"></td>
+                        </tr>
+                    </template>
+                    <tr x-show="legVisitRows.length === 0">
+                        <td colspan="5" class="!text-text-muted !font-normal">Brak podejść w tym legu</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div
+            class="referee-leg-visits-grip"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Wysokość historii podejść"
+            @pointerdown="beginLegVisitsResize($event)"
+        ></div>
+    </div>
 
     <div class="rounded-xl border border-border bg-bg-deep px-4 py-5 mb-4 text-center">
         <div class="text-xs text-text-muted mb-1">Wynik wizyty</div>

@@ -215,8 +215,9 @@ class GameService
                 continue;
             }
 
+            // Ta sama stała kolejność co tabela grup na stronie turnieju (kolejność zapisu), nie miejsce.
             $standingRows = ($standingsByGroup->get($groupNumber, collect()))
-                ->sortBy(fn (GroupStandingDomain $standing) => $standing->place > 0 ? $standing->place : PHP_INT_MAX)
+                ->sortBy(fn (GroupStandingDomain $standing) => $standing->id)
                 ->values()
                 ->map(fn (GroupStandingDomain $standing) => [
                     'playerId' => $standing->player?->id,

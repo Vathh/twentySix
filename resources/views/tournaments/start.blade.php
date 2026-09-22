@@ -583,6 +583,7 @@
                     class="flex flex-col items-center gap-4"
                     x-show="participantCount >= minPlayers"
                     x-cloak
+                    @submit="commitDartLimits($event)"
                 >
                         @csrf
 
@@ -802,13 +803,63 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <div class="mt-5 rounded-lg border border-border bg-bg-elevated/40 p-3">
+                                <p class="text-sm font-medium text-text">Dla całego turnieju</p>
+                                <p class="text-text-secondary/70 text-xs mt-0.5 mb-3">
+                                    Jedno ustawienie trafia do każdego etapu. Inne wartości dla pojedynczych etapów ustawisz poniżej.
+                                </p>
+                                <div class="grid sm:grid-cols-2 gap-3">
+                                    <label class="block">
+                                        <span class="flex items-center gap-2 text-sm mb-1">
+                                            <input type="checkbox" class="ui-check"
+                                                   :checked="globalDart.dartOn"
+                                                   @change="setGlobalDartOn('main', $event.target.checked)">
+                                            Ogranicznik lotek
+                                        </span>
+                                        <div class="flex items-center gap-2" x-show="globalDart.dartOn" x-cloak>
+                                            <button type="button" class="btn btn-secondary !py-1 !px-3"
+                                                    @click="bumpGlobalDart('main', -3)">−</button>
+                                            <input class="input-field text-center w-24" type="number" min="15" max="99" step="3"
+                                                   x-model.number="globalDart.dartLimit"
+                                                   @input="$nextTick(() => onGlobalDartInput('main'))">
+                                            <button type="button" class="btn btn-secondary !py-1 !px-3"
+                                                    @click="bumpGlobalDart('main', 3)">+</button>
+                                        </div>
+                                    </label>
+                                    <label class="block" x-show="globalDart.dartOn" x-cloak>
+                                        <span class="flex items-center gap-2 text-sm mb-1">
+                                            <input type="checkbox" class="ui-check"
+                                                   :checked="globalDart.lossOn"
+                                                   @change="setGlobalLossOn('main', $event.target.checked)">
+                                            Próg przegranej
+                                        </span>
+                                        <input class="input-field" type="number" min="2" max="170"
+                                               x-show="globalDart.lossOn"
+                                               x-model.number="globalDart.lossThreshold"
+                                               @input="$nextTick(() => onGlobalDartInput('main'))">
+                                    </label>
+                                </div>
+                                <p class="text-xs text-accent mt-3" x-show="mainDartLimitsDiffer" x-cloak>
+                                    Niektóre etapy mają inne ustawienia niż powyższe.
+                                </p>
+                            </div>
+                            <button type="button"
+                                    class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-accent transition-colors"
+                                    @click="stageDartOpen = !stageDartOpen"
+                                    :aria-expanded="stageDartOpen">
+                                <svg class="h-4 w-4 shrink-0 transition-transform" :class="stageDartOpen && 'rotate-90'" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd" />
+                                </svg>
+                                Ustawienia poszczególnych etapów
+                            </button>
+                            <div x-show="stageDartOpen" x-cloak>
                             <template x-for="stage in activeFormatStages" x-bind:key="'dl-'+stage.value">
                                 <div class="mt-4 pt-3 border-t border-border/40" x-show="matchFormats[stage.value]">
                                     <p class="text-sm font-medium text-text mb-2" x-text="stage.label"></p>
                                     <div class="grid sm:grid-cols-2 gap-3">
                                         <label class="block">
                                             <span class="flex items-center gap-2 text-sm mb-1">
-                                                <input type="checkbox"
+                                                <input type="checkbox" class="ui-check"
                                                        :checked="matchFormats[stage.value].dartLimit != null"
                                                        @change="
                                                            if ($event.target.checked) {
@@ -823,32 +874,27 @@
                                             <div class="flex items-center gap-2" x-show="matchFormats[stage.value].dartLimit != null" x-cloak>
                                                 <button type="button" class="btn btn-secondary !py-1 !px-3"
                                                         @click="matchFormats[stage.value].dartLimit = Math.max(15, (matchFormats[stage.value].dartLimit || 45) - 3)">−</button>
-                                                <input class="input-field text-center w-24" type="number" min="15" max="99" step="3"
-                                                       x-bind:name="'matchFormats[' + stage.value + '][dartLimit]'"
-                                                       x-model.number="matchFormats[stage.value].dartLimit">
-                                                <button type="button" class="btn btn-secondary !py-1 !px-3"
-                                                        @click="matchFormats[stage.value].dartLimit = Math.min(99, (matchFormats[stage.value].dartLimit || 45) + 3)">+</button>
+                                            <input class="input-field text-center w-24" type="number" min="15" max="99" step="3"
+                                                   x-model.number="matchFormats[stage.value].dartLimit">
+                                            <button type="button" class="btn btn-secondary !py-1 !px-3"
+                                                    @click="matchFormats[stage.value].dartLimit = Math.min(99, (matchFormats[stage.value].dartLimit || 45) + 3)">+</button>
                                             </div>
-                                            <input type="hidden" x-bind:name="'matchFormats[' + stage.value + '][dartLimit]'" value=""
-                                                   x-show="matchFormats[stage.value].dartLimit == null">
                                         </label>
                                         <label class="block" x-show="matchFormats[stage.value].dartLimit != null" x-cloak>
                                             <span class="flex items-center gap-2 text-sm mb-1">
-                                                <input type="checkbox"
+                                                <input type="checkbox" class="ui-check"
                                                        :checked="matchFormats[stage.value].lossThreshold != null"
                                                        @change="matchFormats[stage.value].lossThreshold = $event.target.checked ? (matchFormats[stage.value].lossThreshold || 50) : null">
                                                 Próg przegranej
                                             </span>
                                             <input class="input-field" type="number" min="2" max="170"
-                                                   x-bind:name="'matchFormats[' + stage.value + '][lossThreshold]'"
                                                    x-show="matchFormats[stage.value].lossThreshold != null"
                                                    x-model.number="matchFormats[stage.value].lossThreshold">
-                                            <input type="hidden" x-bind:name="'matchFormats[' + stage.value + '][lossThreshold]'" value=""
-                                                   x-show="matchFormats[stage.value].lossThreshold == null">
                                         </label>
                                     </div>
                                 </div>
                             </template>
+                            </div>
                         </div>
 
                         <div class="w-full max-w-3xl rounded-lg border border-border bg-bg/40 p-4"
@@ -904,13 +950,63 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <div class="mt-5 rounded-lg border border-border bg-bg-elevated/40 p-3">
+                                <p class="text-sm font-medium text-text">Dla całej drabinki pocieszenia</p>
+                                <p class="text-text-secondary/70 text-xs mt-0.5 mb-3">
+                                    Jedno ustawienie trafia do każdego etapu pocieszenia.
+                                </p>
+                                <div class="grid sm:grid-cols-2 gap-3">
+                                    <label class="block">
+                                        <span class="flex items-center gap-2 text-sm mb-1">
+                                            <input type="checkbox" class="ui-check"
+                                                   :checked="consolationGlobalDart.dartOn"
+                                                   @change="setGlobalDartOn('consolation', $event.target.checked)">
+                                            Ogranicznik lotek
+                                        </span>
+                                        <div class="flex items-center gap-2" x-show="consolationGlobalDart.dartOn" x-cloak>
+                                            <button type="button" class="btn btn-secondary !py-1 !px-3"
+                                                    @click="bumpGlobalDart('consolation', -3)">−</button>
+                                            <input class="input-field text-center w-24" type="number" min="15" max="99" step="3"
+                                                   x-model.number="consolationGlobalDart.dartLimit"
+                                                   @input="$nextTick(() => onGlobalDartInput('consolation'))">
+                                            <button type="button" class="btn btn-secondary !py-1 !px-3"
+                                                    @click="bumpGlobalDart('consolation', 3)">+</button>
+                                        </div>
+                                    </label>
+                                    <label class="block" x-show="consolationGlobalDart.dartOn" x-cloak>
+                                        <span class="flex items-center gap-2 text-sm mb-1">
+                                            <input type="checkbox" class="ui-check"
+                                                   :checked="consolationGlobalDart.lossOn"
+                                                   @change="setGlobalLossOn('consolation', $event.target.checked)">
+                                            Próg przegranej
+                                        </span>
+                                        <input class="input-field" type="number" min="2" max="170"
+                                               x-show="consolationGlobalDart.lossOn"
+                                               x-model.number="consolationGlobalDart.lossThreshold"
+                                               @input="$nextTick(() => onGlobalDartInput('consolation'))">
+                                    </label>
+                                </div>
+                                <p class="text-xs text-accent mt-3" x-show="consolationDartLimitsDiffer" x-cloak>
+                                    Niektóre etapy pocieszenia mają inne ustawienia niż powyższe.
+                                </p>
+                            </div>
+                            <button type="button"
+                                    class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-accent transition-colors"
+                                    @click="consolationStageDartOpen = !consolationStageDartOpen"
+                                    :aria-expanded="consolationStageDartOpen">
+                                <svg class="h-4 w-4 shrink-0 transition-transform" :class="consolationStageDartOpen && 'rotate-90'" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd" />
+                                </svg>
+                                Ustawienia poszczególnych etapów
+                            </button>
+                            <div x-show="consolationStageDartOpen" x-cloak>
                             <template x-for="stage in consolationFormatStages" x-bind:key="'cdl-'+stage.value">
                                 <div class="mt-4 pt-3 border-t border-border/40" x-show="consolationMatchFormats[stage.value]">
                                     <p class="text-sm font-medium text-text mb-2" x-text="stage.label"></p>
                                     <div class="grid sm:grid-cols-2 gap-3">
                                         <label class="block">
                                             <span class="flex items-center gap-2 text-sm mb-1">
-                                                <input type="checkbox"
+                                                <input type="checkbox" class="ui-check"
                                                        :checked="consolationMatchFormats[stage.value].dartLimit != null"
                                                        @change="
                                                            if ($event.target.checked) {
@@ -925,32 +1021,27 @@
                                             <div class="flex items-center gap-2" x-show="consolationMatchFormats[stage.value].dartLimit != null" x-cloak>
                                                 <button type="button" class="btn btn-secondary !py-1 !px-3"
                                                         @click="consolationMatchFormats[stage.value].dartLimit = Math.max(15, (consolationMatchFormats[stage.value].dartLimit || 45) - 3)">−</button>
-                                                <input class="input-field text-center w-24" type="number" min="15" max="99" step="3"
-                                                       x-bind:name="'consolationMatchFormats[' + stage.value + '][dartLimit]'"
-                                                       x-model.number="consolationMatchFormats[stage.value].dartLimit">
-                                                <button type="button" class="btn btn-secondary !py-1 !px-3"
-                                                        @click="consolationMatchFormats[stage.value].dartLimit = Math.min(99, (consolationMatchFormats[stage.value].dartLimit || 45) + 3)">+</button>
+                                            <input class="input-field text-center w-24" type="number" min="15" max="99" step="3"
+                                                   x-model.number="consolationMatchFormats[stage.value].dartLimit">
+                                            <button type="button" class="btn btn-secondary !py-1 !px-3"
+                                                    @click="consolationMatchFormats[stage.value].dartLimit = Math.min(99, (consolationMatchFormats[stage.value].dartLimit || 45) + 3)">+</button>
                                             </div>
-                                            <input type="hidden" x-bind:name="'consolationMatchFormats[' + stage.value + '][dartLimit]'" value=""
-                                                   x-show="consolationMatchFormats[stage.value].dartLimit == null">
                                         </label>
                                         <label class="block" x-show="consolationMatchFormats[stage.value].dartLimit != null" x-cloak>
                                             <span class="flex items-center gap-2 text-sm mb-1">
-                                                <input type="checkbox"
+                                                <input type="checkbox" class="ui-check"
                                                        :checked="consolationMatchFormats[stage.value].lossThreshold != null"
                                                        @change="consolationMatchFormats[stage.value].lossThreshold = $event.target.checked ? (consolationMatchFormats[stage.value].lossThreshold || 50) : null">
                                                 Próg przegranej
                                             </span>
                                             <input class="input-field" type="number" min="2" max="170"
-                                                   x-bind:name="'consolationMatchFormats[' + stage.value + '][lossThreshold]'"
                                                    x-show="consolationMatchFormats[stage.value].lossThreshold != null"
                                                    x-model.number="consolationMatchFormats[stage.value].lossThreshold">
-                                            <input type="hidden" x-bind:name="'consolationMatchFormats[' + stage.value + '][lossThreshold]'" value=""
-                                                   x-show="consolationMatchFormats[stage.value].lossThreshold == null">
                                         </label>
                                     </div>
                                 </div>
                             </template>
+                            </div>
                         </div>
 
                         <button type="submit" class="btn btn-primary px-8 py-2"
@@ -1000,6 +1091,14 @@
                 oldConsolationMatchFormats: config.oldConsolationMatchFormats ?? {},
                 matchFormats: {},
                 consolationMatchFormats: {},
+                globalDart: { dartOn: false, dartLimit: 45, lossOn: false, lossThreshold: 50 },
+                consolationGlobalDart: { dartOn: false, dartLimit: 45, lossOn: false, lossThreshold: 50 },
+                globalDartTouched: false,
+                consolationGlobalDartTouched: false,
+                stageDartOpen: false,
+                consolationStageDartOpen: false,
+                stageDartAutoOpened: false,
+                consolationStageDartAutoOpened: false,
                 hasConsolationBracket: !!config.hasConsolationBracket,
                 minPlayers: config.minPlayers ?? 4,
                 minPlayersPerGroup: config.minPlayersPerGroup ?? 3,
@@ -1214,6 +1313,12 @@
                         ?? this.matchFormatStagesByBracketSe[String(this.consolationBracketSize)]
                         ?? [];
                 },
+                get mainDartLimitsDiffer() {
+                    return this.dartLimitsDiffer(this.matchFormats, this.activeFormatStages, this.globalDart);
+                },
+                get consolationDartLimitsDiffer() {
+                    return this.dartLimitsDiffer(this.consolationMatchFormats, this.consolationFormatStages, this.consolationGlobalDart);
+                },
                 get activeFormatStages() {
                     if (this.tournamentFormat === 'double_elimination') {
                         return this.matchFormatStagesByBracketDe[this.seBracketSize]
@@ -1229,6 +1334,177 @@
                         ?? this.matchFormatStagesByBracket[String(this.playoffBracketSize)]
                         ?? [];
                 },
+                dartGlobal(kind) {
+                    return kind === 'consolation' ? this.consolationGlobalDart : this.globalDart;
+                },
+                optionalNumber(value) {
+                    if (value == null || value === '') {
+                        return null;
+                    }
+                    const n = Number(value);
+                    return Number.isFinite(n) ? n : null;
+                },
+                dartLimitsDiffer(formats, stages, global) {
+                    const limit = global.dartOn ? this.optionalNumber(global.dartLimit) : null;
+                    const loss = global.dartOn && global.lossOn ? this.optionalNumber(global.lossThreshold) : null;
+                    return stages.some((stage) => {
+                        const row = formats[stage.value];
+                        if (!row) {
+                            return false;
+                        }
+                        return this.optionalNumber(row.dartLimit) !== limit
+                            || this.optionalNumber(row.lossThreshold) !== loss;
+                    });
+                },
+                writeGlobalInto(kind) {
+                    const global = this.dartGlobal(kind);
+                    const stages = kind === 'consolation' ? this.consolationFormatStages : this.activeFormatStages;
+                    const formats = kind === 'consolation' ? this.consolationMatchFormats : this.matchFormats;
+                    let limit = null;
+                    if (global.dartOn) {
+                        limit = this.optionalNumber(global.dartLimit);
+                        if (limit == null) {
+                            return;
+                        }
+                    }
+                    let loss = null;
+                    if (global.dartOn && global.lossOn) {
+                        loss = this.optionalNumber(global.lossThreshold);
+                        if (loss == null) {
+                            return;
+                        }
+                    }
+                    for (const stage of stages) {
+                        if (!formats[stage.value]) {
+                            continue;
+                        }
+                        formats[stage.value].dartLimit = limit;
+                        formats[stage.value].lossThreshold = loss;
+                    }
+                },
+                touchDartGlobal(kind) {
+                    if (kind === 'consolation') {
+                        this.consolationGlobalDartTouched = true;
+                    } else {
+                        this.globalDartTouched = true;
+                    }
+                },
+                setGlobalDartOn(kind, on) {
+                    const global = this.dartGlobal(kind);
+                    global.dartOn = on;
+                    if (!on) {
+                        global.lossOn = false;
+                    } else if (this.optionalNumber(global.dartLimit) == null) {
+                        global.dartLimit = 45;
+                    }
+                    this.touchDartGlobal(kind);
+                    this.writeGlobalInto(kind);
+                },
+                setGlobalLossOn(kind, on) {
+                    const global = this.dartGlobal(kind);
+                    global.lossOn = on;
+                    if (on && this.optionalNumber(global.lossThreshold) == null) {
+                        global.lossThreshold = 50;
+                    }
+                    this.touchDartGlobal(kind);
+                    this.writeGlobalInto(kind);
+                },
+                bumpGlobalDart(kind, delta) {
+                    const global = this.dartGlobal(kind);
+                    global.dartOn = true;
+                    const current = this.optionalNumber(global.dartLimit) ?? 45;
+                    global.dartLimit = Math.min(99, Math.max(15, current + delta));
+                    this.touchDartGlobal(kind);
+                    this.writeGlobalInto(kind);
+                },
+                onGlobalDartInput(kind) {
+                    this.touchDartGlobal(kind);
+                    this.writeGlobalInto(kind);
+                },
+                commitDartLimits(event) {
+                    this.flushGlobalDart('main');
+                    this.flushGlobalDart('consolation');
+                    const form = event.target;
+                    form.querySelectorAll('input[data-format-dart]').forEach((node) => node.remove());
+                    this.appendDartFields(form, 'matchFormats', this.activeFormatStages, this.matchFormats);
+                    if (this.hasConsolationBracket) {
+                        this.appendDartFields(
+                            form,
+                            'consolationMatchFormats',
+                            this.consolationFormatStages,
+                            this.consolationMatchFormats,
+                        );
+                    }
+                },
+                flushGlobalDart(kind) {
+                    const global = this.dartGlobal(kind);
+                    if (!global.dartOn) {
+                        return;
+                    }
+                    const stages = kind === 'consolation' ? this.consolationFormatStages : this.activeFormatStages;
+                    const formats = kind === 'consolation' ? this.consolationMatchFormats : this.matchFormats;
+                    const allEmpty = stages.every((stage) => this.optionalNumber(formats[stage.value]?.dartLimit) == null);
+                    if (allEmpty || !this.dartLimitsDiffer(formats, stages, global)) {
+                        this.writeGlobalInto(kind);
+                    }
+                },
+                appendDartFields(form, prefix, stages, formats) {
+                    for (const stage of stages) {
+                        const row = formats[stage.value];
+                        if (!row) {
+                            continue;
+                        }
+                        const limit = this.optionalNumber(row.dartLimit);
+                        const loss = limit == null ? null : this.optionalNumber(row.lossThreshold);
+                        this.appendHiddenField(form, prefix + '[' + stage.value + '][dartLimit]', limit);
+                        this.appendHiddenField(form, prefix + '[' + stage.value + '][lossThreshold]', loss);
+                    }
+                },
+                appendHiddenField(form, name, value) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name;
+                    input.value = value == null ? '' : String(value);
+                    input.dataset.formatDart = '1';
+                    form.appendChild(input);
+                },
+                seedGlobalDart(kind) {
+                    const stages = kind === 'consolation' ? this.consolationFormatStages : this.activeFormatStages;
+                    const formats = kind === 'consolation' ? this.consolationMatchFormats : this.matchFormats;
+                    const global = this.dartGlobal(kind);
+                    if (!stages.length) {
+                        return;
+                    }
+                    const limits = stages.map((stage) => this.optionalNumber(formats[stage.value]?.dartLimit));
+                    const losses = stages.map((stage) => this.optionalNumber(formats[stage.value]?.lossThreshold));
+                    const same = (values) => values.every((value) => value === values[0]);
+                    const uniformLimit = same(limits);
+                    const uniformLoss = same(losses);
+                    if (uniformLimit && limits[0] != null) {
+                        global.dartOn = true;
+                        global.dartLimit = limits[0];
+                    } else {
+                        global.dartOn = false;
+                    }
+                    if (global.dartOn && uniformLoss && losses[0] != null) {
+                        global.lossOn = true;
+                        global.lossThreshold = losses[0];
+                    } else {
+                        global.lossOn = false;
+                    }
+                    if (uniformLimit && uniformLoss) {
+                        return;
+                    }
+                    if (kind === 'consolation') {
+                        if (!this.consolationStageDartAutoOpened) {
+                            this.consolationStageDartOpen = true;
+                            this.consolationStageDartAutoOpened = true;
+                        }
+                    } else if (!this.stageDartAutoOpened) {
+                        this.stageDartOpen = true;
+                        this.stageDartAutoOpened = true;
+                    }
+                },
                 syncMatchFormats({ preserveUserEdits = true } = {}) {
                     const stages = this.activeFormatStages;
                     const next = {};
@@ -1241,6 +1517,11 @@
                         };
                     }
                     this.matchFormats = next;
+                    if (this.globalDartTouched) {
+                        this.writeGlobalInto('main');
+                    } else {
+                        this.seedGlobalDart('main');
+                    }
                 },
                 primeConsolationMatchFormats() {
                     const next = { ...this.consolationMatchFormats };
@@ -1274,6 +1555,11 @@
                         };
                     }
                     this.consolationMatchFormats = next;
+                    if (this.consolationGlobalDartTouched) {
+                        this.writeGlobalInto('consolation');
+                    } else {
+                        this.seedGlobalDart('consolation');
+                    }
                 },
                 syncGroupsCount() {
                     const sel = this.$refs.groupsSelect;

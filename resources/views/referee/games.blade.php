@@ -96,48 +96,58 @@
     </div>
 
     <div
-        x-show="selectedGroup != null || selectedPlayoffSide != null"
+        x-show="isGroupModal"
         x-cloak
-        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-4"
-        @keydown.escape.window="closeGroup()"
-        @click.self="closeGroup()"
+        class="fixed inset-x-0 bottom-0 top-14 z-30 flex flex-col bg-bg"
+        @keydown.escape.window="if (isGroupModal) closeGroup()"
     >
-        <div
-            class="w-full rounded-xl border border-border bg-bg-deep shadow-xl p-4"
-            :class="isGroupModal ? 'max-w-4xl' : 'max-w-md'"
-            @click.stop
-        >
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-lg font-semibold text-accent" x-text="modalTitle"></h3>
-                <button type="button" class="text-text-muted hover:text-accent text-xl leading-none" @click="closeGroup()" aria-label="Zamknij">✕</button>
-            </div>
-            <p class="text-danger text-sm mb-3" x-show="error" x-text="error"></p>
-
-            <template x-if="isGroupModal">
-                <div>
-                    <template x-if="selectedGroupData">
-                        <div class="overflow-x-auto max-h-[70vh]">
-                            <table class="w-full text-sm table-surface">
-                                <thead>
+        <div class="flex items-center justify-between gap-3 px-3 py-3 border-b border-border">
+            <button type="button" class="text-accent font-semibold text-sm" @click="closeGroup()">
+                ← Mecze
+            </button>
+            <h2 class="text-lg font-semibold text-accent" x-text="modalTitle"></h2>
+        </div>
+        <div class="flex-1 overflow-auto py-3">
+            <p class="text-danger text-sm mb-3 px-3" x-show="error" x-text="error"></p>
+            <template x-if="selectedGroupData">
+                <div class="referee-group-board">
+                    <div class="referee-group-switch" x-show="!groupBoardFull" x-cloak>
+                        <button
+                            type="button"
+                            :class="groupPane === 'matches' && 'is-active'"
+                            @click="groupPane = 'matches'"
+                        >Mecze</button>
+                        <button
+                            type="button"
+                            :class="groupPane === 'table' && 'is-active'"
+                            @click="groupPane = 'table'"
+                        >Tabela</button>
+                    </div>
+                    <div class="referee-group-scroll">
+                        <table
+                            class="text-sm table-surface referee-group-table"
+                            :data-pane="groupBoardFull ? 'all' : groupPane"
+                        >
+                            <thead>
+                                <tr>
+                                    <template x-for="col in selectedGroupMatrix.columns" :key="col.key">
+                                        <th
+                                            class="text-text-muted font-semibold uppercase text-xs"
+                                            :class="groupColumnKind(col.key)"
+                                            x-text="!groupBoardFull && col.key === 'place' ? 'Poz' : col.label"
+                                        ></th>
+                                    </template>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                <template x-for="row in selectedGroupMatrix.rows" :key="row.key">
                                     <tr>
-                                        <template x-for="col in selectedGroupMatrix.columns" :key="col.key">
-                                            <th
-                                                class="px-2 py-2 text-text-muted font-semibold uppercase text-xs"
-                                                :class="col.key === 'player' ? 'text-left' : 'text-center'"
-                                                x-text="col.label"
-                                            ></th>
-                                        </template>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-border">
-                                    <template x-for="row in selectedGroupMatrix.rows" :key="row.key">
-                                        <tr>
-                                            <td class="px-2 py-2 font-medium text-text whitespace-nowrap">
-                                                <span class="block" x-text="row.playerName"></span>
-                                                <span class="three-dart-average" x-show="row.playerAverage" x-text="row.playerAverage"></span>
-                                            </td>
-                                            <template x-for="cell in row.cells" :key="row.key + '-' + cell.key">
-                                                <td class="px-2 py-2 text-center">
+                                        <td class="group-col-player font-medium text-text">
+                                            <span class="block" x-text="row.playerName"></span>
+                                            <span class="three-dart-average" x-show="row.playerAverage" x-text="row.playerAverage"></span>
+                                        </td>
+                                        <template x-for="cell in row.cells" :key="row.key + '-' + cell.key">
+                                            <td class="group-col-match text-center">
                                                 <span class="text-text-muted" x-show="cell.diagonal">X</span>
                                                 <button
                                                     type="button"
@@ -174,15 +184,16 @@
                                                 </span>
                                             </td>
                                             </template>
-                                            <td class="px-2 py-2 text-center tabular-nums" x-text="row.gamesWon"></td>
-                                            <td class="px-2 py-2 text-center tabular-nums" x-text="row.gamesLost"></td>
-                                            <td class="px-2 py-2 text-center tabular-nums" x-text="row.matchUnitsDifference"></td>
-                                            <td class="px-2 py-2 text-center tabular-nums" x-text="row.points"></td>
-                                            <td class="px-2 py-2 text-center tabular-nums" x-text="row.place"></td>
+                                            <td class="group-col-standings text-center tabular-nums" x-text="row.gamesWon"></td>
+                                            <td class="group-col-standings text-center tabular-nums" x-text="row.gamesLost"></td>
+                                            <td class="group-col-standings text-center tabular-nums" x-text="row.matchUnitsDifference"></td>
+                                            <td class="group-col-standings text-center tabular-nums" x-text="row.points"></td>
+                                            <td class="group-col-standings text-center tabular-nums" x-text="row.place"></td>
                                         </tr>
                                     </template>
                                 </tbody>
                             </table>
+                    </div>
                             <div
                                 class="mt-3 text-sm text-text-secondary leading-relaxed"
                                 x-show="groupReferees.length > 0"
@@ -191,7 +202,7 @@
                                 <span class="text-text-muted">Sędziowie: </span>
                                 <template x-for="(slot, index) in groupReferees" :key="slot.id">
                                     <span>
-                                        <span
+                                        <span class="referee-slot-num" x-text="slot.sequence"></span><span
                                             :class="{
                                                 'line-through text-text-muted': slot.status === 'finished',
                                                 'text-accent font-semibold': slot.status === 'in_progress',
@@ -201,32 +212,45 @@
                                     </span>
                                 </template>
                             </div>
-                        </div>
-                    </template>
-                    <p class="text-text-muted text-sm text-center py-6" x-show="!selectedGroupData">
-                        Wszystkie mecze w tej grupie zostały już rozegrane.
-                    </p>
-                </div>
-            </template>
+                    </div>
+                </template>
+                <p class="text-text-muted text-sm text-center py-6" x-show="!selectedGroupData">
+                    Wszystkie mecze w tej grupie zostały już rozegrane.
+                </p>
+        </div>
+    </div>
 
-            <template x-if="!isGroupModal">
-                <div class="grid gap-2 max-h-[60vh] overflow-y-auto">
-                    <template x-for="game in gamesInSelectedPlayoffSide" :key="(game.type || 'p')+'-'+game.id">
-                        <button
-                            type="button"
-                            class="w-full text-left px-4 py-3 rounded-lg bg-bg-elevated border border-border hover:border-accent/40 transition disabled:opacity-50"
-                            @click="startGame(game)"
-                            :disabled="lockingId != null"
-                        >
-                            <div class="text-xs text-text-muted mb-0.5" x-text="game.roundLabel || game.round || ''"></div>
-                            <div class="font-semibold text-text" x-text="playerLabel(game)"></div>
-                            <div class="text-xs text-accent mt-1" x-show="lockingId === ((game.type || 'playoff')+'-'+game.id)">Blokowanie…</div>
-                        </button>
-                    </template>
-                    <p class="text-text-muted text-sm" x-show="gamesInSelectedPlayoffSide.length === 0">Brak meczów.</p>
-                </div>
-            </template>
-
+    <div
+        x-show="selectedPlayoffSide != null"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-4"
+        @keydown.escape.window="if (selectedPlayoffSide != null) closeGroup()"
+        @click.self="closeGroup()"
+    >
+        <div
+            class="w-full max-w-md rounded-xl border border-border bg-bg-deep shadow-xl p-4"
+            @click.stop
+        >
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-semibold text-accent" x-text="modalTitle"></h3>
+                <button type="button" class="text-text-muted hover:text-accent text-xl leading-none" @click="closeGroup()" aria-label="Zamknij">✕</button>
+            </div>
+            <p class="text-danger text-sm mb-3" x-show="error" x-text="error"></p>
+            <div class="grid gap-2 max-h-[60vh] overflow-y-auto">
+                <template x-for="game in gamesInSelectedPlayoffSide" :key="(game.type || 'p')+'-'+game.id">
+                    <button
+                        type="button"
+                        class="w-full text-left px-4 py-3 rounded-lg bg-bg-elevated border border-border hover:border-accent/40 transition disabled:opacity-50"
+                        @click="startGame(game)"
+                        :disabled="lockingId != null"
+                    >
+                        <div class="text-xs text-text-muted mb-0.5" x-text="game.roundLabel || game.round || ''"></div>
+                        <div class="font-semibold text-text" x-text="playerLabel(game)"></div>
+                        <div class="text-xs text-accent mt-1" x-show="lockingId === ((game.type || 'playoff')+'-'+game.id)">Blokowanie…</div>
+                    </button>
+                </template>
+                <p class="text-text-muted text-sm" x-show="gamesInSelectedPlayoffSide.length === 0">Brak meczów.</p>
+            </div>
             <button type="button" class="mt-4 w-full text-center text-accent font-semibold py-2" @click="closeGroup()">
                 Zamknij
             </button>

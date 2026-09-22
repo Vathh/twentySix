@@ -10,6 +10,7 @@ import {
     RefereeApiError,
     scoringBaseUrl,
 } from './api.js';
+import { buildH2hLegVisitRows } from './legVisitRows.js';
 
 const GAME_STATE_EVENTS = ['game.state', '.game.state'];
 const GAME_CANCELLED_EVENTS = ['game.cancelled', '.game.cancelled'];
@@ -78,6 +79,7 @@ export function registerRefereeScoring(Alpine) {
         pendingSwitchIndex: null,
         dismissedLossKey: null,
         cancelled: false,
+        legVisitsHeight: 240,
 
         init() {
             this.session = requireRefereeSessionOrRedirect();
@@ -197,6 +199,37 @@ export function registerRefereeScoring(Alpine) {
 
         remaining(player) {
             return player?.remaining ?? this.startingScore;
+        },
+
+        get legVisitRows() {
+            return buildH2hLegVisitRows(
+                this.state?.visits ?? [],
+                this.player1?.playerId,
+                this.player2?.playerId,
+            );
+        },
+
+        beginLegVisitsResize(event) {
+            if (event.button != null && event.button !== 0) {
+                return;
+            }
+            const startY = event.clientY;
+            const startHeight = this.legVisitsHeight;
+            const previousUserSelect = document.body.style.userSelect;
+            document.body.style.userSelect = 'none';
+            const move = (pointerEvent) => {
+                const next = startHeight + (pointerEvent.clientY - startY);
+                this.legVisitsHeight = Math.max(140, Math.min(560, Math.round(next)));
+            };
+            const end = () => {
+                document.body.style.userSelect = previousUserSelect;
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', end);
+                window.removeEventListener('pointercancel', end);
+            };
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', end);
+            window.addEventListener('pointercancel', end);
         },
 
         get bullOffRequired() {

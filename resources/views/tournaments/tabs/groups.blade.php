@@ -167,7 +167,7 @@
             <p class="mt-3 text-sm text-text-secondary leading-relaxed text-center">
                 <span class="text-text-muted">Sędziowie:</span>
                 @foreach($groupSchedule as $scheduledGame)
-                    <span
+                    <span class="referee-slot-num">{{ $scheduledGame->sequence }}</span><span
                         data-referee-game-id="{{ $scheduledGame->id }}"
                         @class([
                             'line-through text-text-muted' => $scheduledGame->isFinished(),

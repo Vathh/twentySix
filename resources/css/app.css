@@ -308,6 +308,38 @@
         box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35);
     }
 
+    .ui-check {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 1.15rem;
+        height: 1.15rem;
+        margin: 0;
+        flex-shrink: 0;
+        border-radius: 0.3rem;
+        border: 1.5px solid var(--color-border);
+        background-color: var(--color-bg);
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 0.8rem;
+        cursor: pointer;
+        transition: background-color 150ms, border-color 150ms, box-shadow 150ms;
+    }
+
+    .ui-check:hover {
+        border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+    }
+
+    .ui-check:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 35%, transparent);
+    }
+
+    .ui-check:checked {
+        border-color: var(--color-accent);
+        background-color: var(--color-accent);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.2 6.4 11.1 12.5 4.8' stroke='%230c0c0f' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+
     /* --- Nawigacja --- */
     .nav-btn {
         @apply relative px-3 py-2 md:py-1.5 rounded-md text-text-muted hover:text-text hover:bg-bg-elevated/40 md:hover:bg-transparent transition-colors duration-150;
@@ -361,6 +393,19 @@
 
     .referee-numpad-key-muted {
         @apply text-text-muted;
+    }
+
+    /* Główny licznik. Telefon zostaje jak text-4xl. Od tabletu rośnie, żeby było widać z >2 m. */
+    .referee-remaining {
+        font-size: 2.25rem;
+        line-height: 1.05;
+    }
+
+    @media (min-width: 640px) {
+        .referee-remaining {
+            font-size: clamp(5.5rem, 14vw, 11rem);
+            line-height: 0.95;
+        }
     }
 
     /* Pełne logo = logotyp 26 + napis twentySix (proporcje ~2750×580) */
@@ -1167,7 +1212,9 @@
     }
 
     .sequence-badge {
-        @apply inline-flex min-w-[1.35rem] items-center justify-center rounded-md border border-border bg-bg-elevated px-1.5 py-0.5 text-xs font-semibold tabular-nums text-text-secondary;
+        @apply inline-flex min-w-[1.85rem] h-7 items-center justify-center rounded-md border px-2 text-sm font-bold tabular-nums text-text;
+        background: color-mix(in srgb, var(--color-accent) 24%, var(--color-bg-elevated));
+        border-color: color-mix(in srgb, var(--color-accent) 70%, var(--color-border));
     }
 
     .badge-status-live {
@@ -1315,6 +1362,210 @@
 
     .table-surface tbody td {
         @apply px-3 py-2;
+    }
+
+    .referee-group-board {
+        width: fit-content;
+        max-width: min(100%, 75rem);
+        margin-inline: auto;
+        padding-inline: 0.75rem;
+    }
+
+    .referee-group-scroll {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .referee-group-switch {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+        border: 1px solid var(--color-border);
+        border-radius: 0.65rem;
+    }
+
+    .referee-group-switch button {
+        padding: 0.55rem 0.75rem;
+        background: var(--color-bg-elevated);
+        color: var(--color-text-secondary);
+        font-size: 0.95rem;
+        font-weight: 700;
+    }
+
+    .referee-group-switch button.is-active {
+        background: var(--color-accent);
+        color: var(--color-on-accent);
+    }
+
+    .referee-group-table.table-surface {
+        width: max-content;
+        min-width: max-content;
+        max-width: none;
+    }
+
+    .referee-group-table.table-surface thead th,
+    .referee-group-table.table-surface tbody td {
+        padding: 0.45rem 0.35rem;
+        vertical-align: middle;
+    }
+
+    .referee-group-table.table-surface tbody td {
+        box-sizing: border-box;
+        height: 4.25rem;
+        padding-top: 0;
+        padding-bottom: 0;
+        line-height: 1.15rem;
+        overflow: hidden;
+    }
+
+    .referee-group-table.table-surface thead th.group-col-player,
+    .referee-group-table.table-surface tbody td.group-col-player {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        width: 15rem;
+        min-width: 15rem;
+        max-width: 15rem;
+        padding-left: 0.75rem;
+        text-align: left;
+        white-space: normal;
+        background: var(--color-bg);
+    }
+
+    .referee-group-table.table-surface thead th.group-col-match,
+    .referee-group-table.table-surface thead th.group-col-standings,
+    .referee-group-table.table-surface tbody td.group-col-match,
+    .referee-group-table.table-surface tbody td.group-col-standings {
+        width: 1%;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .referee-group-table[data-pane="matches"] .group-col-standings,
+    .referee-group-table[data-pane="table"] .group-col-match {
+        display: none;
+    }
+
+    .referee-slot-num {
+        display: inline-block;
+        margin-right: 0.2rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        color: var(--color-text-muted);
+        vertical-align: 0.08em;
+    }
+
+    .referee-leg-visits {
+        display: flex;
+        flex-direction: column;
+        height: 15rem;
+        min-height: 8.75rem;
+        max-height: 35rem;
+        border: 1px solid var(--color-border);
+        border-radius: 0.75rem;
+        background: var(--color-bg-deep);
+        overflow: hidden;
+    }
+
+    .referee-leg-visits-names {
+        display: grid;
+        grid-template-columns: 1fr 1fr 0.65fr 1fr 1fr;
+        flex: none;
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-bg-elevated);
+    }
+
+    .referee-leg-visits-names span:first-child {
+        grid-column: 1 / 3;
+    }
+
+    .referee-leg-visits-names span:last-child {
+        grid-column: 4 / 6;
+    }
+
+    .referee-leg-visits-names span {
+        padding: 0.4rem 0.35rem 0.15rem;
+        overflow: hidden;
+        color: var(--color-text-secondary);
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-align: center;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .referee-leg-visits-body {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+    }
+
+    .referee-leg-visits table {
+        width: 100%;
+        border-collapse: collapse;
+        font-variant-numeric: tabular-nums;
+        table-layout: fixed;
+    }
+
+    .referee-leg-visits thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 0.35rem 0.25rem;
+        background: var(--color-bg-elevated);
+        color: var(--color-text-muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+    .referee-leg-visits th:nth-child(3),
+    .referee-leg-visits td:nth-child(3) {
+        width: 14%;
+    }
+
+    .referee-leg-visits tbody td {
+        padding: 0.4rem 0.25rem;
+        border-top: 1px solid var(--color-border);
+        text-align: center;
+        color: var(--color-text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .referee-leg-visits td.is-darts,
+    .referee-leg-visits th.is-darts {
+        color: var(--color-accent);
+        font-weight: 700;
+    }
+
+    .referee-leg-visits td.is-bust {
+        color: var(--color-danger);
+        font-weight: 700;
+    }
+
+    .referee-leg-visits-grip {
+        flex: none;
+        height: 0.7rem;
+        border-top: 1px solid var(--color-border);
+        background: var(--color-bg-elevated);
+        cursor: ns-resize;
+        touch-action: none;
+    }
+
+    .referee-leg-visits-grip::before {
+        content: '';
+        display: block;
+        width: 2.25rem;
+        height: 0.2rem;
+        margin: 0.22rem auto 0;
+        border-radius: 999px;
+        background: var(--color-text-muted);
+        opacity: 0.7;
     }
 
     .score-num {

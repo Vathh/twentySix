@@ -127,7 +127,7 @@ class GroupStandingRepository
             ->with('player')
             ->where('tournament_id', $tournamentId)
             ->orderBy('group_number')
-            ->orderBy('place')
+            ->orderBy('id')
             ->get()
             ->map(fn ($standing) => GroupStandingDomain::fromEloquent($standing, ['player']))
             ->values();
