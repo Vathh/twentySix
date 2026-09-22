@@ -132,7 +132,10 @@
                                 <tbody class="divide-y divide-border">
                                     <template x-for="row in selectedGroupMatrix.rows" :key="row.key">
                                         <tr>
-                                            <td class="px-2 py-2 font-medium text-text whitespace-nowrap" x-text="row.playerName"></td>
+                                            <td class="px-2 py-2 font-medium text-text whitespace-nowrap">
+                                                <span class="block" x-text="row.playerName"></span>
+                                                <span class="three-dart-average" x-show="row.playerAverage" x-text="row.playerAverage"></span>
+                                            </td>
                                             <template x-for="cell in row.cells" :key="row.key + '-' + cell.key">
                                                 <td class="px-2 py-2 text-center">
                                                 <span class="text-text-muted" x-show="cell.diagonal">X</span>
@@ -163,10 +166,12 @@
                                                     :title="'Mecz ' + cell.sequence"
                                                 ></span>
                                                 <span
-                                                    class="text-text-secondary tabular-nums"
+                                                    class="inline-flex flex-col items-center text-text-secondary tabular-nums"
                                                     x-show="!cell.diagonal && !cell.playable && !cell.sequence"
-                                                    x-text="cell.text"
-                                                ></span>
+                                                >
+                                                    <span x-text="cell.text"></span>
+                                                    <span class="three-dart-average" x-show="cell.average" x-text="cell.average"></span>
+                                                </span>
                                             </td>
                                             </template>
                                             <td class="px-2 py-2 text-center tabular-nums" x-text="row.gamesWon"></td>

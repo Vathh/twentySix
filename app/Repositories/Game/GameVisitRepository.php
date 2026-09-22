@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Game;
 
+use App\Domain\Stats\ThreeDartAverageSet;
 use App\DTO\GameScoring\RecordVisitDTO;
 use App\Models\Game\GameVisit;
 use Illuminate\Support\Collection;
@@ -185,5 +186,67 @@ class GameVisitRepository
             ->selectRaw('MAX(CASE WHEN gv.closed_leg = 1 THEN gv.score ELSE NULL END) as best_checkout')
             ->get()
             ->keyBy(fn ($row) => (int) $row->player_id);
+    }
+
+    /**
+     * Suma punktów (bez bustu) i lotek (z bustem) na parę mecz + zawodnik.
+     *
+     * @param  list<int>  $groupGameIds
+     * @param  list<int>  $playoffGameIds
+     * @param  list<int>  $leagueGameIds
+     * @return Collection<int, object{kind: string, match_id: int, player_id: int, points: int, darts: int}>
+     */
+    public function scoringTotalsForMatches(array $groupGameIds, array $playoffGameIds, array $leagueGameIds): Collection
+    {
+        $groupGameIds = $this->positiveIds($groupGameIds);
+        $playoffGameIds = $this->positiveIds($playoffGameIds);
+        $leagueGameIds = $this->positiveIds($leagueGameIds);
+
+        if ($groupGameIds === [] && $playoffGameIds === [] && $leagueGameIds === []) {
+            return collect();
+        }
+
+        $kindSql = "CASE
+            WHEN gl.game_id IS NOT NULL THEN '".ThreeDartAverageSet::KIND_GROUP."'
+            WHEN gl.playoff_game_id IS NOT NULL THEN '".ThreeDartAverageSet::KIND_PLAYOFF."'
+            ELSE '".ThreeDartAverageSet::KIND_LEAGUE."'
+        END";
+        $matchSql = 'COALESCE(gl.game_id, gl.playoff_game_id, gl.league_game_id)';
+
+        return DB::table('game_visits as gv')
+            ->join('game_legs as gl', 'gl.id', '=', 'gv.game_leg_id')
+            ->where('gv.is_voided', false)
+            ->where(function ($query) use ($groupGameIds, $playoffGameIds, $leagueGameIds) {
+                if ($groupGameIds !== []) {
+                    $query->orWhereIn('gl.game_id', $groupGameIds);
+                }
+                if ($playoffGameIds !== []) {
+                    $query->orWhereIn('gl.playoff_game_id', $playoffGameIds);
+                }
+                if ($leagueGameIds !== []) {
+                    $query->orWhereIn('gl.league_game_id', $leagueGameIds);
+                }
+            })
+            ->groupByRaw($kindSql)
+            ->groupByRaw($matchSql)
+            ->groupBy('gv.player_id')
+            ->selectRaw($kindSql.' as kind')
+            ->selectRaw($matchSql.' as match_id')
+            ->selectRaw('gv.player_id as player_id')
+            ->selectRaw('SUM(CASE WHEN gv.bust = 0 THEN gv.score ELSE 0 END) as points')
+            ->selectRaw('SUM(gv.darts_in_visit) as darts')
+            ->get();
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return list<int>
+     */
+    private function positiveIds(array $ids): array
+    {
+        return array_values(array_unique(array_filter(
+            array_map(static fn ($id) => (int) $id, $ids),
+            static fn (int $id) => $id > 0,
+        )));
     }
 }

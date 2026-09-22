@@ -3,6 +3,7 @@
 namespace App\Services\League;
 
 use App\Domain\GameScoring\MatchFormat;
+use App\Domain\Stats\ThreeDartAverageSet;
 use App\Domain\League\LeagueMatchdayCalendar;
 use App\Domain\League\LeagueStandingRow;
 use App\Enums\LeagueGamePurpose;
@@ -13,6 +14,7 @@ use App\Models\League\LeagueSeason;
 use App\Models\League\LeagueSeasonDivision;
 use App\Models\League\LeagueSeasonMatchday;
 use App\Repositories\League\LeagueSeasonRepository;
+use App\Services\Stats\CompetitionThreeDartAverageService;
 
 class LeagueSeasonQueryService
 {
@@ -20,6 +22,7 @@ class LeagueSeasonQueryService
         private LeagueSeasonRepository $leagueSeasonRepository,
         private LeagueSeasonStandingsBuilder $standings,
         private LeagueSeasonLifecycleService $lifecycle,
+        private CompetitionThreeDartAverageService $threeDartAverages,
     ) {}
 
     public function getForPolicy(int $seasonId): LeagueSeason
@@ -54,6 +57,9 @@ class LeagueSeasonQueryService
             'canAdvance' => $season->status->isOpen() && $this->standings->regularPhaseComplete($season),
             'canStartSeason' => $startReadiness?->canStart ?? false,
             'startBlockedReason' => $startReadiness?->canStart ? null : $startReadiness?->reason,
+            'threeDartAverages' => $this->threeDartAverages->forLeagueMatches(
+                $season->games->pluck('id')->map(fn ($id) => (int) $id)->all(),
+            ),
         ];
     }
 
@@ -93,6 +99,7 @@ class LeagueSeasonQueryService
         $participants = $season->participants;
 
         $divisions = [];
+        $averages = $data['threeDartAverages'];
         foreach ($data['divisions'] as $block) {
             $division = $block['division'];
             /** @var \Illuminate\Support\Collection<int, LeagueGame> $regularGames */
@@ -107,6 +114,7 @@ class LeagueSeasonQueryService
                     'playerName' => $participant?->player?->name ?? ('#'.$row->playerId),
                     'userId' => $participant?->player?->user_id,
                     'played' => $row->played,
+                    'average' => $averages->leaguePlayerAverage((int) $row->playerId),
                     'wins' => $row->wins,
                     'draws' => $row->draws,
                     'losses' => $row->losses,
@@ -124,7 +132,7 @@ class LeagueSeasonQueryService
                         continue;
                     }
                     $mapped = $this->mapMatchdayForApi($matchday);
-                    $mapped['games'] = $roundGames->map(fn (LeagueGame $game) => $this->mapGameForApi($game))->all();
+                    $mapped['games'] = $roundGames->map(fn (LeagueGame $game) => $this->mapGameForApi($game, $averages))->all();
                     $rounds[] = $mapped;
                 }
             }
@@ -136,7 +144,7 @@ class LeagueSeasonQueryService
                 'standings' => $standings,
                 'rounds' => $rounds,
                 'games' => $season->matchdays->isEmpty()
-                    ? $regularGames->map(fn (LeagueGame $game) => $this->mapGameForApi($game))->values()->all()
+                    ? $regularGames->map(fn (LeagueGame $game) => $this->mapGameForApi($game, $averages))->values()->all()
                     : [],
             ];
         }
@@ -175,8 +183,8 @@ class LeagueSeasonQueryService
                 ? ['id' => $organization->id, 'name' => $organization->name]
                 : null,
             'divisions' => $divisions,
-            'tiebreakGames' => collect($data['tiebreakGames'])->map(fn (LeagueGame $game) => $this->mapGameForApi($game))->values()->all(),
-            'playoffGames' => collect($data['playoffGames'])->map(fn (LeagueGame $game) => $this->mapGameForApi($game))->values()->all(),
+            'tiebreakGames' => collect($data['tiebreakGames'])->map(fn (LeagueGame $game) => $this->mapGameForApi($game, $averages))->values()->all(),
+            'playoffGames' => collect($data['playoffGames'])->map(fn (LeagueGame $game) => $this->mapGameForApi($game, $averages))->values()->all(),
         ];
     }
 
@@ -218,7 +226,7 @@ class LeagueSeasonQueryService
     /**
      * @return array<string, mixed>
      */
-    private function mapGameForApi(LeagueGame $game): array
+    private function mapGameForApi(LeagueGame $game, ThreeDartAverageSet $averages): array
     {
         return [
             'id' => $game->id,
@@ -234,6 +242,8 @@ class LeagueSeasonQueryService
             ],
             'player1Score' => $game->player1_score,
             'player2Score' => $game->player2_score,
+            'player1Average' => $averages->leagueMatchAverage((int) $game->id, (int) $game->player1_id),
+            'player2Average' => $averages->leagueMatchAverage((int) $game->id, (int) $game->player2_id),
             'status' => $game->status->value,
             'isThirdPlace' => (bool) $game->is_third_place,
             'matchdayId' => $game->league_season_matchday_id,

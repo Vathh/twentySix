@@ -13,6 +13,7 @@ use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentGuestParticipantService;
 use App\Services\Tournament\TournamentInvitationService;
 use App\Services\Tournament\TournamentJoinRequestService;
+use App\Services\Stats\CompetitionThreeDartAverageService;
 use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentService;
 use App\Services\Tournament\TournamentStartPageService;
@@ -39,6 +40,7 @@ class TournamentController extends Controller
         private GameAuthorizationService $gameAuthorizationService,
         private TournamentGroupMatrixLiveService $groupMatrixLiveService,
         private TournamentPlayoffBracketLiveService $playoffBracketLiveService,
+        private CompetitionThreeDartAverageService $threeDartAverages,
         private TournamentStartPageService $startPageService,
         private TournamentCancelService $tournamentCancelService,
     ) {}
@@ -121,6 +123,10 @@ class TournamentController extends Controller
             'groupPlayoffHighlights' => $viewModel->groupPlayoffHighlights(),
             'achievements' => $viewModel->achievements(),
             'results' => $viewModel->results(),
+            'threeDartAverages' => $this->threeDartAverages->forTournamentMatches(
+                $viewModel->tournament->games->pluck('id')->map(fn ($id) => (int) $id)->all(),
+                $viewModel->tournament->playoffGames->pluck('id')->map(fn ($id) => (int) $id)->all(),
+            ),
             'tab' => $this->resolveShowTab($tournamentDomain),
             'canManageTournament' => $canManageTournament,
             'loginCode' => $loginCode,

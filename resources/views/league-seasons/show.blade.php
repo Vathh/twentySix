@@ -128,6 +128,7 @@
                                     <td class="score-num text-center">{{ $row->place }}@if($row->needsTiebreak)*@endif</td>
                                     <td>
                                         {{ $playerName($row->playerId) }}
+                                        <x-three-dart-average :value="$threeDartAverages->leaguePlayerAverage((int) $row->playerId)" />
                                         @if($isAdmin && $season->status->isOpen())
                                             <form method="POST" action="{{ route('league-seasons.withdraw', $season) }}" class="inline ml-2"
                                                   onsubmit="return confirm('Rezygnacja anuluje wszystkie mecze tej osoby i wypisuje ją z piramidy. Kontynuować?')">
@@ -176,21 +177,7 @@
                                         </summary>
                                         <div class="space-y-2">
                                             @foreach($roundGames as $game)
-                                                <a href="{{ route('league-games.show', $game) }}" class="block">
-                                                    <div class="list-item">
-                                                        {{ $game->player1?->name }}
-                                                        <span class="score-num mx-2">
-                                                            @if($game->status->value === 'finished')
-                                                                {{ $game->player1_score }} : {{ $game->player2_score }}
-                                                            @elseif($game->status->value === 'voided')
-                                                                anulowany
-                                                            @else
-                                                                vs
-                                                            @endif
-                                                        </span>
-                                                        {{ $game->player2?->name }}
-                                                    </div>
-                                                </a>
+                                                @include('league-seasons.partials.fixture', ['game' => $game])
                                             @endforeach
                                         </div>
                                     </details>
@@ -204,21 +191,7 @@
                                 </summary>
                                 <div class="space-y-2">
                                     @foreach($block['games'] as $game)
-                                        <a href="{{ route('league-games.show', $game) }}" class="block">
-                                            <div class="list-item">
-                                                {{ $game->player1?->name }}
-                                                <span class="score-num mx-2">
-                                                    @if($game->status->value === 'finished')
-                                                        {{ $game->player1_score }} : {{ $game->player2_score }}
-                                                    @elseif($game->status->value === 'voided')
-                                                        anulowany
-                                                    @else
-                                                        vs
-                                                    @endif
-                                                </span>
-                                                {{ $game->player2?->name }}
-                                            </div>
-                                        </a>
+                                        @include('league-seasons.partials.fixture', ['game' => $game])
                                     @endforeach
                                 </div>
                             </details>
@@ -231,18 +204,10 @@
                     <h2 class="section-title mt-10">Dogrywki</h2>
                     <div class="space-y-2 mb-8">
                         @foreach($tiebreakGames as $game)
-                            <a href="{{ route('league-games.show', $game) }}" class="block">
-                                <div class="list-item">
-                                    {{ $game->player1?->name }}
-                                    <span class="score-num mx-2">
-                                        {{ $game->status->value === 'finished' ? $game->player1_score.' : '.$game->player2_score : 'vs' }}
-                                    </span>
-                                    {{ $game->player2?->name }}
-                                    @if($game->is_third_place)
-                                        <span class="text-text-muted text-sm">· o 3. miejsce</span>
-                                    @endif
-                                </div>
-                            </a>
+                            @include('league-seasons.partials.fixture', [
+                                'game' => $game,
+                                'hint' => $game->is_third_place ? '· o 3. miejsce' : null,
+                            ])
                         @endforeach
                     </div>
                 @endif
@@ -251,15 +216,7 @@
                     <h2 class="section-title mt-10">Baraże</h2>
                     <div class="space-y-2 mb-8">
                         @foreach($playoffGames as $game)
-                            <a href="{{ route('league-games.show', $game) }}" class="block">
-                                <div class="list-item">
-                                    {{ $game->player1?->name }}
-                                    <span class="score-num mx-2">
-                                        {{ $game->status->value === 'finished' ? $game->player1_score.' : '.$game->player2_score : 'vs' }}
-                                    </span>
-                                    {{ $game->player2?->name }}
-                                </div>
-                            </a>
+                            @include('league-seasons.partials.fixture', ['game' => $game])
                         @endforeach
                     </div>
                 @endif

@@ -76,19 +76,29 @@
                             : 'hover:bg-bg-elevated-hover' }}"
                     >
                         <td class="px-3 py-2 font-medium text-text whitespace-nowrap">
-                            @if($rowPlayer->userId)
-                                <a href="{{ route('players.show', $rowPlayer->id) }}" class="text-text hover:text-accent hover:underline transition-colors">
+                            @php
+                                $playerAverage = $threeDartAverages->groupPlayerAverage((int) $rowPlayer->id);
+                            @endphp
+                            <span class="inline-flex items-center gap-2">
+                                @if($rowPlayer->userId)
+                                    <a href="{{ route('players.show', $rowPlayer->id) }}" class="text-text hover:text-accent hover:underline transition-colors">
+                                        {{ $rowPlayer->name }}
+                                    </a>
+                                @else
                                     {{ $rowPlayer->name }}
-                                </a>
-                            @else
-                                {{ $rowPlayer->name }}
-                            @endif
+                                @endif
+                                <span
+                                    data-playoff-badge
+                                    class="align-middle text-[10px] uppercase tracking-wide font-semibold text-accent border border-success/40 rounded px-1.5 py-0.5"
+                                    title="Awans do playoff"
+                                    @if(! $advances) hidden @endif
+                                >Playoff</span>
+                            </span>
                             <span
-                                data-playoff-badge
-                                class="ml-2 align-middle text-[10px] uppercase tracking-wide font-semibold text-accent border border-success/40 rounded px-1.5 py-0.5"
-                                title="Awans do playoff"
-                                @if(! $advances) hidden @endif
-                            >Playoff</span>
+                                class="three-dart-average"
+                                data-group-player-average="{{ $rowPlayer->id }}"
+                                @if($playerAverage === null) hidden @endif
+                            >{{ $playerAverage !== null ? \App\Support\AverageFormat::display($playerAverage) : '' }}</span>
                         </td>
 
                         @foreach($players[$number] as $columnPlayer)
@@ -107,11 +117,14 @@
                                             ? $cellGame->player1Score.' - '.$cellGame->player2Score
                                             : $cellGame->player2Score.' - '.$cellGame->player1Score)
                                         : '—';
+                                    $matchAverage = ($isFinished || $isLive)
+                                        ? $threeDartAverages->groupMatchAverage((int) $cellGame->id, (int) $rowPlayer->id)
+                                        : null;
                                     $href = $isLive
                                         ? route('games.live', ['type' => 'group', 'id' => $cellGame->id])
                                         : route('games.show', ['type' => 'group', 'id' => $cellGame->id]);
                                     $linkClass = ($isFinished || $isLive)
-                                        ? 'text-accent hover:underline'
+                                        ? 'inline-flex flex-col items-center leading-tight text-accent hover:underline'
                                         : 'text-text-muted hover:text-accent hover:underline';
                                     $title = $isLive ? 'Podgląd na żywo' : ($isFinished ? null : 'Ustaw wynik / walkower');
                                 @endphp
@@ -127,7 +140,7 @@
                                         class="{{ ($cellGame->sequence && ! $isFinished && ! $isLive) ? 'inline-flex justify-center hover:opacity-80' : $linkClass }}"
                                         @if($cellGame->sequence && ! $isFinished && ! $isLive) title="Mecz {{ $cellGame->sequence }}"
                                         @elseif($title) title="{{ $title }}" @endif
-                                    >@if($cellGame->sequence && ! $isFinished && ! $isLive)<span class="sequence-badge">{{ $cellGame->sequence }}</span>@else{{ $scoreText }}@endif</a>
+                                    >@if($cellGame->sequence && ! $isFinished && ! $isLive)<span class="sequence-badge">{{ $cellGame->sequence }}</span>@else<span>{{ $scoreText }}</span>@if($matchAverage !== null)<span class="three-dart-average">{{ \App\Support\AverageFormat::display($matchAverage) }}</span>@endif @endif</a>
                                 </td>
                             @endif
                         @endforeach

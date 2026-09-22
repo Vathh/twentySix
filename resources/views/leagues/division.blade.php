@@ -113,7 +113,10 @@
                                         @forelse($tab['standings'] as $row)
                                             <tr>
                                                 <td class="score-num text-center">{{ $row->place }}@if($row->needsTiebreak)*@endif</td>
-                                                <td>{{ $playerName($tab, $row->playerId) }}</td>
+                                                <td>
+                                                    {{ $playerName($tab, $row->playerId) }}
+                                                    <x-three-dart-average :value="$tab['threeDartAverages']->leaguePlayerAverage((int) $row->playerId)" />
+                                                </td>
                                                 <td class="score-num text-center">{{ $row->played }}</td>
                                                 <td class="score-num text-center text-success-bright">{{ $row->wins }}</td>
                                                 @if($tab['allowsDraws'])

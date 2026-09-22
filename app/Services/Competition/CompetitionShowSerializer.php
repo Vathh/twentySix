@@ -6,6 +6,7 @@ use App\Domain\Game\GroupGameDomain;
 use App\Domain\Game\PlayoffGameDomain;
 use App\Domain\Game\WinnerDestination;
 use App\Domain\GroupStandingDomain;
+use App\Domain\Stats\ThreeDartAverageSet;
 use App\Domain\OrganizationDomain;
 use App\Domain\SeasonDomain;
 use App\Domain\Tournament\TournamentDomain;
@@ -17,6 +18,7 @@ use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Queries\GetTournamentData;
 use App\Services\Season\SeasonStatsService;
+use App\Services\Stats\CompetitionThreeDartAverageService;
 use App\ViewModels\TournamentDataViewModel;
 use Illuminate\Support\Collection;
 
@@ -25,6 +27,7 @@ class CompetitionShowSerializer
     public function __construct(
         private SeasonStatsService $seasonStatsService,
         private GetTournamentData $getTournamentData,
+        private CompetitionThreeDartAverageService $threeDartAverages,
     ) {}
 
     /**
@@ -154,6 +157,10 @@ class CompetitionShowSerializer
         $organization = $season?->organization;
 
         $showStageInResults = $tournament->format !== \App\Enums\TournamentFormat::DoubleElimination;
+        $averages = $this->threeDartAverages->forTournamentMatches(
+            $viewModel->tournament->games->pluck('id')->map(fn ($id) => (int) $id)->all(),
+            $viewModel->tournament->playoffGames->pluck('id')->map(fn ($id) => (int) $id)->all(),
+        );
 
         return [
             'tournament' => [
@@ -176,10 +183,10 @@ class CompetitionShowSerializer
                 ? ['id' => $season->id, 'name' => $season->name]
                 : null,
             'availableTabs' => $this->availableTabs($tournament),
-            'results' => $this->mapResults($viewModel->results(), $showStageInResults),
-            'groups' => $this->mapGroups($viewModel),
-            'playoff' => $this->mapPlayoff($viewModel->playoffGames()),
-            'consolationPlayoff' => $this->mapPlayoff($viewModel->playoffGames(BracketSide::Consolation)),
+            'results' => $this->mapResults($viewModel->results(), $showStageInResults, $averages),
+            'groups' => $this->mapGroups($viewModel, $averages),
+            'playoff' => $this->mapPlayoff($viewModel->playoffGames(), $averages),
+            'consolationPlayoff' => $this->mapPlayoff($viewModel->playoffGames(BracketSide::Consolation), $averages),
             'achievements' => $this->mapAchievements($viewModel->achievements()),
         ];
     }
@@ -205,17 +212,19 @@ class CompetitionShowSerializer
      * @param  Collection<int, array{player: mixed, place: mixed, points: mixed, stage: mixed, stageLabel?: ?string}>  $results
      * @return list<array<string, mixed>>
      */
-    private function mapResults(Collection $results, bool $showStageInResults = true): array
+    private function mapResults(Collection $results, bool $showStageInResults, ThreeDartAverageSet $averages): array
     {
-        return $results->map(function (array $result) use ($showStageInResults) {
+        return $results->map(function (array $result) use ($showStageInResults, $averages) {
             $player = $result['player'];
             $stage = $result['stage'] ?? null;
+            $playerId = $player?->id !== null ? (int) $player->id : 0;
 
             return [
                 'place' => $result['place'] ?? null,
                 'playerId' => $player?->id,
                 'playerName' => $player?->name ?? '—',
                 'userId' => $player?->userId,
+                'average' => $playerId > 0 ? $averages->tournamentPlayerAverage($playerId) : null,
                 'points' => $result['points'] ?? null,
                 'stageLabel' => $showStageInResults
                     ? ($result['stageLabel']
@@ -228,7 +237,7 @@ class CompetitionShowSerializer
     /**
      * @return list<array{groupNumber: int, standings: list<array>, games: list<array>}>
      */
-    private function mapGroups(TournamentDataViewModel $viewModel): array
+    private function mapGroups(TournamentDataViewModel $viewModel, ThreeDartAverageSet $averages): array
     {
         $standingsByGroup = $viewModel->groupStandings();
         $gamesByGroup = $viewModel->games();
@@ -245,6 +254,9 @@ class CompetitionShowSerializer
                     'playerId' => $s->player?->id,
                     'playerName' => $s->player?->name ?? '—',
                     'userId' => $s->player?->userId,
+                    'average' => $s->player?->id !== null
+                        ? $averages->groupPlayerAverage((int) $s->player->id)
+                        : null,
                     'gamesPlayed' => $s->gamesPlayed,
                     'gamesWon' => $s->gamesWon,
                     'gamesLost' => $s->gamesLost,
@@ -262,7 +274,7 @@ class CompetitionShowSerializer
                         continue;
                     }
                     $seenGameIds[$game->id] = true;
-                    $gameRows[] = $this->mapGame($game);
+                    $gameRows[] = $this->mapGame($game, $averages, ThreeDartAverageSet::KIND_GROUP);
                 }
             }
 
@@ -280,7 +292,7 @@ class CompetitionShowSerializer
      * @param  array<string, list<PlayoffGameDomain>>  $playoffGames
      * @return list<array{round: string, roundLabel: string, games: list<array>}>
      */
-    private function mapPlayoff(array $playoffGames): array
+    private function mapPlayoff(array $playoffGames, ThreeDartAverageSet $averages): array
     {
         $order = [
             GameStage::SIXTYFOUR->value,
@@ -316,7 +328,7 @@ class CompetitionShowSerializer
                 'round' => $roundValue,
                 'roundLabel' => $stage->label(),
                 'games' => array_map(
-                    fn (PlayoffGameDomain $game) => $this->mapPlayoffGame($game, $bySlot),
+                    fn (PlayoffGameDomain $game) => $this->mapPlayoffGame($game, $bySlot, $averages),
                     $sorted,
                 ),
             ];
@@ -329,9 +341,9 @@ class CompetitionShowSerializer
      * @param  array<string, PlayoffGameDomain>  $bySlot
      * @return array<string, mixed>
      */
-    private function mapPlayoffGame(PlayoffGameDomain $game, array $bySlot): array
+    private function mapPlayoffGame(PlayoffGameDomain $game, array $bySlot, ThreeDartAverageSet $averages): array
     {
-        $row = $this->mapGame($game);
+        $row = $this->mapGame($game, $averages, ThreeDartAverageSet::KIND_PLAYOFF);
         $row['slot'] = $game->slot;
         $row['round'] = $game->round;
 
@@ -400,8 +412,12 @@ class CompetitionShowSerializer
     /**
      * @return array<string, mixed>
      */
-    private function mapGame(GroupGameDomain|PlayoffGameDomain $game): array
+    private function mapGame(GroupGameDomain|PlayoffGameDomain $game, ThreeDartAverageSet $averages, string $kind): array
     {
+        $player1Id = $game->player1?->id !== null ? (int) $game->player1->id : 0;
+        $player2Id = $game->player2?->id !== null ? (int) $game->player2->id : 0;
+        $gameId = (int) $game->id;
+
         return [
             'id' => $game->id,
             'player1' => [
@@ -414,6 +430,8 @@ class CompetitionShowSerializer
                 'name' => $game->player2?->name ?? 'TBD',
                 'userId' => $game->player2?->userId,
             ],
+            'player1Average' => $player1Id > 0 ? $averages->matchAverage($kind, $gameId, $player1Id) : null,
+            'player2Average' => $player2Id > 0 ? $averages->matchAverage($kind, $gameId, $player2Id) : null,
             'score1' => $game->player1Score,
             'score2' => $game->player2Score,
             'winnerId' => $game->winner?->id,

@@ -1,3 +1,5 @@
+import { formatAverage } from '../formatAverage.js';
+
 export function shortPlayerLabel(name) {
     const text = String(name ?? '').trim();
     if (text.length <= 10) {
@@ -19,28 +21,41 @@ function scoreForRow(game, rowPlayerId) {
     return `${s2} - ${s1}`;
 }
 
+function averageLabel(game, rowPlayerId) {
+    if (!game) {
+        return null;
+    }
+    const isP1 = Number(game.player1?.id) === Number(rowPlayerId);
+    const value = isP1 ? game.player1Average : game.player2Average;
+    if (value == null || value === '' || Number.isNaN(Number(value))) {
+        return null;
+    }
+    return formatAverage(value);
+}
+
 export function matrixCellForPair(game, rowPlayerId, { playableUnfinished = false } = {}) {
     if (!game) {
-        return { text: '—', sequence: null, playable: false, game: null };
+        return { text: '—', average: null, sequence: null, playable: false, game: null };
     }
     if (isFinishedStatus(game.status)) {
-        return { text: scoreForRow(game, rowPlayerId), sequence: null, playable: false, game };
+        return { text: scoreForRow(game, rowPlayerId), average: averageLabel(game, rowPlayerId), sequence: null, playable: false, game };
     }
     if (game.status === 'scheduled' && game.sequence != null) {
         return {
             text: String(game.sequence),
+            average: null,
             sequence: game.sequence,
             playable: playableUnfinished,
             game,
         };
     }
     if (playableUnfinished) {
-        return { text: '—', sequence: null, playable: true, game };
+        return { text: '—', average: null, sequence: null, playable: true, game };
     }
     if (game.status === 'scheduled') {
-        return { text: '—', sequence: null, playable: false, game };
+        return { text: '—', average: null, sequence: null, playable: false, game };
     }
-    return { text: scoreForRow(game, rowPlayerId), sequence: null, playable: false, game };
+    return { text: scoreForRow(game, rowPlayerId), average: averageLabel(game, rowPlayerId), sequence: null, playable: false, game };
 }
 
 export function groupRefereeSlots(games) {
@@ -81,6 +96,9 @@ export function buildGroupMatrix(group, { playableUnfinished = false } = {}) {
         const next = {
             key: `p-${row.playerId}`,
             playerName: row.playerName,
+            playerAverage: row.average == null || row.average === '' || Number.isNaN(Number(row.average))
+                ? null
+                : formatAverage(row.average),
             gamesWon: row.gamesWon,
             gamesLost: row.gamesLost,
             matchUnitsDifference: row.matchUnitsDifference,

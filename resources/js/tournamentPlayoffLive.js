@@ -1,4 +1,5 @@
 import Pusher from 'pusher-js';
+import { formatAverage } from './formatAverage.js';
 
 const BRACKET_EVENTS = ['playoff.bracket.updated', '.playoff.bracket.updated'];
 const CARD_BASE = 'bracket-game-card';
@@ -33,6 +34,23 @@ function hrefForGame(game, urls) {
 	}
 
 	return null;
+}
+
+function averageText(value) {
+	if (value == null || value === '') {
+		return null;
+	}
+	const formatted = formatAverage(value, '');
+	return formatted === '' ? null : formatted;
+}
+
+function setAverageEl(el, value) {
+	if (!el) {
+		return;
+	}
+	const text = averageText(value);
+	el.textContent = text ?? '';
+	el.hidden = text == null;
 }
 
 function formatScore(game, score) {
@@ -180,6 +198,8 @@ export function registerTournamentPlayoffLive(Alpine) {
 			if (score2) {
 				score2.textContent = formatScore(game, game.player2Score);
 			}
+			setAverageEl(root.querySelector('[data-playoff-p1-average]'), game.player1Average);
+			setAverageEl(root.querySelector('[data-playoff-p2-average]'), game.player2Average);
 			if (row1) {
 				applyRowWinner(
 					row1,

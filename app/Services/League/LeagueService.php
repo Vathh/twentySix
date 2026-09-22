@@ -8,6 +8,7 @@ use App\Enums\AssignableEntityType;
 use App\Enums\LeagueSeasonStatus;
 use App\Models\League\League;
 use App\Repositories\Game\GameVisitRepository;
+use App\Services\Stats\CompetitionThreeDartAverageService;
 use App\Repositories\League\LeagueRepository;
 use App\Repositories\League\LeagueSeasonRepository;
 use App\Repositories\Player\PlayerRepository;
@@ -24,6 +25,7 @@ class LeagueService
         private LeagueSeasonRepository $leagueSeasonRepository,
         private LeagueSeasonService $leagueSeasonService,
         private GameVisitRepository $gameVisitRepository,
+        private CompetitionThreeDartAverageService $threeDartAverages,
         private PlayerService $playerService,
         private PlayerRepository $playerRepository,
         private UserService $userService,
@@ -224,6 +226,9 @@ class LeagueService
                 'highlights' => $highlights,
                 'champion' => $champion,
                 'allowsDraws' => (bool) $season->allows_draws,
+                'threeDartAverages' => $this->threeDartAverages->forLeagueMatches(
+                    $season->games->pluck('id')->map(fn ($id) => (int) $id)->all(),
+                ),
             ];
         }
 
@@ -284,6 +289,7 @@ class LeagueService
                         'playerName' => $participant?->player?->name ?? ('#'.$row->playerId),
                         'userId' => $participant?->player?->user_id,
                         'played' => $row->played,
+                        'average' => $tab['threeDartAverages']->leaguePlayerAverage((int) $row->playerId),
                         'wins' => $row->wins,
                         'draws' => $row->draws,
                         'losses' => $row->losses,

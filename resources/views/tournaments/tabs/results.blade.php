@@ -5,6 +5,7 @@
         <tr>
             <th class="px-2 py-2 text-center w-16">Miejsce</th>
             <th class="px-3 py-2 text-left">Zawodnik</th>
+            <th class="px-2 py-2 text-center">Średnia</th>
             @if($showPointsColumn ?? false)
                 <th class="px-2 py-2 text-center">Punkty</th>
             @endif
@@ -16,7 +17,7 @@
 
         <tbody class="divide-y divide-border">
         @php
-            $colCount = 2
+            $colCount = 3
                 + (($showPointsColumn ?? false) ? 1 : 0)
                 + (($showStageColumn ?? true) ? 1 : 0);
         @endphp
@@ -35,6 +36,9 @@
                     @else
                         {{ $result['player']->name }}
                     @endif
+                </td>
+                <td class="px-2 py-2 text-center tabular-nums text-text-muted">
+                    {{ \App\Support\AverageFormat::display($threeDartAverages->tournamentPlayerAverage((int) ($result['player']->id ?? 0))) }}
                 </td>
                 @if($showPointsColumn ?? false)
                     <td class="px-2 py-2 text-center tabular-nums">{{ $result['points'] ?? '—' }}</td>

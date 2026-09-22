@@ -1,4 +1,5 @@
 import Pusher from 'pusher-js';
+import { formatAverage } from './formatAverage.js';
 
 const MATRIX_EVENTS = ['groups.matrix.updated', '.groups.matrix.updated'];
 
@@ -35,7 +36,41 @@ function cellClassForStatus(game) {
 	if (game.status === 'scheduled') {
 		return 'text-text-muted hover:text-accent hover:underline';
 	}
-	return 'text-accent hover:underline';
+	return 'inline-flex flex-col items-center leading-tight text-accent hover:underline';
+}
+
+function averageText(value) {
+	if (value == null || value === '') {
+		return null;
+	}
+	const formatted = formatAverage(value, '');
+	return formatted === '' ? null : formatted;
+}
+
+function setRunningAverage(root, playerId, value) {
+	if (!playerId) {
+		return;
+	}
+	const text = averageText(value);
+	root.querySelectorAll(`[data-group-player-average="${playerId}"]`).forEach((el) => {
+		el.textContent = text ?? '';
+		el.hidden = text == null;
+	});
+}
+
+function renderScoreLink(link, scoreText, average, game) {
+	link.className = cellClassForStatus(game);
+	link.replaceChildren();
+	const score = document.createElement('span');
+	score.textContent = scoreText;
+	link.appendChild(score);
+	const avg = averageText(average);
+	if (avg) {
+		const line = document.createElement('span');
+		line.className = 'three-dart-average';
+		line.textContent = avg;
+		link.appendChild(line);
+	}
 }
 
 /** Rejestruje Alpine przed Alpine.start(). */
@@ -154,8 +189,11 @@ export function registerTournamentGroupsLive(Alpine) {
 						link.setAttribute('title', 'Ustaw wynik / walkower');
 					}
 				} else {
-					link.textContent = scoreForRow(game, rowPlayerId);
-					link.className = cellClassForStatus(game);
+					const rowId = Number(rowPlayerId);
+					const rawAverage = rowId === Number(game.player1Id)
+						? game.player1Average
+						: game.player2Average;
+					renderScoreLink(link, scoreForRow(game, rowPlayerId), rawAverage, game);
 					if (game.status === 'in_progress') {
 						link.setAttribute('title', 'Podgląd na żywo');
 					} else {
@@ -164,6 +202,8 @@ export function registerTournamentGroupsLive(Alpine) {
 				}
 				link.setAttribute('href', hrefForGame(game, config.urls));
 			});
+			setRunningAverage(root, game.player1Id, game.player1RunningAverage);
+			setRunningAverage(root, game.player2Id, game.player2RunningAverage);
 			root.querySelectorAll(`[data-referee-game-id="${game.id}"]`).forEach((slot) => {
 				slot.classList.toggle('line-through', game.status === 'finished');
 				slot.classList.toggle('text-text-muted', game.status === 'finished');

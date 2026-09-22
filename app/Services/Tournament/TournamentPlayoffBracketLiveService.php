@@ -3,11 +3,13 @@
 namespace App\Services\Tournament;
 
 use App\Domain\Game\PlayoffGameDomain;
+use App\Domain\Stats\ThreeDartAverageSet;
 use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
 use App\Events\TournamentPlayoffBracketUpdated;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\Tournament\TournamentRepository;
+use App\Services\Stats\CompetitionThreeDartAverageService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -18,6 +20,7 @@ class TournamentPlayoffBracketLiveService
     public function __construct(
         private PlayoffGameRepository $playoffGameRepository,
         private TournamentRepository $tournamentRepository,
+        private CompetitionThreeDartAverageService $threeDartAverages,
     ) {}
 
     public function pushTournament(int $tournamentId): void
@@ -47,8 +50,13 @@ class TournamentPlayoffBracketLiveService
      */
     public function snapshot(int $tournamentId): array
     {
-        $games = $this->playoffGameRepository->getAllForTournament($tournamentId)
-            ->map(fn (PlayoffGameDomain $game) => $this->serializeGame($game))
+        $domains = $this->playoffGameRepository->getAllForTournament($tournamentId);
+        $averages = $this->threeDartAverages->forTournamentMatches(
+            [],
+            $domains->map(fn (PlayoffGameDomain $game) => (int) $game->id)->all(),
+        );
+        $games = $domains
+            ->map(fn (PlayoffGameDomain $game) => $this->serializeGame($game, $averages))
             ->values()
             ->all();
 
@@ -67,20 +75,25 @@ class TournamentPlayoffBracketLiveService
     /**
      * @return array<string, mixed>
      */
-    private function serializeGame(PlayoffGameDomain $game): array
+    private function serializeGame(PlayoffGameDomain $game, ThreeDartAverageSet $averages): array
     {
         $status = $game->status->value;
         $hideScores = $game->isByeVsBye();
         $showScores = ! $hideScores && $game->status !== GameStatus::SCHEDULED;
+        $player1Id = (int) ($game->player1Id ?? 0);
+        $player2Id = (int) ($game->player2Id ?? 0);
+        $gameId = (int) $game->id;
 
         return [
-            'id' => (int) $game->id,
+            'id' => $gameId,
             'player1Id' => $game->player1Id,
             'player2Id' => $game->player2Id,
             'player1Name' => $game->player1?->name,
             'player2Name' => $game->player2?->name,
             'player1Score' => $showScores ? (int) ($game->player1Score ?? 0) : null,
             'player2Score' => $showScores ? (int) ($game->player2Score ?? 0) : null,
+            'player1Average' => $player1Id > 0 ? $averages->playoffMatchAverage($gameId, $player1Id) : null,
+            'player2Average' => $player2Id > 0 ? $averages->playoffMatchAverage($gameId, $player2Id) : null,
             'winnerId' => $hideScores ? null : $game->winnerId,
             'status' => $status,
             'hideScores' => $hideScores,

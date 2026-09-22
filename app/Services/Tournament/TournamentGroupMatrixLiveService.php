@@ -2,6 +2,7 @@
 
 namespace App\Services\Tournament;
 
+use App\Domain\Stats\ThreeDartAverageSet;
 use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
 use App\Events\TournamentGroupMatrixUpdated;
@@ -10,6 +11,7 @@ use App\Models\GroupStanding\GroupStanding;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\GroupStanding\GroupStandingRepository;
 use App\Repositories\Tournament\TournamentRepository;
+use App\Services\Stats\CompetitionThreeDartAverageService;
 use App\ViewModels\TournamentDataViewModel;
 use Illuminate\Support\Facades\DB;
 
@@ -22,6 +24,7 @@ class TournamentGroupMatrixLiveService
         private GameRepository $gameRepository,
         private GroupStandingRepository $groupStandingRepository,
         private TournamentRepository $tournamentRepository,
+        private CompetitionThreeDartAverageService $threeDartAverages,
     ) {}
 
     /**
@@ -39,6 +42,8 @@ class TournamentGroupMatrixLiveService
             ? $game->status->value
             : (string) $game->status;
 
+        $averages = $this->groupAverages($tournamentId);
+
         $payload = [
             'tournamentId' => $tournamentId,
             'groupNumber' => $groupNumber,
@@ -50,6 +55,12 @@ class TournamentGroupMatrixLiveService
                 'player1Score' => (int) ($game->player1_score ?? 0),
                 'player2Score' => (int) ($game->player2_score ?? 0),
                 'status' => $status,
+                ...$this->groupAverageFields(
+                    $averages,
+                    (int) $game->id,
+                    (int) $game->player1_id,
+                    (int) $game->player2_id,
+                ),
             ],
             'standings' => null,
             'playoffHighlight' => null,
@@ -74,8 +85,12 @@ class TournamentGroupMatrixLiveService
             $tournamentId,
             ['id', 'group_number', 'player1_id', 'player2_id', 'player1_score', 'player2_score', 'status'],
         );
+        $averages = $this->threeDartAverages->forTournamentMatches(
+            $games->pluck('id')->map(fn ($id) => (int) $id)->all(),
+            [],
+        );
 
-        $gamePayload = $games->map(function (Game $game) {
+        $gamePayload = $games->map(function (Game $game) use ($averages) {
             $status = $game->status instanceof GameStatus
                 ? $game->status->value
                 : (string) $game->status;
@@ -88,6 +103,12 @@ class TournamentGroupMatrixLiveService
                 'player1Score' => (int) ($game->player1_score ?? 0),
                 'player2Score' => (int) ($game->player2_score ?? 0),
                 'status' => $status,
+                ...$this->groupAverageFields(
+                    $averages,
+                    (int) $game->id,
+                    (int) $game->player1_id,
+                    (int) $game->player2_id,
+                ),
             ];
         })->values()->all();
 
@@ -166,6 +187,33 @@ class TournamentGroupMatrixLiveService
             'complete' => false,
             'advanceCount' => 0,
             'advancingPlayerIds' => [],
+        ];
+    }
+
+    private function groupAverages(int $tournamentId): ThreeDartAverageSet
+    {
+        $ids = $this->gameRepository->getAllForTournament($tournamentId, ['id'])
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return $this->threeDartAverages->forTournamentMatches($ids, []);
+    }
+
+    /**
+     * @return array{player1Average: ?float, player2Average: ?float, player1RunningAverage: ?float, player2RunningAverage: ?float}
+     */
+    private function groupAverageFields(
+        ThreeDartAverageSet $averages,
+        int $gameId,
+        int $player1Id,
+        int $player2Id,
+    ): array {
+        return [
+            'player1Average' => $player1Id > 0 ? $averages->groupMatchAverage($gameId, $player1Id) : null,
+            'player2Average' => $player2Id > 0 ? $averages->groupMatchAverage($gameId, $player2Id) : null,
+            'player1RunningAverage' => $player1Id > 0 ? $averages->groupPlayerAverage($player1Id) : null,
+            'player2RunningAverage' => $player2Id > 0 ? $averages->groupPlayerAverage($player2Id) : null,
         ];
     }
 

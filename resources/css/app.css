@@ -84,7 +84,8 @@
     }
 
     .bracket-round {
-        @apply flex flex-col min-w-[10.75rem];
+        @apply flex flex-col w-[10.75rem] max-w-[10.75rem] shrink-0;
+        min-width: 10.75rem;
         padding-right: var(--bracket-gutter);
         padding-left: var(--bracket-gutter);
     }
@@ -162,6 +163,20 @@
         @apply flex justify-between items-center gap-2 min-h-0;
     }
 
+    .bracket-player-line {
+        @apply flex flex-1 flex-wrap items-baseline gap-x-1.5 min-w-0;
+        row-gap: 1px;
+    }
+
+    .bracket-player-name {
+        @apply max-w-full min-w-0 truncate;
+    }
+
+    .bracket-player-line > .three-dart-average {
+        @apply mt-0 shrink-0 whitespace-nowrap;
+        display: inline;
+    }
+
     .bracket-game-row + .bracket-game-row {
         @apply mt-0.5 pt-0.5;
         border-top: 1px solid var(--color-border-subtle);
@@ -185,6 +200,14 @@
     }
 
     [data-playoff-badge][hidden] {
+        display: none !important;
+    }
+
+    .three-dart-average {
+        @apply block mt-px text-[11px] leading-tight font-normal text-text-muted tabular-nums;
+    }
+
+    .three-dart-average[hidden] {
         display: none !important;
     }
 

@@ -26,6 +26,7 @@ use App\Services\Player\PlayerOverviewService;
 use App\Services\Player\PlayerStatsService;
 use App\Services\PlayoffGame\PlayoffService;
 use App\Services\Tournament\TournamentFinishService;
+use App\Services\Stats\CompetitionThreeDartAverageService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentResultService;
@@ -53,6 +54,7 @@ class GameService
         private GameLockService $gameLockService,
         private TournamentGroupMatrixLiveService $groupMatrixLiveService,
         private TournamentPlayoffBracketLiveService $playoffBracketLiveService,
+        private CompetitionThreeDartAverageService $threeDartAverages,
     ) {}
 
     public function setStatusInProgress(int $gameId): void
@@ -188,6 +190,10 @@ class GameService
     {
         $games = $this->gameRepository->getAllWithPlayers($tournamentId);
         $standings = $this->groupStandingService->standingsForTournament($tournamentId);
+        $averages = $this->threeDartAverages->forTournamentMatches(
+            $games->map(fn (GroupGameDomain $game) => (int) $game->id)->all(),
+            [],
+        );
 
         $gamesByGroup = $games->groupBy(fn (GroupGameDomain $game) => $game->groupNumber);
         $standingsByGroup = $standings->groupBy(fn (GroupStandingDomain $standing) => $standing->groupNumber);
@@ -216,6 +222,9 @@ class GameService
                     'playerId' => $standing->player?->id,
                     'playerName' => $standing->player?->name ?? '—',
                     'userId' => $standing->player?->userId,
+                    'average' => $standing->player?->id !== null
+                        ? $averages->groupPlayerAverage((int) $standing->player->id)
+                        : null,
                     'gamesPlayed' => $standing->gamesPlayed,
                     'gamesWon' => $standing->gamesWon,
                     'gamesLost' => $standing->gamesLost,
@@ -252,6 +261,12 @@ class GameService
                     ],
                     'score1' => $game->player1Score,
                     'score2' => $game->player2Score,
+                    'player1Average' => $game->player1?->id !== null
+                        ? $averages->groupMatchAverage((int) $game->id, (int) $game->player1->id)
+                        : null,
+                    'player2Average' => $game->player2?->id !== null
+                        ? $averages->groupMatchAverage((int) $game->id, (int) $game->player2->id)
+                        : null,
                     'winnerId' => $game->winner?->id,
                     'status' => $game->status->value,
                 ])
