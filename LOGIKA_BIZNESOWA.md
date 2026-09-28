@@ -92,7 +92,7 @@ Jeden silnik gry (legi + wizyty + sync); kontekst to adapter, nie osobna aplikac
 
 **Po meczu (achievementy):**
 
-- Turniej: mecz kończy **scoring API** (`closeLeg`); mobile wysyła achievementy przez `POST /api/game/update` (tylko gdy mecz już `FINISHED`).
+- Turniej: mecz kończy **scoring API** (`closeLeg`). 180, 170+, HF i QF liczą wizyty i statystyki lega, bez `POST /api/game/update`.
 - Quick FFA: mecz kończy **FFA scoring**; achievementy przez `POST /api/quick-game/update` z `gameId`.
 
 **Sesja mobile (konto gracza):**

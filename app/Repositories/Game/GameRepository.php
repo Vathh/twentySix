@@ -6,6 +6,7 @@ use App\Domain\Game\GroupGameDomain;
 use App\DTO\GameResultDTO;
 use App\Enums\GameStatus;
 use App\Models\Game\Game;
+use App\Support\GameScoring\ScoringLock;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -34,12 +35,56 @@ class GameRepository
             ]);
     }
 
-    public function tryLockScheduled(int $gameId): bool
+    public function tryLockScheduled(int $gameId, int $tokenId): bool
+    {
+        $query = DB::table('games')->where('id', $gameId);
+        ScoringLock::constrainClaimable($query, $tokenId);
+
+        $query->update([
+            'status' => GameStatus::IN_PROGRESS,
+            'scoring_token_id' => $tokenId,
+            'scoring_lock_expires_at' => ScoringLock::until(),
+        ]);
+
+        return $this->holdsFreshLock($gameId, $tokenId);
+    }
+
+    public function tryRenewLock(int $gameId, int $tokenId): bool
+    {
+        DB::table('games')
+            ->where('id', $gameId)
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->where('scoring_token_id', $tokenId)
+            ->where('scoring_lock_expires_at', '>', now())
+            ->update(['scoring_lock_expires_at' => ScoringLock::until()]);
+
+        return $this->holdsFreshLock($gameId, $tokenId);
+    }
+
+    public function tryExpireLock(int $gameId, int $tokenId): bool
+    {
+        DB::table('games')
+            ->where('id', $gameId)
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->where('scoring_token_id', $tokenId)
+            ->update(['scoring_lock_expires_at' => ScoringLock::releasedAt()]);
+
+        return DB::table('games')
+            ->where('id', $gameId)
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->where('scoring_token_id', $tokenId)
+            ->where('scoring_lock_expires_at', '<=', now())
+            ->exists();
+    }
+
+    private function holdsFreshLock(int $gameId, int $tokenId): bool
     {
         return DB::table('games')
             ->where('id', $gameId)
-            ->where('status', GameStatus::SCHEDULED)
-            ->update(['status' => GameStatus::IN_PROGRESS]) === 1;
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->where('scoring_token_id', $tokenId)
+            ->where('scoring_lock_expires_at', '>', now())
+            ->exists();
     }
 
     public function resetToScheduled(Game $game): void
@@ -51,15 +96,25 @@ class GameRepository
         $game->player2_legs_in_set = 0;
         $game->current_set_number = 1;
         $game->winner_id = null;
+        $game->scoring_token_id = null;
+        $game->scoring_lock_expires_at = null;
         $this->save($game);
     }
 
-    public function tryUnlockInProgress(int $gameId): bool
+    public function tryUnlockInProgress(int $gameId, int $tokenId): bool
     {
         return DB::table('games')
             ->where('id', $gameId)
             ->where('status', GameStatus::IN_PROGRESS)
-            ->update(['status' => GameStatus::SCHEDULED]) === 1;
+            ->where(function ($query) use ($tokenId) {
+                $query->where('scoring_token_id', $tokenId)
+                    ->orWhereNull('scoring_token_id');
+            })
+            ->update([
+                'status' => GameStatus::SCHEDULED,
+                'scoring_token_id' => null,
+                'scoring_lock_expires_at' => null,
+            ]) === 1;
     }
 
     public function isInProgress(int $gameId): bool
@@ -86,11 +141,13 @@ class GameRepository
     /**
      * @return Collection<int, GroupGameDomain>
      */
-    public function getActive(int $tournamentId): Collection
+    public function getActive(int $tournamentId, ?int $scoringTokenId = null): Collection
     {
-        return Game::with(['tournament', 'player1', 'player2'])
-            ->where('tournament_id', $tournamentId)
-            ->whereIn('status', [GameStatus::SCHEDULED, GameStatus::IN_PROGRESS])
+        $query = Game::with(['tournament', 'player1', 'player2'])
+            ->where('tournament_id', $tournamentId);
+        ScoringLock::constrainAvailable($query, $scoringTokenId);
+
+        return $query
             ->get()
             ->map(fn ($game) => GroupGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2']));
     }

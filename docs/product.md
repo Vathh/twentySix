@@ -89,12 +89,12 @@ Quick game: FFA (każdy gra sam), max **8** graczy, format konfigurowalny (domy�
 | Status       | Tablet (lista do rozegrania) |
 | ------------ | ---------------------------- |
 | `oczekujący` | Widoczny, można wybrać       |
-| `w trakcie`  | Ukryty                       |
+| `w trakcie`  | Ukryty, gdy inne urządzenie właśnie sędziuje. Widoczny, gdy lock wygasł — można kontynuować od ostatniej wizyty. |
 | `zakończony` | Ukryty                       |
 
 ### Start meczu z tabletu
 
-Wybór → API → `w trakcie` (lock); inne tablety nie widzą meczu; race → błąd API; koniec → `zakończony`.
+Wybór → API → `w trakcie` (lock na czas sędziowania, odnawiany heartbeatem). Inne urządzenie nie wejdzie, dopóki lock jest świeży. Zerwanie połączenia albo wyjście z ekranu zdejmuje lock; wynik zostaje i kolejne urządzenie kontynuuje. Koniec → `zakończony`.
 
 **Turniej na tablecie** = zawsze tryb **jednego urządzenia** (sędzia wpisuje rzuty obu zawodników head-to-head).
 
@@ -233,12 +233,16 @@ Logika zgodna z `GroupStandingService` w backendzie (`sortStandings` → `compar
 - Drabinka playoff po grupach: pełna, **bez wolnych losów**; auto przeliczenie po korekcie wyniku na webie.
 - Wariantach SE/DE bye są **dozwolone** (patrz sekcja „Warianty turnieju”).
 
-### Losowanie par playoff (pierwsza runda)
+### Rozstawienie par playoff (pierwsza runda)
 
-- Pary w **pierwszej rundzie** playoff dobierane **losowo** z puli awansujących.
-- **Ograniczenie:** w pierwszym meczu playoff **nie mogą** trafić na siebie **dwaj zawodnicy z tej samej grupy** (unikamy natychmiastowego re-matchu po fazie grupowej).
-- Algorytm: losowanie z **ponowieniem / zamianą par**, aż układ spełnia warunek (lub deterministyczne tasowanie z walidacją — implementacja dowolna, efekt ten sam).
-- Kolejne rundy playoff: standardowe wynikanie z drabinki (zwycięzca → następna runda).
+- Pary pierwszej rundy są **rozstawiane** z miejsc w grupach, nie losowane. Ten sam układ miejsc daje zawsze tę samą drabinkę.
+- W pierwszym meczu playoff **nie grają** dwaj zawodnicy z tej samej grupy.
+- Gdy z każdej grupy awansuje tyle samo osób (K) i grup jest parzyście: grupy spinane są **sąsiednio** (1 z 2, 3 z 4, …). Miejsce `r` gra z miejscem `K+1−r` sąsiada. Dla K = 2 zwycięzca grupy gra z drugim miejscem sąsiedniej grupy, jak 1/8 finału mundialu: 1A–2B, 1C–2D, 1E–2F, 1G–2H, a lustrzane 1B–2A, 1D–2C, … w drugiej połówce.
+- Lustrzane mecze tej samej pary grup stoją w **przeciwnych połówkach**, więc przy K = 2 dwaj zawodnicy z jednej grupy mogą spotkać się najwcześniej w finale. Zwycięzcy różnych grup mogą zejść się wcześniej (np. 1A z 1C w ćwierćfinale).
+- Gdy awans jest nierówny (nadwyżka miejsc, nieparzysta liczba grup): kolejny najlepszy dostaje najsłabszego dostępnego rywala z innej grupy; przy remisie miejsca — grupa sąsiednia. Meczów „zwycięzca grupy kontra zwycięzca grupy” jest wtedy tyle, ile musi.
+- Po lewej stronie meczu (`player1`) stoi zawodnik z lepszym miejscem w grupie.
+- Kolejne rundy: zwycięzca idzie dalej według slotów drabinki.
+- Pełna drabinka pocieszenia (bez wolnych losów) używa tej samej reguły na miejscach nieawansujących. Przy wolnych losach pary R1 pocieszenia zostają losowe, jak w SE.
 
 ### Walkower i korekta wyniku
 
@@ -627,7 +631,7 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 
 - Pula startowa = zaakceptowani + goście; min. 4 (turniej) / min. 2 (quick game)
 - Walidacja drabinki; równy podział do grup od grupy 1
-- Tie-breakery grupowe; losowanie playoff z unikaniem par z tej samej grupy (runda 1)
+- Tie-breakery grupowe; rozstawienie playoff R1 (lepsze miejsce vs gorsze z innej grupy, bez pary z jednej grupy)
 - Auto start playoff po ostatnim meczu grupowym
 - Quick game: FFA do 8 graczy; single-device + multi-device (kolejka tur)
 - Achievementy, auto point scheme
@@ -661,14 +665,14 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 - Krykiet w MVP
 - Tryby drużynowe 2v2 w quick game
 - Wolne losy w drabince **po fazie grupowej** (`groups_playoff`) — bye tylko w czystym SE/DE
-- Seeding drabinki z rankingu sezonowego (MVP wariantów: tylko losowe R1)
+- Seeding drabinki z rankingu sezonowego. W `groups_playoff` rozstawienie idzie z miejsc w grupach; w SE/DE pary R1 zostają losowe.
 - Równoległe wpisywanie rzutów w multi-device (tylko kolejno)
 
 ## Kryterium „MVP jest gotowe”
 
 1. Znajomi + zaproszenia turniej/lobby — akceptacja na mobile i na webie (Konto → Zaproszenia).
 2. Start turnieju/quick game bez pełnej akceptacji; gra tylko zaakceptowani (+ goście w turnieju).
-3. Turniej min. 4 zawodników (łącznie z gośćmi); grupy, tie-breakery, round-robin; playoff bez bye; losowanie rundy 1 bez par z jednej grupy.
+3. Turniej min. 4 zawodników (łącznie z gośćmi); grupy, tie-breakery, round-robin; playoff bez bye; rozstawienie rundy 1 (lepsze miejsce vs gorsze z innej grupy, bez pary z jednej grupy).
 4. Tablet + live web; achievementy; auto start playoff.
 5. Quick game min. 2; do 8 graczy FFA; format konfigurowalny (domyślnie do 2 legów w 1 secie); rotacja startu legów; oba tryby urządzeń; statystyki.
 6. Walkower/korekta na webie (zgodnie z formatem meczu) → auto przeliczenie; point scheme z liczby graczy.
@@ -702,7 +706,7 @@ Historyczne rozbieżności z czasów przed `product.md` — **domknięte w MVP v
 | ----- | ------------------ | --- |
 | Podział do grup | Zapełnianie od grupy 1, równe wielkości | ✅ `TournamentGroupDistribution` |
 | Awans z grupy | Etap drabinki + rozkład per grupa | ✅ `playoff_bracket_size`, `group_advances`, `PlayoffService` |
-| Losowanie playoff | Bez par z tej samej grupy (runda 1) | ✅ `PlayoffFirstRoundPairing` |
+| Rozstawienie playoff | 1. miejsce vs gorsze miejsce z innej grupy; sąsiednie grupy; bez pary z tej samej grupy w R1 | ✅ `PlayoffFirstRoundSeeding` |
 | Rozmiar drabinki | Wybór etapu (`playoff_bracket_size`; **docelowo max 128**, dziś w kodzie jeszcze 32) | ⚠️ `PlayoffBracketFactory::create` (enumy) → generyczny silnik w planie SE/DE |
 | Warianty SE / DE | Typ przy starcie; bye; miejsca; GF | ✅ [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) |
 | Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile i web (Konto → Zaproszenia); `relatedUsers` org/sezon/liga = zaproszenie | ✅ `TournamentInvitation`, `OrganizationInvitation`, `SeasonInvitation`, `LeagueInvitation`, `InvitationsScreen` |

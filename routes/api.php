@@ -52,6 +52,7 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
 
     Route::prefix('game')->group(function () {
         Route::post('/inProgress', [GameController::class, 'setStatusInProgress']);
+        Route::post('/heartbeat', [GameController::class, 'heartbeat']);
         Route::post('/release', [GameController::class, 'releaseLock']);
         Route::post('/update', [GameController::class, 'update']);
         Route::get('/active', [GameController::class, 'getActiveGames']);

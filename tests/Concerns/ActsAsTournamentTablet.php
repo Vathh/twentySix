@@ -4,10 +4,11 @@ namespace Tests\Concerns;
 
 use App\Models\Tournament\LoginCode;
 use App\Models\Tournament\Tournament;
-use Laravel\Sanctum\Sanctum;
 
 trait ActsAsTournamentTablet
 {
+    protected string $tournamentTabletPlainToken = '';
+
     protected function makeTournamentTablet(Tournament $tournament, string $code): LoginCode
     {
         return LoginCode::create([
@@ -24,7 +25,10 @@ trait ActsAsTournamentTablet
             ->first()
             ?? $this->makeTournamentTablet($tournament, $code);
 
-        Sanctum::actingAs($loginCode);
+        $issued = $loginCode->createToken('counter', ['*'], now()->addDays(30));
+        $this->tournamentTabletPlainToken = $issued->plainTextToken;
+        $this->app['auth']->forgetGuards();
+        $this->withToken($issued->plainTextToken);
 
         return $loginCode;
     }

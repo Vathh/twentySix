@@ -24,6 +24,8 @@ class Game extends Model
         'sequence',
         'referee_player_id',
         'status',
+        'scoring_token_id',
+        'scoring_lock_expires_at',
         'starting_score',
         'legs_to_win_set',
         'sets_to_win_match',
@@ -34,6 +36,7 @@ class Game extends Model
 
     protected $casts = [
         'status' => GameStatus::class,
+        'scoring_lock_expires_at' => 'datetime',
     ];
 
     /** @return BelongsTo<Tournament, $this> */

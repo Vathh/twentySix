@@ -3,7 +3,7 @@
     <table class="table-surface">
         <thead>
         <tr>
-            <th class="text-left">Zawodnik</th>
+            <th class="text-left sticky-player">Zawodnik</th>
             <th class="text-center">180</th>
             <th class="text-center">170+</th>
             <th class="text-center">QF</th>
@@ -14,7 +14,7 @@
         <tbody>
         @foreach($achievements as $playerAchievements)
             <tr>
-                <td class="font-medium text-text whitespace-nowrap">
+                <td class="font-medium text-text whitespace-nowrap sticky-player">
                     {{ $playerAchievements['player']->name }}
                 </td>
                 <td class="text-center">{{ $playerAchievements['max'] ?? 0 }}</td>

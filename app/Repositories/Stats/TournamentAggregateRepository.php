@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Stats;
 
-use App\Enums\AchievementType;
+use App\Queries\TournamentVisitHighlightsQuery;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -51,45 +51,57 @@ class TournamentAggregateRepository
             return [];
         }
 
-        $achievements = DB::table('achievements')
-            ->whereIn('tournament_id', $tournamentIds)
-            ->whereNotNull('player_id')
-            ->select('player_id', 'type', 'value')
-            ->get();
+        $query = new TournamentVisitHighlightsQuery;
+        $highlights = $query->forTournaments($tournamentIds);
+        $quickFinishes = $query->quickFinishesForTournaments($tournamentIds);
 
         $byPlayer = [];
-        foreach ($achievements as $a) {
-            $pid = (int) $a->player_id;
-            if (! isset($byPlayer[$pid])) {
-                $byPlayer[$pid] = [
-                    'count_max' => 0,
-                    'count_170_plus' => 0,
-                    'count_qf' => 0,
-                    'count_hf' => 0,
-                    'best_qf' => null,
-                    'best_hf' => null,
-                ];
+        foreach ($quickFinishes as $playerId => $dartCounts) {
+            $byPlayer[$playerId] = $this->emptyAchievementBucket();
+            $byPlayer[$playerId]['count_qf'] = count($dartCounts);
+            $best = $dartCounts === [] ? null : min($dartCounts);
+            $byPlayer[$playerId]['best_qf'] = $best;
+        }
+
+        foreach ($highlights['byPlayer'] as $playerId => $stats) {
+            if ($stats['max'] === 0 && $stats['one_seventy'] === 0 && $stats['hf'] === []) {
+                continue;
             }
-            $type = $a->type;
-            $value = $a->value !== null ? (int) $a->value : null;
-            if ($type === AchievementType::MAX->value) {
-                $byPlayer[$pid]['count_max']++;
-            } elseif ($type === AchievementType::ONE_SEVENTY->value) {
-                $byPlayer[$pid]['count_170_plus']++;
-            } elseif ($type === AchievementType::QF->value) {
-                $byPlayer[$pid]['count_qf']++;
-                if ($value !== null && ($byPlayer[$pid]['best_qf'] === null || $value < $byPlayer[$pid]['best_qf'])) {
-                    $byPlayer[$pid]['best_qf'] = $value;
-                }
-            } elseif ($type === AchievementType::HF->value) {
-                $byPlayer[$pid]['count_hf']++;
-                if ($value !== null && ($byPlayer[$pid]['best_hf'] === null || $value > $byPlayer[$pid]['best_hf'])) {
-                    $byPlayer[$pid]['best_hf'] = $value;
+            if (! isset($byPlayer[$playerId])) {
+                $byPlayer[$playerId] = $this->emptyAchievementBucket();
+            }
+            $byPlayer[$playerId]['count_max'] += $stats['max'];
+            $byPlayer[$playerId]['count_170_plus'] += $stats['one_seventy'];
+            $byPlayer[$playerId]['count_hf'] += count($stats['hf']);
+            foreach ($stats['hf'] as $score) {
+                if ($byPlayer[$playerId]['best_hf'] === null || $score > $byPlayer[$playerId]['best_hf']) {
+                    $byPlayer[$playerId]['best_hf'] = $score;
                 }
             }
         }
 
-        return $byPlayer;
+        return array_filter(
+            $byPlayer,
+            static fn (array $bucket) => $bucket['count_max'] > 0
+                || $bucket['count_170_plus'] > 0
+                || $bucket['count_qf'] > 0
+                || $bucket['count_hf'] > 0,
+        );
+    }
+
+    /**
+     * @return array{count_max: int, count_170_plus: int, count_qf: int, count_hf: int, best_qf: ?int, best_hf: ?int}
+     */
+    private function emptyAchievementBucket(): array
+    {
+        return [
+            'count_max' => 0,
+            'count_170_plus' => 0,
+            'count_qf' => 0,
+            'count_hf' => 0,
+            'best_qf' => null,
+            'best_hf' => null,
+        ];
     }
 
     /**

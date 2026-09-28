@@ -20,17 +20,17 @@ use App\Repositories\Game\GameRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\Tournament\TournamentRepository;
-use App\Services\Achievements\AchievementsService;
 use App\Services\GroupStanding\GroupStandingService;
 use App\Services\Player\PlayerOverviewService;
 use App\Services\Player\PlayerStatsService;
 use App\Services\PlayoffGame\PlayoffService;
-use App\Services\Tournament\TournamentFinishService;
 use App\Services\Stats\CompetitionThreeDartAverageService;
+use App\Services\Tournament\TournamentFinishService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentResultService;
 use App\Support\GameScoring\GameScoringContext;
+use App\Support\GameScoring\ScoringLock;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -43,7 +43,6 @@ class GameService
         private PlayoffGameRepository $playoffGameRepository,
         private PlayerRepository $playerRepository,
         private GroupStandingService $groupStandingService,
-        private AchievementsService $achievementsService,
         private PlayoffService $playoffService,
         private TournamentRepository $tournamentRepository,
         private TournamentResultService $tournamentResultService,
@@ -57,21 +56,26 @@ class GameService
         private CompetitionThreeDartAverageService $threeDartAverages,
     ) {}
 
-    public function setStatusInProgress(int $gameId): void
+    public function setStatusInProgress(int $gameId, int $tokenId): void
     {
-        $this->gameLockService->lock($gameId, GameType::GROUP);
+        $this->gameLockService->lock($gameId, GameType::GROUP, $tokenId);
     }
 
-    public function lockGame(int $gameId, GameType $type): void
+    public function lockGame(int $gameId, GameType $type, int $tokenId): void
     {
-        $this->gameLockService->lock($gameId, $type);
+        $this->gameLockService->lock($gameId, $type, $tokenId);
         $this->pushPlayoffBracketLive($gameId, $type);
     }
 
-    public function releaseGameLock(int $gameId, GameType $type): void
+    public function releaseGameLock(int $gameId, GameType $type, int $tokenId): void
     {
-        $this->gameLockService->release($gameId, $type);
+        $this->gameLockService->release($gameId, $type, $tokenId);
         $this->pushPlayoffBracketLive($gameId, $type);
+    }
+
+    public function renewGameLock(int $gameId, GameType $type, int $tokenId): void
+    {
+        $this->gameLockService->renew($gameId, $type, $tokenId);
     }
 
     public function tournamentIdForGame(int $gameId, GameType $type): ?int
@@ -86,18 +90,13 @@ class GameService
     /**
      * Aktualizacja meczu turniejowego.
      *
-     * 1. Mecz FINISHED + niepusta tablica achievements → tylko achievementy (mobile po closeLeg).
-     * 2. Mecz FINISHED bez achievements → odrzucone (wynik ustawia scoring API).
-     * 3. Mecz SCHEDULED → legacy bulk finish (testy; produkcja używa scoring API + finalizeTournamentGameFromScoring).
+     * 1. Mecz FINISHED → odrzucone (wynik ustawia scoring API; 180 / 170+ / HF / QF liczą wizyty).
+     * 2. Mecz SCHEDULED → legacy bulk finish (testy; produkcja używa scoring API + finalizeTournamentGameFromScoring).
      *
      * Quick game: wyłącznie POST /api/quick-game/update (achievementy po FFA).
      */
     public function update(UpdateGameDTO $dto): bool
     {
-        if ($this->isFinishedGameAchievementsUpdate($dto)) {
-            return $this->saveAchievementsForFinishedGame($dto);
-        }
-
         if ($this->isGameAlreadyFinished($dto)) {
             \Log::warning('Rejected game update: game already finished', [
                 'gameId' => $dto->gameResultDTO->gameId,
@@ -141,40 +140,20 @@ class GameService
         };
     }
 
-    public function saveAchievementsForFinishedGame(UpdateGameDTO $dto): bool
-    {
-        try {
-            DB::transaction(function () use ($dto) {
-                $this->assertGameIsFinished($dto->gameResultDTO);
-                $this->achievementsService->createMany($dto->achievementsDTOs);
-                $this->recalculatePlayerStats($dto->gameResultDTO);
-            });
-
-            return true;
-        } catch (Throwable $e) {
-            \Log::error('Achievements-only game update failed', [
-                'gameId' => $dto->gameResultDTO->gameId,
-                'error' => $e->getMessage(),
-            ]);
-
-            return false;
-        }
-    }
-
     /**
      * @return Collection<ActiveGameDTO>
      */
-    public function getActiveGames(int $tournamentId): Collection
+    public function getActiveGames(int $tournamentId, ?int $scoringTokenId = null): Collection
     {
         $namesByGroup = $this->groupStandingService->playerNamesByGroupNumber($tournamentId);
 
-        $groupGames = collect($this->gameRepository->getActive($tournamentId)
+        $groupGames = collect($this->gameRepository->getActive($tournamentId, $scoringTokenId)
             ->map(fn ($game) => ActiveGameDTO::fromGame(
                 $game,
                 $namesByGroup[$game->groupNumber] ?? [],
             )));
 
-        $playoffGames = collect($this->playoffGameRepository->getActive($tournamentId)
+        $playoffGames = collect($this->playoffGameRepository->getActive($tournamentId, $scoringTokenId)
             ->map(fn ($game) => ActiveGameDTO::fromPlayoffGameDomain($game))
             ->filter());
 
@@ -186,7 +165,7 @@ class GameService
      *
      * @return list<array{groupNumber: int, standings: list<array<string, mixed>>, games: list<array<string, mixed>>}>
      */
-    public function getRemainingGroups(int $tournamentId): array
+    public function getRemainingGroups(int $tournamentId, ?int $scoringTokenId = null): array
     {
         $games = $this->gameRepository->getAllWithPlayers($tournamentId);
         $standings = $this->groupStandingService->standingsForTournament($tournamentId);
@@ -270,6 +249,11 @@ class GameService
                         : null,
                     'winnerId' => $game->winner?->id,
                     'status' => $game->status->value,
+                    'lockedByOther' => ScoringLock::isHeldByOther(
+                        $game->scoringTokenId,
+                        $game->scoringLockExpiresAt,
+                        $scoringTokenId,
+                    ),
                 ])
                 ->values()
                 ->all();
@@ -348,8 +332,6 @@ class GameService
                 if ($this->shouldTryFinishAfterPlayoff($gameToUpdate)) {
                     $this->tournamentFinishService->tryFinish($gameToUpdate->tournamentId);
                 }
-
-                $this->achievementsService->createMany($dto->achievementsDTOs);
 
                 if (! empty($dto->legsDTOs)) {
                     $this->gameLegService->createMany(
@@ -577,7 +559,6 @@ class GameService
 
                 $this->groupStandingService->updateStandingsDetails($dto->gameResultDTO);
                 $this->gameRepository->finish($dto->gameResultDTO);
-                $this->achievementsService->createMany($dto->achievementsDTOs);
                 $this->groupStandingService->updateGroupStandings($dto->gameResultDTO->tournamentId,
                     $dto->gameResultDTO->groupNumber);
 
@@ -654,19 +635,6 @@ class GameService
         );
     }
 
-    private function isFinishedGameAchievementsUpdate(UpdateGameDTO $dto): bool
-    {
-        if ($dto->achievementsDTOs === []) {
-            return false;
-        }
-
-        return match ($dto->gameResultDTO->type) {
-            GameType::GROUP => $this->gameRepository->find($dto->gameResultDTO->gameId)?->status === GameStatus::FINISHED,
-            GameType::PLAYOFF => $this->playoffGameRepository->find($dto->gameResultDTO->gameId)?->status === GameStatus::FINISHED,
-            default => false,
-        };
-    }
-
     private function isGameAlreadyFinished(UpdateGameDTO $dto): bool
     {
         return match ($dto->gameResultDTO->type) {
@@ -674,19 +642,6 @@ class GameService
             GameType::PLAYOFF => $this->playoffGameRepository->find($dto->gameResultDTO->gameId)?->status === GameStatus::FINISHED,
             default => false,
         };
-    }
-
-    private function assertGameIsFinished(GameResultDTO $dto): void
-    {
-        $finished = match ($dto->type) {
-            GameType::GROUP => $this->gameRepository->find($dto->gameId)?->status === GameStatus::FINISHED,
-            GameType::PLAYOFF => $this->playoffGameRepository->find($dto->gameId)?->status === GameStatus::FINISHED,
-            default => false,
-        };
-
-        if (! $finished) {
-            throw new \DomainException('Mecz nie jest zakończony — nie można zapisać samych achievementów.');
-        }
     }
 
     private function recalculatePlayerStats(GameResultDTO $dto): void

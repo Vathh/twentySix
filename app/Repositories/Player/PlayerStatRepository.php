@@ -84,8 +84,7 @@ class PlayerStatRepository
      *         count_qf: int,
      *         highest_hf: ?int,
      *         fastest_qf: ?int
-     *     },
-     *     achievements: Collection<int, object>
+     *     }
      * }
      */
     public function getDataForTournamentStats(int $playerId): array
@@ -108,11 +107,6 @@ class PlayerStatRepository
         $avgFromLegs = $scoring['avg_three_darts']
             ?? $this->getLegacyTournamentAverageFromLegs($playerId);
 
-        $achievements = DB::table('achievements')
-            ->where('player_id', $playerId)
-            ->whereNotNull('tournament_id')
-            ->get();
-
         return [
             'games_count' => $gamesCount,
             'avg_from_legs' => $avgFromLegs,
@@ -125,7 +119,6 @@ class PlayerStatRepository
                 'highest_hf' => $scoring['highest_hf'],
                 'fastest_qf' => $scoring['fastest_qf'],
             ],
-            'achievements' => $achievements,
         ];
     }
 

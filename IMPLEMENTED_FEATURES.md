@@ -55,7 +55,7 @@ Szczegóły wymagań: [`docs/product.md`](docs/product.md). Aktywne zadania: [`d
 | Auto start playoff | ✅ | `GameService::handlePlayoffStart` |
 | Awans z grupy (etap drabinki) | ✅ | `playoff_bracket_size`, `group_advances`, `PlayoffService` |
 | Bracket `groups × awans` (potęga 2) | ✅ | `PlayoffBracketFactory::create` (2–32) |
-| Playoff R1: bez par z tej samej grupy | ✅ | `PlayoffFirstRoundPairing` |
+| Playoff R1: rozstawienie z miejsc w grupach | ✅ | `PlayoffFirstRoundSeeding` |
 | Statusy meczu + lock tabletu | ✅ | `GameLockService`, `POST /api/game/inProgress`, mobile `lockTournamentGame` |
 | Kody tabletów | ✅ | `POST /api/login`, `LoginCodeService` |
 | Znajomi (invite/accept/reject) | ✅ | `/api/friends/*` |
@@ -70,7 +70,7 @@ Szczegóły wymagań: [`docs/product.md`](docs/product.md). Aktywne zadania: [`d
 | Legacy `quick-game/create|active|inProgress` | ❌ wycofane | Usunięte (lipiec 2026); wynik FFA + `POST /api/quick-game/update` (achievementy) |
 | Achievementy quick game online | ✅ | `POST /api/quick-game/update` (tylko `gameId` + achievements) |
 | Finalizacja turnieju po scoring API | ✅ | `GameService::finalizeTournamentGameFromScoring` po `closeLeg` (tabele, playoff, statystyki) |
-| Achievementy na zakończonym meczu | ✅ | `POST /api/game/update` — tylko achievementy gdy gra `FINISHED`; bulk finish odrzucony |
+| Achievementy turniejowe (180, 170+, HF, QF) | ✅ | Wizyty i statystyki lega; `POST /api/game/update` ich nie zapisuje |
 | Achievementy turniejowe | ✅ | `AchievementsService` |
 | Auto point scheme | ✅ | `PointSchemeService::findByPlayersAmount` |
 | WebSocket (Reverb) | ✅ | `GameScoringStateUpdated`, `QuickGameLobbyUpdated`, `channels.php` |
@@ -118,7 +118,7 @@ Wszystkie punkty poniżej ✅. Kolejne prace: [`docs/NEXT_STEPS.md`](docs/NEXT_S
 | Walidacja startu | `tests/Unit/Tournament/TournamentStartValidatorTest.php` |
 | Podział do grup | `tests/Unit/Tournament/TournamentGroupDistributionTest.php` |
 | Drabinka playoff | `tests/Unit/Tournament/PlayoffBracketFactoryTest.php` |
-| Parowanie R1 | `tests/Unit/Tournament/PlayoffFirstRoundPairingTest.php` |
+| Rozstawienie R1 | `tests/Unit/Tournament/PlayoffFirstRoundSeedingTest.php` |
 | Awans / playoff | `tests/Feature/PlayoffAdvanceTest.php` |
 | Flow E2E (start → grupy → playoff) | `tests/Feature/TournamentFlowTest.php` |
 | Scoring API → finalizacja turnieju | `tests/Feature/TournamentGameScoringFinalizeTest.php` |

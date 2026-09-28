@@ -7,6 +7,7 @@ use App\Domain\Game\PlayoffGameDomain;
 use App\Domain\Game\WinnerDestination;
 use App\Domain\GameScoring\MatchFormat;
 use App\Domain\Tournament\DoubleEliminationMatchFormatMap;
+use App\Domain\Tournament\PlayoffFirstRoundSeeding;
 use App\DTO\GameResultDTO;
 use App\Enums\BracketSide;
 use App\Enums\GameType;
@@ -20,7 +21,6 @@ use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\Tournament\TournamentMatchFormatRepository;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Support\Tournament\PlayoffByePairing;
-use App\Support\Tournament\PlayoffFirstRoundPairing;
 use App\Support\Tournament\PlayoffSlotIds;
 use Illuminate\Support\Collection;
 
@@ -52,7 +52,7 @@ class PlayoffService
 
         $bracketSize = $this->tournamentRepository->getBracketSize($tournamentId);
 
-        $firstRoundPairs = PlayoffFirstRoundPairing::pair($advancingPlayers);
+        $firstRoundPairs = PlayoffFirstRoundSeeding::pair($advancingPlayers);
 
         $playoffGames = $this->bracketFactory->create($tournamentId, $bracketSize, $firstRoundPairs);
 
@@ -84,6 +84,7 @@ class PlayoffService
             ->map(fn ($standing) => [
                 'player_id' => $standing->player->id,
                 'group_number' => $standing->groupNumber,
+                'place' => $standing->place,
             ])
             ->values()
             ->all();
@@ -109,7 +110,7 @@ class PlayoffService
     }
 
     /**
-     * @param  list<array{player_id: int, group_number: int}>  $remaining
+     * @param  list<array{player_id: int, group_number: int, place: int}>  $remaining
      * @return list<array{0: int, 1: int}>
      */
     private function pairConsolationFirstRound(array $remaining, int $bracketSize): array
@@ -118,7 +119,7 @@ class PlayoffService
 
         if (count($remaining) === $bracketSize) {
             try {
-                return PlayoffFirstRoundPairing::pair($remaining);
+                return PlayoffFirstRoundSeeding::pair($remaining);
             } catch (\Throwable) {
                 return PlayoffByePairing::pair(
                     array_column($remaining, 'player_id'),

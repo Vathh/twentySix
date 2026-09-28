@@ -2,7 +2,6 @@
 
 namespace App\ViewModels;
 
-use App\Domain\AchievementDomain;
 use App\Domain\Game\GroupGameDomain;
 use App\Domain\Game\PlayoffGameDomain;
 use App\Domain\GroupStandingDomain;
@@ -10,11 +9,10 @@ use App\Domain\PlayerDomain;
 use App\Domain\SeasonDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\Domain\Tournament\TournamentResultDomain;
-use App\Enums\AchievementType;
 use App\Models\Player\Player;
 use App\Models\Tournament\Tournament;
+use App\Queries\TournamentVisitHighlightsQuery;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class TournamentDataViewModel
 {
@@ -121,8 +119,8 @@ class TournamentDataViewModel
     }
 
     /**
-     * Plakietka PLAYOFF: zawodnik już rozegrał mecz i zajmuje miejsce awansu.
-     * Przed pierwszym meczem nikt nie jest wyróżniony (miejsca startowe nie liczą się).
+     * Plakietka PLAYOFF dopiero gdy grupa jest rozegrana do końca.
+     * W trakcie grupy miejsca się zmieniają, więc nikt nie jest wyróżniony.
      *
      * @return array<int, array{complete: bool, advanceCount: int, advancingPlayerIds: list<int>}>
      */
@@ -142,7 +140,7 @@ class TournamentDataViewModel
             $complete = $this->isGroupFinished($gamesByGroup[$groupNumber] ?? []);
             $advancingPlayerIds = [];
 
-            if ($advanceCount > 0) {
+            if ($complete && $advanceCount > 0) {
                 foreach ($standingsByGroup[$groupNumber] ?? [] as $playerId => $standing) {
                     if (
                         $standing->gamesPlayed > 0
@@ -207,42 +205,12 @@ class TournamentDataViewModel
      */
     public function achievements(): Collection
     {
-        $achievementDomains = $this->tournament
-            ->achievements
-            ->map(fn ($achievement) => AchievementDomain::fromEloquent($achievement, ['player']));
-
         $result = [];
 
-        foreach ($achievementDomains as $achievement) {
-            if ($achievement->player === null) {
-                continue;
-            }
+        $this->applyVisitHighlights($result);
 
-            $playerId = $achievement->player->id;
-
-            if (! isset($result[$playerId]['player'])) {
-                $result[$playerId]['player'] = $achievement->player;
-                $result[$playerId]['max'] = 0;
-                $result[$playerId]['one_seventy'] = 0;
-                $result[$playerId]['qf'] = [];
-                $result[$playerId]['hf'] = [];
-            }
-
-            switch ($achievement->type) {
-                case AchievementType::ONE_SEVENTY:
-                case AchievementType::MAX:
-                    $result[$playerId][$achievement->type->value]++;
-                    break;
-                case AchievementType::HF:
-                case AchievementType::QF:
-                    $result[$playerId][$achievement->type->value][] = $achievement;
-                    break;
-            }
-        }
-
-        // QF z scoringu (darts_thrown < 20 na wygranym legu) — źródło prawdy po tablecie;
-        // client POST często pomijał QF w ścieżce online.
-        $qfFromScoring = $this->quickFinishesFromScoring();
+        $qfFromScoring = (new TournamentVisitHighlightsQuery)
+            ->quickFinishesForTournaments([(int) $this->tournament->id]);
         if ($qfFromScoring !== []) {
             $playersById = Player::query()
                 ->whereIn('id', array_keys($qfFromScoring))
@@ -268,37 +236,65 @@ class TournamentDataViewModel
             }
         }
 
+        foreach ($result as $playerId => $row) {
+            $empty = ($row['max'] ?? 0) === 0
+                && ($row['one_seventy'] ?? 0) === 0
+                && ($row['qf'] ?? []) === []
+                && ($row['hf'] ?? []) === [];
+            if ($empty) {
+                unset($result[$playerId]);
+            }
+        }
+
         return collect($result);
     }
 
     /**
-     * @return array<int, list<int>> player_id => lista darts_thrown (QF)
+     * @param  array<int, array{player?: PlayerDomain, max: int, one_seventy: int, qf: list, hf: list}>  $result
      */
-    private function quickFinishesFromScoring(): array
+    private function applyVisitHighlights(array &$result): void
     {
-        $tournamentId = (int) $this->tournament->id;
-
-        $rows = DB::table('game_leg_player_stats as glps')
-            ->join('game_legs as gl', 'gl.id', '=', 'glps.game_leg_id')
-            ->leftJoin('games as g', 'g.id', '=', 'gl.game_id')
-            ->leftJoin('playoff_games as pg', 'pg.id', '=', 'gl.playoff_game_id')
-            ->where(function ($q) use ($tournamentId) {
-                $q->where('g.tournament_id', $tournamentId)
-                    ->orWhere('pg.tournament_id', $tournamentId);
-            })
-            ->whereColumn('gl.winner_id', 'glps.player_id')
-            ->whereNotNull('gl.finished_at')
-            ->whereNotNull('glps.darts_thrown')
-            ->where('glps.darts_thrown', '<', 20)
-            ->orderBy('glps.darts_thrown')
-            ->get(['glps.player_id', 'glps.darts_thrown']);
-
-        $byPlayer = [];
-        foreach ($rows as $row) {
-            $byPlayer[(int) $row->player_id][] = (int) $row->darts_thrown;
+        $highlights = (new TournamentVisitHighlightsQuery)->forTournaments([(int) $this->tournament->id]);
+        $byPlayer = $highlights['byPlayer'];
+        if ($byPlayer === []) {
+            return;
         }
 
-        return $byPlayer;
+        $missingPlayerIds = [];
+        foreach ($byPlayer as $playerId => $stats) {
+            if (isset($result[$playerId]['player'])) {
+                continue;
+            }
+            if ($stats['max'] === 0 && $stats['one_seventy'] === 0 && $stats['hf'] === []) {
+                continue;
+            }
+            $missingPlayerIds[] = $playerId;
+        }
+
+        $playersById = $missingPlayerIds === []
+            ? collect()
+            : Player::query()->whereIn('id', $missingPlayerIds)->get()->keyBy('id');
+
+        foreach ($byPlayer as $playerId => $stats) {
+            if (! isset($result[$playerId]['player'])) {
+                $player = $playersById->get($playerId);
+                if ($player === null) {
+                    continue;
+                }
+                if ($stats['max'] === 0 && $stats['one_seventy'] === 0 && $stats['hf'] === []) {
+                    continue;
+                }
+                $result[$playerId]['player'] = PlayerDomain::fromEloquent($player);
+                $result[$playerId]['qf'] = [];
+            }
+
+            $result[$playerId]['max'] = $stats['max'];
+            $result[$playerId]['one_seventy'] = $stats['one_seventy'];
+            $result[$playerId]['hf'] = array_map(
+                static fn (int $score) => (object) ['value' => $score],
+                $stats['hf'],
+            );
+        }
     }
 
     public function results(): Collection

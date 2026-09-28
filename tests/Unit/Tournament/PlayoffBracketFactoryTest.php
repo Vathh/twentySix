@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\Tournament;
 
+use App\Domain\Tournament\PlayoffFirstRoundSeeding;
 use App\Enums\GameStage;
 use App\Factories\PlayoffBracketFactory;
-use App\Support\Tournament\PlayoffFirstRoundPairing;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -104,9 +104,10 @@ class PlayoffBracketFactoryTest extends TestCase
             $advancing[] = [
                 'player_id' => $playerId,
                 'group_number' => $playerId,
+                'place' => 1,
             ];
         }
 
-        return PlayoffFirstRoundPairing::pair($advancing);
+        return PlayoffFirstRoundSeeding::pair($advancing);
     }
 }

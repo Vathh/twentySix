@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\GameScoring;
 use App\DTO\GameScoring\CloseLegPlayerStatsDTO;
 use App\DTO\GameScoring\RecordVisitDTO;
 use App\Http\Controllers\Controller;
+use App\Services\Game\GameLockService;
 use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\GameScoring\GameScoringService;
+use App\Support\Auth\CurrentAccessToken;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,11 +17,13 @@ class GroupGameScoringController extends Controller
     public function __construct(
         private GameScoringService $gameScoringService,
         private GameAuthorizationService $gameAuthorizationService,
+        private GameLockService $gameLockService,
     ) {}
 
-    public function state(int $gameId): JsonResponse
+    public function state(Request $request, int $gameId): JsonResponse
     {
         [$context, $game] = $this->gameScoringService->resolveGroupGame($gameId);
+        $this->gameLockService->assertHolder($game, CurrentAccessToken::id($request));
         $this->gameScoringService->assertScoringActive($game);
 
         return response()->json($this->gameScoringService->getState($context, $game));
@@ -34,6 +38,7 @@ class GroupGameScoringController extends Controller
 
         [$context, $game] = $this->gameScoringService->resolveGroupGame($gameId);
         $this->gameAuthorizationService->assertLiveTournamentScoring($request->user(), $context->tournamentId);
+        $this->gameLockService->assertHolder($game, CurrentAccessToken::id($request));
 
         $state = $this->gameScoringService->startLeg(
             $context,
@@ -51,6 +56,7 @@ class GroupGameScoringController extends Controller
 
         [$context, $game] = $this->gameScoringService->resolveGroupGame($gameId);
         $this->gameAuthorizationService->assertLiveTournamentScoring($request->user(), $context->tournamentId);
+        $this->gameLockService->assertHolder($game, CurrentAccessToken::id($request));
         $dto = RecordVisitDTO::fromArray($validated);
 
         return response()->json(
@@ -62,6 +68,7 @@ class GroupGameScoringController extends Controller
     {
         [$context, $game] = $this->gameScoringService->resolveGroupGame($gameId);
         $this->gameAuthorizationService->assertLiveTournamentScoring($request->user(), $context->tournamentId);
+        $this->gameLockService->assertHolder($game, CurrentAccessToken::id($request));
 
         return response()->json(
             $this->gameScoringService->undoLastVisit($context, $game, $legId)
@@ -88,6 +95,7 @@ class GroupGameScoringController extends Controller
 
         [$context, $game] = $this->gameScoringService->resolveGroupGame($gameId);
         $this->gameAuthorizationService->assertLiveTournamentScoring($request->user(), $context->tournamentId);
+        $this->gameLockService->assertHolder($game, CurrentAccessToken::id($request));
         $playerStats = array_map(
             fn (array $row) => CloseLegPlayerStatsDTO::fromArray($row),
             $validated['players'],

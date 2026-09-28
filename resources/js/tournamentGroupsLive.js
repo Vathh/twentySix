@@ -269,6 +269,12 @@ export function registerTournamentGroupsLive(Alpine) {
 				tr.classList.toggle('border-l-success', advances);
 				tr.classList.toggle('hover:bg-bg-elevated-hover', !advances);
 
+				tr.querySelectorAll('td[class*="bg-success-muted/70"]').forEach((td) => {
+					if (!advances) {
+						td.classList.remove('bg-success-muted/70');
+					}
+				});
+
 				const badge = tr.querySelector('[data-playoff-badge]');
 				if (badge) {
 					badge.hidden = !advances;

@@ -52,7 +52,7 @@
             <table class="table-surface">
                 <thead>
                 <tr>
-                    <th class="px-3 py-2 text-left">Zawodnik</th>
+                    <th class="px-3 py-2 text-left sticky-player">Zawodnik</th>
                     @foreach($players[$number] as $player)
                         <th class="px-2 py-2 text-center">{{ $player->name }}</th>
                     @endforeach
@@ -67,7 +67,8 @@
                 <tbody class="divide-y divide-border">
                 @foreach($players[$number] as $rowPlayer)
                     @php
-                        $advances = in_array((int) $rowPlayer->id, array_map('intval', $advancingIds), true);
+                        $advances = $groupComplete
+                            && in_array((int) $rowPlayer->id, array_map('intval', $advancingIds), true);
                     @endphp
                     <tr
                         data-group-row-player-id="{{ $rowPlayer->id }}"
@@ -75,7 +76,7 @@
                             ? 'bg-success-muted hover:bg-success-muted/80 border-l-2 border-l-success'
                             : 'hover:bg-bg-elevated-hover' }}"
                     >
-                        <td class="px-3 py-2 font-medium text-text whitespace-nowrap">
+                        <td class="px-3 py-2 font-medium text-text whitespace-nowrap sticky-player">
                             @php
                                 $playerAverage = $threeDartAverages->groupPlayerAverage((int) $rowPlayer->id);
                             @endphp

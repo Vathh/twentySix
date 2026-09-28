@@ -51,7 +51,7 @@ Integracja w `useGameScoring` (serialized writes).
 
 ### A4. Achievementy
 
-Po `gameClosed`: retry wysyłki achievements; backend bez duplikatów insertów. Nie blokuje wyniku meczu.
+180 / 170+ / HF / QF turnieju liczy backend z wizyt i statystyk lega. Aplikacja nie wysyła achievementów po `gameClosed`. Quick game nadal wysyła swój POST.
 
 ---
 

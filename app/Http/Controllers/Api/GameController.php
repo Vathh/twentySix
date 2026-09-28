@@ -7,6 +7,9 @@ use App\Http\Requests\GameResultRequest;
 use App\Http\Requests\LockGameRequest;
 use App\Services\Game\GameService;
 use App\Services\GameScoring\GameAuthorizationService;
+use App\Support\Auth\CurrentAccessToken;
+use App\Support\Http\DomainExceptionHttp;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -28,7 +31,7 @@ class GameController
             $this->gameService->tournamentIdForGame($gameId, $type),
         );
 
-        $this->gameService->lockGame($gameId, $type);
+        $this->gameService->lockGame($gameId, $type, $this->scoringTokenId($request));
 
         return response()->json(['success' => true]);
     }
@@ -44,7 +47,23 @@ class GameController
             $this->gameService->tournamentIdForGame($gameId, $type),
         );
 
-        $this->gameService->releaseGameLock($gameId, $type);
+        $this->gameService->releaseGameLock($gameId, $type, $this->scoringTokenId($request));
+
+        return response()->json(['success' => true]);
+    }
+
+    public function heartbeat(LockGameRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $gameId = (int) $validated['gameId'];
+        $type = GameType::from($validated['type']);
+
+        $this->gameAuthorizationService->assertLiveTournamentScoring(
+            $request->user(),
+            $this->gameService->tournamentIdForGame($gameId, $type),
+        );
+
+        $this->gameService->renewGameLock($gameId, $type, $this->scoringTokenId($request));
 
         return response()->json(['success' => true]);
     }
@@ -53,8 +72,8 @@ class GameController
      * Aktualizacja wyniku turniejowego (grupa / playoff).
      *
      * Tryby (patrz GameService::update):
-     * - mecz FINISHED + achievements → tylko zapis achievementów (mobile po scoring API);
-     * - mecz SCHEDULED → legacy bulk finish (testy / fallback; produkcja kończy mecz przez scoring API).
+     * - mecz FINISHED → odrzucone (wynik i achievementy biorą się ze scoringu);
+     * - mecz SCHEDULED → legacy bulk finish (testy; produkcja kończy mecz przez scoring API).
      */
     public function update(GameResultRequest $request): JsonResponse
     {
@@ -80,7 +99,7 @@ class GameController
             return response()->json([]);
         }
 
-        $games = $this->gameService->getActiveGames($tournamentId);
+        $games = $this->gameService->getActiveGames($tournamentId, CurrentAccessToken::id($request));
 
         return response()->json($games);
     }
@@ -92,6 +111,22 @@ class GameController
             return response()->json([]);
         }
 
-        return response()->json($this->gameService->getRemainingGroups($tournamentId));
+        return response()->json($this->gameService->getRemainingGroups(
+            $tournamentId,
+            CurrentAccessToken::id($request),
+        ));
+    }
+
+    private function scoringTokenId(Request $request): int
+    {
+        $tokenId = CurrentAccessToken::id($request);
+        if ($tokenId === null) {
+            throw new DomainException(
+                'Brak sesji sędziowania.',
+                DomainExceptionHttp::FORBIDDEN,
+            );
+        }
+
+        return $tokenId;
     }
 }

@@ -44,6 +44,7 @@ export function registerRefereeGames(Alpine) {
                 document.body.style.overflow = value != null ? 'hidden' : '';
             });
             this.fetchGames();
+            this.listTimer = setInterval(() => this.fetchGames({ silent: true }), 10000);
         },
 
         get playoffGames() {
@@ -141,11 +142,13 @@ export function registerRefereeGames(Alpine) {
             window.location.replace(refereeLoginUrl());
         },
 
-        async fetchGames() {
+        async fetchGames({ silent = false } = {}) {
             if (!this.session) {
                 return;
             }
-            this.loading = true;
+            if (!silent) {
+                this.loading = true;
+            }
             this.error = '';
             try {
                 const [active, groups] = await Promise.all([

@@ -4,7 +4,7 @@
         <thead>
         <tr>
             <th class="w-12 text-center tracking-normal">#</th>
-            <th class="text-left">Zawodnik</th>
+            <th class="text-left sticky-player">Zawodnik</th>
             <th class="w-14 text-center tracking-normal">Pkt</th>
             <th class="w-14 text-center tracking-normal">180</th>
             <th class="w-14 text-center tracking-normal">170+</th>
@@ -18,7 +18,7 @@
         @forelse($standings as $row)
             <tr>
                 <td class="score-num text-center">{{ $row->place }}</td>
-                <td class="font-medium text-text whitespace-nowrap">
+                <td class="font-medium text-text whitespace-nowrap sticky-player">
                     @if($row->user_id)
                         <a href="{{ route('players.show', $row->player_id) }}" class="text-text hover:text-accent hover:underline transition-colors">
                             {{ $row->player_name }}

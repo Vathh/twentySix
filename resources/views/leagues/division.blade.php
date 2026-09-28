@@ -96,7 +96,7 @@
                                         <thead>
                                         <tr>
                                             <th class="w-12 text-center tracking-normal">#</th>
-                                            <th class="text-left">Zawodnik</th>
+                                            <th class="text-left sticky-player">Zawodnik</th>
                                             <th class="w-12 text-center tracking-normal">M</th>
                                             <th class="w-12 text-center tracking-normal text-success-bright">W</th>
                                             @if($tab['allowsDraws'])
@@ -113,7 +113,7 @@
                                         @forelse($tab['standings'] as $row)
                                             <tr>
                                                 <td class="score-num text-center">{{ $row->place }}@if($row->needsTiebreak)*@endif</td>
-                                                <td>
+                                                <td class="sticky-player">
                                                     {{ $playerName($tab, $row->playerId) }}
                                                     <x-three-dart-average :value="$tab['threeDartAverages']->leaguePlayerAverage((int) $row->playerId)" />
                                                 </td>
@@ -145,7 +145,7 @@
                                         <table class="table-surface">
                                             <thead>
                                             <tr>
-                                                <th class="text-left">Zawodnik</th>
+                                                <th class="text-left sticky-player">Zawodnik</th>
                                                 <th class="w-16 text-center tracking-normal">180</th>
                                                 <th class="w-16 text-center tracking-normal">170+</th>
                                                 <th class="w-24 text-center tracking-normal">Najlepszy checkout</th>
@@ -154,7 +154,7 @@
                                             <tbody>
                                             @foreach($tab['highlights'] as $highlight)
                                                 <tr>
-                                                    <td>{{ $highlight['playerName'] }}</td>
+                                                    <td class="sticky-player">{{ $highlight['playerName'] }}</td>
                                                     <td class="score-num text-center">{{ $highlight['count180'] }}</td>
                                                     <td class="score-num text-center">{{ $highlight['count170Plus'] }}</td>
                                                     <td class="score-num text-center">{{ $highlight['bestCheckout'] ?? '—' }}</td>

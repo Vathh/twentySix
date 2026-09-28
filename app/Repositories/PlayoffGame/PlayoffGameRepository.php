@@ -9,6 +9,7 @@ use App\DTO\GameResultDTO;
 use App\Enums\BracketSide;
 use App\Enums\GameStatus;
 use App\Models\PlayoffGame\PlayoffGame;
+use App\Support\GameScoring\ScoringLock;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -61,24 +62,77 @@ class PlayoffGameRepository
             ]);
     }
 
-    public function tryLockScheduled(int $gameId): bool
+    public function tryLockScheduled(int $gameId, int $tokenId): bool
     {
-        return PlayoffGame::query()
+        $query = PlayoffGame::query()
             ->where('id', $gameId)
-            ->where('status', GameStatus::SCHEDULED)
             ->whereNotNull('player1_id')
             ->whereNotNull('player2_id')
             ->whereHas('player1', fn ($q) => $q->where('is_bye', false))
-            ->whereHas('player2', fn ($q) => $q->where('is_bye', false))
-            ->update(['status' => GameStatus::IN_PROGRESS]) === 1;
+            ->whereHas('player2', fn ($q) => $q->where('is_bye', false));
+        ScoringLock::constrainClaimable($query, $tokenId);
+
+        $query->update([
+            'status' => GameStatus::IN_PROGRESS,
+            'scoring_token_id' => $tokenId,
+            'scoring_lock_expires_at' => ScoringLock::until(),
+        ]);
+
+        return $this->holdsFreshLock($gameId, $tokenId);
     }
 
-    public function tryUnlockInProgress(int $gameId): bool
+    public function tryRenewLock(int $gameId, int $tokenId): bool
+    {
+        DB::table('playoff_games')
+            ->where('id', $gameId)
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->where('scoring_token_id', $tokenId)
+            ->where('scoring_lock_expires_at', '>', now())
+            ->update(['scoring_lock_expires_at' => ScoringLock::until()]);
+
+        return $this->holdsFreshLock($gameId, $tokenId);
+    }
+
+    public function tryExpireLock(int $gameId, int $tokenId): bool
+    {
+        DB::table('playoff_games')
+            ->where('id', $gameId)
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->where('scoring_token_id', $tokenId)
+            ->update(['scoring_lock_expires_at' => ScoringLock::releasedAt()]);
+
+        return DB::table('playoff_games')
+            ->where('id', $gameId)
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->where('scoring_token_id', $tokenId)
+            ->where('scoring_lock_expires_at', '<=', now())
+            ->exists();
+    }
+
+    private function holdsFreshLock(int $gameId, int $tokenId): bool
     {
         return DB::table('playoff_games')
             ->where('id', $gameId)
             ->where('status', GameStatus::IN_PROGRESS)
-            ->update(['status' => GameStatus::SCHEDULED]) === 1;
+            ->where('scoring_token_id', $tokenId)
+            ->where('scoring_lock_expires_at', '>', now())
+            ->exists();
+    }
+
+    public function tryUnlockInProgress(int $gameId, int $tokenId): bool
+    {
+        return DB::table('playoff_games')
+            ->where('id', $gameId)
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->where(function ($query) use ($tokenId) {
+                $query->where('scoring_token_id', $tokenId)
+                    ->orWhereNull('scoring_token_id');
+            })
+            ->update([
+                'status' => GameStatus::SCHEDULED,
+                'scoring_token_id' => null,
+                'scoring_lock_expires_at' => null,
+            ]) === 1;
     }
 
     public function isInProgress(int $gameId): bool
@@ -92,11 +146,13 @@ class PlayoffGameRepository
     /**
      * @return Collection<PlayoffGameDomain>
      */
-    public function getActive(int $tournamentId): Collection
+    public function getActive(int $tournamentId, ?int $scoringTokenId = null): Collection
     {
-        return PlayoffGame::with(['tournament', 'player1', 'player2'])
-            ->where('tournament_id', $tournamentId)
-            ->whereIn('status', [GameStatus::SCHEDULED, GameStatus::IN_PROGRESS])
+        $query = PlayoffGame::with(['tournament', 'player1', 'player2'])
+            ->where('tournament_id', $tournamentId);
+        ScoringLock::constrainAvailable($query, $scoringTokenId);
+
+        return $query
             ->whereNotNull('player1_id')
             ->whereNotNull('player2_id')
             ->whereHas('player1', fn ($q) => $q->where('is_bye', false))
@@ -143,6 +199,8 @@ class PlayoffGameRepository
         $game->player2_legs_in_set = 0;
         $game->current_set_number = 1;
         $game->winner_id = null;
+        $game->scoring_token_id = null;
+        $game->scoring_lock_expires_at = null;
         $this->save($game);
     }
 

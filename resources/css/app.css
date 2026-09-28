@@ -408,6 +408,19 @@
         }
     }
 
+    /* Nazwy nad licznikiem. Telefon zostaje jak text-sm. Od tabletu większe, ale wyraźnie mniejsze niż licznik. */
+    .referee-player-name {
+        font-size: 0.875rem;
+        line-height: 1.25;
+    }
+
+    @media (min-width: 640px) {
+        .referee-player-name {
+            font-size: clamp(1.75rem, 3.5vw, 3rem);
+            line-height: 1.15;
+        }
+    }
+
     /* Pełne logo = logotyp 26 + napis twentySix (proporcje ~2750×580) */
     .brand-logo {
         @apply h-10 sm:h-11 w-auto max-w-[min(100%,14rem)] sm:max-w-[16rem] shrink-0 object-contain;
@@ -1364,6 +1377,36 @@
         @apply px-3 py-2;
     }
 
+    /* Nazwa zawodnika zostaje przy poziomym scrollu (telefon). */
+    .table-surface:has(.sticky-player) {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-surface :is(th, td).sticky-player {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        background-color: var(--color-bg-deep);
+        box-shadow: 1px 0 0 var(--color-border);
+    }
+
+    .table-surface thead th.sticky-player {
+        z-index: 2;
+    }
+
+    .table-surface tbody tr:hover > .sticky-player {
+        background-color: var(--color-row-hover);
+    }
+
+    .table-surface tbody tr.bg-success-muted > .sticky-player {
+        background-color: color-mix(in srgb, var(--color-success) 15%, var(--color-bg-deep));
+    }
+
+    .table-surface tbody tr.bg-success-muted:hover > .sticky-player {
+        background-color: color-mix(in srgb, var(--color-success) 22%, var(--color-bg-deep));
+    }
+
     .referee-group-board {
         width: fit-content;
         max-width: min(100%, 75rem);
@@ -1402,6 +1445,8 @@
         width: max-content;
         min-width: max-content;
         max-width: none;
+        border-collapse: separate;
+        border-spacing: 0;
     }
 
     .referee-group-table.table-surface thead th,

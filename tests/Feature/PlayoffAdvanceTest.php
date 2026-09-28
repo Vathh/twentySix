@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Tournament\PlayoffFirstRoundSeeding;
 use App\Enums\GameStage;
 use App\Models\GroupStanding\GroupStanding;
 use App\Models\Organization\Organization;
@@ -13,7 +14,6 @@ use App\Models\Users\User;
 use App\Repositories\GroupStanding\GroupStandingRepository;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Services\PlayoffGame\PlayoffService;
-use App\Support\Tournament\PlayoffFirstRoundPairing;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -131,12 +131,9 @@ class PlayoffAdvanceTest extends TestCase
 
         app(PlayoffService::class)->generateBracket($tournament->id);
 
-        $groupByPlayer = GroupStanding::where('tournament_id', $tournament->id)
-            ->pluck('group_number', 'player_id')
-            ->all();
-
         $firstRoundGames = PlayoffGame::where('tournament_id', $tournament->id)
             ->where('round', GameStage::QUARTER->value)
+            ->orderBy('slot')
             ->get();
 
         $this->assertCount(4, $firstRoundGames);
@@ -145,6 +142,17 @@ class PlayoffAdvanceTest extends TestCase
             fn (PlayoffGame $game) => [$game->player1_id, $game->player2_id],
         )->all();
 
-        $this->assertTrue(PlayoffFirstRoundPairing::pairsSatisfyGroupConstraint($pairs, $groupByPlayer));
+        $this->assertEquals([
+            [$players[0]->id, $players[3]->id],
+            [$players[4]->id, $players[7]->id],
+            [$players[2]->id, $players[1]->id],
+            [$players[6]->id, $players[5]->id],
+        ], $pairs);
+
+        $groupByPlayer = GroupStanding::where('tournament_id', $tournament->id)
+            ->pluck('group_number', 'player_id')
+            ->all();
+
+        $this->assertTrue(PlayoffFirstRoundSeeding::pairsSatisfyGroupConstraint($pairs, $groupByPlayer));
     }
 }

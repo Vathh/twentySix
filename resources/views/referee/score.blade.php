@@ -53,12 +53,12 @@
                 type="button"
                 x-show="canSwitchOpener && turnIndex !== 0"
                 x-cloak
-                class="text-sm font-semibold text-accent truncate max-w-full underline decoration-dotted underline-offset-2"
+                class="referee-player-name font-semibold text-accent truncate max-w-full underline decoration-dotted underline-offset-2"
                 @click="askSwitchOpener(0)"
                 x-text="player1?.name ?? 'Gracz 1'"
             ></button>
             <div
-                class="text-sm font-semibold text-text truncate"
+                class="referee-player-name font-semibold text-text truncate"
                 x-show="!(canSwitchOpener && turnIndex !== 0)"
                 x-text="player1?.name ?? 'Gracz 1'"
             ></div>
@@ -79,12 +79,12 @@
                 type="button"
                 x-show="canSwitchOpener && turnIndex !== 1"
                 x-cloak
-                class="text-sm font-semibold text-accent truncate max-w-full underline decoration-dotted underline-offset-2"
+                class="referee-player-name font-semibold text-accent truncate max-w-full underline decoration-dotted underline-offset-2"
                 @click="askSwitchOpener(1)"
                 x-text="player2?.name ?? 'Gracz 2'"
             ></button>
             <div
-                class="text-sm font-semibold text-text truncate"
+                class="referee-player-name font-semibold text-text truncate"
                 x-show="!(canSwitchOpener && turnIndex !== 1)"
                 x-text="player2?.name ?? 'Gracz 2'"
             ></div>
@@ -245,7 +245,7 @@
         </div>
     </div>
 
-    {{-- Potwierdzenie checkout --}}
+    {{-- Potwierdzenie checkout. Widoczne tylko gdy CHECKOUT_LEG_CONFIRMATION_ENABLED w refereeScoring.js. --}}
     <div
         x-show="checkoutOpen"
         x-cloak

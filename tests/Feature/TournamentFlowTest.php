@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Tournament\PlayoffFirstRoundSeeding;
 use App\Domain\Tournament\TournamentGroupDistribution;
 use App\DTO\GameResultDTO;
 use App\DTO\UpdateGameDTO;
@@ -21,7 +22,6 @@ use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Services\Game\GameService;
 use App\Services\Player\PlayerService;
-use App\Support\Tournament\PlayoffFirstRoundPairing;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\InsertsPointSchemeRules;
 use Tests\Support\SeedsTournamentParticipants;
@@ -201,7 +201,7 @@ class TournamentFlowTest extends TestCase
 
         $this->assertCount(2, $semiPairs);
         $this->assertTrue(
-            PlayoffFirstRoundPairing::pairsSatisfyGroupConstraint($semiPairs, $groupByPlayer),
+            PlayoffFirstRoundSeeding::pairsSatisfyGroupConstraint($semiPairs, $groupByPlayer),
         );
 
         $this->assertSame(0, Game::where('tournament_id', $tournament->id)

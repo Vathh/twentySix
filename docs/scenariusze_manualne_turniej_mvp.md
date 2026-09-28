@@ -105,8 +105,8 @@ Kod widoczny po zalogowaniu jako admin:
 
 **Oczekiwane:**
 
-- `POST /api/game/update` z samymi achievementami po `FINISHED`.
-- Wpis w `achievements` powiązany z grą / graczem turniejowym.
+- Zakładka **Osiągnięcia** pokazuje 180 / 170+ / HF / QF z wizyt i statystyk lega.
+- Brak osobnego `POST /api/game/update` z achievementami.
 
 ---
 

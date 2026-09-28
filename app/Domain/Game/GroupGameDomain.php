@@ -27,6 +27,8 @@ class GroupGameDomain extends GameDomain
         GameStatus $status,
         public readonly ?int $sequence = null,
         public readonly ?PlayerDomain $referee = null,
+        public readonly ?int $scoringTokenId = null,
+        public readonly ?string $scoringLockExpiresAt = null,
     ) {
         parent::__construct(
             id: $id,
@@ -70,6 +72,8 @@ class GroupGameDomain extends GameDomain
             status: $game->status,
             sequence: $game->sequence !== null ? (int) $game->sequence : null,
             referee: $referee,
+            scoringTokenId: $game->scoring_token_id !== null ? (int) $game->scoring_token_id : null,
+            scoringLockExpiresAt: $game->scoring_lock_expires_at?->toDateTimeString(),
         );
     }
 

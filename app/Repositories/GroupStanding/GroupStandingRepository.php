@@ -94,10 +94,10 @@ class GroupStandingRepository
     }
 
     /**
-     * Awansujący z numerem grupy (do losowania pierwszej rundy playoff).
+     * Awansujący z numerem grupy i miejscem (do rozstawienia pierwszej rundy playoff).
      *
      * @param  array<int, int>  $advancesByGroupNumber  group_number => liczba awansujących
-     * @return Collection<int, array{player_id: int, group_number: int}>
+     * @return Collection<int, array{player_id: int, group_number: int, place: int}>
      */
     public function getAdvancingPlayersWithGroups(int $tournamentId, array $advancesByGroupNumber): Collection
     {
@@ -112,6 +112,7 @@ class GroupStandingRepository
             ->map(fn (GroupStanding $standing) => [
                 'player_id' => $standing->player_id,
                 'group_number' => $standing->group_number,
+                'place' => $standing->place,
             ])
             ->values();
     }

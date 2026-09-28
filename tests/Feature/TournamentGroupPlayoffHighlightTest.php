@@ -26,7 +26,7 @@ class TournamentGroupPlayoffHighlightTest extends TestCase
     use RefreshDatabase;
     use SeedsTournamentParticipants;
 
-    public function test_playoff_badges_hidden_until_a_player_has_played_and_occupies_advance_place(): void
+    public function test_playoff_badges_hidden_until_the_group_is_finished(): void
     {
         $admin = User::factory()->create([
             'email' => 'admin-highlight@test.com',
@@ -112,15 +112,56 @@ class TournamentGroupPlayoffHighlightTest extends TestCase
 
         $loaded = $this->tournamentWithRelations($tournament->id);
         $highlights = (new TournamentDataViewModel($loaded))->groupPlayoffHighlights();
-        $groupHighlight = $highlights[(int) $game->group_number];
-        $this->assertNotEmpty($groupHighlight['advancingPlayerIds']);
-        $this->assertContains((int) $game->player1_id, $groupHighlight['advancingPlayerIds']);
+        $groupNumber = (int) $game->group_number;
+        $this->assertFalse($highlights[$groupNumber]['complete']);
+        $this->assertSame([], $highlights[$groupNumber]['advancingPlayerIds']);
 
-        foreach ($highlights as $groupNumber => $highlight) {
+        $htmlMid = $this->get("/tournaments/{$tournament->id}")->assertOk()->getContent();
+        $this->assertSame(
+            preg_match_all('/data-playoff-badge/', $htmlMid),
+            preg_match_all('/data-playoff-badge[^>]*\bhidden\b/', $htmlMid),
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<tr[^>]*data-group-row-player-id="'.$game->player1_id.'"[^>]*bg-success-muted/',
+            $htmlMid,
+        );
+
+        $groupGames = Game::where('tournament_id', $tournament->id)
+            ->where('group_number', $groupNumber)
+            ->orderBy('id')
+            ->get();
+        foreach ($groupGames as $groupGame) {
+            if ((int) $groupGame->id === (int) $game->id) {
+                continue;
+            }
+            $this->assertTrue(app(GameService::class)->update(new UpdateGameDTO(
+                gameResultDTO: new GameResultDTO(
+                    gameId: $groupGame->id,
+                    type: GameType::GROUP,
+                    player1Id: (int) $groupGame->player1_id,
+                    player2Id: (int) $groupGame->player2_id,
+                    player1Score: 2,
+                    player2Score: 0,
+                    winnerId: (int) $groupGame->player1_id,
+                    tournamentId: $tournament->id,
+                    groupNumber: $groupNumber,
+                ),
+                achievementsDTOs: [],
+            )));
+        }
+
+        $loaded = $this->tournamentWithRelations($tournament->id);
+        $highlights = (new TournamentDataViewModel($loaded))->groupPlayoffHighlights();
+        $groupHighlight = $highlights[$groupNumber];
+        $this->assertTrue($groupHighlight['complete']);
+        $this->assertCount(2, $groupHighlight['advancingPlayerIds']);
+        $this->assertSame([], $highlights[$groupNumber === 1 ? 2 : 1]['advancingPlayerIds']);
+
+        foreach ($highlights as $number => $highlight) {
             foreach ($highlight['advancingPlayerIds'] as $playerId) {
                 $standing = $loaded->groupStandings
                     ->first(fn ($row) => (int) $row->player_id === (int) $playerId
-                        && (int) $row->group_number === (int) $groupNumber);
+                        && (int) $row->group_number === (int) $number);
                 $this->assertNotNull($standing);
                 $this->assertGreaterThan(0, (int) $standing->games_played);
             }

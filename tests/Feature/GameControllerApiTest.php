@@ -19,6 +19,7 @@ use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\Concerns\ActsAsTournamentTablet;
 use Tests\Concerns\InsertsPointSchemeRules;
@@ -129,7 +130,7 @@ class GameControllerApiTest extends TestCase
         ]);
     }
 
-    public function test_lock_succeeds_when_game_already_in_progress(): void
+    public function test_unlocked_in_progress_game_can_be_claimed(): void
     {
         $this->actAsTournamentTablet($this->tournament);
 
@@ -141,13 +142,126 @@ class GameControllerApiTest extends TestCase
             'status' => GameStatus::IN_PROGRESS,
         ]);
 
-        $response = $this->postJson('/api/game/inProgress', [
+        $this->postJson('/api/game/inProgress', [
             'gameId' => $game->id,
             'type' => 'group',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('games', [
+            'id' => $game->id,
+            'status' => GameStatus::IN_PROGRESS->value,
+        ]);
+    }
+
+    public function test_other_device_cannot_lock_or_score_a_held_game(): void
+    {
+        $this->actAsTournamentTablet($this->tournament);
+        $ownerToken = $this->tournamentTabletPlainToken;
+
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
         ]);
 
-        $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+        $this->postJson('/api/game/inProgress', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertOk();
+
+        $this->getJson('/api/group-games/'.$game->id.'/scoring/state')->assertOk();
+
+        $this->actAsTournamentTablet($this->tournament);
+
+        $this->postJson('/api/game/inProgress', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertStatus(409);
+
+        $this->getJson('/api/game/active?tournamentId='.$this->tournament->id)
+            ->assertOk()
+            ->assertJsonMissing(['id' => $game->id]);
+
+        $this->getJson('/api/group-games/'.$game->id.'/scoring/state')->assertForbidden();
+
+        $this->app['auth']->forgetGuards();
+        $this->withToken($ownerToken)
+            ->postJson('/api/game/inProgress', [
+                'gameId' => $game->id,
+                'type' => 'group',
+            ])
+            ->assertOk();
+
+        $this->withToken($ownerToken)
+            ->getJson('/api/game/active?tournamentId='.$this->tournament->id)
+            ->assertOk()
+            ->assertJsonFragment(['id' => $game->id]);
+    }
+
+    public function test_release_after_visit_lets_another_device_continue(): void
+    {
+        $this->actAsTournamentTablet($this->tournament);
+
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $this->postJson('/api/game/inProgress', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertOk();
+
+        $this->postJson('/api/game/heartbeat', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertOk();
+
+        $start = $this->postJson("/api/group-games/{$game->id}/legs", [
+            'player1DoubleTracked' => false,
+            'player2DoubleTracked' => false,
+        ])->assertOk();
+        $legId = $start->json('currentLeg.id');
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits", [
+            'playerId' => $this->player1->id,
+            'score' => 60,
+            'remainingBefore' => 501,
+            'remainingAfter' => 441,
+            'dartsInVisit' => 3,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => (string) Str::uuid(),
+        ])->assertOk();
+
+        $this->postJson('/api/game/release', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('games', [
+            'id' => $game->id,
+            'status' => GameStatus::IN_PROGRESS->value,
+        ]);
+
+        $this->getJson('/api/group-games/'.$game->id.'/scoring/state')->assertForbidden();
+
+        $this->app['auth']->forgetGuards();
+        $this->actAsTournamentTablet($this->tournament);
+
+        $this->postJson('/api/game/inProgress', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertOk();
+
+        $this->getJson('/api/group-games/'.$game->id.'/scoring/state')
+            ->assertOk()
+            ->assertJsonFragment(['score' => 60]);
     }
 
     public function test_user_can_release_group_game_lock_without_scoring(): void
@@ -382,7 +496,7 @@ class GameControllerApiTest extends TestCase
         $gameIds = collect($games)->pluck('id')->toArray();
 
         $this->assertContains($game1->id, $gameIds);
-        $this->assertContains($game2->id, $gameIds);
+        $this->assertNotContains($game2->id, $gameIds);
         $this->assertNotContains($finishedGame->id, $gameIds);
     }
 
@@ -603,10 +717,8 @@ class GameControllerApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJson(['success' => true]);
 
-        $this->assertDatabaseHas('achievements', [
+        $this->assertDatabaseMissing('achievements', [
             'player_id' => $this->player1->id,
-            'type' => 'one_seventy',
-            'value' => 170,
             'tournament_id' => $this->tournament->id,
         ]);
     }

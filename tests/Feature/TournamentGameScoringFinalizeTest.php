@@ -313,7 +313,7 @@ class TournamentGameScoringFinalizeTest extends TestCase
         $this->assertSame($this->player1->id, (int) $semi->player1_id);
     }
 
-    public function test_achievements_only_post_on_finished_group_game(): void
+    public function test_finished_game_update_does_not_store_achievements(): void
     {
         GroupStanding::create([
             'tournament_id' => $this->tournament->id,
@@ -380,12 +380,11 @@ class TournamentGameScoringFinalizeTest extends TestCase
             'legs' => [],
         ]);
 
-        $response->assertOk()->assertJson(['success' => true]);
+        $response->assertOk()->assertJson(['success' => false]);
 
-        $this->assertDatabaseHas('achievements', [
+        $this->assertDatabaseMissing('achievements', [
             'player_id' => $this->player1->id,
             'tournament_id' => $this->tournament->id,
-            'type' => 'max',
         ]);
     }
 

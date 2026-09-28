@@ -15,6 +15,13 @@ import { buildH2hLegVisitRows } from './legVisitRows.js';
 const GAME_STATE_EVENTS = ['game.state', '.game.state'];
 const GAME_CANCELLED_EVENTS = ['game.cancelled', '.game.cancelled'];
 
+/**
+ * Pytanie „czy kończy leg tym wynikiem?”.
+ * false — po zatwierdzeniu checkoutu od razu pytanie o liczbę lotek.
+ * true — z powrotem pokazuje modal Checkout?.
+ */
+const CHECKOUT_LEG_CONFIRMATION_ENABLED = false;
+
 function hasMatchProgress(state) {
     if (!state) {
         return false;
@@ -86,6 +93,8 @@ export function registerRefereeScoring(Alpine) {
             if (!this.session) {
                 return;
             }
+            this.renewLease();
+            this.leaseTimer = setInterval(() => this.renewLease(), 20000);
             this.loadState().then(() => {
                 this.connectWebSocket();
                 this.pollTimer = setInterval(() => this.loadState({ quiet: true }), 20000);
@@ -93,6 +102,10 @@ export function registerRefereeScoring(Alpine) {
         },
 
         destroy() {
+            if (this.leaseTimer) {
+                clearInterval(this.leaseTimer);
+                this.leaseTimer = null;
+            }
             if (this.pollTimer) {
                 clearInterval(this.pollTimer);
                 this.pollTimer = null;
@@ -297,6 +310,34 @@ export function registerRefereeScoring(Alpine) {
             this.switchOpenerOpen = false;
             this.pendingSwitchIndex = null;
             this.error = '';
+        },
+
+        async renewLease() {
+            if (!this.session || this.leaving || this.isFinished || this.cancelled) {
+                return;
+            }
+            try {
+                await refereeFetch('/api/game/heartbeat', {
+                    method: 'POST',
+                    token: this.session.token,
+                    body: { gameId: config.gameId, type: config.gameType },
+                });
+            } catch (e) {
+                if (!(e instanceof RefereeApiError) || (e.status !== 409 && e.status !== 403)) {
+                    return;
+                }
+                try {
+                    await refereeFetch('/api/game/inProgress', {
+                        method: 'POST',
+                        token: this.session.token,
+                        body: { gameId: config.gameId, type: config.gameType },
+                    });
+                } catch (lockError) {
+                    this.error =
+                        (lockError instanceof RefereeApiError && lockError.message)
+                        || 'Mecz jest sędziowany na innym urządzeniu.';
+                }
+            }
         },
 
         async loadState({ quiet = false } = {}) {
@@ -564,7 +605,11 @@ export function registerRefereeScoring(Alpine) {
             const remainingBefore = this.remaining(player);
             if (score === remainingBefore) {
                 this.pendingCheckoutScore = score;
-                this.checkoutOpen = true;
+                if (CHECKOUT_LEG_CONFIRMATION_ENABLED) {
+                    this.checkoutOpen = true;
+                } else {
+                    this.checkoutDartsOpen = true;
+                }
                 return;
             }
 
@@ -854,7 +899,7 @@ export function registerRefereeScoring(Alpine) {
                 window.location.assign(config.gamesUrl);
                 return;
             }
-            if (!window.confirm('Czy na pewno chcesz opuścić mecz?')) {
+            if (!window.confirm('Opuścić sędziowanie? Inne urządzenie będzie mogło kontynuować ten mecz od ostatniej wizyty.')) {
                 return;
             }
             this.leaving = true;

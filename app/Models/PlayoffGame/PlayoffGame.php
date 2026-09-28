@@ -27,6 +27,8 @@ class PlayoffGame extends Model
         'winner_destination_slot',
         'loser_destination_slot',
         'status',
+        'scoring_token_id',
+        'scoring_lock_expires_at',
         'starting_score',
         'legs_to_win_set',
         'sets_to_win_match',
@@ -38,6 +40,7 @@ class PlayoffGame extends Model
     protected $casts = [
         'bracket_side' => BracketSide::class,
         'status' => GameStatus::class,
+        'scoring_lock_expires_at' => 'datetime',
     ];
 
     /** @return BelongsTo<Tournament, $this> */

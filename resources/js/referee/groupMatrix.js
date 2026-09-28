@@ -40,6 +40,16 @@ export function matrixCellForPair(game, rowPlayerId, { playableUnfinished = fals
     if (isFinishedStatus(game.status)) {
         return { text: scoreForRow(game, rowPlayerId), average: averageLabel(game, rowPlayerId), sequence: null, playable: false, game };
     }
+    if (game.status === 'in_progress') {
+        const sequence = game.sequence != null ? game.sequence : null;
+        return {
+            text: sequence != null ? String(sequence) : '…',
+            average: null,
+            sequence,
+            playable: playableUnfinished && game.lockedByOther !== true,
+            game,
+        };
+    }
     if (game.status === 'scheduled' && game.sequence != null) {
         return {
             text: String(game.sequence),

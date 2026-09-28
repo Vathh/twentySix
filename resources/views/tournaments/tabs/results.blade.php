@@ -4,7 +4,7 @@
         <thead>
         <tr>
             <th class="px-2 py-2 text-center w-16">Miejsce</th>
-            <th class="px-3 py-2 text-left">Zawodnik</th>
+            <th class="px-3 py-2 text-left sticky-player">Zawodnik</th>
             <th class="px-2 py-2 text-center">Średnia</th>
             @if($showPointsColumn ?? false)
                 <th class="px-2 py-2 text-center">Punkty</th>
@@ -28,7 +28,7 @@
                         {{ $result['place'] ?? '—' }}
                     @endif
                 </td>
-                <td class="px-3 py-2 font-medium text-text whitespace-nowrap">
+                <td class="px-3 py-2 font-medium text-text whitespace-nowrap sticky-player">
                     @if($result['player']->userId)
                         <a href="{{ route('players.show', $result['player']->id) }}" class="text-text hover:text-accent hover:underline transition-colors">
                             {{ $result['player']->name }}

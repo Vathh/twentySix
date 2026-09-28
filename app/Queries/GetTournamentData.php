@@ -20,7 +20,6 @@ class GetTournamentData
             'playoffGames.player1',
             'playoffGames.player2',
             'playoffGames.winner',
-            'achievements.player',
             'results.player',
             'pointScheme',
         ])->findOrFail($tournamentId);
