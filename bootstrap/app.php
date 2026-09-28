@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule): void {
         $schedule->command('quick-game:prune-lobbies')->hourly();
+        $schedule->command('application-entities:purge-deleted')->daily();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontReport(\DomainException::class);

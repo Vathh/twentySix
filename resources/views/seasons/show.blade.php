@@ -26,6 +26,12 @@
                 <a href="{{ route('seasons.guests', $season->id) }}" class="admin-sidebar-link">
                     👤 Goście
                 </a>
+                <x-delete-application-entity
+                    :action="route('seasons.destroy', $season->id)"
+                    :name="$season->name"
+                    label="sezon"
+                    hint="Znikną też turnieje tego sezonu. Przez 90 dni przywrócić może je operator platformy."
+                />
             </nav>
         </aside>
         @endseasonAdmin

@@ -28,6 +28,12 @@
                         <a href="{{ route('league-seasons.create', $league) }}" class="admin-sidebar-link">➕ Nowy sezon ligowy</a>
                     @endif
                     <a href="{{ route('leagues.edit', $league) }}" class="admin-sidebar-link">✏️ Edytuj ligę / szczeble</a>
+                    <x-delete-application-entity
+                        :action="route('leagues.destroy', $league)"
+                        :name="$league->name"
+                        label="ligę"
+                        hint="Znikną też sezony ligowe tej ligi. Przez 90 dni przywrócić może je operator platformy."
+                    />
                 </nav>
             </aside>
         @endif

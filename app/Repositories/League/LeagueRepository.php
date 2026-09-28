@@ -11,6 +11,7 @@ use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class LeagueRepository
 {
@@ -80,6 +81,8 @@ class LeagueRepository
     public function create(int $organizationId, string $name, ?string $description, array $divisions): League
     {
         return DB::transaction(function () use ($organizationId, $name, $description, $divisions) {
+            $this->assertNameAvailable($organizationId, $name);
+
             $league = League::query()->create([
                 'organization_id' => $organizationId,
                 'name' => $name,
@@ -114,10 +117,30 @@ class LeagueRepository
 
     public function updateDetails(int $leagueId, string $name, ?string $description): void
     {
-        League::query()->whereKey($leagueId)->update([
+        $league = League::query()->findOrFail($leagueId);
+        $this->assertNameAvailable((int) $league->organization_id, $name, $leagueId);
+
+        $league->update([
             'name' => $name,
             'description' => $description,
         ]);
+    }
+
+    private function assertNameAvailable(int $organizationId, string $name, ?int $exceptLeagueId = null): void
+    {
+        $query = League::query()
+            ->where('organization_id', $organizationId)
+            ->where('name', $name);
+
+        if ($exceptLeagueId !== null) {
+            $query->where('id', '!=', $exceptLeagueId);
+        }
+
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'leagueName' => 'Liga o tej nazwie już istnieje w tej organizacji.',
+            ]);
+        }
     }
 
     /**

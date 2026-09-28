@@ -102,6 +102,10 @@ Route::middleware(['auth', 'platform.admin'])->prefix('admin')->name('admin.')->
     Route::post('/users/{user}/ban', [\App\Http\Controllers\PlatformAdminController::class, 'updateBanned'])
         ->whereNumber('user')
         ->name('users.ban');
+    Route::get('/deleted', [\App\Http\Controllers\PlatformAdminController::class, 'deleted'])->name('deleted');
+    Route::post('/deleted/{kind}/{id}/restore', [\App\Http\Controllers\PlatformAdminController::class, 'restore'])
+        ->whereNumber('id')
+        ->name('deleted.restore');
 });
 
 Route::middleware('auth')->prefix('settings')->name('settings.')->group(function () {
@@ -166,7 +170,10 @@ Route::get('/friends/panel', [FriendsController::class, 'panel'])->name('friends
 Route::post('/friends/invitations/{invitation}/accept', [FriendInvitationController::class, 'accept'])->name('friends.invitations.accept')->middleware('auth');
 Route::post('/friends/invitations/{invitation}/reject', [FriendInvitationController::class, 'reject'])->name('friends.invitations.reject')->middleware('auth');
 
-Route::resource('organizations', OrganizationController::class);
+Route::resource('organizations', OrganizationController::class)->except(['destroy']);
+Route::delete('/organizations/{organization}', [OrganizationController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('organizations.destroy');
 Route::prefix('organizations/{organization}')->group(function () {
     Route::get('/relatedUsers', [OrganizationController::class, 'relatedUsers'])->name('organizations.relatedUsers');
     Route::post('/relatedUsers/add', [OrganizationController::class, 'addRelatedUser'])->name('organizations.relatedUsers.add');
@@ -188,6 +195,7 @@ Route::prefix('organizations/{organization}')->group(function () {
 });
 
 Route::get('/leagues/{league}', [LeagueController::class, 'show'])->name('leagues.show');
+Route::delete('/leagues/{league}', [LeagueController::class, 'destroy'])->name('leagues.destroy')->middleware('auth');
 Route::get('/leagues/{league}/divisions/{division}', [LeagueController::class, 'showDivision'])->name('leagues.divisions.show');
 Route::get('/leagues/{league}/edit', [LeagueController::class, 'edit'])->name('leagues.edit')->middleware('auth');
 Route::put('/leagues/{league}', [LeagueController::class, 'update'])->name('leagues.update')->middleware('auth');
@@ -213,6 +221,7 @@ Route::post('/league-seasons/{leagueSeason}/start', [LeagueSeasonController::cla
 Route::post('/league-seasons/{leagueSeason}/advance', [LeagueSeasonController::class, 'advance'])->name('league-seasons.advance')->middleware('auth');
 Route::post('/league-seasons/{leagueSeason}/withdraw', [LeagueSeasonController::class, 'withdraw'])->name('league-seasons.withdraw')->middleware('auth');
 Route::post('/league-seasons/{leagueSeason}/cancel', [LeagueSeasonController::class, 'cancel'])->name('league-seasons.cancel')->middleware('auth');
+Route::delete('/league-seasons/{leagueSeason}', [LeagueSeasonController::class, 'destroy'])->name('league-seasons.destroy')->middleware('auth');
 
 Route::get('/league-games/{leagueGame}', [LeagueSeasonController::class, 'showGame'])->name('league-games.show');
 Route::post('/league-games/{leagueGame}/result', [LeagueSeasonController::class, 'updateResult'])->name('league-games.result')->middleware('auth');
@@ -220,7 +229,10 @@ Route::post('/league-games/{leagueGame}/walkover', [LeagueSeasonController::clas
 Route::post('/league-games/{leagueGame}/extend', [LeagueSeasonController::class, 'extend'])->name('league-games.extend')->middleware('auth');
 Route::post('/league-games/{leagueGame}/cancel', [LeagueSeasonController::class, 'cancelGame'])->name('league-games.cancel')->middleware('auth');
 
-Route::resource('seasons', SeasonController::class);
+Route::resource('seasons', SeasonController::class)->except(['destroy']);
+Route::delete('/seasons/{season}', [SeasonController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('seasons.destroy');
 Route::prefix('seasons/{season}')->group(function () {
     Route::get('/relatedUsers', [SeasonController::class, 'relatedUsers'])->name('seasons.relatedUsers');
     Route::post('/relatedUsers/add', [SeasonController::class, 'addRelatedUser'])->name('seasons.relatedUsers.add');
@@ -238,7 +250,10 @@ Route::prefix('seasons/{season}')->group(function () {
     Route::delete('/guests/remove', [SeasonController::class, 'removeGuest'])->name('seasons.guests.remove');
 });
 
-Route::resource('tournaments', TournamentController::class);
+Route::resource('tournaments', TournamentController::class)->except(['destroy']);
+Route::delete('/tournaments/{tournament}', [TournamentController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('tournaments.destroy');
 Route::prefix('tournaments/{tournament}')->group(function () {
     Route::get('/groups-live', [TournamentController::class, 'groupsLive'])->name('tournaments.groups-live');
     Route::get('/playoff-live', [TournamentController::class, 'playoffLive'])->name('tournaments.playoff-live');

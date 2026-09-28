@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Retention\ApplicationEntityKind;
 use App\Enums\GameKind;
 use App\Enums\LeagueCalendarMode;
 use App\Models\League\League;
@@ -10,10 +11,13 @@ use App\Models\League\LeagueSeason;
 use App\Services\GameScoring\GameCancelService;
 use App\Services\League\LeagueSeasonService;
 use App\Services\League\LeagueService;
+use App\Services\Retention\ApplicationEntityDeletionService;
+use App\Support\Retention\ConfirmedEntityDeletion;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class LeagueSeasonController extends Controller
@@ -22,6 +26,7 @@ class LeagueSeasonController extends Controller
         private LeagueSeasonService $leagueSeasonService,
         private LeagueService $leagueService,
         private GameCancelService $gameCancelService,
+        private ApplicationEntityDeletionService $applicationEntityDeletionService,
     ) {}
 
     public function create(League $league): Factory|View|RedirectResponse
@@ -145,6 +150,22 @@ class LeagueSeasonController extends Controller
         return redirect()
             ->route('leagues.show', $leagueId)
             ->with('success', 'Sezon ligowy anulowany. Skład piramidy wrócił do stanu sprzed startu.');
+    }
+
+    public function destroy(Request $request, LeagueSeason $leagueSeason): RedirectResponse
+    {
+        $this->authorize('delete', $leagueSeason);
+        ConfirmedEntityDeletion::validate($request, $leagueSeason->name);
+        $leagueId = $leagueSeason->league_id;
+        $this->applicationEntityDeletionService->hide(
+            ApplicationEntityKind::LeagueSeason,
+            $leagueSeason->id,
+            (int) Auth::id(),
+        );
+
+        return redirect()
+            ->route('leagues.show', $leagueId)
+            ->with('success', 'Sezon ligowy został usunięty. Przez 90 dni może go przywrócić operator platformy.');
     }
 
     public function showGame(LeagueGame $leagueGame): Factory|View

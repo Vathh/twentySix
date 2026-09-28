@@ -16,4 +16,11 @@ class LeagueSeasonPolicy
     {
         return $leagueSeason->league->organization->admins->contains('id', $user->id);
     }
+
+    public function delete(User $user, LeagueSeason $leagueSeason): bool
+    {
+        $leagueSeason->loadMissing('league.organization.admins');
+
+        return $leagueSeason->league->organization->admins->contains('id', $user->id);
+    }
 }

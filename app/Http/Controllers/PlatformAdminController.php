@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Retention\ApplicationEntityKind;
 use App\Services\Platform\PlatformAdminService;
+use App\Services\Retention\ApplicationEntityDeletionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,6 +13,7 @@ class PlatformAdminController extends Controller
 {
     public function __construct(
         private PlatformAdminService $platformAdminService,
+        private ApplicationEntityDeletionService $applicationEntityDeletionService,
     ) {}
 
     public function dashboard(): View
@@ -77,5 +80,29 @@ class PlatformAdminController extends Controller
         $state = $user->isBanned() ? 'zablokowane' : 'odblokowane';
 
         return back()->with('success', "Konto {$label}: {$state}");
+    }
+
+    public function deleted(): View
+    {
+        return view('admin.deleted', [
+            'entities' => $this->applicationEntityDeletionService->deletedRoots(),
+        ]);
+    }
+
+    public function restore(string $kind, int $id): RedirectResponse
+    {
+        try {
+            $entityKind = ApplicationEntityKind::fromRoute($kind);
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        try {
+            $name = $this->applicationEntityDeletionService->restore($entityKind, $id);
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', "Przywrócono: {$name}");
     }
 }

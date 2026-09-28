@@ -45,6 +45,12 @@
                     <button type="button" class="admin-sidebar-link w-full text-left text-danger" @click="cancelOpen = true">
                         Anuluj sezon
                     </button>
+                    <x-delete-application-entity
+                        :action="route('league-seasons.destroy', $season)"
+                        :name="$season->name"
+                        label="sezon ligowy"
+                        hint="To chowa cały sezon ligowy z aplikacji. Anulowanie sezonu zostaje osobną operacją i tylko resetuje rozgrywkę. Przez 90 dni przywrócić może operator platformy."
+                    />
                 </nav>
             </aside>
         @endif
@@ -109,7 +115,7 @@
                             <thead>
                             <tr>
                                 <th class="w-12 text-center tracking-normal">#</th>
-                                <th class="text-left">Zawodnik</th>
+                                <th class="text-left sticky-player">Zawodnik</th>
                                 <th class="w-12 text-center tracking-normal">M</th>
                                 <th class="w-12 text-center tracking-normal text-success-bright">W</th>
                                 @if($season->allows_draws)
@@ -126,7 +132,7 @@
                             @forelse($block['standings'] as $row)
                                 <tr>
                                     <td class="score-num text-center">{{ $row->place }}@if($row->needsTiebreak)*@endif</td>
-                                    <td>
+                                    <td class="sticky-player">
                                         {{ $playerName($row->playerId) }}
                                         <x-three-dart-average :value="$threeDartAverages->leaguePlayerAverage((int) $row->playerId)" />
                                         @if($isAdmin && $season->status->isOpen())

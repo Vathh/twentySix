@@ -30,6 +30,8 @@ class LeaguePolicy
 
     public function delete(User $user, League $league): bool
     {
-        return false;
+        $league->loadMissing('organization.admins');
+
+        return $league->organization->admins->contains('id', $user->id);
     }
 }

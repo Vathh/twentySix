@@ -1,6 +1,5 @@
 <?php
 
-use App\Services\League\LeagueSeasonService;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,7 +16,8 @@ return new class extends Migration
                 ->nullOnDelete();
         });
 
-        app(LeagueSeasonService::class)->backfillFinishedSeasonChampions();
+        // Świeża migracja nie ma jeszcze zakończonych sezonów. Nie wołamy tu modelu:
+        // SoftDeletes dokłada deleted_at, a ta kolumna powstaje dopiero w późniejszej migracji.
     }
 
     public function down(): void

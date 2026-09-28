@@ -14,5 +14,11 @@
         <a href="{{ route('tournaments.admins', $tournament->id) }}" class="admin-sidebar-link">
             👥 Administratorzy
         </a>
+        <x-delete-application-entity
+            :action="route('tournaments.destroy', $tournament->id)"
+            :name="$tournament->name"
+            label="turniej"
+            hint="Turniej zniknie z aplikacji. Mecze i wyniki zostają w bazie przez 90 dni, potem są kasowane. Przywrócić może operator platformy."
+        />
     </nav>
 </aside>

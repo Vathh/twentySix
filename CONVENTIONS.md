@@ -18,6 +18,12 @@ Słowo `match` jest słowem kluczowym w PHP (`match ($x) { ... }`). Unikamy go w
 - `GameLegDTO` zamiast `MatchLegDTO`
 - Tabela w bazie: `game_legs` zamiast `match_legs`
 
+## Byty aplikacji
+
+**Byty aplikacji** = organizacja, sezon, turniej, liga i sezon ligowy (`LeagueSeason`).
+
+Sezon organizacji (`Season`) i sezon ligowy to dwa różne byty. Mecz, gracz i użytkownik nie są bytami aplikacji.
+
 ## Web — komunikaty flash (toast)
 
 Flash z sesji (`session('success')`, `session('error')`) wyświetlamy **tylko** jako toast w **prawym górnym rogu** — komponent `resources/views/components/notifications.blade.php` (+ `alert.blade.php`), dołączany w `layouts/app.blade.php`.

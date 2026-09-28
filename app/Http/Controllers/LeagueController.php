@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Domain\RelatedRosterInvite;
+use App\Domain\Retention\ApplicationEntityKind;
 use App\Models\League\League;
 use App\Models\League\LeagueDivision;
 use App\Models\Organization\Organization;
 use App\Services\League\LeagueInvitationService;
 use App\Services\League\LeagueService;
+use App\Services\Retention\ApplicationEntityDeletionService;
+use App\Support\Retention\ConfirmedEntityDeletion;
 use App\Services\User\UserService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -23,6 +26,7 @@ class LeagueController extends Controller
         private LeagueService $leagueService,
         private LeagueInvitationService $leagueInvitationService,
         private UserService $userService,
+        private ApplicationEntityDeletionService $applicationEntityDeletionService,
     ) {}
 
     public function create(Organization $organization): Factory|View
@@ -77,6 +81,22 @@ class LeagueController extends Controller
         $this->authorize('view', $league);
 
         return view('leagues.show', $this->leagueService->showData($league->id));
+    }
+
+    public function destroy(Request $request, League $league): RedirectResponse
+    {
+        $this->authorize('delete', $league);
+        ConfirmedEntityDeletion::validate($request, $league->name);
+        $organizationId = $league->organization_id;
+        $this->applicationEntityDeletionService->hide(
+            ApplicationEntityKind::League,
+            $league->id,
+            (int) Auth::id(),
+        );
+
+        return redirect()
+            ->route('organizations.show', $organizationId)
+            ->with('success', 'Liga została usunięta. Przez 90 dni może ją przywrócić operator platformy.');
     }
 
     public function showDivision(League $league, LeagueDivision $division): Factory|View

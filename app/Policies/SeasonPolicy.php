@@ -44,7 +44,7 @@ class SeasonPolicy
      */
     public function delete(User $user, Season $season): bool
     {
-        return false;
+        return $season->admins->contains('id', $user->id);
     }
 
     /**

@@ -20,6 +20,7 @@ use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
 use App\Support\Tournament\PlayoffRoundLabel;
 use DomainException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 
 class GameDetailService
@@ -89,6 +90,10 @@ class GameDetailService
      */
     private function displayFromGroupGame(Game $game): array
     {
+        if ($game->tournament === null) {
+            throw (new ModelNotFoundException)->setModel(Game::class, [$game->id]);
+        }
+
         return [
             GameScoringContext::fromGroupGame($game),
             $game,
@@ -105,6 +110,10 @@ class GameDetailService
      */
     private function displayFromPlayoffGame(PlayoffGame $game): array
     {
+        if ($game->tournament === null) {
+            throw (new ModelNotFoundException)->setModel(PlayoffGame::class, [$game->id]);
+        }
+
         return [
             GameScoringContext::fromPlayoffGame($game),
             $game,

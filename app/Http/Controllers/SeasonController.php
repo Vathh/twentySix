@@ -3,14 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Domain\RelatedRosterInvite;
+use App\Domain\Retention\ApplicationEntityKind;
 use App\Domain\SeasonDomain;
 use App\Enums\AssignableEntityType;
 use App\Models\Season\Season;
 use App\Services\Organization\OrganizationService;
 use App\Services\Player\PlayerService;
+use App\Services\Retention\ApplicationEntityDeletionService;
 use App\Services\Season\SeasonInvitationService;
 use App\Services\Season\SeasonService;
 use App\Services\Season\SeasonStatsService;
+use App\Support\Retention\ConfirmedEntityDeletion;
 use App\Services\User\UserService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -30,6 +33,7 @@ class SeasonController extends Controller
         private PlayerService $playerService,
         private SeasonInvitationService $seasonInvitationService,
         private SeasonStatsService $seasonStatsService,
+        private ApplicationEntityDeletionService $applicationEntityDeletionService,
     ) {}
 
     public function index(Request $request): Factory|View|JsonResponse
@@ -99,9 +103,20 @@ class SeasonController extends Controller
         //
     }
 
-    public function destroy(Season $season)
+    public function destroy(Request $request, Season $season): RedirectResponse
     {
-        //
+        $this->authorize('delete', $season);
+        ConfirmedEntityDeletion::validate($request, $season->name);
+        $organizationId = $season->organization_id;
+        $this->applicationEntityDeletionService->hide(
+            ApplicationEntityKind::Season,
+            $season->id,
+            (int) Auth::id(),
+        );
+
+        return redirect()
+            ->route('organizations.show', $organizationId)
+            ->with('success', 'Sezon został usunięty. Przez 90 dni może go przywrócić operator platformy.');
     }
 
     public function relatedUsers(Request $request, int $seasonId): Factory|View|JsonResponse

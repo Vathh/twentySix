@@ -44,7 +44,7 @@ class OrganizationPolicy
      */
     public function delete(User $user, Organization $organization): bool
     {
-        return false;
+        return $organization->admins->contains('id', $user->id);
     }
 
     /**

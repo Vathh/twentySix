@@ -29,6 +29,12 @@
                     <a href="{{ route('organizations.guests', $organization->id) }}" class="admin-sidebar-link">
                         👤 Goście
                     </a>
+                    <x-delete-application-entity
+                        :action="route('organizations.destroy', $organization->id)"
+                        :name="$organization->name"
+                        label="organizację"
+                        hint="Znikną też jej sezony, turnieje, ligi i sezony ligowe. Przez 90 dni przywrócić może je operator platformy."
+                    />
                 </nav>
             </aside>
         @endorganizationAdmin

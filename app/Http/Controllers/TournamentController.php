@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Retention\ApplicationEntityKind;
 use App\Domain\Tournament\TournamentDomain;
 use App\Domain\Tournament\TournamentStartRules;
 use App\Models\Tournament\Tournament;
 use App\Queries\GetTournamentData;
 use App\Services\GameScoring\GameAuthorizationService;
+use App\Services\Retention\ApplicationEntityDeletionService;
+use App\Support\Retention\ConfirmedEntityDeletion;
 use App\Services\Tournament\LoginCodeService;
 use App\Services\Tournament\TournamentCancelService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
@@ -43,6 +46,7 @@ class TournamentController extends Controller
         private CompetitionThreeDartAverageService $threeDartAverages,
         private TournamentStartPageService $startPageService,
         private TournamentCancelService $tournamentCancelService,
+        private ApplicationEntityDeletionService $applicationEntityDeletionService,
     ) {}
 
     public function index(Request $request)
@@ -185,9 +189,21 @@ class TournamentController extends Controller
         //
     }
 
-    public function destroy(Tournament $tournament)
+    public function destroy(Request $request, Tournament $tournament): RedirectResponse
     {
-        //
+        $tournament->loadMissing(['admins', 'season.admins']);
+        $this->gameAuthorizationService->authorizeManageTournament($tournament);
+        ConfirmedEntityDeletion::validate($request, $tournament->name);
+        $seasonId = $tournament->season_id;
+        $this->applicationEntityDeletionService->hide(
+            ApplicationEntityKind::Tournament,
+            $tournament->id,
+            (int) Auth::id(),
+        );
+
+        return redirect()
+            ->to($seasonId ? route('seasons.show', $seasonId) : route('tournaments.index'))
+            ->with('success', 'Turniej został usunięty. Przez 90 dni może go przywrócić operator platformy.');
     }
 
     public function start(Request $request, int $tournamentId): Factory|View

@@ -9,7 +9,10 @@
             <p class="text-text-secondary text-sm mb-1">twentySix — właściciel aplikacji</p>
             <h1 class="text-xl sm:text-2xl font-semibold text-accent">Panel platformy</h1>
         </div>
-        <a href="{{ route('admin.users') }}" class="btn btn-primary">Użytkownicy</a>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('admin.deleted') }}" class="btn btn-secondary">Usunięte byty</a>
+            <a href="{{ route('admin.users') }}" class="btn btn-primary">Użytkownicy</a>
+        </div>
     </div>
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">

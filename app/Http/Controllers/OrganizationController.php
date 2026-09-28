@@ -7,8 +7,11 @@ use App\Domain\OrganizationDomain;
 use App\Domain\RelatedRosterInvite;
 use App\Enums\AssignableEntityType;
 use App\Models\Organization\Organization;
+use App\Domain\Retention\ApplicationEntityKind;
 use App\Services\League\LeagueService;
 use App\Services\Organization\OrganizationInvitationService;
+use App\Services\Retention\ApplicationEntityDeletionService;
+use App\Support\Retention\ConfirmedEntityDeletion;
 use App\Services\Organization\OrganizationService;
 use App\Services\Player\PlayerService;
 use App\Services\User\UserService;
@@ -29,6 +32,7 @@ class OrganizationController extends Controller
         private UserService $userService,
         private PlayerService $playerService,
         private LeagueService $leagueService,
+        private ApplicationEntityDeletionService $applicationEntityDeletionService,
     ) {
         $this->authorizeResource(Organization::class, 'organization');
     }
@@ -124,6 +128,21 @@ class OrganizationController extends Controller
         return redirect()
             ->route('organizations.show', $organization->id)
             ->with('success', 'Pomyślnie zaktualizowano organizację');
+    }
+
+    public function destroy(Request $request, Organization $organization): RedirectResponse
+    {
+        $this->authorize('delete', $organization);
+        ConfirmedEntityDeletion::validate($request, $organization->name);
+        $this->applicationEntityDeletionService->hide(
+            ApplicationEntityKind::Organization,
+            $organization->id,
+            (int) Auth::id(),
+        );
+
+        return redirect()
+            ->route('organizations.index')
+            ->with('success', 'Organizacja została usunięta. Przez 90 dni może ją przywrócić operator platformy.');
     }
 
     public function relatedUsers(Request $request, int $organizationId): Factory|View|JsonResponse

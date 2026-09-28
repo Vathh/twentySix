@@ -69,7 +69,10 @@ class GameAuthorizationService
         }
 
         $tournament = $this->tournamentRepository->findModelOrNull($tournamentId);
-        if ($tournament === null || $tournament->status === TournamentStatus::FINISHED) {
+        if ($tournament === null) {
+            abort(404);
+        }
+        if ($tournament->status === TournamentStatus::FINISHED) {
             abort(403, 'Turniej zakończony — sędziowanie jest już nieważne.');
         }
     }

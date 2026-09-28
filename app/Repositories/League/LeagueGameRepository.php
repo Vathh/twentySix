@@ -6,13 +6,15 @@ use App\Enums\LeagueGameStatus;
 use App\Enums\LeagueSeasonStatus;
 use App\Enums\LeagueWalkoverType;
 use App\Models\League\LeagueGame;
+use App\Models\League\LeagueSeason;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 
 class LeagueGameRepository
 {
     public function findForPlay(int $gameId): LeagueGame
     {
-        return LeagueGame::query()
+        $game = LeagueGame::query()
             ->with([
                 'player1',
                 'player2',
@@ -21,6 +23,12 @@ class LeagueGameRepository
                 'season.league.organization',
             ])
             ->findOrFail($gameId);
+
+        if ($game->season === null) {
+            throw (new ModelNotFoundException)->setModel(LeagueSeason::class);
+        }
+
+        return $game;
     }
 
     public function save(LeagueGame $game): void
