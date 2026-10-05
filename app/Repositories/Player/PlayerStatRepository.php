@@ -3,6 +3,7 @@
 namespace App\Repositories\Player;
 
 use App\Models\Player\PlayerStat;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -120,6 +121,46 @@ class PlayerStatRepository
                 'fastest_qf' => $scoring['fastest_qf'],
             ],
         ];
+    }
+
+    /**
+     * Najlepsze oficjalne QF i HF z turnieju, playoffu i ligi przez całe konto.
+     *
+     * QF: wygrany, skończony leg w mniej niż 20 lotek.
+     * HF: checkout zwycięzcy od 100 w górę.
+     *
+     * @return array{fastest_qf: ?int, highest_hf: ?int}
+     */
+    public function competitionCareerHighlights(int $playerId): array
+    {
+        $fastestQf = $this->competitionLegStats($playerId)
+            ->whereNotNull('glps.darts_thrown')
+            ->where('glps.darts_thrown', '<', 20)
+            ->min('glps.darts_thrown');
+
+        $highestHf = $this->competitionLegStats($playerId)
+            ->whereNotNull('glps.highest_finish')
+            ->where('glps.highest_finish', '>=', 100)
+            ->max('glps.highest_finish');
+
+        return [
+            'fastest_qf' => $fastestQf !== null ? (int) $fastestQf : null,
+            'highest_hf' => $highestHf !== null ? (int) $highestHf : null,
+        ];
+    }
+
+    private function competitionLegStats(int $playerId): Builder
+    {
+        return DB::table('game_leg_player_stats as glps')
+            ->join('game_legs as gl', 'gl.id', '=', 'glps.game_leg_id')
+            ->where('glps.player_id', $playerId)
+            ->whereColumn('gl.winner_id', 'glps.player_id')
+            ->whereNotNull('gl.finished_at')
+            ->where(function ($query) {
+                $query->whereNotNull('gl.game_id')
+                    ->orWhereNotNull('gl.playoff_game_id')
+                    ->orWhereNotNull('gl.league_game_id');
+            });
     }
 
     /**

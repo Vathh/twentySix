@@ -1,13 +1,16 @@
 @extends('layouts.app')
 
-@section('title', 'Edycja powiązanych użytkowników')
+@section('title', 'Powiązani użytkownicy')
 
 @section('content')
-    <div class="container mx-auto py-5 max-w-4xl">
-        <a href="{{ route('organizations.show', $organization->id) }}" class="link-back mb-4 inline-block">← {{ $organization->name }}</a>
-
-        <h1 class="page-title">Użytkownicy organizacji: {{ $organization->name }}</h1>
-
+    <x-people-page
+        title="Powiązani użytkownicy"
+        kind="Powiązani"
+        tone="organization"
+        :organization-name="$organization->name"
+        :organization-url="route('organizations.show', $organization->id)"
+        lead="Konta, które można zapraszać do rozgrywek tej organizacji."
+    >
         <x-related-user-search
             :search-url="route('organizations.relatedUsers', $organization->id)"
             :add-url="route('organizations.relatedUsers.add', $organization->id)"
@@ -19,13 +22,7 @@
                 'name' => $invitation->userPlayer?->name ?? 'Brak nazwy',
             ])->values()->all()"
             add-label="Zaproś"
-            empty-related="Brak użytkowników powiązanych z tą organizacją."
+            empty-related="Nikt jeszcze nie jest powiązany z tą organizacją."
         />
-
-        <div class="flex justify-center mt-8">
-            <a href="{{ route('organizations.show', ['organization' => $organization->id]) }}" class="btn btn-secondary">
-                Powrót
-            </a>
-        </div>
-    </div>
+    </x-people-page>
 @endsection

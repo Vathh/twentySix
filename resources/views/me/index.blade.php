@@ -19,22 +19,36 @@
             @if(count($seasons) === 0)
                 <p class="text-text-muted text-sm">Nie jesteś powiązany z żadnym trwającym sezonem turniejowym.</p>
             @else
+                @php
+                    $formatDay = function (?string $date): ?string {
+                        if (! filled($date)) {
+                            return null;
+                        }
+
+                        return \Illuminate\Support\Carbon::parse($date)
+                            ->locale(app()->getLocale())
+                            ->translatedFormat('j F Y');
+                    };
+                @endphp
                 <div class="index-grid">
                     @foreach($seasons as $index => $item)
-                        <a href="{{ $item['url'] }}" class="block" style="--stagger: {{ $index }}">
-                            <div class="index-card">
-                                <div class="flex items-start justify-between gap-3 mb-2">
-                                    <h3 class="text-base font-semibold text-text leading-snug">{{ $item['name'] }}</h3>
-                                    <span class="shrink-0 text-xs font-semibold {{ $item['role'] === 'admin' ? 'text-accent' : 'text-text-muted' }}">{{ $item['roleLabel'] }}</span>
-                                </div>
-                                <p class="card-description mb-0">
-                                    {{ $item['organizationName'] }}
-                                    @if($item['startDate'] && $item['endDate'])
-                                        · {{ $item['startDate'] }} – {{ $item['endDate'] }}
-                                    @endif
-                                </p>
-                            </div>
-                        </a>
+                        @php
+                            $start = $formatDay($item['startDate'] ?? null);
+                            $end = $formatDay($item['endDate'] ?? null);
+                            $seasonMeta = $item['organizationName'];
+                            if ($start && $end) {
+                                $seasonMeta .= ' · '.$start.' – '.$end;
+                            }
+                        @endphp
+                        <x-place-card
+                            kind="season"
+                            :href="$item['url']"
+                            :name="$item['name']"
+                            :meta="$seasonMeta"
+                            :role-label="$item['roleLabel']"
+                            :role-accent="$item['role'] === 'admin'"
+                            style="--stagger: {{ $index }}"
+                        />
                     @endforeach
                 </div>
             @endif
@@ -47,20 +61,21 @@
             @else
                 <div class="index-grid">
                     @foreach($leagues as $index => $item)
-                        <a href="{{ $item['url'] }}" class="block" style="--stagger: {{ $index }}">
-                            <div class="index-card">
-                                <div class="flex items-start justify-between gap-3 mb-2">
-                                    <h3 class="text-base font-semibold text-text leading-snug">{{ $item['name'] }}</h3>
-                                    <span class="shrink-0 text-xs font-semibold {{ $item['role'] === 'admin' ? 'text-accent' : 'text-text-muted' }}">{{ $item['roleLabel'] }}</span>
-                                </div>
-                                <p class="card-description mb-0">
-                                    {{ $item['organizationName'] }}
-                                    @if($item['divisionName'])
-                                        · {{ $item['divisionName'] }}
-                                    @endif
-                                </p>
-                            </div>
-                        </a>
+                        @php
+                            $leagueMeta = $item['organizationName'];
+                            if ($item['divisionName']) {
+                                $leagueMeta .= ' · '.$item['divisionName'];
+                            }
+                        @endphp
+                        <x-place-card
+                            kind="league"
+                            :href="$item['url']"
+                            :name="$item['name']"
+                            :meta="$leagueMeta"
+                            :role-label="$item['roleLabel']"
+                            :role-accent="$item['role'] === 'admin'"
+                            style="--stagger: {{ $index }}"
+                        />
                     @endforeach
                 </div>
             @endif
@@ -73,15 +88,15 @@
             @else
                 <div class="index-grid">
                     @foreach($organizations as $index => $item)
-                        <a href="{{ $item['url'] }}" class="block" style="--stagger: {{ $index }}">
-                            <div class="index-card">
-                                <div class="flex items-start justify-between gap-3 mb-2">
-                                    <h3 class="text-base font-semibold text-text leading-snug">{{ $item['name'] }}</h3>
-                                    <span class="shrink-0 text-xs font-semibold {{ $item['role'] === 'admin' ? 'text-accent' : 'text-text-muted' }}">{{ $item['roleLabel'] }}</span>
-                                </div>
-                                <p class="card-description mb-0">{{ $item['description'] ?: 'Organizacja' }}</p>
-                            </div>
-                        </a>
+                        <x-place-card
+                            kind="organization"
+                            :href="$item['url']"
+                            :name="$item['name']"
+                            :meta="$item['description'] ?: null"
+                            :role-label="$item['roleLabel']"
+                            :role-accent="$item['role'] === 'admin'"
+                            style="--stagger: {{ $index }}"
+                        />
                     @endforeach
                 </div>
             @endif

@@ -87,6 +87,19 @@ class TournamentAchievementsQfFromScoringTest extends TestCase
         $tournament->load('achievements.player');
         $rows = (new TournamentDataViewModel($tournament))->achievements();
 
+        $html = $this->blade('<x-achievement-marks :items="$items" order="asc" />', [
+            'items' => [
+                (object) ['value' => 12],
+                (object) ['value' => 9],
+                (object) ['value' => 9],
+                (object) ['value' => 9],
+            ],
+        ]);
+        $html->assertSee('>9</span>', false);
+        $html->assertSee('× 3', false);
+        $html->assertSee('>12</span>', false);
+        $this->assertSame(1, substr_count((string) $html, '>9</span>'));
+
         $this->assertTrue($rows->has($player1->id));
         $qfValues = collect($rows[$player1->id]['qf'])->pluck('value')->all();
         $this->assertSame([12], $qfValues);

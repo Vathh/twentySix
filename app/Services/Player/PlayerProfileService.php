@@ -8,6 +8,7 @@ use App\Domain\PlayerDomain;
 use App\Models\Player\Player;
 use App\Models\Users\User;
 use App\Repositories\Player\PlayerRepository;
+use App\Repositories\Player\PlayerStatRepository;
 use App\Services\Badge\CheckoutWheelAssembler;
 use App\Services\Career\PlayerCareerStatsService;
 use App\Services\Friends\FriendshipService;
@@ -25,6 +26,7 @@ class PlayerProfileService
         private PlayerCareerStatsService $playerCareerStatsService,
         private PlayerOverviewService $playerOverviewService,
         private CheckoutWheelAssembler $checkoutWheelAssembler,
+        private PlayerStatRepository $playerStatRepository,
     ) {}
 
     /**
@@ -58,6 +60,7 @@ class PlayerProfileService
             'overview' => $assembled['overview'],
             'checkoutHits' => $assembled['checkoutHits'],
             'checkoutItems' => $assembled['checkoutItems'],
+            'highlights' => $assembled['highlights'],
         ];
     }
 
@@ -130,7 +133,8 @@ class PlayerProfileService
      *     overviewSplit: array{window: string, quick: array<string, mixed>, tournament: array<string, mixed>},
      *     overview: array<string, mixed>,
      *     checkoutHits: array<int, int>,
-     *     checkoutItems: list<array{key: string, timesEarned: int, level: int, levelName: string, lastEarnedAt: string|null, lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null}>
+     *     checkoutItems: list<array{key: string, timesEarned: int, level: int, levelName: string, lastEarnedAt: string|null, lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null}>,
+     *     highlights: array{fastestQf: ?int, highestHf: ?int}
      * }
      */
     public function buildWebShow(Player $player, ?User $viewer): array
@@ -155,6 +159,7 @@ class PlayerProfileService
             'overview' => $assembled['overview'],
             'checkoutHits' => $assembled['checkoutHits'],
             'checkoutItems' => $assembled['checkoutItems'],
+            'highlights' => $assembled['highlights'],
         ];
     }
 
@@ -179,7 +184,8 @@ class PlayerProfileService
      *     overviewSplit: array{window: string, quick: array<string, mixed>, tournament: array<string, mixed>},
      *     overview: array<string, mixed>,
      *     checkoutHits: array<int, int>,
-     *     checkoutItems: list<array{key: string, timesEarned: int, level: int, levelName: string, lastEarnedAt: string|null, lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null}>
+     *     checkoutItems: list<array{key: string, timesEarned: int, level: int, levelName: string, lastEarnedAt: string|null, lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null}>,
+     *     highlights: array{fastestQf: ?int, highestHf: ?int}
      * }
      */
     private function assembleProfile(Player $player, ?User $viewer): array
@@ -208,6 +214,20 @@ class PlayerProfileService
             'overview' => $this->playerOverviewService->forProfile($player),
             'checkoutHits' => $checkoutHits,
             'checkoutItems' => $checkoutItems,
+            'highlights' => $this->competitionHighlights((int) $player->id),
+        ];
+    }
+
+    /**
+     * @return array{fastestQf: ?int, highestHf: ?int}
+     */
+    private function competitionHighlights(int $playerId): array
+    {
+        $highlights = $this->playerStatRepository->competitionCareerHighlights($playerId);
+
+        return [
+            'fastestQf' => $highlights['fastest_qf'],
+            'highestHf' => $highlights['highest_hf'],
         ];
     }
 

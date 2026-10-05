@@ -16,5 +16,7 @@
     @if($description)
         <p class="empty-panel-desc">{{ $description }}</p>
     @endif
-    {{ $slot }}
+    @if(! $slot->isEmpty())
+        <div class="mt-5">{{ $slot }}</div>
+    @endif
 </div>

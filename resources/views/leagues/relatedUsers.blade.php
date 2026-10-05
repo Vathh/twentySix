@@ -1,14 +1,18 @@
 @extends('layouts.app')
 
-@section('title', 'Powiązani użytkownicy ligi')
+@section('title', 'Powiązani użytkownicy')
 
 @section('content')
-    <div class="container mx-auto py-5 max-w-4xl">
-        <a href="{{ route('leagues.show', $league) }}" class="link-back mb-4 inline-block">← {{ $league->name }}</a>
-
-        <h1 class="page-title">Użytkownicy ligi: {{ $league->name }}</h1>
-        <p class="text-text-muted mb-6">Pula powiązanych — stąd dodajesz zawodników do szczebli.</p>
-
+    <x-people-page
+        title="Powiązani użytkownicy"
+        kind="Powiązani"
+        tone="league"
+        :organization-name="$league->organization?->name"
+        :organization-url="$league->organization ? route('organizations.show', $league->organization) : null"
+        :league-name="$league->name"
+        :league-url="route('leagues.show', $league)"
+        lead="Konta, z których składasz szczeble."
+    >
         <x-related-user-search
             :search-url="route('leagues.relatedUsers', $league)"
             :add-url="route('leagues.relatedUsers.add', $league)"
@@ -20,13 +24,7 @@
                 'name' => $invitation->userPlayer?->name ?? 'Brak nazwy',
             ])->values()->all()"
             add-label="Zaproś"
-            empty-related="Brak użytkowników powiązanych z tą ligą."
+            empty-related="Nikt jeszcze nie jest powiązany z tą ligą."
         />
-
-        <div class="flex justify-center mt-8">
-            <a href="{{ route('leagues.show', $league) }}" class="btn btn-secondary">
-                Powrót
-            </a>
-        </div>
-    </div>
+    </x-people-page>
 @endsection

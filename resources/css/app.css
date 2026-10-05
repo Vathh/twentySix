@@ -219,6 +219,68 @@
         @apply bg-bg-elevated/50 p-4 rounded-lg border border-border-subtle hover:bg-bg-elevated-hover transition;
     }
 
+    .people-add {
+        @apply flex flex-wrap items-center gap-3 mb-6;
+    }
+
+    .people-add .input-field {
+        @apply w-auto flex-1 min-w-[12rem];
+    }
+
+    .people-results {
+        @apply mb-8;
+    }
+
+    .people-catalog {
+        column-width: 15rem;
+        column-gap: 1.5rem;
+    }
+
+    .people-letter {
+        @apply mb-3;
+        display: inline-block;
+        width: 100%;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        -webkit-column-break-inside: avoid;
+    }
+
+    .people-letter-label {
+        @apply px-1 mb-0.5 text-xs font-semibold uppercase tracking-[0.16em] text-accent;
+    }
+
+    .people-list {
+        @apply flex flex-col gap-1;
+    }
+
+    .people-row {
+        @apply flex items-center justify-between gap-2 rounded-md border border-border-subtle bg-bg-elevated/40 px-2 py-0.5;
+    }
+
+    .people-row-name {
+        @apply min-w-0 truncate text-sm text-text;
+    }
+
+    .people-row-aside {
+        @apply flex items-center gap-1.5 shrink-0;
+    }
+
+    .people-row-status {
+        @apply text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted;
+    }
+
+    .people-x {
+        @apply inline-flex h-7 w-7 items-center justify-center rounded text-text-muted hover:text-danger hover:bg-danger-muted shrink-0;
+    }
+
+    .people-x:disabled {
+        @apply opacity-40 cursor-not-allowed;
+    }
+
+    .people-x-icon {
+        @apply h-3.5 w-3.5;
+    }
+
     .tile {
         @apply bg-bg rounded-lg p-3 border border-border;
     }
@@ -540,6 +602,14 @@
 
     .profile-hero-meta {
         @apply mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-secondary;
+    }
+
+    .profile-hero-highlights {
+        @apply mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-text-secondary;
+    }
+
+    .profile-hero-highlights strong {
+        @apply font-semibold text-text;
     }
 
     .profile-hero-actions {
@@ -1217,11 +1287,15 @@
     }
 
     .badge-planned {
-        @apply px-3 py-1 rounded-full text-xs font-semibold bg-bg-deep/60 text-text-muted border border-border;
+        @apply px-3 py-1 rounded-full text-xs font-semibold border border-warning/40;
+        background-color: var(--color-warning-muted);
+        color: var(--color-warning);
     }
 
     .badge-finished {
-        @apply px-3 py-1 rounded-full text-xs font-semibold bg-bg-elevated text-text-secondary border border-border;
+        @apply px-3 py-1 rounded-full text-xs font-semibold border border-info/40;
+        background-color: var(--color-info-muted);
+        color: var(--color-info);
     }
 
     .sequence-badge {
@@ -1280,6 +1354,33 @@
         @apply text-xl font-semibold text-text mb-4 tracking-tight;
     }
 
+    .section-head {
+        @apply flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-4;
+    }
+
+    .section-head .section-title {
+        @apply mb-0;
+    }
+
+    .section-head-action {
+        @apply ml-auto shrink-0;
+    }
+
+    .btn-compact {
+        @apply inline-flex items-center justify-center gap-1.5 text-sm font-semibold py-2 px-3.5 rounded-lg transition-colors duration-150;
+    }
+
+    .btn-compact-plus {
+        @apply h-3.5 w-3.5 shrink-0;
+    }
+
+    .btn-compact[aria-disabled="true"],
+    .btn-compact[aria-disabled="true"]:hover {
+        @apply opacity-40 cursor-not-allowed bg-bg-elevated text-text-muted border-border;
+        box-shadow: none;
+        transform: none;
+    }
+
     /*
      | Nagłówek szczegółów (organizacja / sezon / turniej):
      | eyebrow → tytuł → cienka kreska accent → dystans do meta.
@@ -1318,6 +1419,230 @@
 
     .entity-rule {
         @apply block w-14 h-0.5 rounded-full bg-accent mb-0;
+    }
+
+    /*
+     | Pasek miejsca: stałe sloty Organizacja › Sezon › Turniej.
+     | Kolor kreski i etykiety jest ten sam na karcie i na stronie docelowej.
+     */
+    .place-bar {
+        @apply mb-8 rounded-xl border border-border bg-bg-elevated/50 p-3 sm:p-4;
+    }
+
+    .place-bar-track {
+        @apply flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-stretch sm:gap-0 list-none m-0 p-0;
+    }
+
+    .place-bar-sep {
+        @apply hidden sm:flex items-center text-text-disabled select-none sm:px-1.5 sm:text-lg leading-none;
+    }
+
+    .place-bar-item {
+        @apply flex min-w-0;
+    }
+
+    .place-bar-item.is-ancestor {
+        @apply sm:flex-none sm:max-w-64;
+    }
+
+    .place-bar-item.is-current {
+        @apply sm:flex-1;
+    }
+
+    .place-slot {
+        @apply relative flex w-full flex-col justify-center min-w-0 rounded-lg px-3 py-2.5 sm:px-4 sm:py-3;
+        border-left: 3px solid var(--place-mark, var(--color-border));
+    }
+
+    .place-slot.is-current {
+        background: color-mix(in srgb, var(--place-mark, var(--color-border)) 12%, transparent);
+    }
+
+    a.place-slot {
+        @apply no-underline text-inherit;
+    }
+
+    a.place-slot:hover {
+        background: color-mix(in srgb, var(--place-mark, var(--color-border)) 12%, transparent);
+    }
+
+    a.place-slot:focus-visible {
+        @apply outline-none ring-2 ring-accent/40;
+    }
+
+    .place-slot--organization,
+    .place-card--organization {
+        --place-mark: var(--color-text-disabled);
+    }
+
+    .place-slot--season,
+    .place-card--season {
+        --place-mark: var(--color-accent);
+    }
+
+    .place-slot--league,
+    .place-card--league {
+        --place-mark: var(--color-info);
+    }
+
+    .place-slot--tournament.is-planned,
+    .place-card--tournament.is-planned {
+        --place-mark: var(--color-warning);
+    }
+
+    .place-slot--tournament.is-live,
+    .place-card--tournament.is-live {
+        --place-mark: var(--color-success);
+    }
+
+    .place-slot--tournament.is-finished,
+    .place-card--tournament.is-finished {
+        --place-mark: var(--color-info);
+    }
+
+    .place-kind {
+        @apply block text-[11px] font-semibold uppercase tracking-[0.16em] mb-1;
+        color: var(--place-mark, var(--color-text-muted));
+    }
+
+    .place-slot.is-current .place-name {
+        @apply text-2xl sm:text-3xl font-bold text-text tracking-tight leading-tight break-words;
+    }
+
+    .place-slot.is-ancestor .place-name {
+        @apply text-sm font-semibold text-text-secondary leading-snug break-words transition-colors;
+    }
+
+    a.place-slot:hover .place-name {
+        @apply text-accent;
+    }
+
+    .place-current-row {
+        @apply flex flex-wrap items-center gap-x-3 gap-y-2;
+    }
+
+    .place-slot-meta {
+        @apply mt-2 text-sm text-text-secondary tabular-nums;
+    }
+
+    .place-status {
+        @apply inline-flex items-center text-sm px-3.5 py-1.5;
+    }
+
+    .place-live-dot {
+        display: inline-block;
+        width: 0.45rem;
+        height: 0.45rem;
+        margin-right: 0.4rem;
+        border-radius: 999px;
+        background: var(--color-success-bright);
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-success) 65%, transparent);
+        animation: place-live-pulse 1.8s ease-out infinite;
+        vertical-align: 0.05em;
+    }
+
+    @keyframes place-live-pulse {
+        70% { box-shadow: 0 0 0 6px transparent; }
+        100% { box-shadow: 0 0 0 0 transparent; }
+    }
+
+    .place-lead {
+        @apply text-base text-text-secondary leading-relaxed mb-4 max-w-2xl;
+    }
+
+    .place-facts {
+        @apply grid items-stretch gap-3 mb-2;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    }
+
+    .place-fact-group {
+        @apply flex min-w-0 flex-col gap-1 rounded-xl border border-border-subtle px-3 pt-2.5 pb-1.5;
+        background: color-mix(in srgb, var(--color-bg-elevated) 35%, transparent);
+    }
+
+    .place-facts > .place-fact-group:only-child {
+        max-width: 20rem;
+    }
+
+    .place-fact-group-label {
+        @apply px-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-text-muted;
+    }
+
+    .place-fact-group-items {
+        @apply flex flex-1 flex-col justify-around;
+    }
+
+    .place-stat {
+        @apply inline-flex items-center gap-2.5 rounded-lg px-1 py-1.5 text-inherit;
+    }
+
+    .place-fact-group .place-stat {
+        @apply w-full rounded-none;
+    }
+
+    a.place-stat {
+        @apply transition-colors;
+    }
+
+    .place-fact-group a.place-stat:hover {
+        background: color-mix(in srgb, var(--color-text-muted) 12%, transparent);
+    }
+
+    .place-stat-icon {
+        @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-secondary;
+        background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
+    }
+
+    .place-stat-svg {
+        @apply h-4 w-4;
+    }
+
+    .place-stat-copy {
+        @apply flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5;
+    }
+
+    .place-stat-label {
+        @apply text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted leading-none;
+    }
+
+    .place-stat-value {
+        @apply ml-auto text-sm font-semibold text-text leading-snug tabular-nums;
+    }
+
+    .place-grid {
+        @apply grid grid-cols-1 sm:grid-cols-2 gap-3;
+    }
+
+    .place-card {
+        @apply relative block h-full rounded-xl border border-border bg-bg-elevated p-5 min-h-[7.5rem]
+            hover:bg-bg-elevated-hover hover:-translate-y-0.5 transition-all duration-200;
+        border-left-width: 3px;
+        border-left-color: var(--place-mark, var(--color-border));
+    }
+
+    .place-card:hover {
+        border-color: color-mix(in srgb, var(--place-mark, var(--color-accent)) 45%, var(--color-border));
+        border-left-color: var(--place-mark, var(--color-accent));
+    }
+
+    .place-card-head {
+        @apply flex items-start justify-between gap-3;
+    }
+
+    .place-card-name {
+        @apply text-base font-semibold text-text leading-snug break-words;
+    }
+
+    .place-card-meta {
+        @apply mt-2 mb-0 text-sm text-text-muted;
+    }
+
+    .place-card-role {
+        @apply shrink-0 text-xs font-semibold text-text-muted;
+    }
+
+    .place-card-role.is-accent {
+        @apply text-accent;
     }
 
     .entity-meta {
@@ -1375,6 +1700,22 @@
 
     .table-surface tbody td {
         @apply px-3 py-2;
+    }
+
+    .achievement-table :is(th, td):not(.sticky-player) {
+        text-align: center;
+    }
+
+    .achievement-marks {
+        @apply inline-flex flex-wrap justify-center gap-1;
+    }
+
+    .achievement-mark {
+        @apply inline-flex items-baseline gap-1 rounded-full border border-border-subtle bg-bg-elevated/50 px-2 py-0.5 text-sm text-text;
+    }
+
+    .achievement-mark-count {
+        @apply text-xs font-medium text-text-muted;
     }
 
     /* Nazwa zawodnika zostaje przy poziomym scrollu (telefon). */
@@ -1761,7 +2102,9 @@
         .animate-stagger-item,
         .skeleton,
         .btn-primary,
-        .index-card {
+        .index-card,
+        .place-card,
+        .place-live-dot {
             animation: none !important;
             transition: none !important;
         }

@@ -27,6 +27,10 @@
                     <span class="overview-scope overview-scope--form">{{ $relationChip }}</span>
                 @endif
             </p>
+            <p class="profile-hero-highlights">
+                <span>Najszybsza lotka <strong>{{ $highlights['fastestQf'] !== null ? $highlights['fastestQf'].' lotek' : '–' }}</strong></span>
+                <span>Najwyższy finish <strong>{{ $highlights['highestHf'] !== null ? $highlights['highestHf'] : '–' }}</strong></span>
+            </p>
         </div>
         @auth
             <div class="profile-hero-actions">

@@ -1,13 +1,18 @@
 @extends('layouts.app')
 
-@section('title', 'Edycja powiązanych użytkowników')
+@section('title', 'Powiązani użytkownicy')
 
 @section('content')
-    <div class="container mx-auto py-5 max-w-4xl">
-        <a href="{{ route('seasons.show', $season->id) }}" class="link-back mb-4 inline-block">← {{ $season->name }}</a>
-
-        <h1 class="page-title">Użytkownicy sezonu: {{ $season->name }}</h1>
-
+    <x-people-page
+        title="Powiązani użytkownicy"
+        kind="Powiązani"
+        tone="season"
+        :organization-name="$season->organization?->name"
+        :organization-url="$season->organization ? route('organizations.show', $season->organization->id) : null"
+        :season-name="$season->name"
+        :season-url="route('seasons.show', $season->id)"
+        lead="Konta, które można zapraszać do turniejów tego sezonu."
+    >
         <x-related-user-search
             :search-url="route('seasons.relatedUsers', $season->id)"
             :add-url="route('seasons.relatedUsers.add', $season->id)"
@@ -22,13 +27,7 @@
                 'name' => $invitation->userPlayer?->name ?? 'Brak nazwy',
             ])->values()->all()"
             add-label="Zaproś"
-            empty-related="Brak użytkowników powiązanych z tym sezonem."
+            empty-related="Nikt jeszcze nie jest powiązany z tym sezonem."
         />
-
-        <div class="flex justify-center mt-8">
-            <a href="{{ route('seasons.show', ['season' => $season->id]) }}" class="btn btn-secondary">
-                Powrót
-            </a>
-        </div>
-    </div>
+    </x-people-page>
 @endsection

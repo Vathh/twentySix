@@ -28,6 +28,8 @@ class OrganizationDomain
         public readonly array $relatedUsers,
         public readonly array $guests,
         public readonly array $matchFormatPresets = [],
+        public readonly ?int $relatedUserCount = null,
+        public readonly ?int $guestCount = null,
     ) {}
 
     public static function fromEloquent(Organization $organization, array $with = []): self
@@ -64,6 +66,8 @@ class OrganizationDomain
                 ])->toArray()
                 : [],
             matchFormatPresets: $presets,
+            relatedUserCount: self::relationCount($organization, 'related_users_count', 'relatedUsers', $with),
+            guestCount: self::relationCount($organization, 'guests_count', 'guests', $with),
         );
     }
 
@@ -104,5 +108,22 @@ class OrganizationDomain
     public function hasMatchFormatPresets(): bool
     {
         return $this->matchFormatPresets !== [];
+    }
+
+    /**
+     * @param  list<string>  $with
+     */
+    private static function relationCount(Organization $organization, string $countAttribute, string $relation, array $with): ?int
+    {
+        $counted = $organization->getAttribute($countAttribute);
+        if ($counted !== null) {
+            return (int) $counted;
+        }
+
+        if (! in_array($relation, $with, true)) {
+            return null;
+        }
+
+        return $organization->{$relation}->count();
     }
 }

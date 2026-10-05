@@ -24,41 +24,18 @@
         <div class="detail-main">
             <div class="detail-content">
 
-                <header class="entity-header">
-                    @if($season)
-                        <nav class="entity-breadcrumb" aria-label="Okruszki">
-                            <a href="{{ route('organizations.show', $season->organization->id) }}">{{ $season->organization->name }}</a>
-                            <span class="entity-breadcrumb-sep">/</span>
-                            <a href="{{ route('seasons.show', $season->id) }}">{{ $season->name }}</a>
-                            <span class="entity-breadcrumb-sep">/</span>
-                            <span class="text-text-secondary">Turniej</span>
-                        </nav>
-                    @else
-                        <p class="entity-eyebrow">Turniej jednorazowy</p>
-                    @endif
-
-                    <div class="entity-title-row">
-                        <h1 class="entity-title">{{ $tournament->name }}</h1>
-                        @php $variant = $tournament->status->badgeVariant(); @endphp
-                        <span @class([
-                            'badge-planned' => $variant === 'planned',
-                            'badge-status-live' => $variant === 'live',
-                            'badge-finished' => $variant === 'finished',
-                        ])>
-                            {{ $tournament->status->label() }}
-                        </span>
-                    </div>
-                    <span class="entity-rule" aria-hidden="true"></span>
-                </header>
-
-                <div class="entity-meta">
-                    <dl class="entity-meta-grid cols-2">
-                        <div class="entity-meta-item">
-                            <dt class="entity-meta-label">Data rozgrywek</dt>
-                            <dd class="entity-meta-value score-num">{{ $tournament->getDate() ?: '—' }}</dd>
-                        </div>
-                    </dl>
-                </div>
+                <x-place-bar
+                    current="tournament"
+                    :organization-name="$season?->organization?->name"
+                    :organization-url="$season?->organization ? route('organizations.show', $season->organization->id) : null"
+                    :season-name="$season?->name"
+                    :season-url="$season ? route('seasons.show', $season->id) : null"
+                    :tournament-name="$tournament->name"
+                    :tournament-status-label="$tournament->status->label()"
+                    :tournament-status-variant="$tournament->status->badgeVariant()"
+                    :one-off="$season === null"
+                    :current-meta="$tournament->getPlayDateFormatted() ?? 'Data nieustalona'"
+                />
 
                 @if($canManageTournament && $tournament->isStarted() && !empty($loginCode))
                     @include('tournaments.partials.login-codes', [

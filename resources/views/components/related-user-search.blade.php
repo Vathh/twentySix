@@ -5,7 +5,7 @@
     'cancelUrlTemplate' => '',
     'related' => [],
     'pending' => [],
-    'addLabel' => 'Dodaj',
+    'addLabel' => 'Zaproś',
     'minChars' => 5,
     'emptyRelated' => 'Brak użytkowników powiązanych z tą pulą.',
 ])
@@ -23,49 +23,12 @@
         'csrfToken' => csrf_token(),
     ]))"
 >
-    <div class="card mb-8">
-        <h2 class="section-title text-accent">Aktualnie powiązani użytkownicy</h2>
-        <p class="text-text-secondary" x-show="related.length === 0" x-cloak>{{ $emptyRelated }}</p>
-        <div class="flex flex-wrap gap-3" x-show="related.length > 0" x-cloak>
-            <template x-for="user in related" :key="user.id">
-                <div class="tile flex items-center justify-center flex-col">
-                    <span class="card-title mb-4 text-wrap text-center" x-text="user.name"></span>
-                    <button
-                        type="button"
-                        class="btn-mini-danger"
-                        :disabled="busyKey === ('remove-' + user.id)"
-                        @click="remove(user)"
-                    >Usuń</button>
-                </div>
-            </template>
-        </div>
-    </div>
-
-    <div class="card mb-8" x-show="pending.length > 0" x-cloak>
-        <h2 class="section-title text-accent">Oczekujące zaproszenia</h2>
-        <div class="flex flex-wrap gap-3">
-            <template x-for="invitation in pending" :key="invitation.id">
-                <div class="tile flex items-center justify-center flex-col">
-                    <span class="card-title mb-4 text-wrap text-center" x-text="invitation.name"></span>
-                    <button
-                        type="button"
-                        class="btn-mini-danger"
-                        :disabled="busyKey === ('cancel-' + invitation.id)"
-                        @click="cancel(invitation)"
-                    >Anuluj</button>
-                </div>
-            </template>
-        </div>
-    </div>
-
-    <h2 class="section-title text-center">Wyszukiwanie użytkowników</h2>
-
-    <form @submit.prevent="search()" class="mb-6 flex flex-wrap items-center gap-4">
+    <form @submit.prevent="search()" class="people-add">
         <input
             type="text"
             x-model="query"
-            placeholder="Min. {{ $minChars }} znaków..."
-            class="input-field flex-1 min-w-[200px]"
+            placeholder="Szukaj konta, min. {{ $minChars }} znaków"
+            class="input-field"
             autocomplete="off"
         >
         <button type="submit" class="btn btn-primary" :disabled="loading">
@@ -73,21 +36,58 @@
         </button>
     </form>
 
-    <p class="empty-state" x-show="searched && results.length === 0" x-cloak>
-        Brak wyników wyszukiwania.
-    </p>
-    <div class="flex flex-wrap gap-3 justify-center" x-show="results.length > 0" x-cloak>
-        <template x-for="user in results" :key="user.id">
-            <div class="tile flex items-center justify-center flex-col bg-bg-elevated">
-                <span class="card-title mb-4 text-wrap text-center" x-text="user.name"></span>
-                <button
-                    type="button"
-                    class="btn btn-mini"
-                    :disabled="busyKey === ('add-' + user.id)"
-                    @click="add(user)"
-                    x-text="addLabel"
-                ></button>
-            </div>
+    <div class="people-results" x-show="searched" x-cloak>
+        <p class="text-sm text-text-muted" x-show="results.length === 0">Brak wyników wyszukiwania.</p>
+        <div class="people-list" x-show="results.length > 0">
+            <template x-for="user in results" :key="user.id">
+                <div class="people-row">
+                    <span class="people-row-name" x-text="user.name"></span>
+                    <button
+                        type="button"
+                        class="btn-mini"
+                        :disabled="busyKey === ('add-' + user.id)"
+                        @click="add(user)"
+                        x-text="addLabel"
+                    ></button>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <div x-show="related.length === 0 && pending.length === 0" x-cloak>
+        <x-empty-state
+            class="!py-10"
+            title="Pula jest pusta"
+            :description="$emptyRelated"
+        />
+    </div>
+
+    <div class="people-catalog" x-show="rosterGroups.length > 0" x-cloak>
+        <template x-for="group in rosterGroups" :key="group.letter">
+            <section class="people-letter">
+                <p class="people-letter-label" x-text="group.letter"></p>
+                <div class="people-list">
+                    <template x-for="person in group.people" :key="person.key">
+                        <div class="people-row">
+                            <span class="people-row-name" x-text="person.name"></span>
+                            <span class="people-row-aside">
+                                <span class="people-row-status" x-show="person.pending">Oczekuje</span>
+                                <button
+                                    type="button"
+                                    class="people-x"
+                                    :aria-label="person.pending ? 'Anuluj' : 'Usuń'"
+                                    :disabled="busyKey === ((person.pending ? 'cancel-' : 'remove-') + person.id)"
+                                    @click="person.pending ? cancel(person) : remove(person)"
+                                >
+                                    <svg class="people-x-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                        <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                            </span>
+                        </div>
+                    </template>
+                </div>
+            </section>
         </template>
     </div>
 </div>

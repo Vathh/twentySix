@@ -23,7 +23,43 @@ export function registerRelatedUserSearch(Alpine) {
 		},
 
 		sortByName(list) {
-			return [...list].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pl'));
+			const alphabet = ['a', 'ą', 'b', 'c', 'ć', 'd', 'e', 'ę', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'ł', 'm', 'n', 'ń', 'o', 'ó', 'p', 'q', 'r', 's', 'ś', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'ź', 'ż'];
+			const rank = Object.fromEntries(alphabet.map((letter, index) => [letter, index]));
+			const key = (name) => [...String(name || '').toLocaleLowerCase('pl')].map((char) => (
+				rank[char] === undefined ? `z${char}` : `a${String(rank[char]).padStart(2, '0')}`
+			)).join('');
+
+			return [...list].sort((a, b) => key(a.name).localeCompare(key(b.name)));
+		},
+
+		catalogLetter(name) {
+			const trimmed = String(name || '').trim();
+			const first = trimmed.charAt(0);
+			if (!first) {
+				return '#';
+			}
+
+			return first.toLocaleUpperCase('pl');
+		},
+
+		get rosterGroups() {
+			const people = this.sortByName([
+				...this.pending.map((item) => ({ ...item, pending: true, key: `pending-${item.id}` })),
+				...this.related.map((item) => ({ ...item, pending: false, key: `related-${item.id}` })),
+			]);
+			const groups = [];
+
+			people.forEach((person) => {
+				const letter = this.catalogLetter(person.name);
+				const last = groups[groups.length - 1];
+				if (!last || last.letter !== letter) {
+					groups.push({ letter, people: [person] });
+				} else {
+					last.people.push(person);
+				}
+			});
+
+			return groups;
 		},
 
 		cancelUrl(invitationId) {

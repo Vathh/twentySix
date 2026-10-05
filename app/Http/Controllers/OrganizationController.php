@@ -77,7 +77,11 @@ class OrganizationController extends Controller
 
     public function show(Organization $organization): Factory|View
     {
-        $organization->loadMissing(['admins', 'seasons']);
+        $organization->loadMissing(['admins']);
+        $organization->loadCount(['relatedUsers', 'guests']);
+        $organization->load([
+            'seasons' => fn ($query) => $query->withCount('tournaments'),
+        ]);
         $organizationDomain = OrganizationDomain::fromEloquent($organization, ['admins', 'seasons']);
         $seasons = collect($organizationDomain->seasons)
             ->sortByDesc(fn ($season) => $season->updatedAt)

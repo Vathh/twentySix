@@ -11,9 +11,6 @@
             <h2 class="admin-sidebar-title">⚙️ Zarządzanie sezonem</h2>
 
             <nav class="flex flex-col space-y-3">
-                <a href="{{ route('tournaments.create') }}?seasonId={{ $season->id }}" class="admin-sidebar-link">
-                    ➕ Dodaj turniej
-                </a>
                 <a href="{{ route('seasons.admins', $season->id) }}" class="admin-sidebar-link">
                     💼 Administratorzy
                 </a>
@@ -39,49 +36,85 @@
         <div class="detail-main">
             <div class="detail-content">
 
-                <header class="entity-header">
-                    <nav class="entity-breadcrumb" aria-label="Okruszki">
-                        <a href="{{ route('organizations.show', $season->organization->id) }}">{{ $season->organization->name }}</a>
-                        <span class="entity-breadcrumb-sep">/</span>
-                        <span class="text-text-secondary">Sezon</span>
-                    </nav>
-                    <h1 class="entity-title">{{ $season->name }}</h1>
-                    <span class="entity-rule" aria-hidden="true"></span>
-                </header>
+                <x-place-bar
+                    current="season"
+                    :organization-name="$season->organization?->name"
+                    :organization-url="$season->organization ? route('organizations.show', $season->organization->id) : null"
+                    :season-name="$season->name"
+                    :current-meta="$season->getPlayDatesFormatted()"
+                />
 
-                <div class="entity-meta">
-                    <dl class="entity-meta-grid cols-2">
-                        <div class="entity-meta-item">
-                            <dt class="entity-meta-label">Data rozpoczęcia</dt>
-                            <dd class="entity-meta-value score-num">{{ $season->getStartDate() }}</dd>
+                @php
+                    $relatedUsersUrl = null;
+                    $guestsUrl = null;
+                @endphp
+                @seasonAdmin($season)
+                    @php
+                        $relatedUsersUrl = route('seasons.relatedUsers', $season->id);
+                        $guestsUrl = route('seasons.guests', $season->id);
+                    @endphp
+                @endseasonAdmin
+                <div class="place-facts mt-4">
+                    <section class="place-fact-group">
+                        <p class="place-fact-group-label">Społeczność</p>
+                        <div class="place-fact-group-items">
+                            <x-people-counts
+                                :related-count="$season->relatedUserCount"
+                                :guest-count="$season->guestCount"
+                                :related-url="$relatedUsersUrl"
+                                :guests-url="$guestsUrl"
+                            />
                         </div>
-                        <div class="entity-meta-item">
-                            <dt class="entity-meta-label">Data zakończenia</dt>
-                            <dd class="entity-meta-value score-num">{{ $season->getEndDate() }}</dd>
-                        </div>
-                        <div class="entity-meta-item span-full">
-                            <dt class="entity-meta-label">Ostatnia aktywność</dt>
-                            <dd class="entity-meta-value score-num">{{ $season->getUpdatedAtDate() }}</dd>
-                        </div>
-                    </dl>
+                    </section>
                 </div>
 
                 @include('seasons.partials.standings', ['standings' => $standings])
 
-                <h2 class="section-title mt-12">Turnieje</h2>
-                <div class="space-y-3">
-                    @forelse($season->tournaments as $tournament)
-                        <a href="{{ route('tournaments.show', ['tournament' => $tournament->id]) }}">
-                            <div class="list-item">{{ $tournament->name }}</div>
-                        </a>
-                    @empty
-                        <x-empty-state
-                            class="!py-10"
-                            title="Brak turniejów"
-                            description="Dodaj turniej z panelu zarządzania sezonem."
-                        />
-                    @endforelse
-                </div>
+                @php
+                    $tournaments = $season->tournaments->sortBy(function ($tournament) {
+                        $rank = match ($tournament->status) {
+                            \App\Enums\TournamentStatus::GROUP, \App\Enums\TournamentStatus::PLAYOFF => 0,
+                            \App\Enums\TournamentStatus::CREATED => 1,
+                            \App\Enums\TournamentStatus::FINISHED => 2,
+                        };
+                        $dateKey = PHP_INT_MAX - ($tournament->date?->getTimestamp() ?? 0);
+
+                        return sprintf('%d-%010d', $rank, $dateKey);
+                    })->values();
+                @endphp
+                <x-section-head title="Turnieje" class="mt-12">
+                    <x-slot:action>
+                        @seasonAdmin($season)
+                            @if($tournaments->isNotEmpty())
+                                <x-add-action :href="route('tournaments.create').'?seasonId='.$season->id">Dodaj turniej</x-add-action>
+                            @endif
+                        @endseasonAdmin
+                    </x-slot:action>
+                </x-section-head>
+                @if($tournaments->isEmpty())
+                    <x-empty-state
+                        class="!py-10"
+                        title="Brak turniejów"
+                        description="W tym sezonie nie ma jeszcze turniejów."
+                    >
+                        @seasonAdmin($season)
+                            <x-add-action :href="route('tournaments.create').'?seasonId='.$season->id">Dodaj turniej</x-add-action>
+                        @endseasonAdmin
+                    </x-empty-state>
+                @else
+                    <div class="place-grid">
+                        @foreach($tournaments as $tournament)
+                            <x-place-card
+                                kind="tournament"
+                                :href="route('tournaments.show', ['tournament' => $tournament->id])"
+                                :name="$tournament->name"
+                                :meta="$tournament->getPlayDateFormatted() ?? 'Data nieustalona'"
+                                :status-label="$tournament->status->label()"
+                                :status-variant="$tournament->status->badgeVariant()"
+                            />
+                        @endforeach
+                    </div>
+                @endif
 
             </div>
         </div>

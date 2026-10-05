@@ -84,6 +84,7 @@ class PlayerProfileApiTest extends TestCase
                 'overviewSplit' => ['window', 'quick', 'tournament'],
                 'overview' => ['record', 'activity', 'social'],
                 'checkoutHits',
+                'highlights' => ['fastestQf', 'highestHf'],
                 'checkoutItems' => [
                     '*' => ['key', 'timesEarned', 'level', 'levelName', 'lastEarnedAt', 'lastGame'],
                 ],

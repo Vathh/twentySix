@@ -79,6 +79,7 @@ class SeasonController extends Controller
     public function show(Season $season)
     {
         $season->loadMissing(['admins', 'organization', 'tournaments']);
+        $season->loadCount(['relatedUsers', 'guests']);
         $seasonDomain = SeasonDomain::fromEloquent($season, ['admins', 'organization', 'tournaments']);
 
         return view('seasons.show', [
@@ -121,7 +122,7 @@ class SeasonController extends Controller
 
     public function relatedUsers(Request $request, int $seasonId): Factory|View|JsonResponse
     {
-        $season = $this->loadAndAuthorize($seasonId, ['relatedUsers']);
+        $season = $this->loadAndAuthorize($seasonId, ['relatedUsers', 'organization']);
         $relatedUsers = $this->seasonService->getRelatedUsers($seasonId);
         $pendingInvitations = $this->seasonInvitationService->getPendingForSeason($seasonId);
         $excludeFromSearch = $relatedUsers
@@ -324,7 +325,7 @@ class SeasonController extends Controller
 
     public function guests(int $seasonId): Factory|View
     {
-        $season = $this->loadAndAuthorize($seasonId, ['guests']);
+        $season = $this->loadAndAuthorize($seasonId, ['guests', 'organization']);
 
         $guests = $this->userService->sortByName($season->guests);
 

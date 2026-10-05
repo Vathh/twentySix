@@ -1,4 +1,4 @@
-<div class="table-wrap mt-12">
+<div class="table-wrap mt-2">
     <h2 class="section-title">Tabela sezonu</h2>
     <table class="table-surface">
         <thead>

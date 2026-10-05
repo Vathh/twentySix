@@ -18,15 +18,6 @@
                     <a href="{{ route('leagues.roster', $league) }}" class="admin-sidebar-link">👥 Skład szczebli</a>
                     <a href="{{ route('leagues.relatedUsers', $league) }}" class="admin-sidebar-link">👥 Powiązani użytkownicy</a>
                     <a href="{{ route('leagues.guests', $league) }}" class="admin-sidebar-link">👤 Goście</a>
-                    @if($hasOpenSeason)
-                        <span
-                            class="admin-sidebar-link admin-sidebar-link-disabled"
-                            aria-disabled="true"
-                            title="{{ $newSeasonBlockedReason }}"
-                        >➕ Nowy sezon ligowy</span>
-                    @else
-                        <a href="{{ route('league-seasons.create', $league) }}" class="admin-sidebar-link">➕ Nowy sezon ligowy</a>
-                    @endif
                     <a href="{{ route('leagues.edit', $league) }}" class="admin-sidebar-link">✏️ Edytuj ligę / szczeble</a>
                     <x-delete-application-entity
                         :action="route('leagues.destroy', $league)"
@@ -97,7 +88,17 @@
                     @endforeach
                 </div>
 
-                <h2 class="section-title mt-10">Sezony ligowe</h2>
+                <x-section-head title="Sezony ligowe" class="mt-10">
+                    <x-slot:action>
+                        @if($isAdmin && $seasons->isNotEmpty())
+                            @if($hasOpenSeason)
+                                <x-add-action disabled :title="$newSeasonBlockedReason">Nowy sezon ligowy</x-add-action>
+                            @else
+                                <x-add-action :href="route('league-seasons.create', $league)">Nowy sezon ligowy</x-add-action>
+                            @endif
+                        @endif
+                    </x-slot:action>
+                </x-section-head>
                 <div class="space-y-3">
                     @forelse($seasons as $season)
                         <a href="{{ route('league-seasons.show', $season) }}">
@@ -111,7 +112,15 @@
                             class="!py-10"
                             title="Brak sezonów ligowych"
                             description="Ustaw skład, potem wystartuj sezon — zdjęcie piramidy i mecze każdy z każdym."
-                        />
+                        >
+                            @if($isAdmin)
+                                @if($hasOpenSeason)
+                                    <x-add-action disabled :title="$newSeasonBlockedReason">Nowy sezon ligowy</x-add-action>
+                                @else
+                                    <x-add-action :href="route('league-seasons.create', $league)">Nowy sezon ligowy</x-add-action>
+                                @endif
+                            @endif
+                        </x-empty-state>
                     @endforelse
                 </div>
             </div>

@@ -13,7 +13,7 @@ enum TournamentStatus: string
     {
         return match ($this) {
             self::CREATED => 'Zaplanowany',
-            self::GROUP => 'Grupowa',
+            self::GROUP => 'Grupy',
             self::PLAYOFF => 'Playoff',
             self::FINISHED => 'Zakończony',
         };

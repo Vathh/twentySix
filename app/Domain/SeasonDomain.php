@@ -28,7 +28,10 @@ class SeasonDomain
         public readonly ?OrganizationDomain $organization,
         public readonly array $relatedUsers,
         public readonly Collection $tournaments,
-        public readonly array $guests
+        public readonly array $guests,
+        public readonly ?int $tournamentCount = null,
+        public readonly ?int $relatedUserCount = null,
+        public readonly ?int $guestCount = null,
     ) {}
 
     public static function fromEloquent(Season $season, array $with = []): self
@@ -64,7 +67,12 @@ class SeasonDomain
                     'id' => $guest->id,
                     'name' => $guest->name,
                 ])->toArray()
-                : []
+                : [],
+            tournamentCount: $season->tournaments_count !== null
+                ? (int) $season->tournaments_count
+                : (in_array('tournaments', $with, true) ? $season->tournaments->count() : null),
+            relatedUserCount: self::relationCount($season, 'related_users_count', 'relatedUsers', $with),
+            guestCount: self::relationCount($season, 'guests_count', 'guests', $with),
         );
     }
 
@@ -112,5 +120,41 @@ class SeasonDomain
     public function getUpdatedAtDate(): string
     {
         return $this->updatedAt->format('Y-m-d');
+    }
+
+    /** „1 turniej”, „2 turnieje”, „5 turniejów”. Null, gdy liczby nie załadowano. */
+    public function tournamentCountLabel(): ?string
+    {
+        if ($this->tournamentCount === null) {
+            return null;
+        }
+
+        $count = $this->tournamentCount;
+        $mod10 = $count % 10;
+        $mod100 = $count % 100;
+        $word = match (true) {
+            $count === 1 => 'turniej',
+            $mod10 >= 2 && $mod10 <= 4 && ($mod100 < 12 || $mod100 > 14) => 'turnieje',
+            default => 'turniejów',
+        };
+
+        return $count.' '.$word;
+    }
+
+    /**
+     * @param  list<string>  $with
+     */
+    private static function relationCount(Season $season, string $countAttribute, string $relation, array $with): ?int
+    {
+        $counted = $season->getAttribute($countAttribute);
+        if ($counted !== null) {
+            return (int) $counted;
+        }
+
+        if (! in_array($relation, $with, true)) {
+            return null;
+        }
+
+        return $season->{$relation}->count();
     }
 }
