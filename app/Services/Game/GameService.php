@@ -73,9 +73,12 @@ class GameService
         $this->pushPlayoffBracketLive($gameId, $type);
     }
 
-    public function renewGameLock(int $gameId, GameType $type, int $tokenId): void
+    /**
+     * @return 'in_progress'|'finished'
+     */
+    public function renewGameLock(int $gameId, GameType $type, int $tokenId): string
     {
-        $this->gameLockService->renew($gameId, $type, $tokenId);
+        return $this->gameLockService->renew($gameId, $type, $tokenId);
     }
 
     public function tournamentIdForGame(int $gameId, GameType $type): ?int

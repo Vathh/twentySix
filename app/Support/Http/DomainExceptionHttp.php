@@ -30,7 +30,12 @@ final class DomainExceptionHttp
     public static function render(DomainException $e, Request $request): JsonResponse|RedirectResponse
     {
         if ($request->expectsJson() || $request->wantsJson() || $request->is('api/*')) {
-            return response()->json(['message' => $e->getMessage()], self::status($e));
+            $body = ['message' => $e->getMessage()];
+            if ($e instanceof ProvidesErrorReason) {
+                $body['reason'] = $e->reason();
+            }
+
+            return response()->json($body, self::status($e));
         }
 
         return back()->withInput()->with('error', $e->getMessage());

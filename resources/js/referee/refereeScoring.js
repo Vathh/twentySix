@@ -1,4 +1,3 @@
-import Pusher from 'pusher-js';
 import {
     clearRefereeSession,
     refereeLoginUrl,
@@ -11,9 +10,15 @@ import {
     scoringBaseUrl,
 } from './api.js';
 import { buildH2hLegVisitRows } from './legVisitRows.js';
-
-const GAME_STATE_EVENTS = ['game.state', '.game.state'];
-const GAME_CANCELLED_EVENTS = ['game.cancelled', '.game.cancelled'];
+import {
+    clearRefereeOutbox,
+    dequeueRefereeOutbox,
+    enqueueRefereeOutbox,
+    isRetryableRefereeError,
+    loadRefereeOutbox,
+    patchRefereeState,
+    refereeOutboxKey,
+} from './refereeOutbox.js';
 
 /**
  * Pytanie „czy kończy leg tym wynikiem?”.
@@ -48,23 +53,6 @@ function hasMatchProgress(state) {
     return Number(legNumber) > 1;
 }
 
-function normalizePayload(payload) {
-    if (payload == null) {
-        return null;
-    }
-    if (typeof payload === 'string') {
-        try {
-            payload = JSON.parse(payload);
-        } catch {
-            return null;
-        }
-    }
-    if (payload && typeof payload === 'object' && payload.state) {
-        return payload.state;
-    }
-    return payload;
-}
-
 export function registerRefereeScoring(Alpine) {
     Alpine.data('refereeScoring', (config) => ({
         session: null,
@@ -72,9 +60,9 @@ export function registerRefereeScoring(Alpine) {
         input: '',
         busy: false,
         error: '',
-        connection: 'offline',
-        pollTimer: null,
-        pusher: null,
+        syncPending: false,
+        leaseLost: false,
+        onOnline: null,
         checkoutOpen: false,
         checkoutDartsOpen: false,
         pendingCheckoutScore: null,
@@ -95,10 +83,11 @@ export function registerRefereeScoring(Alpine) {
             }
             this.renewLease();
             this.leaseTimer = setInterval(() => this.renewLease(), 20000);
-            this.loadState().then(() => {
-                this.connectWebSocket();
-                this.pollTimer = setInterval(() => this.loadState({ quiet: true }), 20000);
-            });
+            this.onOnline = () => {
+                this.flushOutbox();
+            };
+            window.addEventListener('online', this.onOnline);
+            this.loadState().then(() => this.flushOutbox());
         },
 
         destroy() {
@@ -106,19 +95,18 @@ export function registerRefereeScoring(Alpine) {
                 clearInterval(this.leaseTimer);
                 this.leaseTimer = null;
             }
-            if (this.pollTimer) {
-                clearInterval(this.pollTimer);
-                this.pollTimer = null;
+            if (this.onOnline) {
+                window.removeEventListener('online', this.onOnline);
+                this.onOnline = null;
             }
-            if (this.pusher) {
-                try {
-                    this.pusher.unsubscribe(config.channel);
-                    this.pusher.disconnect();
-                } catch {
-                    // ignore
-                }
-                this.pusher = null;
-            }
+        },
+
+        outboxKey() {
+            return refereeOutboxKey(config.gameType, config.gameId);
+        },
+
+        refreshSyncPending() {
+            this.syncPending = loadRefereeOutbox(this.outboxKey()).length > 0;
         },
 
         get baseUrl() {
@@ -161,6 +149,7 @@ export function registerRefereeScoring(Alpine) {
                 && !this.hasProgress
                 && !this.isFinished
                 && !this.isCancelled
+                && !this.leaseLost
                 && !this.bullOffRequired
                 && !this.openerOpen
                 && !this.busy
@@ -186,6 +175,10 @@ export function registerRefereeScoring(Alpine) {
 
         get isCancelled() {
             return this.cancelled === true;
+        },
+
+        get inputLocked() {
+            return this.cancelled || this.leaseLost;
         },
 
         get matchFormat() {
@@ -313,35 +306,55 @@ export function registerRefereeScoring(Alpine) {
         },
 
         async renewLease() {
-            if (!this.session || this.leaving || this.isFinished || this.cancelled) {
+            if (!this.session || this.leaving || this.isFinished || this.inputLocked) {
                 return;
             }
             try {
-                await refereeFetch('/api/game/heartbeat', {
+                const data = await refereeFetch('/api/game/heartbeat', {
                     method: 'POST',
                     token: this.session.token,
                     body: { gameId: config.gameId, type: config.gameType },
                 });
+                if (data?.status === 'finished') {
+                    if (this.state?.game) {
+                        this.state = {
+                            ...this.state,
+                            game: { ...this.state.game, status: 'finished' },
+                        };
+                    }
+                }
             } catch (e) {
-                if (!(e instanceof RefereeApiError) || (e.status !== 409 && e.status !== 403)) {
+                if (!(e instanceof RefereeApiError)) {
                     return;
                 }
-                try {
-                    await refereeFetch('/api/game/inProgress', {
-                        method: 'POST',
-                        token: this.session.token,
-                        body: { gameId: config.gameId, type: config.gameType },
-                    });
-                } catch (lockError) {
-                    this.error =
-                        (lockError instanceof RefereeApiError && lockError.message)
-                        || 'Mecz jest sędziowany na innym urządzeniu.';
+                if (e.data?.reason === 'cancelled') {
+                    clearRefereeOutbox(this.outboxKey());
+                    this.refreshSyncPending();
+                    this.markCancelled();
+                    return;
+                }
+                if (e.data?.reason === 'stolen' || e.status === 409 || e.status === 403) {
+                    clearRefereeOutbox(this.outboxKey());
+                    this.refreshSyncPending();
+                    this.markStolen(e.message);
                 }
             }
         },
 
+        markStolen(message) {
+            if (this.leaseLost) {
+                return;
+            }
+            this.leaseLost = true;
+            this.busy = false;
+            this.openerOpen = false;
+            this.switchOpenerOpen = false;
+            this.pendingSwitchIndex = null;
+            this.error = message || 'Mecz jest sędziowany na innym urządzeniu.';
+        },
+
         async loadState({ quiet = false } = {}) {
-            if (this.cancelled) {
+            if (this.inputLocked) {
                 return;
             }
             try {
@@ -421,52 +434,103 @@ export function registerRefereeScoring(Alpine) {
             this.openerOpen = false;
         },
 
-        connectWebSocket() {
-            if (!config.reverb?.key || !config.channel) {
-                this.connection = 'offline';
-                return;
+        async sendOutboxEntry(entry) {
+            if (entry.op === 'recordVisit') {
+                return this.api(`/legs/${entry.legId}/visits`, {
+                    method: 'POST',
+                    body: entry.payload,
+                });
             }
-            const useTls = config.reverb.scheme === 'https';
-            this.connection = 'connecting';
-            this.pusher = new Pusher(config.reverb.key, {
-                cluster: 'reverb',
-                wsHost: config.reverb.host,
-                wsPort: config.reverb.port,
-                wssPort: config.reverb.port,
-                forceTLS: useTls,
-                disableStats: true,
-                enabledTransports: ['ws', 'wss'],
-            });
-            const channel = this.pusher.subscribe(config.channel);
-            channel.bind('pusher:subscription_succeeded', () => {
-                this.connection = 'live';
-            });
-            channel.bind('pusher:subscription_error', () => {
-                this.connection = 'error';
-            });
-            GAME_STATE_EVENTS.forEach((eventName) => {
-                channel.bind(eventName, (payload) => {
-                    const next = normalizePayload(payload);
-                    if (next) {
-                        this.state = next;
-                        this.connection = 'live';
+            if (entry.op === 'closeLeg') {
+                return this.api(`/legs/${entry.legId}/close`, {
+                    method: 'POST',
+                    body: entry.payload,
+                });
+            }
+            if (entry.op === 'undoVisit') {
+                return this.api(`/legs/${entry.legId}/visits/undo`, {
+                    method: 'POST',
+                });
+            }
+            return null;
+        },
+
+        async flushOutbox() {
+            if (this.inputLocked) {
+                return null;
+            }
+            const key = this.outboxKey();
+            let remaining = loadRefereeOutbox(key);
+            let last = null;
+            while (remaining.length > 0) {
+                const entry = remaining[0];
+                try {
+                    last = await this.sendOutboxEntry(entry);
+                    if (last) {
+                        this.state = last;
                         this.maybeAskOpener();
                     }
+                    remaining = dequeueRefereeOutbox(key);
+                } catch (e) {
+                    if (e instanceof RefereeApiError && e.data?.reason === 'cancelled') {
+                        clearRefereeOutbox(key);
+                        this.refreshSyncPending();
+                        this.markCancelled();
+                        return null;
+                    }
+                    if (
+                        e instanceof RefereeApiError
+                        && (e.data?.reason === 'stolen' || e.status === 403)
+                    ) {
+                        clearRefereeOutbox(key);
+                        this.refreshSyncPending();
+                        this.markStolen(e.message);
+                        return null;
+                    }
+                    if (e instanceof RefereeApiError && e.status === 409) {
+                        clearRefereeOutbox(key);
+                        this.refreshSyncPending();
+                        this.markCancelled();
+                        return null;
+                    }
+                    if (e instanceof RefereeApiError && e.status === 422) {
+                        clearRefereeOutbox(key);
+                        this.refreshSyncPending();
+                        await this.loadState({ quiet: true });
+                        this.error = 'Serwer odrzucił wizytę. Tablica pokazuje zapisany stan meczu.';
+                        return null;
+                    }
+                    if (isRetryableRefereeError(e)) {
+                        this.refreshSyncPending();
+                        this.error = 'Zapiszę na serwerze, gdy wróci internet.';
+                        return null;
+                    }
+                    throw e;
+                }
+            }
+            this.refreshSyncPending();
+            return last;
+        },
+
+        async queueCommands(entries, { optimistic = true } = {}) {
+            const key = this.outboxKey();
+            entries.forEach((entry) => enqueueRefereeOutbox(key, entry));
+            if (optimistic) {
+                let next = this.state;
+                entries.forEach((entry) => {
+                    next = patchRefereeState(next, entry);
                 });
-            });
-            GAME_CANCELLED_EVENTS.forEach((eventName) => {
-                channel.bind(eventName, () => {
-                    this.markCancelled();
-                    this.connection = 'live';
-                });
-            });
+                this.state = next;
+            }
+            this.refreshSyncPending();
+            return this.flushOutbox();
         },
 
         pressDigit(d) {
             if (
                 this.busy
                 || this.isFinished
-                || this.cancelled
+                || this.inputLocked
                 || this.openerOpen
                 || !this.openerChosen
                 || this.checkoutOpen
@@ -492,7 +556,7 @@ export function registerRefereeScoring(Alpine) {
         },
 
         handleWindowKey(event) {
-            if (this.busy || this.isFinished || this.cancelled) {
+            if (this.busy || this.isFinished || this.inputLocked) {
                 return;
             }
 
@@ -587,7 +651,7 @@ export function registerRefereeScoring(Alpine) {
         },
 
         async submitVisit() {
-            if (this.busy || this.isFinished || this.cancelled || this.openerOpen || !this.openerChosen || this.switchOpenerOpen || this.bullOffRequired || this.lossThresholdOpen) {
+            if (this.busy || this.isFinished || this.inputLocked || this.openerOpen || !this.openerChosen || this.switchOpenerOpen || this.bullOffRequired || this.lossThresholdOpen) {
                 return;
             }
             const score = this.inputValue();
@@ -623,9 +687,12 @@ export function registerRefereeScoring(Alpine) {
                     ? remainingBefore
                     : remainingBefore - score;
 
-                const state = await this.api(`/legs/${legId}/visits`, {
-                    method: 'POST',
-                    body: {
+                const clientVisitId = newClientVisitId();
+                const state = await this.queueCommands([{
+                    op: 'recordVisit',
+                    legId,
+                    clientVisitId,
+                    payload: {
                         playerId: player.playerId,
                         score: visitScore,
                         remainingBefore,
@@ -633,10 +700,9 @@ export function registerRefereeScoring(Alpine) {
                         dartsInVisit: 3,
                         closedLeg: false,
                         bust,
-                        clientVisitId: newClientVisitId(),
+                        clientVisitId,
                     },
-                });
-                this.state = state;
+                }]);
                 this.input = '';
                 if (
                     state?.meta?.lastLegClose?.reason === 'loss_threshold'
@@ -689,20 +755,6 @@ export function registerRefereeScoring(Alpine) {
                 const legId = await this.ensureLegId();
                 const clientVisitId = newClientVisitId();
 
-                await this.api(`/legs/${legId}/visits`, {
-                    method: 'POST',
-                    body: {
-                        playerId: player.playerId,
-                        score,
-                        remainingBefore,
-                        remainingAfter: 0,
-                        dartsInVisit,
-                        closedLeg: true,
-                        bust: false,
-                        clientVisitId,
-                    },
-                });
-
                 const playersPayload = this.players.map((p) => ({
                     playerId: p.playerId,
                     doubleTracked: false,
@@ -716,14 +768,31 @@ export function registerRefereeScoring(Alpine) {
                     checkoutDart: p.playerId === player.playerId ? dartsInVisit : null,
                 }));
 
-                const state = await this.api(`/legs/${legId}/close`, {
-                    method: 'POST',
-                    body: {
-                        winnerId: player.playerId,
-                        players: playersPayload,
+                const state = await this.queueCommands([
+                    {
+                        op: 'recordVisit',
+                        legId,
+                        clientVisitId,
+                        payload: {
+                            playerId: player.playerId,
+                            score,
+                            remainingBefore,
+                            remainingAfter: 0,
+                            dartsInVisit,
+                            closedLeg: true,
+                            bust: false,
+                            clientVisitId,
+                        },
                     },
-                });
-                this.state = state;
+                    {
+                        op: 'closeLeg',
+                        legId,
+                        payload: {
+                            winnerId: player.playerId,
+                            players: playersPayload,
+                        },
+                    },
+                ]);
                 this.input = '';
                 this.cancelCheckout();
 
@@ -764,15 +833,15 @@ export function registerRefereeScoring(Alpine) {
                     dartsThrown: null,
                     checkoutDart: null,
                 }));
-                const state = await this.api(`/legs/${legId}/close`, {
-                    method: 'POST',
-                    body: {
+                const state = await this.queueCommands([{
+                    op: 'closeLeg',
+                    legId,
+                    payload: {
                         winnerId: player.playerId,
                         players: playersPayload,
                         reason: 'bull_off',
                     },
-                });
-                this.state = state;
+                }]);
                 this.input = '';
                 if (state?.game?.status !== 'finished' && !state?.currentLeg?.id) {
                     try {
@@ -801,10 +870,7 @@ export function registerRefereeScoring(Alpine) {
             this.busy = true;
             this.error = '';
             try {
-                const state = await this.api(`/legs/${legId}/visits/undo`, {
-                    method: 'POST',
-                });
-                this.state = state;
+                await this.queueCommands([{ op: 'undoVisit', legId }]);
                 this.input = '';
             } catch (e) {
                 this.error = e.message || 'Nie udało się cofnąć wizyty.';
@@ -815,7 +881,7 @@ export function registerRefereeScoring(Alpine) {
         },
 
         async undo() {
-            if (this.busy || this.isFinished || this.cancelled || this.openerOpen || !this.openerChosen) {
+            if (this.busy || this.isFinished || this.inputLocked || this.openerOpen || !this.openerChosen) {
                 return;
             }
             const legId = this.resolveUndoLegId();
@@ -833,10 +899,7 @@ export function registerRefereeScoring(Alpine) {
             this.busy = true;
             this.error = '';
             try {
-                const state = await this.api(`/legs/${legId}/visits/undo`, {
-                    method: 'POST',
-                });
-                this.state = state;
+                await this.queueCommands([{ op: 'undoVisit', legId }]);
                 this.input = '';
             } catch (e) {
                 this.error = e.message || 'Nie udało się cofnąć wizyty.';
@@ -895,7 +958,8 @@ export function registerRefereeScoring(Alpine) {
             if (this.leaving) {
                 return;
             }
-            if (this.isFinished || this.cancelled) {
+            if (this.isFinished || this.cancelled || this.leaseLost) {
+                clearRefereeOutbox(this.outboxKey());
                 window.location.assign(config.gamesUrl);
                 return;
             }
@@ -903,6 +967,7 @@ export function registerRefereeScoring(Alpine) {
                 return;
             }
             this.leaving = true;
+            clearRefereeOutbox(this.outboxKey());
             try {
                 await refereeFetch('/api/game/release', {
                     method: 'POST',

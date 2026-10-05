@@ -55,7 +55,6 @@ class GameRepository
             ->where('id', $gameId)
             ->where('status', GameStatus::IN_PROGRESS)
             ->where('scoring_token_id', $tokenId)
-            ->where('scoring_lock_expires_at', '>', now())
             ->update(['scoring_lock_expires_at' => ScoringLock::until()]);
 
         return $this->holdsFreshLock($gameId, $tokenId);
@@ -63,18 +62,14 @@ class GameRepository
 
     public function tryExpireLock(int $gameId, int $tokenId): bool
     {
-        DB::table('games')
-            ->where('id', $gameId)
-            ->where('status', GameStatus::IN_PROGRESS)
-            ->where('scoring_token_id', $tokenId)
-            ->update(['scoring_lock_expires_at' => ScoringLock::releasedAt()]);
-
         return DB::table('games')
             ->where('id', $gameId)
             ->where('status', GameStatus::IN_PROGRESS)
             ->where('scoring_token_id', $tokenId)
-            ->where('scoring_lock_expires_at', '<=', now())
-            ->exists();
+            ->update([
+                'scoring_token_id' => null,
+                'scoring_lock_expires_at' => ScoringLock::releasedAt(),
+            ]) === 1;
     }
 
     private function holdsFreshLock(int $gameId, int $tokenId): bool

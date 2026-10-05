@@ -18,9 +18,20 @@
     <div class="flex items-center justify-between gap-2 mb-4">
         <button type="button" class="link-back" @click="leave()">← Mecze</button>
         <span
+            x-show="syncPending"
+            x-cloak
             class="px-2 py-0.5 rounded text-xs border border-border text-text-muted"
-            x-text="connection === 'live' ? 'Live' : (connection === 'connecting' ? 'Łączenie…' : 'Offline')"
-        ></span>
+        >Do wysłania</span>
+    </div>
+
+    <div
+        x-show="leaseLost && !isCancelled"
+        x-cloak
+        class="mb-4 p-3 rounded-lg border border-danger/40 bg-danger/10 text-center"
+    >
+        <p class="text-danger font-semibold mb-2">Mecz przejęty</p>
+        <p class="text-text-muted text-sm mb-3">Mecz jest sędziowany na innym urządzeniu.</p>
+        <button type="button" class="btn btn-primary !py-2" @click="goToGames()">OK</button>
     </div>
 
     <div

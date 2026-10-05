@@ -1,6 +1,6 @@
 # Scoring — architektura (mobile + backend)
 
-**Status:** refaktor **zamknięty** (czerwiec–lipiec 2026). Dokument referencyjny — nie plan prac.
+**Status:** refaktor scoringu zamknięty (czerwiec–lipiec 2026). Od października 2026 pisarz H2H i host `one_device` nie sterują meczem przez WebSocket.
 
 Szczegóły przepływów: [`../LOGIKA_BIZNESOWA.md`](../LOGIKA_BIZNESOWA.md). Konwencje undo: [`../CONVENTIONS.md`](../CONVENTIONS.md).
 
@@ -47,12 +47,16 @@ Testy reducera: `npm run test:game-scoring` w `twentysix-mobile`.
 
 ## WebSocket
 
-| Kontekst | Kanał |
-|----------|-------|
-| Turniej | public `group-game.*` / playoff |
-| Quick FFA | private `private-quick-game-lobby.{lobbyId}` — event `ffa.state.updated` |
+Pisarz nie słucha stanu meczu. Ekran sędziego (tablet i `/referee`) oraz host quick game `one_device` wysyłają komendy HTTP. Odpowiedź komendy aktualizuje tablicę. Brak sieci odkłada komendę w kolejce i wysyła ją po powrocie łącza. Widzowie i tryb `each_own` zostają na sockecie.
 
-`useGameScoringRealtime` — parametr `channelType: 'public' | 'private'`.
+| Kontekst | Połączenie |
+|----------|------------|
+| Turniej / liga, ekran sędziego | HTTP + kolejka komend. Heartbeat locka (grupa/playoff) bez podmiany tablicy |
+| Host quick game `one_device` | HTTP + kolejka komend |
+| Gość `one_device`, gracze `each_own` | private `private-quick-game-lobby.{lobbyId}` — `ffa.state.updated` |
+| Podgląd na stronie turnieju | public `group-game.*` / playoff — `game.state` |
+
+`useGameScoringRealtime` — tylko słuchacze (`channelType: 'public' | 'private'`). Backup poll pełnego stanu startuje wyłącznie wtedy, gdy transport prosi o realtime i socket padł.
 
 ---
 

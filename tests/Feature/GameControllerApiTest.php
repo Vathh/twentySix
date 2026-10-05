@@ -264,6 +264,112 @@ class GameControllerApiTest extends TestCase
             ->assertJsonFragment(['score' => 60]);
     }
 
+    public function test_heartbeat_renews_own_lock_after_expiry(): void
+    {
+        $this->actAsTournamentTablet($this->tournament);
+
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $this->postJson('/api/game/inProgress', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertOk();
+
+        $game->forceFill([
+            'scoring_lock_expires_at' => now()->subSeconds(5),
+        ])->save();
+
+        $this->postJson('/api/game/heartbeat', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertOk()
+            ->assertJson([
+                'success' => true,
+                'status' => 'in_progress',
+            ]);
+
+        $game->refresh();
+        $this->assertTrue($game->scoring_lock_expires_at->isFuture());
+        $this->assertSame(GameStatus::IN_PROGRESS, $game->status);
+    }
+
+    public function test_heartbeat_reports_stolen_without_relocking(): void
+    {
+        $this->actAsTournamentTablet($this->tournament);
+
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $this->postJson('/api/game/inProgress', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertOk();
+
+        $ownerTokenId = $game->fresh()->scoring_token_id;
+
+        $this->actAsTournamentTablet($this->tournament);
+
+        $this->postJson('/api/game/heartbeat', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertStatus(409)
+            ->assertJson([
+                'reason' => 'stolen',
+            ]);
+
+        $this->assertSame($ownerTokenId, $game->fresh()->scoring_token_id);
+    }
+
+    public function test_heartbeat_reports_cancelled_without_relocking(): void
+    {
+        $this->actAsTournamentTablet($this->tournament);
+
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $this->postJson('/api/game/inProgress', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertOk();
+
+        $game->refresh();
+        $game->update([
+            'status' => GameStatus::SCHEDULED,
+            'scoring_token_id' => null,
+            'scoring_lock_expires_at' => null,
+        ]);
+
+        $this->postJson('/api/game/heartbeat', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertStatus(409)
+            ->assertJson([
+                'reason' => 'cancelled',
+            ]);
+
+        $this->assertDatabaseHas('games', [
+            'id' => $game->id,
+            'status' => GameStatus::SCHEDULED->value,
+            'scoring_token_id' => null,
+        ]);
+    }
+
     public function test_user_can_release_group_game_lock_without_scoring(): void
     {
         $this->actAsTournamentTablet($this->tournament);

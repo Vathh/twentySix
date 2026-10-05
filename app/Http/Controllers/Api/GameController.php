@@ -63,9 +63,12 @@ class GameController
             $this->gameService->tournamentIdForGame($gameId, $type),
         );
 
-        $this->gameService->renewGameLock($gameId, $type, $this->scoringTokenId($request));
+        $status = $this->gameService->renewGameLock($gameId, $type, $this->scoringTokenId($request));
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'status' => $status,
+        ]);
     }
 
     /**
