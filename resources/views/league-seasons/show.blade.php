@@ -111,7 +111,7 @@
                     <h2 class="section-title mt-10">{{ $division->name }}</h2>
                     @endif
                     <div class="table-wrap mb-6">
-                        <table class="table-surface">
+                        <table class="table-surface table-striped">
                             <thead>
                             <tr>
                                 <th class="w-12 text-center tracking-normal">#</th>

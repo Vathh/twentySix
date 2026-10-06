@@ -72,7 +72,7 @@
                     @endphp
                     <tr
                         data-group-row-player-id="{{ $rowPlayer->id }}"
-                        class="transition {{ $advances
+                        class="{{ $advances
                             ? 'bg-success-muted hover:bg-success-muted/80 border-l-2 border-l-success'
                             : 'hover:bg-bg-elevated-hover' }}"
                     >

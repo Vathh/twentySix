@@ -219,6 +219,60 @@
         @apply bg-bg-elevated/50 p-4 rounded-lg border border-border-subtle hover:bg-bg-elevated-hover transition;
     }
 
+    .player-search {
+        width: min(100%, 40rem);
+        margin-inline: auto;
+        padding-top: 3.5rem;
+        padding-bottom: 2.5rem;
+    }
+
+    .player-search-head {
+        @apply text-center mb-7;
+    }
+
+    .player-search-head .page-title {
+        @apply mb-2;
+    }
+
+    .player-search-lead {
+        @apply text-sm sm:text-base text-text-muted;
+    }
+
+    .player-search-bar {
+        @apply flex flex-wrap items-stretch gap-3;
+    }
+
+    .player-search-bar .input-field {
+        @apply min-w-[12rem] flex-1;
+    }
+
+    .player-search-error {
+        @apply mt-3 text-sm text-danger-text text-center;
+    }
+
+    .player-search-meta {
+        @apply mt-6 mb-3 text-sm text-text-secondary;
+    }
+
+    .player-search-list {
+        @apply flex flex-col gap-2;
+    }
+
+    .player-search-hit {
+        @apply flex items-center gap-3 rounded-lg border border-border-subtle px-3 py-2.5 no-underline transition-colors;
+        background: color-mix(in srgb, var(--color-bg-elevated) 45%, transparent);
+        color: var(--color-text);
+    }
+
+    .player-search-hit:hover {
+        border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+        background: var(--color-bg-elevated);
+    }
+
+    .player-search-hit-name {
+        @apply min-w-0 font-semibold;
+    }
+
     .people-add {
         @apply flex flex-wrap items-center gap-3 mb-6;
     }
@@ -1695,11 +1749,31 @@
     }
 
     .table-surface tbody tr {
-        @apply hover:bg-row-hover transition;
+        @apply hover:bg-row-hover;
     }
 
     .table-surface tbody td {
         @apply px-3 py-2;
+    }
+
+    /* Co drugi wiersz — jak na tabelach wyników (Flashscore). */
+    .table-surface.table-striped {
+        --row-stripe: var(--color-bg-elevated);
+    }
+
+    .table-surface.table-striped tbody tr:nth-child(even) {
+        background-color: var(--row-stripe);
+    }
+
+    .table-surface.table-striped tbody tr:nth-child(even):hover {
+        background-color: var(--color-row-hover);
+    }
+
+    /* Tło hover na komórkach, bez animacji — inaczej kolumna z nazwiskiem
+       (własne tło) rozjaśnia się wcześniej niż reszta wiersza. */
+    .table-surface.table-striped tbody tr:hover > td {
+        background-color: var(--color-row-hover);
+        transition: none;
     }
 
     .achievement-table :is(th, td):not(.sticky-player) {
@@ -1711,7 +1785,7 @@
     }
 
     .achievement-mark {
-        @apply inline-flex items-baseline gap-1 rounded-full border border-border-subtle bg-bg-elevated/50 px-2 py-0.5 text-sm text-text;
+        @apply inline-flex items-baseline gap-1 rounded-full border border-border-subtle bg-bg px-2 py-0.5 text-sm text-text;
     }
 
     .achievement-mark-count {
@@ -1736,7 +1810,12 @@
         z-index: 2;
     }
 
-    .table-surface tbody tr:hover > .sticky-player {
+    .table-surface.table-striped tbody tr:nth-child(even) > .sticky-player {
+        background-color: var(--row-stripe);
+    }
+
+    .table-surface tbody tr:hover > .sticky-player,
+    .table-surface.table-striped tbody tr:nth-child(even):hover > .sticky-player {
         background-color: var(--color-row-hover);
     }
 
@@ -2021,12 +2100,6 @@
     }
 
     /* --- Friends panel --- */
-    .friends-fab {
-        @apply fixed right-3 top-[4.5rem] sm:right-4 sm:top-24 z-30 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-border
-            bg-bg-deep/80 backdrop-blur-md text-accent hover:border-accent/50 hover:bg-bg-elevated
-            transition text-xs sm:text-sm font-semibold shadow-lg;
-    }
-
     .friends-panel {
         @apply fixed right-0 top-0 bottom-0 w-72 max-w-[min(85vw,18rem)] z-40 flex flex-col
             bg-bg-deep/95 backdrop-blur-md border-l border-border shadow-xl;

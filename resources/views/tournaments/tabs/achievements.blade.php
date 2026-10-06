@@ -6,7 +6,7 @@
     />
 @else
     <div class="table-wrap mt-8">
-        <table class="table-surface achievement-table">
+        <table class="table-surface achievement-table table-striped">
             <thead>
             <tr>
                 <th class="sticky-player">Zawodnik</th>

@@ -1,6 +1,6 @@
 <div class="table-wrap mt-2">
     <h2 class="section-title">Tabela sezonu</h2>
-    <table class="table-surface">
+    <table class="table-surface table-striped">
         <thead>
         <tr>
             <th class="w-12 text-center tracking-normal">#</th>

@@ -1,6 +1,6 @@
 <div class="table-wrap mt-10">
     <p class="text-center mb-3 text-text-secondary">Wyniki</p>
-    <table class="table-surface">
+    <table class="table-surface table-striped">
         <thead>
         <tr>
             <th class="px-2 py-2 text-center w-16">Miejsce</th>
@@ -22,7 +22,7 @@
                 + (($showStageColumn ?? true) ? 1 : 0);
         @endphp
         @forelse($results as $index => $result)
-            <tr class="hover:bg-bg-elevated-hover transition">
+            <tr>
                 <td class="px-2 py-2 text-center tabular-nums">
                     @if($index === 0 || ($result['place'] ?? null) !== ($results[$index - 1]['place'] ?? null))
                         {{ $result['place'] ?? '—' }}

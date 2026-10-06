@@ -10,6 +10,7 @@ use App\Services\Player\PlayerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -22,15 +23,33 @@ class PlayerController extends Controller
         private PlayerService $playerService,
     ) {}
 
-    public function search(Request $request): View
+    public function search(Request $request): View|JsonResponse
     {
         $q = trim((string) $request->query('q', ''));
-        $players = $this->playerService->searchRegisteredByName($q);
+        $players = $this->searchHits($this->playerService->searchRegisteredByName($q));
+
+        if ($request->expectsJson()) {
+            return response()->json(['players' => $players]);
+        }
 
         return view('players.search', [
             'q' => $q,
             'players' => $players,
         ]);
+    }
+
+    /**
+     * @param  Collection<int, Player>  $players
+     * @return list<array{id: int, name: string, initials: string, url: string}>
+     */
+    private function searchHits(Collection $players): array
+    {
+        return $players->map(fn (Player $player) => [
+            'id' => (int) $player->id,
+            'name' => $player->name,
+            'initials' => $player->initials(),
+            'url' => route('players.show', $player),
+        ])->values()->all();
     }
 
     public function show(Player $player): View|RedirectResponse

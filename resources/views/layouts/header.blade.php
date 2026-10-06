@@ -26,12 +26,12 @@
         </button>
 
         @php
-            $currentPlayer = request()->routeIs('players.show') ? request()->route('player') : null;
+            $currentPlayer = request()->routeIs('players.show', 'players.edit') ? request()->route('player') : null;
             $isMyProfile = Auth::check()
                 && Auth::user()->player
                 && $currentPlayer
                 && (int) $currentPlayer->id === (int) Auth::user()->player->id;
-            $kontoActive = request()->routeIs('me.*', 'settings.*', 'invitations.*');
+            $kontoActive = $isMyProfile || request()->routeIs('me.*', 'settings.*', 'invitations.*');
             $rozgrywkiActive = request()->routeIs('organizations.*', 'seasons.*', 'tournaments.*', 'leagues.*', 'league-seasons.*', 'league-games.*')
                 && ! $kontoActive;
         @endphp
@@ -93,6 +93,14 @@
             @endguest
 
             @auth
+                <button type="button"
+                        class="nav-btn w-full md:w-auto text-left"
+                        :class="open && 'active'"
+                        @click="open ? hide() : show(); navOpen = false"
+                        :aria-expanded="open.toString()"
+                        aria-controls="friends-panel">
+                    Znajomi ({{ $friendsCount }})
+                </button>
                 <div class="relative w-full md:w-auto"
                      x-data="{ open: false }"
                      @mouseenter="if (window.matchMedia('(min-width: 768px)').matches) open = true"
@@ -118,6 +126,12 @@
                          class="nav-dropdown md:right-0 md:left-auto"
                          role="menu">
                         <div class="nav-dropdown-panel">
+                            @if(Auth::user()->player)
+                                <a href="{{ route('players.show', Auth::user()->player) }}"
+                                   class="nav-dropdown-item {{ $isMyProfile ? 'active' : '' }}"
+                                   role="menuitem"
+                                   @click="navOpen = false; open = false">Mój profil</a>
+                            @endif
                             <a href="{{ route('me.index') }}"
                                class="nav-dropdown-item {{ request()->routeIs('me.*') ? 'active' : '' }}"
                                role="menuitem"

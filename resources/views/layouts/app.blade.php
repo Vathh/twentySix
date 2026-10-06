@@ -22,13 +22,8 @@
         </main>
 
         @auth
-            <button type="button"
-                    @click="show()"
-                    class="friends-fab">
-                Znajomi ({{ $friendsCount }})
-            </button>
-
-            <div x-show="open"
+            <div id="friends-panel"
+                 x-show="open"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 translate-x-full"
                  x-transition:enter-end="opacity-100 translate-x-0"

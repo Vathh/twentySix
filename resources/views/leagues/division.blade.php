@@ -92,7 +92,7 @@
                                 @endif
 
                                 <div class="table-wrap mb-6">
-                                    <table class="table-surface">
+                                    <table class="table-surface table-striped">
                                         <thead>
                                         <tr>
                                             <th class="w-12 text-center tracking-normal">#</th>
@@ -142,7 +142,7 @@
                                     <p class="text-text-muted text-sm mb-6">Brak zapisanych 180 i checkoutów w tym sezonie.</p>
                                 @else
                                     <div class="table-wrap mb-6">
-                                        <table class="table-surface">
+                                        <table class="table-surface table-striped">
                                             <thead>
                                             <tr>
                                                 <th class="text-left sticky-player">Zawodnik</th>
