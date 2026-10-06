@@ -27,7 +27,7 @@
 | [`deploy_staging.md`](deploy_staging.md) | Runbook VPS — **tylko gdy użytkownik prosi o deploy** |
 | [`instrukcja_testerow_mvp_v1.md`](instrukcja_testerow_mvp_v1.md) | Onboarding testerów (rejestracja, APK, scenariusze minimum) |
 
-**MVP v1:** tag `v1.0.0-mvp` (backend `b1f3193`, mobile `9a39d28`, lipiec 2026). Stan funkcji: `IMPLEMENTED_FEATURES.md` + sekcja „Status MVP” w `product.md`.
+**MVP v1:** tag `v1.0.0-mvp` (backend `b1f3193`, mobile `9a39d28`, lipiec 2026). Stan funkcji: `IMPLEMENTED_FEATURES.md`. Aktualny status: sekcja „Źródło prawdy i stan kodu” w `product.md`.
 
 ---
 

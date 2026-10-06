@@ -12,7 +12,7 @@ System do prowadzenia rozgrywek darterskich: aplikacja webowa do śledzenia i za
 
 Część kodu powstała przed `product.md` — historyczne rozbieżności zostały **domknięte w MVP v1** (lipiec 2026). Nowe funkcje muszą być zgodne z tym dokumentem.
 
-**Status MVP v1:** tag `v1.0.0-mvp`; mapa kod ↔ wymagania: [`IMPLEMENTED_FEATURES.md`](../IMPLEMENTED_FEATURES.md) (backend), [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) (mobile). Aktywne zadania: [`NEXT_STEPS.md`](NEXT_STEPS.md).
+**Status (październik 2026):** kryteria MVP v1 są spełnione. Tag `v1.0.0-mvp` (lipiec 2026). Liga, warianty SE/DE, kariera, sędziowanie w przeglądarce i tryby quick/trening opisane niżej są w kodzie. Mapa: [`IMPLEMENTED_FEATURES.md`](../IMPLEMENTED_FEATURES.md) (backend), [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) (mobile). Otwarte tematy: [`NEXT_STEPS.md`](NEXT_STEPS.md).
 
 ## Dla kogo
 
@@ -148,12 +148,12 @@ Wybór **tylko przy starcie** (kreator) — po wystartowaniu bez zmiany typu.
 
 **Rozmiar drabinki:** potęgi 2, **max 128**. Model slotów: **generyczny** (`round` + `index` + kierunki awansu), nie rozrost enumów `PlayoffSlot` / `WinnerDestinationSlot`.
 
-**Kolejność wdrożenia:** najpierw SE, potem DE. Reguły i model: [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md).
+**SE i DE są w kodzie.** Reguły i model: [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md).
 
 #### `groups_playoff` (bez zmian reguł względem MVP v1)
 
 - Faza grupowa + playoff; playoff **bez bye** (pełna drabinka z awansujących).
-- Limit awansujących do drabinki: **max 128** (wcześniej MVP: 32 — podnosimy wraz z generycznym silnikiem).
+- Limit awansujących do drabinki: **max 128**. W MVP v1 było 32; generyczny silnik slotów podniósł limit.
 - **Opcjonalna drabinka pocieszenia** (checkbox przy starcie, domyślnie wyłączony): po grupach powstają **dwie niezależne drabinki SE** — główna dla awansujących (o tytuł) oraz pocieszenia dla pozostałych. To **nie** jest double elimination (przegrana w głównej nie zrzuca do pocieszenia).
 - Pocieszenie: rozmiar `nextPowerOfTwo(N − awansujący)`; **bye dozwolone**; format meczu per etap osobno. Miejsca pocieszenia zaczynają się od `playoff_bracket_size + 1` (mistrz pocieszenia nie jest mistrzem turnieju).
 - UI: **Drabinka główna** / **Drabinka pocieszenia**. Na tablecie sędziowskim — dwa kafelki jak grupy.
@@ -463,11 +463,11 @@ Już istniejący wybór w lobby mobilnym:
 | **Każdy na własnym urządzeniu** | Ten sam widok meczu na każdym telefonie, **synchronizacja przez API** + WebSocket. Zawodnik wpisuje rzuty **tylko w swojej kolejce** — czeka na turę. Dotyczy **2–8** graczy (jeden silnik FFA). |
 
 - Turniej na tablecie = zawsze model **jednego urządzenia** (head-to-head).
-- **Krykiet** — poza MVP (kod w toku, wrócimy później).
+- **Krykiet, Bob's 27, Around the Clock, Catch 40 i Cricket 60** są w quick game i treningu (sekcja [Format gry](#format-gry-konfigurowalny)). W turnieju ich nie ma.
 
 ### Quick game (docelowo)
 
-- Dowolny zalogowany w lobby; **krykiet** i inne formaty gry (`gameType`).
+- Dowolny zalogowany w lobby. Dziś dołączają tylko znajomi zaproszeni przez hosta.
 
 ## Format gry (konfigurowalny)
 
@@ -651,18 +651,17 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 
 ## Poza MVP (świadomie później)
 
-- Krykiet
-- Komunikator, odznaczenia, stream, premium
+- Komunikator, katalog odznak, stream jako osobny produkt, premium. Overlay OBS meczu H2H jest. Koło checkoutów na profilu jest; osobnego katalogu odznak nie ma.
 - **Awatary graczy** — upload zdjęcia profilowego (web + mobile); przy `Player`; limity pliku, fallback inicjałów; crop / CDN później. Backlog: [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - **Aktualizacja APK w apce** — komunikat przy starcie i instalacja nowej wersji (Android self-update / później Play In-App Updates; nie OTA JS). Backlog: [`NEXT_STEPS.md`](NEXT_STEPS.md). **Nie teraz.**
 - Granularne uprawnienia współadmina
 - Quick game z dowolnym zalogowanym
-- ~~**Drabinka playoff > 32**~~ — decyzja sierpień 2026: generyczny model slotów + **max 128** w ramach wariantów SE/DE ([`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md)); `groups_playoff` na tym samym silniku.
-- **Warianty SE / DE** — ✅ w kodzie; reguły: [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md).
+
+Drabinka do 128 i warianty SE/DE są w kodzie (sierpień 2026). Reguły: [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md).
 
 ## Czego nie robimy (na razie)
 
-- Krykiet w MVP
+- Krykiet, Bob's 27, Around the Clock, Catch 40 i Cricket 60 **w turnieju** (są w treningu i quick game)
 - Tryby drużynowe 2v2 w quick game
 - Wolne losy w drabince **po fazie grupowej** (`groups_playoff`) — bye tylko w czystym SE/DE
 - Seeding drabinki z rankingu sezonowego. W `groups_playoff` rozstawienie idzie z miejsc w grupach; w SE/DE pary R1 zostają losowe.
@@ -698,16 +697,16 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 
 *Brak otwartych pytań produktowych — reguły wariantów turnieju (SE/DE) zamknięte sierpień 2026; szczegóły wdrożenia: [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md).*
 
-## Zgodność kodu z produktem (lipiec 2026)
+## Zgodność kodu z produktem
 
-Historyczne rozbieżności z czasów przed `product.md` — **domknięte w MVP v1**. Tabela referencyjna (nie lista TODO):
+Historyczne rozbieżności z czasów przed `product.md` — **domknięte**. Tabela referencyjna (nie lista TODO). Stan: październik 2026.
 
 | Temat | Wymaganie produktu | Kod |
 | ----- | ------------------ | --- |
 | Podział do grup | Zapełnianie od grupy 1, równe wielkości | ✅ `TournamentGroupDistribution` |
 | Awans z grupy | Etap drabinki + rozkład per grupa | ✅ `playoff_bracket_size`, `group_advances`, `PlayoffService` |
 | Rozstawienie playoff | 1. miejsce vs gorsze miejsce z innej grupy; sąsiednie grupy; bez pary z tej samej grupy w R1 | ✅ `PlayoffFirstRoundSeeding` |
-| Rozmiar drabinki | Wybór etapu (`playoff_bracket_size`; **docelowo max 128**, dziś w kodzie jeszcze 32) | ⚠️ `PlayoffBracketFactory::create` (enumy) → generyczny silnik w planie SE/DE |
+| Rozmiar drabinki | Potęgi 2, max **128** (`playoff_bracket_size`) | ✅ `TournamentStartRules::MAX_BRACKET_SIZE`, `PlayoffBracketFactory` (sloty `round` + `index`) |
 | Warianty SE / DE | Typ przy starcie; bye; miejsca; GF | ✅ [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) |
 | Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile i web (Konto → Zaproszenia); `relatedUsers` org/sezon/liga = zaproszenie | ✅ `TournamentInvitation`, `OrganizationInvitation`, `SeasonInvitation`, `LeagueInvitation`, `InvitationsScreen` |
 | Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ |

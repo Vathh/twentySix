@@ -18,9 +18,9 @@ class QuickGameFfaStateBuilder
     ) {}
 
     /**
-     * Pełny stan FFA — ten sam kształt na GET i na WS (`ffa.state.updated`).
-     * Cieńszy payload WS (bez historii zamkniętych legów) jest odłożony:
-     * patrz docs/NEXT_STEPS.md („FFA WS — cieńszy payload”).
+     * Stan FFA na GET i na WS (`ffa.state.updated`).
+     * `visits` to bieżący leg; zamknięte legi są w `legByLegScores`.
+     * Pole `you` dokleja broadcaster tylko do odpowiedzi HTTP.
      *
      * @return array<string, mixed>
      */

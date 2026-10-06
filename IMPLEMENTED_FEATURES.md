@@ -3,21 +3,21 @@
 Mapa zgodności kodu z [`docs/product.md`](docs/product.md).  
 **Legenda:** ✅ gotowe · ⚠️ częściowo · ❌ brak
 
-Ostatnia aktualizacja: lipiec 2026 — **MVP v1 otagowane** (`v1.0.0-mvp`).
+Ostatnia aktualizacja: październik 2026. **MVP v1** (tag `v1.0.0-mvp`, lipiec 2026) jest spełnione. Poniżej: kryteria MVP oraz to, co doszło w kodzie po tagu.
 
 ---
 
 ## Podsumowanie
 
-| Obszar | Postęp | Najważniejsze luki |
-|--------|--------|-------------------|
-| **Web** | ~95% | Live całego turnieju (WS) — poza MVP |
-| **API** | ~95% | — |
-| **Mobile** | ~90% | Zob. [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) |
+| Obszar | Stan |
+|--------|------|
+| **Kryteria MVP v1** | Spełnione (web, API, mobile) |
+| **Po tagu** | Liga, SE/DE do 128, drabinka pocieszenia, `/referee`, kariera web i mobile, live grup i drabinki, tryby quick/trening poza X01 |
+| **Mobile** | [`../twentysix-mobile/IMPLEMENTED_FEATURES.md`](../twentysix-mobile/IMPLEMENTED_FEATURES.md) |
 
-Szczegóły wymagań: [`docs/product.md`](docs/product.md). Aktywne zadania: [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md).
+Szczegóły wymagań: [`docs/product.md`](docs/product.md). Otwarte tematy: [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md).
 
-**Weryfikacja MVP:** scenariusze manualne w [`docs/README.md`](docs/README.md) ✅ · `php artisan test` — 172 passed, 14 skipped (lipiec 2026).
+**Weryfikacja:** scenariusze manualne w [`docs/README.md`](docs/README.md). Suite: `php artisan test` (liczba testów rośnie razem z kodem — nie trzymamy tu zamrożonego wyniku z lipca).
 
 ---
 
@@ -29,14 +29,15 @@ Szczegóły wymagań: [`docs/product.md`](docs/product.md). Aktywne zadania: [`d
 | Współadmin per organizacja (pełne prawa) | ✅ | `/organizations/{id}/admins/*`, `OrganizationPolicy` |
 | Turniej: goście (nazwa) | ✅ | `SeasonController`, `PlayerRepository` |
 | Turniej: zaproszenia (wyszukiwarka + akceptacja) | ✅ | Strona startu: wysyłka, masowy invite ze składu (`relatedUsers`); mobile: accept/reject/withdraw |
-| Start turnieju: liczba grup | ✅ | `start.blade.php` — potęgi 2 (2…64), `TournamentStartRules` |
+| Start turnieju: liczba grup | ✅ | Dowolna liczba od 2, min. 3 osoby w grupie — `TournamentStartRules` |
 | Start: walidowany awans z grupy | ✅ | Kreator + `TournamentStartValidator` |
 | Start: jeden kod tabletu 8 znaków + QR | ✅ | `LoginCodeService::generateForTournament`, `/tablet-login/{code}` |
 | Start: tylko zaakceptowani + goście | ✅ | `getTournamentStartPool`, walidacja przy `run` |
 | Publiczny podgląd organizacji/turniejów | ✅ | Gość bez logowania — [`scenariusze_manualne_web_gosc_krok3.md`](docs/scenariusze_manualne_web_gosc_krok3.md) |
 | Korekta wyniku / walkower na webie | ✅ | `games/show` — formularz admina sezonu, `GameResultCorrectionService` |
-| Live podgląd meczu (WebSocket) | ✅ | `games/{type}/{id}/live`, `game-live.js`, Reverb `game.state` |
-| Live WebSocket na webie (turniej) | ❌ | Brak widoku live całego turnieju z WS |
+| Live podgląd meczu (WebSocket) | ✅ | `games/{type}/{id}/live`, `gameLiveViewer.js`, Reverb `game.state` |
+| Live turnieju na webie (grupy, drabinka, zgłoszenia QR) | ✅ | `tournamentGroupsLive.js`, `tournamentPlayoffLive.js`, `tournamentJoinRequestsLive.js` — Reverb, bez odświeżania strony |
+| Live sesji FFA | ✅ | `/quick-game/lobby/{lobbyId}/live`, `ffaLiveViewer.js` |
 | Znajomi na webie | ✅ | Profil gracza: invite → accept; panel boczny (przychodzące / znajomi / oczekujący); `FriendInvitationController` |
 | Presety formatu gry w organizacji | ✅ | `organizations.match_format_presets`, edycja organizacji → domyślne w kreatorze startu turnieju |
 
@@ -54,7 +55,7 @@ Szczegóły wymagań: [`docs/product.md`](docs/product.md). Aktywne zadania: [`d
 | Tie-breakery grupowe | ✅ | `GroupStandingService` |
 | Auto start playoff | ✅ | `GameService::handlePlayoffStart` |
 | Awans z grupy (etap drabinki) | ✅ | `playoff_bracket_size`, `group_advances`, `PlayoffService` |
-| Bracket `groups × awans` (potęga 2) | ✅ | `PlayoffBracketFactory::create` (2–32) |
+| Bracket (potęga 2, max 128) | ✅ | `TournamentStartRules::MAX_BRACKET_SIZE`, `PlayoffBracketFactory` |
 | Playoff R1: rozstawienie z miejsc w grupach | ✅ | `PlayoffFirstRoundSeeding` |
 | Statusy meczu + lock tabletu | ✅ | `GameLockService`, `POST /api/game/inProgress`, mobile `lockTournamentGame` |
 | Kody tabletów | ✅ | `POST /api/login`, `LoginCodeService` |
@@ -90,9 +91,30 @@ Szczegóły wymagań: [`docs/product.md`](docs/product.md). Aktywne zadania: [`d
 | Quick game: tryby urządzeń (online FFA) | ✅ |
 | Quick game FFA 2–8 + rotacja legów | ✅ |
 | FFA presence, walkower, powrót do meczu | ✅ | `useGameScoring`, `Home.jsx` + `GET /active-match` |
-| Trening mobile (bez zapisu) | ✅ | `TrainingMatchSetup.jsx` |
+| Trening mobile | ✅ | Bez konta bez zapisu; zalogowany slot JA idzie na konto — `TrainingMatchSetup.jsx` |
 | Znajomi: invite + accept (mobile) | ✅ |
 | Marka twentySix w UI | ✅ |
+
+---
+
+## Po tagu `v1.0.0-mvp` (w kodzie)
+
+| Obszar | Status | Pliki / uwagi |
+|--------|--------|----------------|
+| Liga (piramida) | ✅ | `app/Domain/League`, `LeagueSeasonService`, sezon ligowy, baraże, awans/spadek |
+| Mecz ligowy | ✅ | Lobby i scoring API `LeagueGameScoringController`; gość bez konta — wynik wpisuje admin na webie |
+| Single / double elimination | ✅ | `DoubleEliminationBracketFactory`, `DoubleEliminationPlacement`; wybór przy starcie |
+| Drabinka pocieszenia | ✅ | Opcja przy `groups_playoff`; osobna drabinka SE |
+| Sędziowanie w przeglądarce | ✅ | `routes/web.php` prefix `referee` — ten sam kod tabletu |
+| Kariera gracza | ✅ | Web `players/partials/career-dashboard` i mobile `ProfileCareerDashboard` — okna, źródła, średnia X01, duble, wykresy. Zestawy metryk pozostałych trybów na profilu: [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md) |
+| Trening slotu JA | ✅ | Zapis na konto zalogowanego; lokalne imię zostaje lokalne |
+| Cricket, Bob's 27, ATC, Catch 40, Cricket 60 | ✅ | Trening + quick FFA. Brak w turnieju |
+| Punktacja sezonu od N | ✅ | Pasma 4–128, `PointSchemeDomain` |
+| Ogranicznik lotek X01 | ✅ | `dartLimit` / `lossThreshold`, bull-off |
+| Anulowanie meczu w trakcie | ✅ | Turniej i liga — powrót do `oczekujący` |
+| Overlay OBS (H2H) | ✅ | Podgląd meczu pod transmisję |
+| Ukrycie bytu na 90 dni | ✅ | Organizacja, sezon, turniej, liga, sezon ligowy — bez twardego kasowania |
+| Kolejność meczów w grupie i sędzia z grupy | ✅ | Metoda koła; lista sędziów pod tabelą |
 
 ---
 
@@ -129,7 +151,7 @@ Wszystkie punkty poniżej ✅. Kolejne prace: [`docs/NEXT_STEPS.md`](docs/NEXT_S
 | Znajomi web (invite → accept) | `tests/Feature/PlayerFriendInvitationWebTest.php` |
 | Achievementy po FFA | `tests/Feature/QuickGameApiTest.php` |
 
-Pełna suite: `php artisan test` — **172 passed, 14 skipped** (lipiec 2026). Pominięte: widoki wymagające Vite manifest, legacy bulk quick-game POST.
+Pełna suite: `php artisan test`. Wynik z lipca 2026 (172 passed, 14 skipped) jest historyczny i nie opisuje dzisiejszego zestawu.
 
 ---
 
