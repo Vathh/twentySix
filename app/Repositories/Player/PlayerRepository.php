@@ -60,6 +60,16 @@ class PlayerRepository
         return $player->fresh();
     }
 
+    public function updateAvatarPath(Player $player, ?string $path): Player
+    {
+        $player->forceFill([
+            'avatar_path' => $path,
+            'updated_at' => now(),
+        ])->save();
+
+        return $player->fresh();
+    }
+
     public function createQuickGameGuest(string $name): PlayerDomain
     {
         $player = Player::create([

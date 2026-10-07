@@ -16,6 +16,7 @@ import { registerPlayerSearch } from './playerSearch.js';
 import { registerCheckoutWheels } from './checkoutWheel.js';
 import { registerFriendsPanel } from './friendsPanel.js';
 import { registerPlayerCareer } from './playerCareer.js';
+import { registerPlayerAvatarCrop } from './playerAvatarCrop.js';
 
 registerGameLiveViewer(alpine);
 registerFfaLiveViewer(alpine);
@@ -33,6 +34,7 @@ registerPlayerSearch(alpine);
 registerCheckoutWheels();
 registerFriendsPanel(alpine);
 registerPlayerCareer(alpine);
+registerPlayerAvatarCrop(alpine);
 
 function registerSiteHeaderOffset() {
     const header = document.querySelector('.site-header');

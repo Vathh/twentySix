@@ -5,6 +5,8 @@ namespace App\Repositories\Organization;
 use App\Domain\AdminRoster;
 use App\Domain\OrganizationDomain;
 use App\Models\Organization\Organization;
+use App\Support\Catalog\CatalogSort;
+use App\Support\Text\PolishFold;
 use Illuminate\Support\Collection;
 
 class OrganizationRepository
@@ -22,21 +24,25 @@ class OrganizationRepository
     /**
      * Strona listy organizacji (najpierw ostatnio aktualizowane).
      *
-     * @return array{items: Collection<int, OrganizationDomain>, has_more: bool}
+     * @return array{items: Collection<int, OrganizationDomain>, has_more: bool, total: int}
      */
-    public function getPage(int $page): array
+    public function getPage(int $page, ?string $search = null, ?string $sort = null): array
     {
         $page = max(1, $page);
-        $paginator = Organization::query()
-            ->orderByDesc('updated_at')
-            ->orderByDesc('id')
-            ->paginate(self::INDEX_PER_PAGE, ['*'], 'page', $page);
+        $query = Organization::query()
+            ->withCount(['seasons', 'tournaments', 'relatedUsers']);
+        PolishFold::restrict($query, 'organizations.name', $search);
+        if (! CatalogSort::apply($query, $sort, 'related_users_count')) {
+            $query->orderByDesc('updated_at')->orderByDesc('id');
+        }
+        $paginator = $query->paginate(self::INDEX_PER_PAGE, ['*'], 'page', $page);
 
         return [
             'items' => $paginator->getCollection()
                 ->map(fn (Organization $organization) => OrganizationDomain::fromEloquent($organization))
                 ->values(),
             'has_more' => $paginator->hasMorePages(),
+            'total' => $paginator->total(),
         ];
     }
 

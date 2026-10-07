@@ -14,7 +14,7 @@
 @endphp
 <article class="profile-hero">
     <div class="profile-hero-top">
-        <span class="profile-hero-mono" aria-hidden="true">{{ $player->initials() }}</span>
+        <x-player-avatar :player="$player" size="lg" />
         <div class="profile-hero-id">
             <h1 class="profile-hero-name">{{ $player->name }}</h1>
             <p class="profile-hero-meta">

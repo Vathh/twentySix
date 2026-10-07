@@ -69,6 +69,7 @@ class UserRepository
                 'id' => $user->id,
                 'email' => $user->email,
                 'player' => $user->player ? PlayerDomain::fromEloquent($user->player) : null,
+                'avatarUrl' => $user->player?->avatarUrl(),
             ];
         });
     }

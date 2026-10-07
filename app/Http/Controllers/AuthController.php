@@ -32,11 +32,13 @@ class AuthController extends Controller
         $validated = $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
+            'remember' => 'sometimes|boolean',
         ]);
 
         $this->accountAuthService->attemptWebLogin(
             $validated['email'],
             $validated['password'],
+            $request->boolean('remember'),
         );
 
         $request->session()->regenerate();

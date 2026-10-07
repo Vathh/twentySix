@@ -167,6 +167,90 @@ class AuthControllerTest extends TestCase
         $this->assertFalse(Auth::check());
     }
 
+    public function test_remember_me_keeps_the_user_signed_in_after_the_session_expires(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'remember@example.com',
+            'password' => Hash::make('password123'),
+            'remember_token' => null,
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => 'remember@example.com',
+            'password' => 'password123',
+            'remember' => '1',
+        ]);
+
+        $response->assertRedirect('/');
+        $user->refresh();
+        $this->assertNotEmpty($user->remember_token);
+
+        $recaller = Auth::getRecallerName();
+        $response->assertCookie($recaller);
+
+        $cookie = collect($response->headers->getCookies())->first(
+            fn ($queued) => $queued->getName() === $recaller,
+        );
+        $this->assertNotNull($cookie);
+
+        $this->app['auth']->forgetGuards();
+        $this->flushSession();
+
+        $this->withUnencryptedCookie($cookie->getName(), $cookie->getValue())
+            ->get('/me')
+            ->assertOk();
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertTrue(Auth::viaRemember());
+    }
+
+    public function test_login_without_remember_does_not_set_a_recaller_cookie(): void
+    {
+        User::factory()->create([
+            'email' => 'session-only@example.com',
+            'password' => Hash::make('password123'),
+            'remember_token' => null,
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => 'session-only@example.com',
+            'password' => 'password123',
+            'remember' => '0',
+        ]);
+
+        $response->assertRedirect('/');
+        $response->assertCookieMissing(Auth::getRecallerName());
+        $this->assertTrue(Auth::check());
+    }
+
+    public function test_logout_forgets_the_remember_me_cookie(): void
+    {
+        User::factory()->create([
+            'email' => 'logout-remember@example.com',
+            'password' => Hash::make('password123'),
+        ]);
+
+        $login = $this->post('/login', [
+            'email' => 'logout-remember@example.com',
+            'password' => 'password123',
+            'remember' => '1',
+        ]);
+
+        $login->assertCookie(Auth::getRecallerName());
+
+        $recaller = Auth::getRecallerName();
+        $cookie = collect($login->headers->getCookies())->first(
+            fn ($queued) => $queued->getName() === $recaller,
+        );
+
+        $this->withUnencryptedCookie($cookie->getName(), $cookie->getValue())
+            ->post('/logout')
+            ->assertRedirect('/login')
+            ->assertCookieExpired($recaller);
+
+        $this->assertFalse(Auth::check());
+    }
+
     public function test_user_can_logout(): void
     {
         $user = User::factory()->create();

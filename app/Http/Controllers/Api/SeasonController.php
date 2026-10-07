@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Concerns\MapsIndexPageForApi;
 use App\Models\Season\Season;
 use App\Services\Competition\CompetitionShowSerializer;
 use App\Services\Season\SeasonService;
+use App\Support\Text\PolishFold;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,14 +20,15 @@ class SeasonController
     ) {}
 
     /**
-     * GET /api/seasons?page=
+     * GET /api/seasons?page=&q=
      */
     public function index(Request $request): JsonResponse
     {
         $page = max(1, (int) $request->query('page', 1));
+        $search = PolishFold::term($request->query('q'));
 
         return response()->json(
-            $this->indexPageWithoutUrls($this->seasonService->getIndexPage($page)),
+            $this->indexPageWithoutUrls($this->seasonService->getIndexPage($page, $search)),
         );
     }
 

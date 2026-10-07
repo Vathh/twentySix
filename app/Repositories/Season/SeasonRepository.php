@@ -6,6 +6,9 @@ use App\Domain\AdminRoster;
 use App\Domain\SeasonDomain;
 use App\Models\Season\Season;
 use App\Models\Users\User;
+use App\Support\Catalog\CatalogSort;
+use App\Support\Catalog\SeasonCatalogStatus;
+use App\Support\Text\PolishFold;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -28,22 +31,36 @@ class SeasonRepository
     /**
      * Strona listy sezonów (najpierw najnowsze daty startu).
      *
-     * @return array{items: Collection<int, SeasonDomain>, has_more: bool}
+     * @return array{items: Collection<int, SeasonDomain>, has_more: bool, total: int}
      */
-    public function getPage(int $page): array
+    public function getPage(int $page, ?string $search = null, ?string $sort = null, ?string $status = null): array
     {
         $page = max(1, $page);
-        $paginator = Season::query()
+        $query = Season::query()
             ->with('organization')
-            ->orderByRaw('COALESCE(start_date, end_date, ?) DESC', ['1970-01-01'])
-            ->orderByDesc('id')
-            ->paginate(self::INDEX_PER_PAGE, ['*'], 'page', $page);
+            ->withCount(['tournaments', 'relatedUsers']);
+        $pattern = PolishFold::likePattern($search);
+        if ($pattern !== null) {
+            $query->where(function ($inner) use ($pattern) {
+                $inner->whereRaw(PolishFold::likeSql('seasons.name'), PolishFold::likeBindings($pattern))
+                    ->orWhereHas('organization', function ($organization) use ($pattern) {
+                        $organization->whereRaw(PolishFold::likeSql('organizations.name'), PolishFold::likeBindings($pattern));
+                    });
+            });
+        }
+        SeasonCatalogStatus::apply($query, $status);
+        if (! CatalogSort::apply($query, $sort, 'related_users_count')) {
+            $query->orderByRaw('COALESCE(start_date, end_date, ?) DESC', ['1970-01-01'])
+                ->orderByDesc('id');
+        }
+        $paginator = $query->paginate(self::INDEX_PER_PAGE, ['*'], 'page', $page);
 
         return [
             'items' => $paginator->getCollection()
                 ->map(fn (Season $season) => SeasonDomain::fromEloquent($season, ['organization']))
                 ->values(),
             'has_more' => $paginator->hasMorePages(),
+            'total' => $paginator->total(),
         ];
     }
 

@@ -15,7 +15,9 @@ use App\Support\Retention\ConfirmedEntityDeletion;
 use App\Services\Organization\OrganizationService;
 use App\Services\Player\PlayerService;
 use App\Services\User\UserService;
+use App\Support\Catalog\CatalogSort;
 use App\Support\Organization\OrganizationMatchFormatPresets;
+use App\Support\Text\PolishFold;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -40,7 +42,9 @@ class OrganizationController extends Controller
     public function index(Request $request): Factory|View|JsonResponse
     {
         $page = max(1, (int) $request->query('page', 1));
-        $data = $this->organizationService->getIndexPage($page);
+        $search = PolishFold::term($request->query('q'));
+        $sort = CatalogSort::from($request->query('sort'));
+        $data = $this->organizationService->getIndexPage($page, $search, $sort);
 
         if ($request->wantsJson()) {
             return response()->json($data);
@@ -49,6 +53,10 @@ class OrganizationController extends Controller
         return view('organizations.index', [
             'items' => $data['items'],
             'hasMore' => $data['has_more'],
+            'query' => $search ?? '',
+            'summary' => $data['summary'],
+            'page' => $page,
+            'sort' => $sort,
         ]);
     }
 

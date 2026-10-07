@@ -30,6 +30,8 @@ class OrganizationDomain
         public readonly array $matchFormatPresets = [],
         public readonly ?int $relatedUserCount = null,
         public readonly ?int $guestCount = null,
+        public readonly ?int $seasonCount = null,
+        public readonly ?int $tournamentCount = null,
     ) {}
 
     public static function fromEloquent(Organization $organization, array $with = []): self
@@ -68,6 +70,8 @@ class OrganizationDomain
             matchFormatPresets: $presets,
             relatedUserCount: self::relationCount($organization, 'related_users_count', 'relatedUsers', $with),
             guestCount: self::relationCount($organization, 'guests_count', 'guests', $with),
+            seasonCount: self::relationCount($organization, 'seasons_count', 'seasons', $with),
+            tournamentCount: self::relationCount($organization, 'tournaments_count', 'tournaments', $with),
         );
     }
 

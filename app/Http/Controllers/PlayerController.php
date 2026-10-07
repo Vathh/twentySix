@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Player\Player;
 use App\Services\Friends\FriendshipService;
+use App\Services\Player\PlayerAvatarService;
 use App\Services\Player\PlayerGameHistoryService;
 use App\Services\Player\PlayerProfileService;
 use App\Services\Player\PlayerService;
@@ -21,6 +22,7 @@ class PlayerController extends Controller
         private FriendshipService $friendshipService,
         private PlayerProfileService $playerProfileService,
         private PlayerService $playerService,
+        private PlayerAvatarService $playerAvatarService,
     ) {}
 
     public function search(Request $request): View|JsonResponse
@@ -40,7 +42,7 @@ class PlayerController extends Controller
 
     /**
      * @param  Collection<int, Player>  $players
-     * @return list<array{id: int, name: string, initials: string, url: string}>
+     * @return list<array{id: int, name: string, initials: string, avatarUrl: string|null, url: string}>
      */
     private function searchHits(Collection $players): array
     {
@@ -48,6 +50,7 @@ class PlayerController extends Controller
             'id' => (int) $player->id,
             'name' => $player->name,
             'initials' => $player->initials(),
+            'avatarUrl' => $player->avatarUrl(),
             'url' => route('players.show', $player),
         ])->values()->all();
     }
@@ -71,7 +74,18 @@ class PlayerController extends Controller
 
     public function update(Request $request, Player $player): RedirectResponse
     {
-        $this->playerProfileService->updateOwnProfile($player, Auth::user(), $request->all());
+        $file = $request->file('avatar');
+        if ($file !== null) {
+            $this->playerAvatarService->validateUpload($file);
+        }
+
+        $updated = $this->playerProfileService->updateOwnProfile($player, Auth::user(), $request->all());
+
+        if ($file !== null) {
+            $this->playerAvatarService->storeForOwner($updated, Auth::user(), $file);
+        } elseif ($request->boolean('remove_avatar')) {
+            $this->playerAvatarService->removeForOwner($updated, Auth::user());
+        }
 
         return redirect()
             ->route('players.show', $player)

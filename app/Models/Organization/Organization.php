@@ -5,10 +5,12 @@ namespace App\Models\Organization;
 use App\Models\League\League;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
+use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Organization extends Model
@@ -35,6 +37,12 @@ class Organization extends Model
     public function seasons(): HasMany
     {
         return $this->hasMany(Season::class);
+    }
+
+    /** @return HasManyThrough<Tournament, Season, $this> */
+    public function tournaments(): HasManyThrough
+    {
+        return $this->hasManyThrough(Tournament::class, Season::class);
     }
 
     /** @return HasMany<League, $this> */

@@ -7,6 +7,8 @@ use App\Repositories\Organization\OrganizationRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\Season\SeasonRepository;
 use App\Services\Player\PlayerService;
+use App\Support\Catalog\SeasonCatalogStatus;
+use App\Support\Text\PolishFold;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -34,25 +36,38 @@ class SeasonService
     }
 
     /**
-     * @return array{items: list<array{id: int, url: string, title: string, subtitle: string|null, subtitle_missing: bool}>, has_more: bool}
+     * @return array{items: list<array<string, mixed>>, has_more: bool, total: int, summary: string|null}
      */
-    public function getIndexPage(int $page): array
+    public function getIndexPage(int $page, ?string $search = null, ?string $sort = null, ?string $status = null): array
     {
-        $pageData = $this->seasonRepository->getPage($page);
+        $pageData = $this->seasonRepository->getPage($page, $search, $sort, $status);
 
         return [
             'items' => $pageData['items']->map(function (SeasonDomain $season) {
                 $dates = $season->getPlayDatesFormatted();
+                $meta = array_values(array_filter([
+                    $dates ?? 'Data nieustawiona',
+                    $season->tournamentCountLabel(),
+                ]));
+                $phase = SeasonCatalogStatus::phase($season->startDate, $season->endDate);
 
                 return [
                     'id' => $season->id,
                     'url' => route('seasons.show', ['season' => $season->id]),
                     'title' => $season->displayTitle(),
+                    'name' => $season->name,
+                    'context' => $season->organization?->name,
+                    'description' => null,
+                    'meta' => implode(' · ', $meta),
                     'subtitle' => $dates ? 'Data rozgrywek: '.$dates : null,
                     'subtitle_missing' => $dates === null,
+                    'status_label' => SeasonCatalogStatus::label($phase),
+                    'status_variant' => $phase,
                 ];
             })->all(),
             'has_more' => $pageData['has_more'],
+            'total' => $pageData['total'],
+            'summary' => PolishFold::matchSummary($pageData['total'], $search, 'sezon', 'sezony', 'sezonów'),
         ];
     }
 

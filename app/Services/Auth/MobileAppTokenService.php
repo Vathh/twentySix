@@ -24,7 +24,7 @@ class MobileAppTokenService
     }
 
     /**
-     * @return array{token: string, user: array{id: int, email: string, name: string|null, playerId: int|null}}
+     * @return array{token: string, user: array{id: int, email: string, name: string|null, playerId: int|null, avatarUrl: string|null}}
      */
     public function issueForUser(User $user): array
     {
@@ -45,7 +45,7 @@ class MobileAppTokenService
     /**
      * Rotacja tokena — stary unieważniony, nowy ważny kolejne TTL dni.
      *
-     * @return array{token: string, user: array{id: int, email: string, name: string|null, playerId: int|null}}
+     * @return array{token: string, user: array{id: int, email: string, name: string|null, playerId: int|null, avatarUrl: string|null}}
      */
     public function refresh(User $user, PersonalAccessToken $currentToken): array
     {
@@ -77,7 +77,7 @@ class MobileAppTokenService
     }
 
     /**
-     * @return array{id: int, email: string, name: string|null, playerId: int|null}
+     * @return array{id: int, email: string, name: string|null, playerId: int|null, avatarUrl: string|null}
      */
     public function userPayload(User $user): array
     {
@@ -86,6 +86,7 @@ class MobileAppTokenService
             'email' => $user->email,
             'name' => $user->player->name ?? null,
             'playerId' => $user->player?->id,
+            'avatarUrl' => $user->player?->avatarUrl(),
         ];
     }
 }

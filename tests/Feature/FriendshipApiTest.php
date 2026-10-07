@@ -75,7 +75,7 @@ class FriendshipApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'friends' => [
-                    '*' => ['id', 'name', 'playerId'],
+                    '*' => ['id', 'name', 'playerId', 'avatarUrl'],
                 ],
             ])
             ->assertJsonCount(1, 'friends');
@@ -114,7 +114,7 @@ class FriendshipApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'users' => [
-                    '*' => ['id', 'email', 'name', 'playerId'],
+                    '*' => ['id', 'email', 'name', 'playerId', 'avatarUrl'],
                 ],
             ])
             ->assertJsonCount(1, 'users')

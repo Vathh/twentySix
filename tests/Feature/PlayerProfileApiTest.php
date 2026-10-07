@@ -50,7 +50,7 @@ class PlayerProfileApiTest extends TestCase
             ->assertJsonPath('player.id', $this->profilePlayer->id)
             ->assertJsonPath('player.name', 'Anna Nowak')
             ->assertJsonStructure([
-                'player' => ['id', 'userId', 'name', 'description', 'registeredAt', 'initials'],
+                'player' => ['id', 'userId', 'name', 'description', 'registeredAt', 'initials', 'avatarUrl'],
                 'friendship' => [
                     'isSelf',
                     'isFriend',

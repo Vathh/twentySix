@@ -26,6 +26,16 @@
                            id="password"
                            required>
 
+                    <label class="mb-1 flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
+                        <input type="hidden" name="remember" value="0">
+                        <input class="ui-check"
+                               type="checkbox"
+                               name="remember"
+                               value="1"
+                               @checked((string) old('remember', '1') === '1')>
+                        Zapamiętaj mnie
+                    </label>
+
                     <button class="btn btn-primary mt-3" type="submit" name="loginBtn">Zaloguj</button>
 
                     <x-errors/>

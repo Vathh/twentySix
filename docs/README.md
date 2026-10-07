@@ -53,6 +53,7 @@ Czytaj przed zmianami w danym obszarze (nie są planem prac):
 | [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) | SE/DE: bye, miejsca, GF, bracket |
 | [`design_scoring_result_delivery.md`](design_scoring_result_delivery.md) | Outbox / idempotentne closeLeg |
 | [`game-scoring-unification.md`](game-scoring-unification.md) | `useGameScoring` + transporty |
+| [`design_webcam_match_1v1.md`](design_webcam_match_1v1.md) | Mecz kamerkowy 1v1 na webie — **odłożone, nie implementować** |
 
 ---
 

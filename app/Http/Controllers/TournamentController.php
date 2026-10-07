@@ -9,7 +9,10 @@ use App\Models\Tournament\Tournament;
 use App\Queries\GetTournamentData;
 use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\Retention\ApplicationEntityDeletionService;
+use App\Support\Catalog\CatalogSort;
+use App\Support\Catalog\TournamentCatalogStatus;
 use App\Support\Retention\ConfirmedEntityDeletion;
+use App\Support\Text\PolishFold;
 use App\Services\Tournament\LoginCodeService;
 use App\Services\Tournament\TournamentCancelService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
@@ -52,7 +55,10 @@ class TournamentController extends Controller
     public function index(Request $request)
     {
         $page = max(1, (int) $request->query('page', 1));
-        $data = $this->tournamentService->getIndexPage($page);
+        $search = PolishFold::term($request->query('q'));
+        $sort = CatalogSort::from($request->query('sort'));
+        $status = TournamentCatalogStatus::from($request->query('status'));
+        $data = $this->tournamentService->getIndexPage($page, $search, $sort, $status);
 
         if ($request->wantsJson()) {
             return response()->json($data);
@@ -61,6 +67,11 @@ class TournamentController extends Controller
         return view('tournaments.index', [
             'items' => $data['items'],
             'hasMore' => $data['has_more'],
+            'query' => $search ?? '',
+            'summary' => $data['summary'],
+            'page' => $page,
+            'sort' => $sort,
+            'status' => $status ?? '',
         ]);
     }
 

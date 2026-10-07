@@ -46,6 +46,7 @@ class PlayerProfileService
                 'description' => $assembled['player']->description,
                 'registeredAt' => $assembled['player']->user?->created_at?->format('d.m.Y'),
                 'initials' => $assembled['player']->initials(),
+                'avatarUrl' => $assembled['player']->avatarUrl(),
             ],
             'friendship' => $this->mapFriendshipForApi($assembled['friendship']),
             'quickStats' => $assembled['quickStats'],

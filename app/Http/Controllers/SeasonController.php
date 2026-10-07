@@ -13,7 +13,10 @@ use App\Services\Retention\ApplicationEntityDeletionService;
 use App\Services\Season\SeasonInvitationService;
 use App\Services\Season\SeasonService;
 use App\Services\Season\SeasonStatsService;
+use App\Support\Catalog\CatalogSort;
+use App\Support\Catalog\SeasonCatalogStatus;
 use App\Support\Retention\ConfirmedEntityDeletion;
+use App\Support\Text\PolishFold;
 use App\Services\User\UserService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -39,7 +42,10 @@ class SeasonController extends Controller
     public function index(Request $request): Factory|View|JsonResponse
     {
         $page = max(1, (int) $request->query('page', 1));
-        $data = $this->seasonService->getIndexPage($page);
+        $search = PolishFold::term($request->query('q'));
+        $sort = CatalogSort::from($request->query('sort'));
+        $status = SeasonCatalogStatus::from($request->query('status'));
+        $data = $this->seasonService->getIndexPage($page, $search, $sort, $status);
 
         if ($request->wantsJson()) {
             return response()->json($data);
@@ -48,6 +54,11 @@ class SeasonController extends Controller
         return view('seasons.index', [
             'items' => $data['items'],
             'hasMore' => $data['has_more'],
+            'query' => $search ?? '',
+            'summary' => $data['summary'],
+            'page' => $page,
+            'sort' => $sort,
+            'status' => $status ?? '',
         ]);
     }
 

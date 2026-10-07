@@ -148,12 +148,15 @@ class QuickGameLobbyService
         return $this->lobbyRepository->getPendingInvitationsForPlayer($player->id)
             ->map(function ($inv) {
                 $lobby = $inv->lobby;
-                $hostName = $lobby->host->player?->name ?? 'Host';
+                $hostPlayer = $lobby->host?->player;
+                $hostName = $hostPlayer?->name ?? 'Host';
 
                 return [
                     'id' => $inv->id,
                     'lobbyId' => $lobby->id,
                     'hostName' => $hostName,
+                    'hostAvatarUrl' => $hostPlayer?->avatarUrl(),
+                    'hostInitials' => $hostPlayer?->initials() ?? '?',
                 ];
             });
     }

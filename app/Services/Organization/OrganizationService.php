@@ -8,6 +8,7 @@ use App\Repositories\Organization\OrganizationRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Services\League\LeagueService;
 use App\Services\Player\PlayerService;
+use App\Support\Text\PolishFold;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 
@@ -30,20 +31,42 @@ class OrganizationService
     }
 
     /**
-     * @return array{items: list<array{id: int, url: string, title: string, subtitle: string}>, has_more: bool}
+     * @return array{items: list<array<string, mixed>>, has_more: bool, total: int, summary: string|null}
      */
-    public function getIndexPage(int $page): array
+    public function getIndexPage(int $page, ?string $search = null, ?string $sort = null): array
     {
-        $pageData = $this->organizationRepository->getPage($page);
+        $pageData = $this->organizationRepository->getPage($page, $search, $sort);
 
         return [
             'items' => $pageData['items']->map(fn (OrganizationDomain $organization) => [
                 'id' => $organization->id,
                 'url' => route('organizations.show', ['organization' => $organization->id]),
                 'title' => $organization->displayTitle(),
+                'name' => $organization->name,
+                'context' => null,
+                'stats' => [
+                    self::stat('seasons', $organization->seasonCount ?? 0, 'sezon', 'sezony', 'sezonów'),
+                    self::stat('tournaments', $organization->tournamentCount ?? 0, 'turniej', 'turnieje', 'turniejów'),
+                    self::stat('members', $organization->relatedUserCount ?? 0, 'użytkownik', 'użytkownicy', 'użytkowników'),
+                ],
+                'activity' => $organization->getUpdatedAtFormatted(),
                 'subtitle' => $organization->getCardSubtitle(),
             ])->all(),
             'has_more' => $pageData['has_more'],
+            'total' => $pageData['total'],
+            'summary' => PolishFold::matchSummary($pageData['total'], $search, 'organizacja', 'organizacje', 'organizacji'),
+        ];
+    }
+
+    /**
+     * @return array{key: string, value: int, label: string}
+     */
+    private static function stat(string $key, int $value, string $one, string $few, string $many): array
+    {
+        return [
+            'key' => $key,
+            'value' => $value,
+            'label' => PolishFold::word($value, $one, $few, $many),
         ];
     }
 

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Player extends Model
 {
-    protected $fillable = ['name', 'description', 'user_id', 'is_bye', 'organization_id', 'season_id', 'league_id'];
+    protected $fillable = ['name', 'description', 'avatar_path', 'user_id', 'is_bye', 'organization_id', 'season_id', 'league_id'];
 
     protected $casts = [
         'is_bye' => 'boolean',
@@ -28,7 +28,12 @@ class Player extends Model
 
     public function initials(): string
     {
-        $parts = preg_split('/\s+/u', trim((string) $this->name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        return self::initialsFromName((string) $this->name);
+    }
+
+    public static function initialsFromName(string $name): string
+    {
+        $parts = preg_split('/\s+/u', trim($name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
         if ($parts === []) {
             return '?';
         }
@@ -42,6 +47,18 @@ class Player extends Model
         }
 
         return $letter($parts[0]).$letter($parts[array_key_last($parts)]);
+    }
+
+    public function avatarUrl(): ?string
+    {
+        if (! is_string($this->avatar_path) || $this->avatar_path === '') {
+            return null;
+        }
+
+        $version = $this->updated_at?->getTimestamp() ?? 0;
+        $url = url('/storage/'.ltrim($this->avatar_path, '/'));
+
+        return $version > 0 ? $url.'?v='.$version : $url;
     }
 
     /** @return BelongsTo<Organization, $this> */

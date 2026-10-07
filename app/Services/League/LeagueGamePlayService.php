@@ -391,6 +391,8 @@ class LeagueGamePlayService
             'id' => $game->id,
             'type' => 'league',
             'hostName' => $host?->name ?? 'Rywal',
+            'hostAvatarUrl' => $host?->avatarUrl(),
+            'hostInitials' => $host?->initials() ?? '?',
             'leagueName' => $game->season->league->name,
             'formatLabel' => $payload['formatLabel'],
             'game' => $payload,

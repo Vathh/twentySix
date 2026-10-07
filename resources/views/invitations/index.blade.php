@@ -44,6 +44,9 @@
                             :title="$invitation->senderPlayer?->name ?? 'Gracz'"
                             subtitle="Chce dodać Cię do znajomych"
                             :url="$invitation->senderPlayer ? route('players.show', $invitation->senderPlayer->id) : null"
+                            :avatar-name="$invitation->senderPlayer?->name ?? 'Gracz'"
+                            :avatar-url="$invitation->senderPlayer?->avatarUrl"
+                            :avatar-initials="\App\Models\Player\Player::initialsFromName($invitation->senderPlayer?->name ?? 'Gracz')"
                         >
                             @include('invitations.partials.actions', [
                                 'acceptUrl' => route('friends.invitations.accept', $invitation->id),
@@ -67,6 +70,9 @@
                             <x-invitation-row
                                 :title="$invitation['leagueName'] ?? 'Mecz ligowy'"
                                 :subtitle="collect([$invitation['hostName'] ? 'Od '.$invitation['hostName'] : null, $invitation['formatLabel'] ?? null])->filter()->implode(' · ')"
+                                :avatar-name="$invitation['hostName'] ?? 'Rywal'"
+                                :avatar-url="$invitation['hostAvatarUrl'] ?? null"
+                                :avatar-initials="$invitation['hostInitials'] ?? null"
                             >
                                 @include('invitations.partials.actions', [
                                     'acceptUrl' => route('invitations.league-games.accept', $invitation['id']),
@@ -79,6 +85,9 @@
                             <x-invitation-row
                                 :title="($invitation['hostName'] ?? 'Gracz').' zaprasza'"
                                 subtitle="Szybka gra"
+                                :avatar-name="$invitation['hostName'] ?? 'Gracz'"
+                                :avatar-url="$invitation['hostAvatarUrl'] ?? null"
+                                :avatar-initials="$invitation['hostInitials'] ?? null"
                             >
                                 @include('invitations.partials.actions', [
                                     'acceptUrl' => route('invitations.quick-game.join', $invitation['lobbyId']),

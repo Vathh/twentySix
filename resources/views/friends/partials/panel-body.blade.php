@@ -4,9 +4,17 @@
         <ul class="space-y-2">
             @foreach($receivedFriendInvitations as $invitation)
                 <li class="p-3 rounded-lg border border-border bg-bg-elevated/50">
-                    <p class="text-text-secondary text-sm mb-2">
-                        {{ $invitation->senderPlayer?->name ?? 'Gracz' }}
-                    </p>
+                    <div class="flex items-center gap-2 mb-2">
+                        <x-player-avatar
+                            :name="$invitation->senderPlayer?->name ?? 'Gracz'"
+                            :initials="\App\Models\Player\Player::initialsFromName($invitation->senderPlayer?->name ?? 'Gracz')"
+                            :avatar-url="$invitation->senderPlayer?->avatarUrl"
+                            size="sm"
+                        />
+                        <p class="text-text-secondary text-sm mb-0">
+                            {{ $invitation->senderPlayer?->name ?? 'Gracz' }}
+                        </p>
+                    </div>
                     <div class="flex gap-2">
                         <form action="{{ route('friends.invitations.accept', $invitation->id) }}" method="POST">
                             @csrf
@@ -35,8 +43,9 @@
     <ul class="space-y-2">
         @foreach($friends as $friend)
             <li>
-                <a href="{{ route('players.show', $friend->friendPlayer->id) }}" class="friends-link">
-                    {{ $friend->friendPlayer->name }}
+                <a href="{{ route('players.show', $friend->friendPlayer->id) }}" class="friends-link friends-link--person">
+                    <x-player-avatar :player="$friend->friendPlayer" size="sm" />
+                    <span class="min-w-0 truncate">{{ $friend->friendPlayer->name }}</span>
                 </a>
             </li>
         @endforeach
@@ -51,8 +60,9 @@
             @foreach($sentFriendInvitations as $invitation)
                 <li>
                     @if($invitation->receiverPlayer)
-                        <a href="{{ route('players.show', $invitation->receiverPlayer->id) }}" class="friends-link">
-                            {{ $invitation->receiverPlayer->name }}
+                        <a href="{{ route('players.show', $invitation->receiverPlayer->id) }}" class="friends-link friends-link--person">
+                            <x-player-avatar :player="$invitation->receiverPlayer" size="sm" />
+                            <span class="min-w-0 truncate">{{ $invitation->receiverPlayer->name }}</span>
                         </a>
                     @else
                         <span class="friends-link text-text-muted pointer-events-none">Gracz</span>

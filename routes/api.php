@@ -109,6 +109,8 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::prefix('players')->group(function () {
         Route::get('/{player}', [PlayerProfileController::class, 'show'])->whereNumber('player');
         Route::put('/{player}', [PlayerProfileController::class, 'update'])->whereNumber('player');
+        Route::post('/{player}/avatar', [PlayerProfileController::class, 'storeAvatar'])->whereNumber('player');
+        Route::delete('/{player}/avatar', [PlayerProfileController::class, 'destroyAvatar'])->whereNumber('player');
         Route::get('/{player}/games', [PlayerProfileController::class, 'games'])->whereNumber('player');
         Route::get('/{player}/career', [PlayerCareerController::class, 'show'])->whereNumber('player');
     });

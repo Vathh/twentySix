@@ -20,7 +20,7 @@ class AccountAuthService
     /**
      * @throws ValidationException
      */
-    public function attemptWebLogin(string $email, string $password): void
+    public function attemptWebLogin(string $email, string $password, bool $remember = false): void
     {
         $user = $this->userRepository->findByEmail($email);
 
@@ -40,7 +40,7 @@ class AccountAuthService
             ]);
         }
 
-        if (! Auth::attempt(['email' => $email, 'password' => $password])) {
+        if (! Auth::attempt(['email' => $email, 'password' => $password], $remember)) {
             throw ValidationException::withMessages([
                 'credentials' => __('validation.auth.failed'),
             ]);
@@ -48,7 +48,7 @@ class AccountAuthService
     }
 
     /**
-     * @return array{token: string, user: array{id: int, email: string, name: string|null, playerId: int|null}}
+     * @return array{token: string, user: array{id: int, email: string, name: string|null, playerId: int|null, avatarUrl: string|null}}
      *
      * @throws AccountAuthException
      */

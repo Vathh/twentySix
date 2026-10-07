@@ -648,12 +648,13 @@ Podglądy live meczu (`/games/{type}/{id}/live` — H2H grupowy/playoff/quick) o
 ### Web (dodatkowo poza pierwotnym scope v1)
 
 - Znajomi na webie (invite → accept) — **zrealizowane lipiec 2026**
+- **Awatary graczy** — zdjęcie profilowe przy `Player` (web + mobile), kadr do kwadratu, JPEG 512 px na dysku serwera, fallback inicjałów. CDN później. **Zrealizowane.**
 
 ## Poza MVP (świadomie później)
 
 - Komunikator, katalog odznak, stream jako osobny produkt, premium. Overlay OBS meczu H2H jest. Koło checkoutów na profilu jest; osobnego katalogu odznak nie ma.
-- **Awatary graczy** — upload zdjęcia profilowego (web + mobile); przy `Player`; limity pliku, fallback inicjałów; crop / CDN później. Backlog: [`NEXT_STEPS.md`](NEXT_STEPS.md).
 - **Aktualizacja APK w apce** — komunikat przy starcie i instalacja nowej wersji (Android self-update / później Play In-App Updates; nie OTA JS). Backlog: [`NEXT_STEPS.md`](NEXT_STEPS.md). **Nie teraz.**
+- **Mecz kamerkowy 1v1 na webie** — laptop przy tarczy, dwie kamerki, podgląd wzajemny, wynik obok obrazu. Osobno od quick game i od turnieju na sędzim. Backlog: [`NEXT_STEPS.md`](NEXT_STEPS.md), ustalenia: [`design_webcam_match_1v1.md`](design_webcam_match_1v1.md). **Nie teraz.**
 - Granularne uprawnienia współadmina
 - Quick game z dowolnym zalogowanym
 

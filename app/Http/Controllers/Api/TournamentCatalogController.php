@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Concerns\MapsIndexPageForApi;
 use App\Models\Tournament\Tournament;
 use App\Services\Competition\CompetitionShowSerializer;
 use App\Services\Tournament\TournamentService;
+use App\Support\Text\PolishFold;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,14 +20,15 @@ class TournamentCatalogController
     ) {}
 
     /**
-     * GET /api/tournaments?page=
+     * GET /api/tournaments?page=&q=
      */
     public function index(Request $request): JsonResponse
     {
         $page = max(1, (int) $request->query('page', 1));
+        $search = PolishFold::term($request->query('q'));
 
         return response()->json(
-            $this->indexPageWithoutUrls($this->tournamentService->getIndexPage($page)),
+            $this->indexPageWithoutUrls($this->tournamentService->getIndexPage($page, $search)),
         );
     }
 

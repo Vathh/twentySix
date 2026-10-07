@@ -50,7 +50,14 @@
                 <template x-for="player in results" :key="player.id">
                     <li>
                         <a class="player-search-hit" :href="player.url">
-                            <span class="profile-hero-mono" aria-hidden="true" x-text="player.initials"></span>
+                            <template x-if="player.avatarUrl">
+                                <img class="player-avatar player-avatar--md" :src="player.avatarUrl" alt="" x-on:error="player.avatarUrl = null">
+                            </template>
+                            <template x-if="!player.avatarUrl">
+                                <span class="player-avatar player-avatar--md" aria-hidden="true">
+                                    <span class="player-avatar-fallback" x-text="player.initials"></span>
+                                </span>
+                            </template>
                             <span class="player-search-hit-name" x-text="player.name"></span>
                         </a>
                     </li>

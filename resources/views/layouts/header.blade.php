@@ -10,8 +10,13 @@
             >
             @auth
                 <span class="text-text-muted font-normal text-lg sm:text-2xl shrink-0" aria-hidden="true">/</span>
-                <span class="text-accent text-base sm:text-lg font-semibold truncate max-w-[9rem] sm:max-w-[14rem]">
-                    {{ Auth::user()->player?->name ?? 'Użytkownik' }}
+                <span class="inline-flex items-center gap-2 min-w-0">
+                    @if(Auth::user()->player)
+                        <x-player-avatar :player="Auth::user()->player" size="sm" />
+                    @endif
+                    <span class="text-accent text-base sm:text-lg font-semibold truncate max-w-[9rem] sm:max-w-[14rem]">
+                        {{ Auth::user()->player?->name ?? 'Użytkownik' }}
+                    </span>
                 </span>
             @endauth
         </a>

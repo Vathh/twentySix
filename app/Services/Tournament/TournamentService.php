@@ -22,6 +22,7 @@ use App\Repositories\Tournament\TournamentRepository;
 use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\Player\PlayerService;
 use App\Services\PointScheme\PointSchemeService;
+use App\Support\Text\PolishFold;
 use App\Support\Tournament\PlayoffByePairing;
 use App\Support\Tournament\TournamentMatchFormatRequestParser;
 use Illuminate\Support\Collection;
@@ -94,11 +95,11 @@ class TournamentService
     }
 
     /**
-     * @return array{items: list<array{id: int, url: string, title: string, subtitle: string|null, subtitle_missing: bool, status_label: string, status_variant: string}>, has_more: bool}
+     * @return array{items: list<array<string, mixed>>, has_more: bool, total: int, summary: string|null}
      */
-    public function getIndexPage(int $page): array
+    public function getIndexPage(int $page, ?string $search = null, ?string $sort = null, ?string $status = null): array
     {
-        $pageData = $this->tournamentRepository->getPage($page);
+        $pageData = $this->tournamentRepository->getPage($page, $search, $sort, $status);
 
         return [
             'items' => $pageData['items']->map(function ($tournament) {
@@ -108,6 +109,10 @@ class TournamentService
                     'id' => $tournament->id,
                     'url' => route('tournaments.show', ['tournament' => $tournament->id]),
                     'title' => $tournament->displayTitle(),
+                    'name' => $tournament->name,
+                    'context' => $tournament->season?->organization?->name,
+                    'description' => null,
+                    'meta' => $date ?? 'Data nieustawiona',
                     'subtitle' => $date ? 'Data rozgrywek: '.$date : null,
                     'subtitle_missing' => $date === null,
                     'status_label' => $tournament->status->label(),
@@ -115,6 +120,8 @@ class TournamentService
                 ];
             })->all(),
             'has_more' => $pageData['has_more'],
+            'total' => $pageData['total'],
+            'summary' => PolishFold::matchSummary($pageData['total'], $search, 'turniej', 'turnieje', 'turniejów'),
         ];
     }
 

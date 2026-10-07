@@ -76,6 +76,7 @@ class FriendshipController
                     'id' => $friendship->friendId,
                     'name' => $friendship->friendPlayer->name,
                     'playerId' => $friendship->friendPlayer->id,
+                    'avatarUrl' => $friendship->friendPlayer->avatarUrl,
                 ];
             }),
         ]);
@@ -104,6 +105,7 @@ class FriendshipController
                     'email' => $user['email'],
                     'name' => $user['player']?->name ?? 'Brak nazwy',
                     'playerId' => $user['player']?->id ?? null,
+                    'avatarUrl' => $user['avatarUrl'] ?? null,
                 ];
             }),
         ]);
@@ -140,11 +142,13 @@ class FriendshipController
                         'id' => $invitation->senderId,
                         'name' => $invitation->senderPlayer->name,
                         'playerId' => $invitation->senderPlayer->id,
+                        'avatarUrl' => $invitation->senderPlayer->avatarUrl,
                     ],
                     'receiver' => [
                         'id' => $invitation->receiverId,
                         'name' => $invitation->receiverPlayer?->name ?? 'Brak nazwy',
                         'playerId' => $invitation->receiverPlayer?->id ?? null,
+                        'avatarUrl' => $invitation->receiverPlayer?->avatarUrl,
                     ],
                     'status' => $invitation->status,
                 ],
@@ -223,6 +227,7 @@ class FriendshipController
                         'id' => $invitation->senderId,
                         'name' => $invitation->senderPlayer?->name ?? 'Brak nazwy',
                         'playerId' => $invitation->senderPlayer?->id ?? null,
+                        'avatarUrl' => $invitation->senderPlayer?->avatarUrl,
                     ],
                     'status' => $invitation->status,
                     'createdAt' => $invitation->createdAt->toIso8601String(),
@@ -248,6 +253,7 @@ class FriendshipController
                         'id' => $invitation->receiverId,
                         'name' => $invitation->receiverPlayer?->name ?? 'Brak nazwy',
                         'playerId' => $invitation->receiverPlayer?->id ?? null,
+                        'avatarUrl' => $invitation->receiverPlayer?->avatarUrl,
                     ],
                     'status' => $invitation->status,
                     'createdAt' => $invitation->createdAt->toIso8601String(),
