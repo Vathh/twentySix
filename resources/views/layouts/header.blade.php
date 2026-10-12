@@ -36,7 +36,7 @@
                 && Auth::user()->player
                 && $currentPlayer
                 && (int) $currentPlayer->id === (int) Auth::user()->player->id;
-            $kontoActive = $isMyProfile || request()->routeIs('me.*', 'settings.*', 'invitations.*');
+            $kontoActive = $isMyProfile || request()->routeIs('me.*', 'settings.*', 'invitations.*', 'webcam.*');
             $rozgrywkiActive = request()->routeIs('organizations.*', 'seasons.*', 'tournaments.*', 'leagues.*', 'league-seasons.*', 'league-games.*')
                 && ! $kontoActive;
         @endphp
@@ -145,6 +145,10 @@
                                class="nav-dropdown-item {{ request()->routeIs('invitations.*') ? 'active' : '' }}"
                                role="menuitem"
                                @click="navOpen = false; open = false">Zaproszenia</a>
+                            <a href="{{ route('webcam.index') }}"
+                               class="nav-dropdown-item {{ request()->routeIs('webcam.*') ? 'active' : '' }}"
+                               role="menuitem"
+                               @click="navOpen = false; open = false">Mecz kamerkowy</a>
                             <a href="{{ route('settings.index') }}"
                                class="nav-dropdown-item {{ request()->routeIs('settings.*') ? 'active' : '' }}"
                                role="menuitem"

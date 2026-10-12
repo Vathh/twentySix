@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\QuickGame\QuickGameLobbyAuthorizationService;
+use App\Services\Webcam\WebcamMatchService;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
@@ -29,4 +30,8 @@ Broadcast::channel('quick-game.{quickGameId}', function () {
 
 Broadcast::channel('quick-game-ffa-lobby.{lobbyId}', function () {
     return true;
+});
+
+Broadcast::channel('webcam-match.{matchId}', function ($user, $matchId) {
+    return app(WebcamMatchService::class)->isParticipant((int) $matchId, (int) $user->id);
 });

@@ -19,6 +19,7 @@ use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TournamentJoinLandingController;
 use App\Http\Controllers\TournamentRefereeController;
 use App\Http\Controllers\TournamentTabletLoginLandingController;
+use App\Http\Controllers\WebcamMatchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PagesController::class, 'showHomePage'])->name('pages.home');
@@ -106,6 +107,18 @@ Route::middleware(['auth', 'platform.admin'])->prefix('admin')->name('admin.')->
     Route::post('/deleted/{kind}/{id}/restore', [\App\Http\Controllers\PlatformAdminController::class, 'restore'])
         ->whereNumber('id')
         ->name('deleted.restore');
+});
+
+Route::middleware('auth')->prefix('webcam')->name('webcam.')->group(function () {
+    Route::get('/', [WebcamMatchController::class, 'index'])->name('index');
+    Route::post('/', [WebcamMatchController::class, 'store'])->name('store');
+    Route::post('/broadcasting/auth', [WebcamMatchController::class, 'broadcastAuth'])->name('broadcast.auth');
+    Route::get('/matches/{match}', [WebcamMatchController::class, 'show'])->whereNumber('match')->name('show');
+    Route::get('/matches/{match}/state', [WebcamMatchController::class, 'state'])->whereNumber('match')->name('state');
+    Route::post('/matches/{match}/ready', [WebcamMatchController::class, 'ready'])->whereNumber('match')->name('ready');
+    Route::post('/matches/{match}/visits', [WebcamMatchController::class, 'visit'])->whereNumber('match')->name('visit');
+    Route::post('/matches/{match}/undo', [WebcamMatchController::class, 'undo'])->whereNumber('match')->name('undo');
+    Route::post('/matches/{match}/signal', [WebcamMatchController::class, 'signal'])->whereNumber('match')->name('signal');
 });
 
 Route::middleware('auth')->prefix('settings')->name('settings.')->group(function () {
