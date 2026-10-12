@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Badge\BadgeCategory;
+use App\Models\Badge\PlayerBadge;
 use App\Models\Player\Player;
 use App\Models\Users\User;
 use App\Repositories\Friends\FriendshipRepository;
@@ -30,13 +32,34 @@ class DemoPlayersSeeder extends Seeder
         ['email' => 'gracz8@test.pl', 'name' => 'Magdalena Szymańska'],
     ];
 
+    /**
+     * Podgląd pasków: różne stopnie i wypełnienie (0 = brak wiersza, medal zablokowany).
+     *
+     * @var array<string, array<string, int>>
+     */
+    private const HIGH_VISITS = [
+        'gracz1@test.pl' => ['100' => 32, '140' => 12, '180' => 2],
+        'gracz2@test.pl' => ['100' => 4],
+        'gracz3@test.pl' => ['100' => 400, '140' => 80, '180' => 40],
+        'gracz4@test.pl' => ['100' => 1, '140' => 1, '180' => 1],
+        'gracz5@test.pl' => ['100' => 9, '140' => 24, '180' => 9],
+        'gracz6@test.pl' => ['100' => 60, '140' => 6, '180' => 250],
+        'gracz7@test.pl' => ['100' => 1200, '140' => 3],
+        'gracz8@test.pl' => ['100' => 50, '140' => 100, '180' => 50],
+    ];
+
     public function run(): void
     {
         $users = $this->ensureUsers();
         $this->seedFriendships($users);
         $this->seedInvitations($users);
+        $this->seedHighVisitBadges($users);
 
         $this->command?->info('DemoPlayersSeeder: 8 kont (gracz1@test.pl … gracz8@test.pl), hasło: password');
+        $jan = $users['gracz1@test.pl']->player;
+        if ($jan !== null) {
+            $this->command?->line('  odznaki Jana Kowalskiego: '.url('/players/'.$jan->id));
+        }
     }
 
     /**
@@ -146,5 +169,42 @@ class DemoPlayersSeeder extends Seeder
 
         // Wysłane i już zaakceptowane (historyczne) — 5 → 6, potem znajomi z seedFriendships nie łączą 5-6
         // 5 i 6 nie są znajomymi w pairs — do testu accept flow można użyć pending 2→6
+    }
+
+    /**
+     * @param  array<string, User>  $users
+     */
+    private function seedHighVisitBadges(array $users): void
+    {
+        $category = BadgeCategory::HighVisit->value;
+        $now = now();
+
+        foreach (self::HIGH_VISITS as $email => $hits) {
+            $player = $users[$email]->player ?? null;
+            if ($player === null) {
+                continue;
+            }
+
+            PlayerBadge::query()
+                ->where('player_id', $player->id)
+                ->where('category', $category)
+                ->delete();
+
+            foreach ($hits as $key => $times) {
+                if ($times < 1) {
+                    continue;
+                }
+
+                PlayerBadge::query()->create([
+                    'player_id' => $player->id,
+                    'category' => $category,
+                    'badge_key' => $key,
+                    'times_earned' => $times,
+                    'first_unlocked_at' => $now->copy()->subDays(30),
+                    'last_earned_at' => $now,
+                    'source_quality' => 'manual',
+                ]);
+            }
+        }
     }
 }

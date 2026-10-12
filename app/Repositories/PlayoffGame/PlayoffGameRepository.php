@@ -180,6 +180,11 @@ class PlayoffGameRepository
         return PlayoffGame::with($relations)->findOrFail($gameId);
     }
 
+    public function findModelOrNull(int $gameId): ?PlayoffGame
+    {
+        return PlayoffGame::query()->find($gameId);
+    }
+
     public function save(PlayoffGame $game): void
     {
         $game->save();

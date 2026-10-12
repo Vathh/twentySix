@@ -10,6 +10,7 @@ use App\Models\Users\User;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\Player\PlayerStatRepository;
 use App\Services\Badge\CheckoutWheelAssembler;
+use App\Services\Badge\HighVisitBadgeAssembler;
 use App\Services\Career\PlayerCareerStatsService;
 use App\Services\Friends\FriendshipService;
 use Illuminate\Support\Facades\Validator;
@@ -26,6 +27,7 @@ class PlayerProfileService
         private PlayerCareerStatsService $playerCareerStatsService,
         private PlayerOverviewService $playerOverviewService,
         private CheckoutWheelAssembler $checkoutWheelAssembler,
+        private HighVisitBadgeAssembler $highVisitBadgeAssembler,
         private PlayerStatRepository $playerStatRepository,
     ) {}
 
@@ -61,6 +63,7 @@ class PlayerProfileService
             'overview' => $assembled['overview'],
             'checkoutHits' => $assembled['checkoutHits'],
             'checkoutItems' => $assembled['checkoutItems'],
+            'highVisitItems' => $assembled['highVisitItems'],
             'highlights' => $assembled['highlights'],
         ];
     }
@@ -135,6 +138,7 @@ class PlayerProfileService
      *     overview: array<string, mixed>,
      *     checkoutHits: array<int, int>,
      *     checkoutItems: list<array{key: string, timesEarned: int, level: int, levelName: string, lastEarnedAt: string|null, lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null}>,
+     *     highVisitItems: list<array{key: string, label: string, timesEarned: int, level: int, levelName: string, levelLabel: string|null, nextThreshold: int|null, nextLevelName: string|null, nextLevelLabel: string|null, image: string, lastEarnedAt: string|null, lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null}>,
      *     highlights: array{fastestQf: ?int, highestHf: ?int}
      * }
      */
@@ -160,6 +164,7 @@ class PlayerProfileService
             'overview' => $assembled['overview'],
             'checkoutHits' => $assembled['checkoutHits'],
             'checkoutItems' => $assembled['checkoutItems'],
+            'highVisitItems' => $assembled['highVisitItems'],
             'highlights' => $assembled['highlights'],
         ];
     }
@@ -186,6 +191,7 @@ class PlayerProfileService
      *     overview: array<string, mixed>,
      *     checkoutHits: array<int, int>,
      *     checkoutItems: list<array{key: string, timesEarned: int, level: int, levelName: string, lastEarnedAt: string|null, lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null}>,
+     *     highVisitItems: list<array{key: string, label: string, timesEarned: int, level: int, levelName: string, levelLabel: string|null, nextThreshold: int|null, nextLevelName: string|null, nextLevelLabel: string|null, image: string, lastEarnedAt: string|null, lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null}>,
      *     highlights: array{fastestQf: ?int, highestHf: ?int}
      * }
      */
@@ -194,6 +200,7 @@ class PlayerProfileService
         $isSelf = $this->isSelf($player, $viewer);
         $core = $this->prepareRegisteredProfile($player, $isSelf);
         $checkoutItems = $this->checkoutWheelAssembler->itemsForPlayer((int) $player->id);
+        $highVisitItems = $this->highVisitBadgeAssembler->itemsForPlayer((int) $player->id);
         $checkoutHits = [];
         foreach ($checkoutItems as $item) {
             $times = (int) $item['timesEarned'];
@@ -215,6 +222,7 @@ class PlayerProfileService
             'overview' => $this->playerOverviewService->forProfile($player),
             'checkoutHits' => $checkoutHits,
             'checkoutItems' => $checkoutItems,
+            'highVisitItems' => $highVisitItems,
             'highlights' => $this->competitionHighlights((int) $player->id),
         ];
     }

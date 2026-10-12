@@ -9,6 +9,25 @@ use Illuminate\Support\Collection;
 
 class PlayerBadgeRepository
 {
+    /**
+     * Commity meczów, które nie mają jeszcze zdarzeń danej kategorii.
+     *
+     * @return Collection<int, BadgeGameCommit>
+     */
+    public function commitsMissingCategory(string $category): Collection
+    {
+        return BadgeGameCommit::query()
+            ->whereNotExists(function ($query) use ($category) {
+                $query->selectRaw('1')
+                    ->from('player_badge_events')
+                    ->whereColumn('player_badge_events.source_kind', 'badge_game_commits.source_kind')
+                    ->whereColumn('player_badge_events.source_id', 'badge_game_commits.source_id')
+                    ->where('player_badge_events.category', $category);
+            })
+            ->orderBy('id')
+            ->get();
+    }
+
     public function hasCommit(string $sourceKind, int $sourceId): bool
     {
         return BadgeGameCommit::query()

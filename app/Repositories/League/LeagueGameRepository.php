@@ -12,6 +12,11 @@ use Illuminate\Support\Collection;
 
 class LeagueGameRepository
 {
+    public function findModelOrNull(int $gameId): ?LeagueGame
+    {
+        return LeagueGame::query()->find($gameId);
+    }
+
     public function findForPlay(int $gameId): LeagueGame
     {
         $game = LeagueGame::query()

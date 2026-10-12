@@ -13,7 +13,9 @@ use App\Enums\LeagueGamePurpose;
 use App\Enums\LeagueGameStatus;
 use App\Enums\LeagueSeasonStatus;
 use App\Enums\TournamentStatus;
+use App\Models\Badge\BadgeGameCommit;
 use App\Models\Badge\PlayerBadge;
+use App\Models\Badge\PlayerBadgeEvent;
 use App\Models\Game\Game;
 use App\Models\Game\GameLeg;
 use App\Models\Game\GameVisit;
@@ -32,6 +34,7 @@ use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Services\Badge\BadgeAwardService;
 use App\Services\Badge\CheckoutWheelAssembler;
+use App\Services\Badge\HighVisitBadgeAssembler;
 use App\Services\GameScoring\GameResultCorrectionService;
 use App\Services\GameScoring\GameScoringService;
 use App\Services\League\LeagueSeasonService;
@@ -75,7 +78,7 @@ class PlayerCheckoutBadgeTest extends TestCase
         $this->finishGroupByScoring($game2, $p1, $p2, checkout: 121, secondCheckout: 40);
 
         $this->assertSame(2, (int) PlayerBadge::query()->where('player_id', $p1->id)->where('badge_key', '121')->value('times_earned'));
-        $this->assertDatabaseCount('player_badge_events', 2);
+        $this->assertSame(2, PlayerBadgeEvent::query()->where('category', BadgeCategory::Checkout->value)->count());
 
         $item = collect(app(CheckoutWheelAssembler::class)->itemsForPlayer((int) $p1->id))->firstWhere('key', '121');
         $this->assertSame(2, $item['timesEarned']);
@@ -91,11 +94,11 @@ class PlayerCheckoutBadgeTest extends TestCase
 
         $game40 = $this->createGroupGame($tournament, $p1, $p2);
         $this->finishGroupByScoring($game40, $p1, $p2, checkout: 40);
-        $this->assertDatabaseCount('player_badges', 0);
+        $this->assertSame(0, $this->checkoutBadgeCount());
 
         $game301 = $this->createGroupGame($tournament, $p1, $p2, startingScore: 301);
         $this->finishGroupByScoring($game301, $p1, $p2, checkout: 121);
-        $this->assertDatabaseCount('player_badges', 0);
+        $this->assertSame(0, $this->checkoutBadgeCount());
 
         $quick = QuickGame::create([
             'player1_id' => $p1->id,
@@ -117,7 +120,7 @@ class PlayerCheckoutBadgeTest extends TestCase
         ]);
         $this->visit($leg, $p1->id, 121, true);
         $this->awardService->awardForFinishedGame(GameScoringContext::fromQuickGame($quick), $quick);
-        $this->assertDatabaseCount('player_badges', 0);
+        $this->assertSame(0, $this->checkoutBadgeCount());
         $this->assertDatabaseCount('badge_game_commits', 2);
     }
 
@@ -140,11 +143,12 @@ class PlayerCheckoutBadgeTest extends TestCase
 
         $game->refresh();
         $this->assertSame(GameStatus::FINISHED, $game->status);
-        $this->assertDatabaseCount('player_badges', 0);
+        $this->assertSame(0, $this->checkoutBadgeCount());
+        $this->assertSame(2, $this->highVisitTimes((int) $p1->id, '180'));
 
         $this->awardService->awardForFinishedGame(GameScoringContext::fromGroupGame($game->fresh()), $game->fresh());
-        $this->assertDatabaseCount('player_badge_events', 0);
-        $this->assertSame(1, \App\Models\Badge\BadgeGameCommit::query()->count());
+        $this->assertSame(2, $this->highVisitTimes((int) $p1->id, '180'));
+        $this->assertSame(1, BadgeGameCommit::query()->count());
     }
 
     #[Test]
@@ -197,7 +201,7 @@ class PlayerCheckoutBadgeTest extends TestCase
         ]);
         $this->seedFinishedCheckout($game, 'league_game_id', $a->id, 121);
         $this->awardService->awardForFinishedGame(GameScoringContext::fromLeagueGame($game->fresh()), $game->fresh());
-        $this->assertDatabaseCount('player_badges', 1);
+        $this->assertSame(1, $this->checkoutBadgeCount());
 
         app(LeagueSeasonService::class)->recordWalkover($game->id, 'single', $b->id);
         $this->assertDatabaseCount('player_badges', 0);
@@ -255,8 +259,85 @@ class PlayerCheckoutBadgeTest extends TestCase
         $this->get(route('players.show', $player))
             ->assertOk()
             ->assertSee('Checkouty 100+')
+            ->assertSee('Mocny punkciarz')
             ->assertSee('12 / 64')
             ->assertSee('data-checkout-wheel', false);
+    }
+
+    #[Test]
+    public function high_visit_awards_exclusive_buckets_and_backfill_is_idempotent(): void
+    {
+        [$p1, $p2, $tournament] = $this->tournamentPair();
+        $game = $this->createGroupGame($tournament, $p1, $p2, status: GameStatus::FINISHED);
+        $game->update(['player1_score' => 2, 'player2_score' => 0, 'winner_id' => $p1->id]);
+        $leg = GameLeg::create([
+            'game_id' => $game->id,
+            'leg_number' => 1,
+            'winner_id' => $p1->id,
+            'player1_score' => 501,
+            'player2_score' => 0,
+            'finished_at' => now(),
+        ]);
+        $this->visit($leg, (int) $p1->id, 180, false, visitNumber: 1);
+        $this->visit($leg, (int) $p1->id, 160, false, visitNumber: 2);
+        $this->visit($leg, (int) $p1->id, 110, false, darts: 2, visitNumber: 3);
+        $this->visit($leg, (int) $p1->id, 99, false, visitNumber: 4);
+        $this->visit($leg, (int) $p1->id, 180, false, bust: true, visitNumber: 5);
+        $this->visit($leg, (int) $p2->id, 140, false, visitNumber: 6);
+
+        $this->awardService->awardForFinishedGame(GameScoringContext::fromGroupGame($game->fresh()), $game->fresh());
+        $this->awardService->awardForFinishedGame(GameScoringContext::fromGroupGame($game->fresh()), $game->fresh());
+
+        $this->assertSame(0, $this->checkoutBadgeCount());
+        $this->assertSame(1, $this->highVisitTimes((int) $p1->id, '180'));
+        $this->assertSame(1, $this->highVisitTimes((int) $p1->id, '140'));
+        $this->assertSame(1, $this->highVisitTimes((int) $p1->id, '100'));
+        $this->assertSame(1, $this->highVisitTimes((int) $p2->id, '140'));
+
+        $oneEighty = collect(app(HighVisitBadgeAssembler::class)->itemsForPlayer((int) $p1->id))->firstWhere('key', '180');
+        $this->assertSame('iron', $oneEighty['levelName']);
+        $this->assertSame(1, $oneEighty['levelNumber']);
+        $this->assertSame('Żelazo', $oneEighty['levelLabel']);
+        $this->assertSame(3, $oneEighty['nextThreshold']);
+        $this->assertSame('Brąz', $oneEighty['nextLevelLabel']);
+        $this->assertSame(33, $oneEighty['progressPercent']);
+        $this->assertSame('1/3', $oneEighty['progressLabel']);
+        $this->assertSame('images/badges/visits/180/iron.png', $oneEighty['image']);
+
+        $game2 = $this->createGroupGame($tournament, $p1, $p2, status: GameStatus::FINISHED);
+        $this->seedFinishedCheckout($game2, 'game_id', (int) $p1->id, 180);
+        BadgeGameCommit::query()->create([
+            'source_kind' => GameKind::GROUP->value,
+            'source_id' => $game2->id,
+        ]);
+
+        $this->assertSame(1, $this->awardService->backfillCommittedHighVisits());
+        $this->assertSame(2, $this->highVisitTimes((int) $p1->id, '180'));
+        $this->assertSame(0, $this->checkoutBadgeCount());
+        $this->assertSame(0, $this->awardService->backfillCommittedHighVisits());
+        $this->assertSame(2, $this->highVisitTimes((int) $p1->id, '180'));
+
+        $this->get(route('players.show', $p1))
+            ->assertOk()
+            ->assertSee('Mocny punkciarz')
+            ->assertSee('Poziom 1')
+            ->assertSee('2/3')
+            ->assertDontSee('Żelazo od 1')
+            ->assertDontSee('Następny:');
+    }
+
+    private function checkoutBadgeCount(): int
+    {
+        return PlayerBadge::query()->where('category', BadgeCategory::Checkout->value)->count();
+    }
+
+    private function highVisitTimes(int $playerId, string $key): int
+    {
+        return (int) PlayerBadge::query()
+            ->where('player_id', $playerId)
+            ->where('category', BadgeCategory::HighVisit->value)
+            ->where('badge_key', $key)
+            ->value('times_earned');
     }
 
     /**
@@ -434,18 +515,26 @@ class PlayerCheckoutBadgeTest extends TestCase
         $this->visit($leg, $playerId, $score, true);
     }
 
-    private function visit(GameLeg $leg, int $playerId, int $score, bool $closed, bool $voided = false): void
-    {
+    private function visit(
+        GameLeg $leg,
+        int $playerId,
+        int $score,
+        bool $closed,
+        bool $voided = false,
+        bool $bust = false,
+        int $darts = 3,
+        int $visitNumber = 1,
+    ): void {
         GameVisit::create([
             'game_leg_id' => $leg->id,
             'player_id' => $playerId,
-            'visit_number' => 1,
+            'visit_number' => $visitNumber,
             'score' => $score,
             'remaining_before' => $score,
             'remaining_after' => $closed ? 0 : 400,
-            'darts_in_visit' => 3,
+            'darts_in_visit' => $darts,
             'closed_leg' => $closed,
-            'bust' => false,
+            'bust' => $bust,
             'is_voided' => $voided,
             'client_visit_id' => (string) Str::uuid(),
         ]);
