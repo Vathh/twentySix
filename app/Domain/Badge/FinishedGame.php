@@ -12,6 +12,7 @@ use App\Enums\GameKind;
  *     bust: bool,
  *     isVoided: bool
  * }
+ * @phpstan-type ClosedLeg array{playerId: int, dartsThrown: int}
  */
 final class FinishedGame
 {
@@ -19,6 +20,7 @@ final class FinishedGame
      * @param  list<int>  $playerIds
      * @param  list<int>  $registeredPlayerIds
      * @param  list<Visit>  $visits
+     * @param  list<ClosedLeg>  $legs
      */
     public function __construct(
         public GameKind $kind,
@@ -28,5 +30,6 @@ final class FinishedGame
         public array $playerIds,
         public array $registeredPlayerIds,
         public array $visits,
+        public array $legs = [],
     ) {}
 }

@@ -74,6 +74,32 @@ class GameLegPlayerStatRepository
     }
 
     /**
+     * Lotki zwycięzcy zamkniętego lega. Puste darts_thrown pomijamy.
+     *
+     * @param  list<int>  $gameLegIds
+     * @return list<array{playerId: int, dartsThrown: int}>
+     */
+    public function winnerDartsForLegs(array $gameLegIds): array
+    {
+        if ($gameLegIds === []) {
+            return [];
+        }
+
+        return GameLegPlayerStat::query()
+            ->join('game_legs', 'game_legs.id', '=', 'game_leg_player_stats.game_leg_id')
+            ->whereIn('game_leg_player_stats.game_leg_id', $gameLegIds)
+            ->whereColumn('game_legs.winner_id', 'game_leg_player_stats.player_id')
+            ->whereNotNull('game_leg_player_stats.darts_thrown')
+            ->orderBy('game_legs.leg_number')
+            ->get(['game_leg_player_stats.player_id', 'game_leg_player_stats.darts_thrown'])
+            ->map(fn ($row) => [
+                'playerId' => (int) $row->player_id,
+                'dartsThrown' => (int) $row->darts_thrown,
+            ])
+            ->all();
+    }
+
+    /**
      * @return Collection<int, GameLegPlayerStat>
      */
     public function getForLegIds(array $gameLegIds): Collection

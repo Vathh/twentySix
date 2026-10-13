@@ -88,6 +88,18 @@ class PlayerProfileApiTest extends TestCase
                 'checkoutItems' => [
                     '*' => ['key', 'timesEarned', 'level', 'levelName', 'lastEarnedAt', 'lastGame'],
                 ],
+                'qfItems' => [
+                    '*' => [
+                        'key',
+                        'label',
+                        'timesEarned',
+                        'level',
+                        'levelName',
+                        'image',
+                        'lastEarnedAt',
+                        'lastGame',
+                    ],
+                ],
                 'highVisitItems' => [
                     '*' => [
                         'key',

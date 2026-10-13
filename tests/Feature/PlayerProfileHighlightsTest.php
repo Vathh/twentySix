@@ -167,6 +167,7 @@ class PlayerProfileHighlightsTest extends TestCase
                 '–',
                 'Najwyższy finish',
                 '–',
+                'Jeszcze brak odznaczeń.',
             ], false);
     }
 

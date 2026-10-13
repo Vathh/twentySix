@@ -637,7 +637,7 @@
     }
 
     .profile-hero-top {
-        @apply flex flex-wrap items-start gap-3;
+        @apply flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap;
     }
 
     .profile-hero-mono {
@@ -696,6 +696,15 @@
         max-width: 100%;
     }
 
+    .profile-hero-main {
+        @apply flex min-w-0 flex-1 flex-col gap-3;
+        flex-basis: 16rem;
+    }
+
+    .profile-hero-idline {
+        @apply flex items-start gap-3;
+    }
+
     .profile-hero-id {
         @apply min-w-0 flex-1;
     }
@@ -718,6 +727,48 @@
 
     .profile-hero-actions {
         @apply flex flex-wrap items-center gap-2 shrink-0;
+    }
+
+    .profile-hero-badges {
+        @apply flex flex-col gap-1.5;
+    }
+
+    .profile-hero-badges-label {
+        @apply text-[10px] font-bold uppercase tracking-wide text-text-muted;
+    }
+
+    .profile-hero-badges-empty {
+        @apply text-xs text-text-muted;
+    }
+
+    .profile-hero-badges-row {
+        @apply m-0 flex list-none flex-wrap gap-1.5 p-0 sm:gap-2;
+    }
+
+    .profile-hero-badge {
+        @apply relative inline-flex h-[4.75rem] w-[4.75rem] cursor-pointer rounded-md border-0 bg-transparent p-0 sm:h-[5.5rem] sm:w-[5.5rem];
+    }
+
+    .profile-hero-badge:hover,
+    .profile-hero-badge:focus-visible {
+        transform: translateY(-2px);
+    }
+
+    .badge-artwork {
+        @apply relative block h-full w-full overflow-hidden;
+    }
+
+    .badge-artwork img {
+        @apply absolute block max-w-none;
+    }
+
+    .badge-artwork.is-locked img {
+        opacity: 0.4;
+    }
+
+    .profile-hero-badge:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
     }
 
     .profile-hero-bio {

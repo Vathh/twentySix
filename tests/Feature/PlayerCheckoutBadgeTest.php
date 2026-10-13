@@ -18,6 +18,7 @@ use App\Models\Badge\PlayerBadge;
 use App\Models\Badge\PlayerBadgeEvent;
 use App\Models\Game\Game;
 use App\Models\Game\GameLeg;
+use App\Models\Game\GameLegPlayerStat;
 use App\Models\Game\GameVisit;
 use App\Models\GroupStanding\GroupStanding;
 use App\Models\League\League;
@@ -35,6 +36,7 @@ use App\Models\Users\User;
 use App\Services\Badge\BadgeAwardService;
 use App\Services\Badge\CheckoutWheelAssembler;
 use App\Services\Badge\HighVisitBadgeAssembler;
+use App\Services\Badge\QfBadgeAssembler;
 use App\Services\GameScoring\GameResultCorrectionService;
 use App\Services\GameScoring\GameScoringService;
 use App\Services\League\LeagueSeasonService;
@@ -323,7 +325,104 @@ class PlayerCheckoutBadgeTest extends TestCase
             ->assertSee('Poziom 1')
             ->assertSee('2/3')
             ->assertDontSee('Żelazo od 1')
-            ->assertDontSee('Następny:');
+            ->assertDontSee('Następny:')
+            ->assertSeeInOrder([
+                'profile-hero-badges',
+                'images/badges/visits/180/',
+                'images/badges/visits/140/',
+                'images/badges/visits/100/',
+            ], false);
+    }
+
+    #[Test]
+    public function qf_awards_only_the_exact_dart_count_and_backfill_is_idempotent(): void
+    {
+        [$p1, $p2, $tournament] = $this->tournamentPair();
+        $game = $this->createGroupGame($tournament, $p1, $p2, status: GameStatus::FINISHED);
+        $game->update(['player1_score' => 2, 'player2_score' => 0, 'winner_id' => $p1->id]);
+        $nine = GameLeg::create([
+            'game_id' => $game->id,
+            'leg_number' => 1,
+            'winner_id' => $p1->id,
+            'player1_score' => 501,
+            'player2_score' => 0,
+            'finished_at' => now(),
+        ]);
+        $this->winnerDarts($nine, (int) $p1->id, 9);
+        $this->winnerDarts($nine, (int) $p2->id, 15);
+        $slow = GameLeg::create([
+            'game_id' => $game->id,
+            'leg_number' => 2,
+            'winner_id' => $p1->id,
+            'player1_score' => 501,
+            'player2_score' => 0,
+            'finished_at' => now(),
+        ]);
+        $this->winnerDarts($slow, (int) $p1->id, 20);
+
+        $this->awardService->awardForFinishedGame(GameScoringContext::fromGroupGame($game->fresh()), $game->fresh());
+        $this->awardService->awardForFinishedGame(GameScoringContext::fromGroupGame($game->fresh()), $game->fresh());
+
+        $this->assertSame(1, $this->qfTimes((int) $p1->id, '9'));
+        $this->assertSame(0, $this->qfTimes((int) $p1->id, '10'));
+        $this->assertSame(0, $this->qfTimes((int) $p1->id, '15'));
+        $this->assertSame(0, $this->qfTimes((int) $p1->id, '19'));
+        $this->assertSame(0, $this->qfTimes((int) $p1->id, '20'));
+        $this->assertSame(0, $this->qfTimes((int) $p2->id, '15'));
+        $this->assertSame(0, $this->checkoutBadgeCount());
+        $this->assertSame(0, $this->highVisitTimes((int) $p1->id, '180'));
+
+        $nineItem = collect(app(QfBadgeAssembler::class)->itemsForPlayer((int) $p1->id))->firstWhere('key', '9');
+        $this->assertSame('iron', $nineItem['levelName']);
+        $this->assertSame('1/2', $nineItem['progressLabel']);
+        $this->assertSame('images/badges/qf/9/iron.png', $nineItem['image']);
+        $this->assertNull(collect(app(QfBadgeAssembler::class)->itemsForPlayer((int) $p1->id))->firstWhere('key', '19'));
+
+        $game2 = $this->createGroupGame($tournament, $p1, $p2, status: GameStatus::FINISHED);
+        $twelve = GameLeg::create([
+            'game_id' => $game2->id,
+            'leg_number' => 1,
+            'winner_id' => $p1->id,
+            'player1_score' => 501,
+            'player2_score' => 0,
+            'finished_at' => now(),
+        ]);
+        $this->winnerDarts($twelve, (int) $p1->id, 12);
+        BadgeGameCommit::query()->create([
+            'source_kind' => GameKind::GROUP->value,
+            'source_id' => $game2->id,
+        ]);
+
+        $this->assertSame(1, $this->awardService->backfillCommittedQf());
+        $this->assertSame(1, $this->qfTimes((int) $p1->id, '12'));
+        $this->assertSame(0, $this->checkoutBadgeCount());
+        $this->assertSame(0, $this->awardService->backfillCommittedQf());
+        $this->assertSame(1, $this->qfTimes((int) $p1->id, '12'));
+
+        $this->get(route('players.show', $p1))
+            ->assertOk()
+            ->assertSee('Szybkie legi')
+            ->assertSee('images/badges/qf/9/iron.png', false)
+            ->assertSee('images/badges/qf/12/', false)
+            ->assertDontSee('images/badges/qf/19/', false);
+    }
+
+    private function winnerDarts(GameLeg $leg, int $playerId, int $darts): void
+    {
+        GameLegPlayerStat::query()->create([
+            'game_leg_id' => $leg->id,
+            'player_id' => $playerId,
+            'darts_thrown' => $darts,
+        ]);
+    }
+
+    private function qfTimes(int $playerId, string $key): int
+    {
+        return (int) PlayerBadge::query()
+            ->where('player_id', $playerId)
+            ->where('category', BadgeCategory::Qf->value)
+            ->where('badge_key', $key)
+            ->value('times_earned');
     }
 
     private function checkoutBadgeCount(): int

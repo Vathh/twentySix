@@ -8,6 +8,7 @@ use App\Domain\Badge\Checkout\CheckoutBadgeDetector;
 use App\Domain\Badge\FinishedGame;
 use App\Domain\Badge\GameEligibility;
 use App\Domain\Badge\HighVisit\HighVisitBadgeDetector;
+use App\Domain\Badge\Qf\QfBadgeDetector;
 use App\Enums\GameKind;
 use App\Models\Game\Game;
 use App\Models\Game\GameVisit;
@@ -15,6 +16,7 @@ use App\Models\League\LeagueGame;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\QuickGame\QuickGame;
 use App\Repositories\Badge\PlayerBadgeRepository;
+use App\Repositories\Game\GameLegPlayerStatRepository;
 use App\Repositories\Game\GameLegRepository;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\Game\GameVisitRepository;
@@ -32,15 +34,17 @@ class BadgeAwardService
     public function __construct(
         private PlayerBadgeRepository $playerBadgeRepository,
         private GameLegRepository $gameLegRepository,
+        private GameLegPlayerStatRepository $gameLegPlayerStatRepository,
         private GameVisitRepository $gameVisitRepository,
         private PlayerRepository $playerRepository,
         private GameRepository $gameRepository,
         private PlayoffGameRepository $playoffGameRepository,
         private LeagueGameRepository $leagueGameRepository,
         private HighVisitBadgeDetector $highVisitDetector,
+        private QfBadgeDetector $qfBadgeDetector,
         CheckoutBadgeDetector $checkoutDetector,
     ) {
-        $this->detectors = [$checkoutDetector, $highVisitDetector];
+        $this->detectors = [$checkoutDetector, $highVisitDetector, $qfBadgeDetector];
     }
 
     public function awardForFinishedGame(
@@ -116,6 +120,42 @@ class BadgeAwardService
         return $awardedGames;
     }
 
+    /**
+     * Mecze z commitem odznak, które nie mają jeszcze zdarzeń qf.
+     * Nie nadaje innych kategorii i nie tworzy nowego commitu.
+     */
+    public function backfillCommittedQf(): int
+    {
+        $awardedGames = 0;
+
+        foreach ($this->playerBadgeRepository->commitsMissingCategory(BadgeCategory::Qf->value) as $commit) {
+            $context = $this->contextForSource($commit->source_kind, (int) $commit->source_id);
+            if ($context === null) {
+                continue;
+            }
+
+            $events = $this->qfBadgeDetector->detect($this->buildFinishedGame($context));
+            if ($events === []) {
+                continue;
+            }
+
+            DB::transaction(function () use ($commit, $events) {
+                $this->playerBadgeRepository->insertEvents($commit->source_kind, (int) $commit->source_id, $events);
+                foreach ($events as $event) {
+                    $this->playerBadgeRepository->upsertFromAward(
+                        $event['playerId'],
+                        $event['category'],
+                        $event['badgeKey'],
+                        $event['amount'],
+                    );
+                }
+            });
+            $awardedGames++;
+        }
+
+        return $awardedGames;
+    }
+
     public function retractForGame(GameKind $kind, int $sourceId): void
     {
         if (! in_array($kind, [GameKind::GROUP, GameKind::PLAYOFF, GameKind::LEAGUE], true)) {
@@ -155,9 +195,8 @@ class BadgeAwardService
     private function buildFinishedGame(GameScoringContext $context): FinishedGame
     {
         $legs = $this->gameLegRepository->getForContext($context);
-        $visits = $this->gameVisitRepository->getActiveForGameLegs(
-            $legs->pluck('id')->map(fn ($id) => (int) $id)->all(),
-        );
+        $legIds = $legs->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $visits = $this->gameVisitRepository->getActiveForGameLegs($legIds);
         $playerIds = [$context->player1Id, $context->player2Id];
 
         return new FinishedGame(
@@ -174,6 +213,7 @@ class BadgeAwardService
                 'bust' => (bool) $visit->bust,
                 'isVoided' => (bool) $visit->is_voided,
             ])->all(),
+            legs: $this->gameLegPlayerStatRepository->winnerDartsForLegs($legIds),
         );
     }
 

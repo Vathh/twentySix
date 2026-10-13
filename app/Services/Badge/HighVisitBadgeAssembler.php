@@ -7,6 +7,7 @@ use App\Domain\Badge\HighVisit\HighVisitCatalog;
 use App\Domain\Badge\HighVisit\HighVisitLevelPolicy;
 use App\Repositories\Badge\PlayerBadgeRepository;
 use App\Repositories\Player\PlayerGameHistoryRepository;
+use App\Support\Badge\BadgeArtworkFrame;
 
 class HighVisitBadgeAssembler
 {
@@ -30,6 +31,7 @@ class HighVisitBadgeAssembler
      *     progressPercent: int,
      *     progressLabel: string,
      *     image: string,
+     *     artwork: array{width: float, height: float, left: float, top: float},
      *     lastEarnedAt: string|null,
      *     lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null
      * }>
@@ -101,7 +103,8 @@ class HighVisitBadgeAssembler
                 'nextLevelLabel' => HighVisitLevelPolicy::label($nextLevelName),
                 'progressPercent' => $progress['percent'],
                 'progressLabel' => $progress['label'],
-                'image' => HighVisitCatalog::imagePath($key, $levelName),
+                'image' => $image = HighVisitCatalog::imagePath($key, $levelName),
+                'artwork' => BadgeArtworkFrame::placement($image),
                 'lastEarnedAt' => $lastAt[$key] ?? $eventCreatedAt,
                 'lastGame' => $game,
             ];

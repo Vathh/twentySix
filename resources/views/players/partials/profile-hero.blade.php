@@ -11,48 +11,93 @@
             $relationChip = 'Zaproszenie od tego gracza';
         }
     }
+    // Gablota: tylko zdobyte odznaki z grafiką. Najpierw wysokie podejścia (180 → 100), potem QF (9 → 19).
+    $showcaseBadge = function (array $item, int $sort): array {
+        return [
+            'image' => $item['image'],
+            'title' => collect([$item['label'] ?? null, $item['levelLabel'] ?? null])->filter()->implode(' — '),
+            'sort' => $sort,
+        ];
+    };
+    $visitBadges = collect($highVisitItems ?? [])
+        ->filter(fn ($item) => (int) ($item['timesEarned'] ?? 0) > 0 && filled($item['image'] ?? null))
+        ->map(fn ($item) => $showcaseBadge($item, 1000 - (int) ($item['key'] ?? 0)))
+        ->sortBy('sort')
+        ->values();
+    $qfBadges = collect($qfItems ?? [])
+        ->filter(fn ($item) => (int) ($item['timesEarned'] ?? 0) > 0 && filled($item['image'] ?? null))
+        ->map(fn ($item) => $showcaseBadge($item, 2000 + (int) ($item['key'] ?? 0)))
+        ->sortBy('sort')
+        ->values();
+    $showcaseBadges = $visitBadges->concat($qfBadges)->values();
 @endphp
 <article class="profile-hero">
     <div class="profile-hero-top">
         <x-player-avatar :player="$player" size="lg" />
-        <div class="profile-hero-id">
-            <h1 class="profile-hero-name">{{ $player->name }}</h1>
-            <p class="profile-hero-meta">
-                @if($isRegistered)
-                    <span>Konto · od {{ $registeredOn }}</span>
-                @else
-                    <span class="overview-scope overview-scope--all">Gość</span>
-                @endif
-                @if($relationChip)
-                    <span class="overview-scope overview-scope--form">{{ $relationChip }}</span>
-                @endif
-            </p>
-            <p class="profile-hero-highlights">
-                <span>Najszybsza lotka <strong>{{ $highlights['fastestQf'] !== null ? $highlights['fastestQf'].' lotek' : '–' }}</strong></span>
-                <span>Najwyższy finish <strong>{{ $highlights['highestHf'] !== null ? $highlights['highestHf'] : '–' }}</strong></span>
-            </p>
-        </div>
-        @auth
-            <div class="profile-hero-actions">
-                @if($isOwnProfile)
-                    <a href="{{ route('players.edit', $player) }}" class="btn btn-mini">Edytuj profil</a>
-                @elseif($canInviteFriend)
-                    <form action="{{ route('players.add-friend', $player) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-mini">Dodaj do znajomych</button>
-                    </form>
-                @elseif($pendingReceivedInvitation)
-                    <form action="{{ route('friends.invitations.accept', $pendingReceivedInvitation->id) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-mini">Akceptuj</button>
-                    </form>
-                    <form action="{{ route('friends.invitations.reject', $pendingReceivedInvitation->id) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-mini border border-accent text-accent bg-transparent hover:bg-accent/10">Odrzuć</button>
-                    </form>
-                @endif
+        <div class="profile-hero-main">
+            <div class="profile-hero-idline">
+                <div class="profile-hero-id">
+                    <h1 class="profile-hero-name">{{ $player->name }}</h1>
+                    <p class="profile-hero-meta">
+                        @if($isRegistered)
+                            <span>Konto · od {{ $registeredOn }}</span>
+                        @else
+                            <span class="overview-scope overview-scope--all">Gość</span>
+                        @endif
+                        @if($relationChip)
+                            <span class="overview-scope overview-scope--form">{{ $relationChip }}</span>
+                        @endif
+                    </p>
+                    <p class="profile-hero-highlights">
+                        <span>Najszybsza lotka <strong>{{ $highlights['fastestQf'] !== null ? $highlights['fastestQf'].' lotek' : '–' }}</strong></span>
+                        <span>Najwyższy finish <strong>{{ $highlights['highestHf'] !== null ? $highlights['highestHf'] : '–' }}</strong></span>
+                    </p>
+                </div>
+                @auth
+                    <div class="profile-hero-actions">
+                        @if($isOwnProfile)
+                            <a href="{{ route('players.edit', $player) }}" class="btn btn-mini">Edytuj profil</a>
+                        @elseif($canInviteFriend)
+                            <form action="{{ route('players.add-friend', $player) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-mini">Dodaj do znajomych</button>
+                            </form>
+                        @elseif($pendingReceivedInvitation)
+                            <form action="{{ route('friends.invitations.accept', $pendingReceivedInvitation->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-mini">Akceptuj</button>
+                            </form>
+                            <form action="{{ route('friends.invitations.reject', $pendingReceivedInvitation->id) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-mini border border-accent text-accent bg-transparent hover:bg-accent/10">Odrzuć</button>
+                            </form>
+                        @endif
+                    </div>
+                @endauth
             </div>
-        @endauth
+
+            <section class="profile-hero-badges" aria-label="Odznaczenia">
+                <h2 class="profile-hero-badges-label">Odznaczenia</h2>
+                @if($showcaseBadges->isEmpty())
+                    <p class="profile-hero-badges-empty">Jeszcze brak odznaczeń.</p>
+                @else
+                    <ul class="profile-hero-badges-row">
+                        @foreach($showcaseBadges as $badge)
+                            <li>
+                                <button
+                                    type="button"
+                                    class="profile-hero-badge"
+                                    title="{{ $badge['title'] }}"
+                                    @click="activeTab = 'badges'"
+                                >
+                                    <x-badge-artwork :src="$badge['image']" :alt="$badge['title']" />
+                                </button>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+        </div>
     </div>
 
     @if(filled($player->description))
