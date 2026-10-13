@@ -35,6 +35,7 @@ use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Services\Badge\BadgeAwardService;
 use App\Services\Badge\CheckoutWheelAssembler;
+use App\Services\Badge\FinishBadgeAssembler;
 use App\Services\Badge\HighVisitBadgeAssembler;
 use App\Services\Badge\QfBadgeAssembler;
 use App\Services\GameScoring\GameResultCorrectionService;
@@ -401,10 +402,79 @@ class PlayerCheckoutBadgeTest extends TestCase
 
         $this->get(route('players.show', $p1))
             ->assertOk()
-            ->assertSee('Szybkie legi')
+            ->assertSee('Szybka akcja')
             ->assertSee('images/badges/qf/9/iron.png', false)
             ->assertSee('images/badges/qf/12/', false)
             ->assertDontSee('images/badges/qf/19/', false);
+    }
+
+    #[Test]
+    public function finish_counts_closed_legs_from_100_and_backfill_is_idempotent(): void
+    {
+        [$p1, $p2, $tournament] = $this->tournamentPair();
+        $game = $this->createGroupGame($tournament, $p1, $p2, status: GameStatus::FINISHED);
+        $game->update(['player1_score' => 2, 'player2_score' => 0, 'winner_id' => $p1->id]);
+        $leg = GameLeg::create([
+            'game_id' => $game->id,
+            'leg_number' => 1,
+            'winner_id' => $p1->id,
+            'player1_score' => 501,
+            'player2_score' => 0,
+            'finished_at' => now(),
+        ]);
+        foreach ([100, 121, 170, 140, 99] as $index => $score) {
+            $this->visit($leg, (int) $p1->id, $score, closed: true, visitNumber: $index + 1);
+        }
+        $this->visit($leg, (int) $p1->id, 180, closed: false, visitNumber: 6);
+        $this->visit($leg, (int) $p1->id, 160, closed: true, bust: true, visitNumber: 7);
+        $this->visit($leg, (int) $p2->id, 40, closed: true, visitNumber: 8);
+
+        $this->awardService->awardForFinishedGame(GameScoringContext::fromGroupGame($game->fresh()), $game->fresh());
+        $this->awardService->awardForFinishedGame(GameScoringContext::fromGroupGame($game->fresh()), $game->fresh());
+
+        $this->assertSame(4, $this->finishTimes((int) $p1->id, '100'));
+        $this->assertSame(0, $this->finishTimes((int) $p2->id, '100'));
+
+        $item = collect(app(FinishBadgeAssembler::class)->itemsForPlayer((int) $p1->id))->firstWhere('key', '100');
+        $this->assertSame('locked', $item['levelName']);
+        $this->assertSame(0, $item['levelNumber']);
+        $this->assertSame('4/5', $item['progressLabel']);
+        $this->assertSame('images/badges/finish/100/iron.png', $item['image']);
+
+        $game2 = $this->createGroupGame($tournament, $p1, $p2, status: GameStatus::FINISHED);
+        $this->seedFinishedCheckout($game2, 'game_id', (int) $p1->id, 100);
+        BadgeGameCommit::query()->create([
+            'source_kind' => GameKind::GROUP->value,
+            'source_id' => $game2->id,
+        ]);
+
+        $this->assertSame(1, $this->awardService->backfillCommittedFinishes());
+        $this->assertSame(5, $this->finishTimes((int) $p1->id, '100'));
+        $this->assertSame(0, $this->awardService->backfillCommittedFinishes());
+        $this->assertSame(5, $this->finishTimes((int) $p1->id, '100'));
+
+        $iron = collect(app(FinishBadgeAssembler::class)->itemsForPlayer((int) $p1->id))->firstWhere('key', '100');
+        $this->assertSame('iron', $iron['levelName']);
+        $this->assertSame('Żelazo', $iron['levelLabel']);
+        $this->assertSame('5/25', $iron['progressLabel']);
+
+        $this->get(route('players.show', $p1))
+            ->assertOk()
+            ->assertSee('Inne')
+            ->assertSeeInOrder([
+                'profile-hero-badges',
+                'images/badges/visits/100/',
+                'images/badges/finish/100/iron.png',
+            ], false);
+    }
+
+    private function finishTimes(int $playerId, string $key): int
+    {
+        return (int) PlayerBadge::query()
+            ->where('player_id', $playerId)
+            ->where('category', BadgeCategory::Finish->value)
+            ->where('badge_key', $key)
+            ->value('times_earned');
     }
 
     private function winnerDarts(GameLeg $leg, int $playerId, int $darts): void

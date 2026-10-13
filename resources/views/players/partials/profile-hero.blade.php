@@ -11,7 +11,7 @@
             $relationChip = 'Zaproszenie od tego gracza';
         }
     }
-    // Gablota: tylko zdobyte odznaki z grafiką. Najpierw wysokie podejścia (180 → 100), potem QF (9 → 19).
+    // Gablota: tylko zdobyte odznaki z grafiką. Najpierw wysokie podejścia (180 → 100), potem QF (9 → 19), potem finish 100+.
     $showcaseBadge = function (array $item, int $sort): array {
         return [
             'image' => $item['image'],
@@ -29,7 +29,12 @@
         ->map(fn ($item) => $showcaseBadge($item, 2000 + (int) ($item['key'] ?? 0)))
         ->sortBy('sort')
         ->values();
-    $showcaseBadges = $visitBadges->concat($qfBadges)->values();
+    $finishBadges = collect($finishItems ?? [])
+        ->filter(fn ($item) => ($item['levelName'] ?? 'locked') !== 'locked' && filled($item['image'] ?? null))
+        ->map(fn ($item) => $showcaseBadge($item, 3000 + (int) ($item['key'] ?? 0)))
+        ->sortBy('sort')
+        ->values();
+    $showcaseBadges = $visitBadges->concat($qfBadges)->concat($finishBadges)->values();
 @endphp
 <article class="profile-hero">
     <div class="profile-hero-top">

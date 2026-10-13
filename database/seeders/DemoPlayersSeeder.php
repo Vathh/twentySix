@@ -49,6 +49,21 @@ class DemoPlayersSeeder extends Seeder
     ];
 
     /**
+     * Finish 100+. Progi: 5 / 25 / 100 / 250 / 1000. Brak klucza = 0, medal zablokowany.
+     *
+     * @var array<string, array<string, int>>
+     */
+    private const FINISH = [
+        'gracz1@test.pl' => ['100' => 12],
+        'gracz2@test.pl' => ['100' => 3],
+        'gracz3@test.pl' => ['100' => 1000],
+        'gracz4@test.pl' => ['100' => 5],
+        'gracz5@test.pl' => ['100' => 25],
+        'gracz6@test.pl' => ['100' => 250],
+        'gracz7@test.pl' => ['100' => 100],
+    ];
+
+    /**
      * Zdobyte QF (9–19). Brak klucza = odznaka nie pokazuje się na profilu.
      * Progi: 19–16 → 1/3/10/25/50, 15–13 → 1/2/5/10/25, 12–10 → 1/2/3/5/7, 9 → 1/2/3/4/5.
      *
@@ -71,6 +86,7 @@ class DemoPlayersSeeder extends Seeder
         $this->seedInvitations($users);
         $this->seedHighVisitBadges($users);
         $this->seedQfBadges($users);
+        $this->seedFinishBadges($users);
 
         $this->command?->info('DemoPlayersSeeder: 8 kont (gracz1@test.pl … gracz8@test.pl), hasło: password');
         $jan = $users['gracz1@test.pl']->player;
@@ -255,6 +271,43 @@ class DemoPlayersSeeder extends Seeder
                     'badge_key' => $key,
                     'times_earned' => $times,
                     'first_unlocked_at' => $now->copy()->subDays(14),
+                    'last_earned_at' => $now,
+                    'source_quality' => 'manual',
+                ]);
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, User>  $users
+     */
+    private function seedFinishBadges(array $users): void
+    {
+        $category = BadgeCategory::Finish->value;
+        $now = now();
+
+        foreach (self::FINISH as $email => $hits) {
+            $player = $users[$email]->player ?? null;
+            if ($player === null) {
+                continue;
+            }
+
+            PlayerBadge::query()
+                ->where('player_id', $player->id)
+                ->where('category', $category)
+                ->delete();
+
+            foreach ($hits as $key => $times) {
+                if ($times < 1) {
+                    continue;
+                }
+
+                PlayerBadge::query()->create([
+                    'player_id' => $player->id,
+                    'category' => $category,
+                    'badge_key' => $key,
+                    'times_earned' => $times,
+                    'first_unlocked_at' => $now->copy()->subDays(10),
                     'last_earned_at' => $now,
                     'source_quality' => 'manual',
                 ]);

@@ -9,4 +9,6 @@ enum BadgeCategory: string
     case HighVisit = 'high_visit';
 
     case Qf = 'qf';
+
+    case Finish = 'finish';
 }

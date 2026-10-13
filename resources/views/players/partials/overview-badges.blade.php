@@ -4,6 +4,7 @@
     $checkoutItems = $checkoutItems ?? [];
     $highVisitItems = $highVisitItems ?? [];
     $qfItems = $qfItems ?? [];
+    $finishItems = $finishItems ?? [];
     $unlocked = collect($checkoutItems)->where('timesEarned', '>', 0)->count();
     $total = count($checkoutItems);
 @endphp
@@ -53,7 +54,7 @@
 @if(count($qfItems) > 0)
 <section class="mb-10">
     <div class="career-section-head">
-        <h2 class="text-base font-bold text-accent">Szybkie legi</h2>
+        <h2 class="text-base font-bold text-accent">Szybka akcja</h2>
     </div>
     <div class="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-4">
         @foreach($qfItems as $item)
@@ -79,6 +80,49 @@
                     <div class="h-full rounded-full bg-accent" style="width: {{ (int) $item['progressPercent'] }}%"></div>
                 </div>
                 @if(! empty($item['lastGame']))
+                    <p class="mt-1 text-[11px] leading-snug text-text-muted">
+                        {{ collect([$item['lastGame']['opponents'] ?? null, $item['lastGame']['dateFormatted'] ?? null])->filter()->implode(' · ') }}
+                    </p>
+                @endif
+            </article>
+        @endforeach
+    </div>
+</section>
+@endif
+@if(count($finishItems) > 0)
+<section class="mb-10">
+    <div class="career-section-head">
+        <h2 class="text-base font-bold text-accent">Inne</h2>
+    </div>
+    <div class="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-4">
+        @foreach($finishItems as $item)
+            @php
+                $times = (int) ($item['timesEarned'] ?? 0);
+                $locked = ($item['levelName'] ?? 'locked') === 'locked';
+            @endphp
+            <article class="flex flex-col rounded-lg border border-border bg-bg-elevated px-2 py-3 sm:px-4 sm:py-4 text-center">
+                <div class="mx-auto aspect-square w-full max-w-[148px]">
+                    <x-badge-artwork
+                        :src="$item['image']"
+                        :alt="$item['label'].($item['levelLabel'] ? ' — '.$item['levelLabel'] : '')"
+                        :locked="$locked"
+                    />
+                </div>
+                <div class="mt-3 flex items-baseline justify-between gap-1 whitespace-nowrap text-xs font-semibold sm:text-sm">
+                    <span class="text-text-secondary">Poziom {{ $item['levelNumber'] }}</span>
+                    <span class="tabular-nums text-text-muted">{{ $item['progressLabel'] }}</span>
+                </div>
+                <div
+                    class="mt-1 h-1.5 overflow-hidden rounded-full bg-border"
+                    role="progressbar"
+                    aria-valuenow="{{ $item['progressPercent'] }}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-label="{{ $item['label'] }}: {{ $item['progressLabel'] }}"
+                >
+                    <div class="h-full rounded-full bg-accent" style="width: {{ (int) $item['progressPercent'] }}%"></div>
+                </div>
+                @if($times > 0 && ! empty($item['lastGame']))
                     <p class="mt-1 text-[11px] leading-snug text-text-muted">
                         {{ collect([$item['lastGame']['opponents'] ?? null, $item['lastGame']['dateFormatted'] ?? null])->filter()->implode(' · ') }}
                     </p>

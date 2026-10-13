@@ -6,6 +6,7 @@ use App\Domain\Badge\BadgeCategory;
 use App\Domain\Badge\BadgeDetector;
 use App\Domain\Badge\Checkout\CheckoutBadgeDetector;
 use App\Domain\Badge\FinishedGame;
+use App\Domain\Badge\Finish\FinishBadgeDetector;
 use App\Domain\Badge\GameEligibility;
 use App\Domain\Badge\HighVisit\HighVisitBadgeDetector;
 use App\Domain\Badge\Qf\QfBadgeDetector;
@@ -42,9 +43,10 @@ class BadgeAwardService
         private LeagueGameRepository $leagueGameRepository,
         private HighVisitBadgeDetector $highVisitDetector,
         private QfBadgeDetector $qfBadgeDetector,
+        private FinishBadgeDetector $finishBadgeDetector,
         CheckoutBadgeDetector $checkoutDetector,
     ) {
-        $this->detectors = [$checkoutDetector, $highVisitDetector, $qfBadgeDetector];
+        $this->detectors = [$checkoutDetector, $highVisitDetector, $qfBadgeDetector, $finishBadgeDetector];
     }
 
     public function awardForFinishedGame(
@@ -135,6 +137,42 @@ class BadgeAwardService
             }
 
             $events = $this->qfBadgeDetector->detect($this->buildFinishedGame($context));
+            if ($events === []) {
+                continue;
+            }
+
+            DB::transaction(function () use ($commit, $events) {
+                $this->playerBadgeRepository->insertEvents($commit->source_kind, (int) $commit->source_id, $events);
+                foreach ($events as $event) {
+                    $this->playerBadgeRepository->upsertFromAward(
+                        $event['playerId'],
+                        $event['category'],
+                        $event['badgeKey'],
+                        $event['amount'],
+                    );
+                }
+            });
+            $awardedGames++;
+        }
+
+        return $awardedGames;
+    }
+
+    /**
+     * Mecze z commitem odznak, które nie mają jeszcze zdarzeń finish.
+     * Nie nadaje innych kategorii i nie tworzy nowego commitu.
+     */
+    public function backfillCommittedFinishes(): int
+    {
+        $awardedGames = 0;
+
+        foreach ($this->playerBadgeRepository->commitsMissingCategory(BadgeCategory::Finish->value) as $commit) {
+            $context = $this->contextForSource($commit->source_kind, (int) $commit->source_id);
+            if ($context === null) {
+                continue;
+            }
+
+            $events = $this->finishBadgeDetector->detect($this->buildFinishedGame($context));
             if ($events === []) {
                 continue;
             }
