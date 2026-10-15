@@ -11,6 +11,7 @@ use App\Models\League\LeagueGame;
 use App\Repositories\League\LeagueRepository;
 use App\Repositories\League\LeagueSeasonRepository;
 use App\Services\Badge\BadgeAwardService;
+use App\Services\Badge\CareerBadgeService;
 use App\Services\Player\PlayerOverviewService;
 use Carbon\Carbon;
 use DomainException;
@@ -24,6 +25,7 @@ class LeagueSeasonResultService
         private LeagueSeasonRepository $leagueSeasonRepository,
         private PlayerOverviewService $playerOverviewService,
         private BadgeAwardService $badgeAwardService,
+        private CareerBadgeService $careerBadgeService,
     ) {}
 
     public function getGameForPolicy(int $gameId): LeagueGame
@@ -56,6 +58,7 @@ class LeagueSeasonResultService
             'walkover_type' => LeagueWalkoverType::NONE,
         ]);
         $this->playerOverviewService->rebuildRegistered([(int) $game->player1_id, (int) $game->player2_id]);
+        $this->careerBadgeService->syncWinStreakForPlayers([(int) $game->player1_id, (int) $game->player2_id]);
     }
 
     public function recordWalkover(int $gameId, string $type, ?int $winnerPlayerId): void
@@ -74,6 +77,7 @@ class LeagueSeasonResultService
                 'walkover_type' => LeagueWalkoverType::BOTH,
             ]);
             $this->playerOverviewService->rebuildRegistered([(int) $game->player1_id, (int) $game->player2_id]);
+            $this->careerBadgeService->syncWinStreakForPlayers([(int) $game->player1_id, (int) $game->player2_id]);
 
             return;
         }
@@ -91,6 +95,7 @@ class LeagueSeasonResultService
             'walkover_type' => LeagueWalkoverType::SINGLE,
         ]);
         $this->playerOverviewService->rebuildRegistered([(int) $game->player1_id, (int) $game->player2_id]);
+        $this->careerBadgeService->syncWinStreakForPlayers([(int) $game->player1_id, (int) $game->player2_id]);
     }
 
     public function extendGame(int $gameId, string $deadlineAt): void
@@ -115,6 +120,7 @@ class LeagueSeasonResultService
             foreach ($voidedIds as $gameId) {
                 $this->badgeAwardService->retractForGame(GameKind::LEAGUE, $gameId);
             }
+            $this->careerBadgeService->syncWinStreakForLeagueGames($voidedIds);
             $this->leagueSeasonRepository->markWithdrawn($season->id, $playerId, now());
             $this->leagueRepository->removePlayer($season->league_id, $playerId);
         });

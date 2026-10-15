@@ -204,6 +204,15 @@ class PlayerBadgeRepository
         return $latest;
     }
 
+    public function findOne(int $playerId, string $category, string $badgeKey): ?PlayerBadge
+    {
+        return PlayerBadge::query()
+            ->where('player_id', $playerId)
+            ->where('category', $category)
+            ->where('badge_key', $badgeKey)
+            ->first();
+    }
+
     /**
      * @return Collection<int, PlayerBadge>
      */

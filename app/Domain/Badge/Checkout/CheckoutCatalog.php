@@ -32,4 +32,9 @@ final class CheckoutCatalog
     {
         return count(self::all());
     }
+
+    public static function description(int $score): string
+    {
+        return "Checkout {$score} zamykający lega.";
+    }
 }

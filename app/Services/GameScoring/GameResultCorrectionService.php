@@ -14,6 +14,7 @@ use App\Repositories\Game\GameRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Services\Badge\BadgeAwardService;
+use App\Services\Badge\CareerBadgeService;
 use App\Services\Game\GameService;
 use App\Services\GroupStanding\GroupStandingService;
 use App\Services\Player\PlayerOverviewService;
@@ -41,6 +42,7 @@ class GameResultCorrectionService
         private TournamentGroupMatrixLiveService $groupMatrixLiveService,
         private TournamentPlayoffBracketLiveService $playoffBracketLiveService,
         private BadgeAwardService $badgeAwardService,
+        private CareerBadgeService $careerBadgeService,
     ) {}
 
     public function applyFromWeb(
@@ -124,12 +126,26 @@ class GameResultCorrectionService
                 $this->groupMatrixLiveService->pushFromGroupGame($fresh, true);
             }
 
+            $this->careerBadgeService->syncAfterTournamentGame(
+                (int) $gameModel->tournament_id,
+                (int) $game->player1->id,
+                (int) $game->player2->id,
+                false,
+            );
+
             return;
         }
 
         if (! $this->gameService->update($dto)) {
             throw new DomainException('Nie udało się zapisać wyniku meczu grupowego.');
         }
+
+        $this->careerBadgeService->syncAfterTournamentGame(
+            (int) $gameModel->tournament_id,
+            (int) $game->player1->id,
+            (int) $game->player2->id,
+            false,
+        );
     }
 
     private function applyPlayoffResult(int $gameId, int $player1Score, int $player2Score): void
@@ -190,6 +206,13 @@ class GameResultCorrectionService
 
             $this->playoffBracketLiveService->pushTournament((int) $game->tournamentId);
 
+            $this->careerBadgeService->syncAfterTournamentGame(
+                (int) $game->tournamentId,
+                (int) $game->player1Id,
+                (int) $game->player2Id,
+                true,
+            );
+
             return;
         }
 
@@ -200,6 +223,12 @@ class GameResultCorrectionService
         }
 
         $this->playoffBracketLiveService->pushTournament((int) $game->tournamentId);
+        $this->careerBadgeService->syncAfterTournamentGame(
+            (int) $game->tournamentId,
+            (int) $game->player1Id,
+            (int) $game->player2Id,
+            true,
+        );
     }
 
     /**

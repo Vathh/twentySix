@@ -7,6 +7,7 @@ use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
 use App\Events\TournamentFinished;
 use App\Repositories\Tournament\TournamentRepository;
+use App\Services\Badge\CareerBadgeService;
 use Illuminate\Support\Facades\DB;
 
 class TournamentFinishService
@@ -14,6 +15,7 @@ class TournamentFinishService
     public function __construct(
         private TournamentRepository $tournamentRepository,
         private LoginCodeService $loginCodeService,
+        private CareerBadgeService $careerBadgeService,
     ) {}
 
     /**
@@ -49,6 +51,7 @@ class TournamentFinishService
         DB::transaction(function () use ($tournamentId) {
             $this->tournamentRepository->changeStatus($tournamentId, TournamentStatus::FINISHED);
             $this->loginCodeService->revokeForTournament($tournamentId);
+            $this->careerBadgeService->syncFinishedTournament($tournamentId);
         });
 
         event(new TournamentFinished($tournamentId));

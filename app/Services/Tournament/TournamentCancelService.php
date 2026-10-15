@@ -7,6 +7,7 @@ use App\Enums\GameKind;
 use App\Repositories\Tournament\TournamentPlayResetRepository;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Services\Badge\BadgeAwardService;
+use App\Services\Badge\CareerBadgeService;
 use App\Services\Player\PlayerOverviewService;
 use App\Services\Player\PlayerStatsService;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class TournamentCancelService
         private TournamentPlayResetRepository $playResetRepository,
         private LoginCodeService $loginCodeService,
         private BadgeAwardService $badgeAwardService,
+        private CareerBadgeService $careerBadgeService,
         private PlayerStatsService $playerStatsService,
         private PlayerOverviewService $playerOverviewService,
     ) {}
@@ -47,10 +49,11 @@ class TournamentCancelService
             $this->badgeAwardService->retractForGame(GameKind::PLAYOFF, $playoffId);
         }
 
-        DB::transaction(function () use ($tournamentId, $groupGameIds, $playoffGameIds) {
+        DB::transaction(function () use ($tournamentId, $groupGameIds, $playoffGameIds, $playerIds) {
             $this->playResetRepository->wipePlayData($tournamentId, $groupGameIds, $playoffGameIds);
             $this->loginCodeService->revokeForTournament($tournamentId);
             $this->tournamentRepository->resetToUnstarted($tournamentId);
+            $this->careerBadgeService->syncWinStreakForPlayers($playerIds);
         });
 
         foreach ($playerIds as $playerId) {

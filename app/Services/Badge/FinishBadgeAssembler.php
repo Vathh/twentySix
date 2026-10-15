@@ -95,6 +95,7 @@ class FinishBadgeAssembler
             $items[] = [
                 'key' => $key,
                 'label' => FinishCatalog::label($key),
+                'description' => FinishCatalog::description($key),
                 'timesEarned' => $times,
                 'level' => FinishLevelPolicy::levelForHits($key, $times),
                 'levelName' => $levelName,

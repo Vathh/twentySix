@@ -12,29 +12,36 @@
         }
     }
     // Gablota: tylko zdobyte odznaki z grafiką. Najpierw wysokie podejścia (180 → 100), potem QF (9 → 19), potem finish 100+.
-    $showcaseBadge = function (array $item, int $sort): array {
+    $showcaseBadge = function (array $item, int $sort, string $anchor): array {
         return [
             'image' => $item['image'],
             'title' => collect([$item['label'] ?? null, $item['levelLabel'] ?? null])->filter()->implode(' — '),
             'sort' => $sort,
+            'anchor' => $anchor,
         ];
     };
     $visitBadges = collect($highVisitItems ?? [])
         ->filter(fn ($item) => (int) ($item['timesEarned'] ?? 0) > 0 && filled($item['image'] ?? null))
-        ->map(fn ($item) => $showcaseBadge($item, 1000 - (int) ($item['key'] ?? 0)))
+        ->map(fn ($item) => $showcaseBadge($item, 1000 - (int) ($item['key'] ?? 0), 'badge-visit-'.$item['key']))
         ->sortBy('sort')
         ->values();
     $qfBadges = collect($qfItems ?? [])
         ->filter(fn ($item) => (int) ($item['timesEarned'] ?? 0) > 0 && filled($item['image'] ?? null))
-        ->map(fn ($item) => $showcaseBadge($item, 2000 + (int) ($item['key'] ?? 0)))
+        ->map(fn ($item) => $showcaseBadge($item, 2000 + (int) ($item['key'] ?? 0), 'badge-qf-'.$item['key']))
         ->sortBy('sort')
         ->values();
     $finishBadges = collect($finishItems ?? [])
         ->filter(fn ($item) => ($item['levelName'] ?? 'locked') !== 'locked' && filled($item['image'] ?? null))
-        ->map(fn ($item) => $showcaseBadge($item, 3000 + (int) ($item['key'] ?? 0)))
+        ->map(fn ($item) => $showcaseBadge($item, 3000 + (int) ($item['key'] ?? 0), 'badge-finish-'.$item['key']))
         ->sortBy('sort')
         ->values();
-    $showcaseBadges = $visitBadges->concat($qfBadges)->concat($finishBadges)->values();
+    $careerOrder = ['podium' => 0, 'win_streak' => 1, 'appearances' => 2, 'titles' => 3];
+    $careerBadges = collect($careerItems ?? [])
+        ->filter(fn ($item) => ($item['levelName'] ?? 'locked') !== 'locked' && filled($item['image'] ?? null))
+        ->map(fn ($item) => $showcaseBadge($item, 4000 + ($careerOrder[$item['key'] ?? ''] ?? 9), 'badge-career-'.$item['key']))
+        ->sortBy('sort')
+        ->values();
+    $showcaseBadges = $visitBadges->concat($qfBadges)->concat($finishBadges)->concat($careerBadges)->values();
 @endphp
 <article class="profile-hero">
     <div class="profile-hero-top">
@@ -93,7 +100,7 @@
                                     type="button"
                                     class="profile-hero-badge"
                                     title="{{ $badge['title'] }}"
-                                    @click="activeTab = 'badges'"
+                                    @click="openBadge(@js($badge['anchor']))"
                                 >
                                     <x-badge-artwork :src="$badge['image']" :alt="$badge['title']" />
                                 </button>

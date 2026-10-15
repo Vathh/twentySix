@@ -451,7 +451,7 @@
                                                         ? selectedRegulars = selectedRegulars.filter(id => id !== {{ $regular['userId'] }})
                                                         : selectedRegulars.push({{ $regular['userId'] }})"
                                                     x-bind:class="selectedRegulars.includes({{ $regular['userId'] }})
-                                                        ? 'bg-success text-on-success'
+                                                        ? 'bg-accent text-on-accent'
                                                         : 'bg-bg text-text-secondary'"
                                                     class="cursor-pointer px-3 py-2 rounded-lg text-sm transition  select-none"
                                                 >

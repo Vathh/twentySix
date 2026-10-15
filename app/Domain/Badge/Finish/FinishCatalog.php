@@ -21,6 +21,11 @@ final class FinishCatalog
         return $key === '100' ? '100+' : $key;
     }
 
+    public static function description(string $key): string
+    {
+        return 'Checkouty od 100 wzwyż.';
+    }
+
     public static function imagePath(string $key, string $levelName): string
     {
         $file = $levelName === 'locked' ? 'iron' : $levelName;

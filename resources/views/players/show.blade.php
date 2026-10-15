@@ -69,6 +69,18 @@ document.addEventListener('alpine:init', () => {
             if (url) {
                 window.location.href = url;
             }
+        },
+        openBadge(anchor) {
+            this.activeTab = 'badges';
+            const reveal = () => {
+                const el = document.getElementById(anchor);
+                if (!el) return;
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.remove('is-jumped');
+                void el.offsetWidth;
+                el.classList.add('is-jumped');
+            };
+            this.$nextTick(() => requestAnimationFrame(() => requestAnimationFrame(reveal)));
         }
     }));
 });
@@ -83,25 +95,25 @@ document.addEventListener('alpine:init', () => {
         <div class="profile-tabs">
             <button type="button"
                     @click="activeTab = 'overview'"
-                    :class="activeTab === 'overview' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
+                    :class="activeTab === 'overview' ? 'bg-accent/20 text-accent border-accent/50' : 'border-border text-text-secondary hover:bg-bg-elevated'"
                     class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
                 Przegląd
             </button>
             <button type="button"
                     @click="activeTab = 'history'"
-                    :class="activeTab === 'history' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
+                    :class="activeTab === 'history' ? 'bg-accent/20 text-accent border-accent/50' : 'border-border text-text-secondary hover:bg-bg-elevated'"
                     class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
                 Historia meczów
             </button>
             <button type="button"
                     @click="activeTab = 'stats'"
-                    :class="activeTab === 'stats' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
+                    :class="activeTab === 'stats' ? 'bg-accent/20 text-accent border-accent/50' : 'border-border text-text-secondary hover:bg-bg-elevated'"
                     class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
                 Statystyki
             </button>
             <button type="button"
                     @click="activeTab = 'badges'"
-                    :class="activeTab === 'badges' ? 'bg-success-muted text-success-bright border-border' : 'border-border text-text-secondary hover:bg-bg-elevated'"
+                    :class="activeTab === 'badges' ? 'bg-accent/20 text-accent border-accent/50' : 'border-border text-text-secondary hover:bg-bg-elevated'"
                     class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
                 Odznaczenia
             </button>

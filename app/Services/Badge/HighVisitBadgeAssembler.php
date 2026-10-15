@@ -93,6 +93,7 @@ class HighVisitBadgeAssembler
             $items[] = [
                 'key' => $key,
                 'label' => HighVisitCatalog::label($key),
+                'description' => HighVisitCatalog::description($key),
                 'timesEarned' => $times,
                 'level' => HighVisitLevelPolicy::levelForHits($key, $times),
                 'levelName' => $levelName,

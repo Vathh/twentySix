@@ -21,6 +21,11 @@ final class QfCatalog
         return $key;
     }
 
+    public static function description(string $key): string
+    {
+        return "Leg wygrany w {$key} lotkach.";
+    }
+
     public static function imagePath(string $key, string $levelName): string
     {
         $file = $levelName === 'locked' ? 'iron' : $levelName;

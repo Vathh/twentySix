@@ -32,6 +32,7 @@ class GameRepository
                 'current_set_number' => 1,
                 'winner_id' => $dto->winnerId,
                 'status' => GameStatus::FINISHED,
+                'finished_at' => DB::raw('COALESCE(finished_at, NOW())'),
             ]);
     }
 
@@ -91,6 +92,7 @@ class GameRepository
         $game->player2_legs_in_set = 0;
         $game->current_set_number = 1;
         $game->winner_id = null;
+        $game->finished_at = null;
         $game->scoring_token_id = null;
         $game->scoring_lock_expires_at = null;
         $this->save($game);

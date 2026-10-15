@@ -47,6 +47,7 @@ class LeagueGameRepository
         $game->player1_score = 0;
         $game->player2_score = 0;
         $game->winner_id = null;
+        $game->finished_at = null;
         $game->walkover_type = LeagueWalkoverType::NONE;
         $game->lobby_host_player_id = null;
         $game->opponent_accepted_at = null;

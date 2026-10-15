@@ -96,6 +96,7 @@ class CheckoutWheelAssembler
 
             $items[] = [
                 'key' => (string) $key,
+                'description' => CheckoutCatalog::description($key),
                 'timesEarned' => $times,
                 'level' => CheckoutLevelPolicy::levelForHits($times),
                 'levelName' => CheckoutLevelPolicy::nameForHits($times),

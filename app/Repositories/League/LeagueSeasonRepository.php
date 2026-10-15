@@ -151,6 +151,12 @@ class LeagueSeasonRepository
     {
         $game = LeagueGame::query()->findOrFail($gameId);
         $game->fill($payload);
+        if (
+            ($payload['status'] ?? null) === LeagueGameStatus::FINISHED
+            && $game->finished_at === null
+        ) {
+            $game->finished_at = now();
+        }
         $game->save();
     }
 
@@ -176,6 +182,7 @@ class LeagueSeasonRepository
                     'player1_score' => null,
                     'player2_score' => null,
                     'winner_id' => null,
+                    'finished_at' => null,
                     'walkover_type' => LeagueWalkoverType::NONE,
                 ]);
         }

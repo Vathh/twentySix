@@ -109,7 +109,7 @@
                         </label>
                     </div>
                     <button type="submit"
-                            class="px-4 py-2 rounded bg-success text-on-success font-semibold text-sm hover:opacity-90 transition">
+                            class="px-4 py-2 rounded bg-accent text-on-accent font-semibold text-sm hover:bg-accent-hover transition">
                         Zapisz wynik
                     </button>
                 </form>
@@ -278,8 +278,8 @@
                                 role="tab"
                                 class="px-4 py-2 rounded-lg text-sm font-semibold border transition"
                                 x-bind:class="activeSet === {{ $setIdx }}
-                                    ? 'bg-success-muted text-success-bright border-success/50'
-                                    : 'bg-bg-deep text-text-muted border-border hover:border-success/40 hover:text-text-secondary'"
+                                    ? 'bg-accent/20 text-accent border-accent/50'
+                                    : 'bg-bg-deep text-text-muted border-border hover:border-accent/40 hover:text-text-secondary'"
                                 x-on:click="selectSet({{ $setIdx }})"
                                 x-bind:aria-selected="activeSet === {{ $setIdx }}"
                             >
@@ -299,7 +299,7 @@
                                     class="px-3 py-1.5 rounded-lg text-sm font-semibold border transition"
                                     x-bind:class="activeLeg === {{ $legIdx }}
                                         ? 'bg-accent/20 text-accent border-accent/50'
-                                        : 'bg-bg-deep text-text-muted border-border hover:border-success/40 hover:text-text-secondary'"
+                                        : 'bg-bg-deep text-text-muted border-border hover:border-accent/40 hover:text-text-secondary'"
                                     x-on:click="activeLeg = {{ $legIdx }}"
                                     x-bind:aria-selected="activeLeg === {{ $legIdx }}"
                                 >

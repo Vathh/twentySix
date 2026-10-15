@@ -24,6 +24,7 @@ use App\Repositories\League\LeagueGameRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 use App\Services\Badge\BadgeAwardService;
+use App\Services\Badge\CareerBadgeService;
 use App\Services\Career\PlayerCareerSnapshotService;
 use App\Services\Game\GameService;
 use App\Services\Player\PlayerOverviewService;
@@ -53,6 +54,7 @@ class GameScoringService
         private PlayerCareerSnapshotService $careerSnapshotService,
         private PlayerOverviewService $playerOverviewService,
         private BadgeAwardService $badgeAwardService,
+        private CareerBadgeService $careerBadgeService,
     ) {}
 
     public function resolveGroupGame(int $gameId): array
@@ -379,6 +381,12 @@ class GameScoringService
                 ]);
                 if (in_array($context->kind, [GameKind::GROUP, GameKind::PLAYOFF, GameKind::LEAGUE], true)) {
                     $this->badgeAwardService->awardForFinishedGame($context, $freshGame);
+                    $this->careerBadgeService->syncAfterScoredGame(
+                        $context->kind,
+                        (int) $context->player1Id,
+                        (int) $context->player2Id,
+                        $context->tournamentId,
+                    );
                 }
             }
 
@@ -630,6 +638,9 @@ class GameScoringService
     {
         $game->status = $game instanceof LeagueGame ? LeagueGameStatus::FINISHED : GameStatus::FINISHED;
         $game->winner_id = $winnerId;
+        if (! $game instanceof QuickGame && $game->finished_at === null) {
+            $game->finished_at = now();
+        }
     }
 
     private function markInProgress(Game|PlayoffGame|QuickGame|LeagueGame $game): void

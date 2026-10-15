@@ -32,6 +32,16 @@ final class HighVisitCatalog
         };
     }
 
+    public static function description(string $key): string
+    {
+        return match ($key) {
+            '180' => 'Podejście za 180.',
+            '140' => 'Podejście za 140–179.',
+            '100' => 'Podejście za 100–139.',
+            default => '',
+        };
+    }
+
     public static function imagePath(string $key, string $levelName): string
     {
         $file = $levelName === 'locked' ? 'iron' : $levelName;

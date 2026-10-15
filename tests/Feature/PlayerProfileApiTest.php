@@ -92,6 +92,7 @@ class PlayerProfileApiTest extends TestCase
                     '*' => [
                         'key',
                         'label',
+                        'description',
                         'timesEarned',
                         'level',
                         'levelName',
@@ -104,6 +105,7 @@ class PlayerProfileApiTest extends TestCase
                     '*' => [
                         'key',
                         'label',
+                        'description',
                         'timesEarned',
                         'level',
                         'levelName',
@@ -123,6 +125,7 @@ class PlayerProfileApiTest extends TestCase
                     '*' => [
                         'key',
                         'label',
+                        'description',
                         'timesEarned',
                         'level',
                         'levelName',
@@ -133,10 +136,28 @@ class PlayerProfileApiTest extends TestCase
                         'image',
                     ],
                 ],
+                'careerItems' => [
+                    '*' => [
+                        'key',
+                        'label',
+                        'description',
+                        'timesEarned',
+                        'levelName',
+                        'progressLabel',
+                        'image',
+                    ],
+                ],
             ])
             ->assertJsonPath('friendship.isSelf', false)
             ->assertJsonPath('friendship.canInvite', true)
-            ->assertJsonPath('player.description', null);
+            ->assertJsonPath('player.description', null)
+            ->assertJsonCount(4, 'careerItems')
+            ->assertJsonPath('careerItems.0.key', 'podium')
+            ->assertJsonPath('careerItems.0.description', 'Miejsca 1–3 w turniejach.')
+            ->assertJsonPath('highVisitItems.2.description', 'Podejście za 180.')
+            ->assertJsonPath('careerItems.1.label', 'Seria zwycięstw')
+            ->assertJsonPath('careerItems.2.label', 'Turniejowiec')
+            ->assertJsonPath('careerItems.3.label', 'Zwycięzca turniejów');
     }
 
     public function test_guest_player_without_user_returns_404(): void

@@ -24,6 +24,7 @@ class Game extends Model
         'sequence',
         'referee_player_id',
         'status',
+        'finished_at',
         'scoring_token_id',
         'scoring_lock_expires_at',
         'starting_score',
@@ -36,6 +37,7 @@ class Game extends Model
 
     protected $casts = [
         'status' => GameStatus::class,
+        'finished_at' => 'datetime',
         'scoring_lock_expires_at' => 'datetime',
     ];
 

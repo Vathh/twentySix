@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Domain\Badge\BadgeCategory;
+use App\Domain\Badge\Career\CareerCatalog;
 use App\Models\Badge\PlayerBadge;
 use App\Models\Player\Player;
 use App\Models\Users\User;
@@ -79,6 +80,63 @@ class DemoPlayersSeeder extends Seeder
         'gracz8@test.pl' => ['9' => 1, '19' => 3],
     ];
 
+    /**
+     * Kariera. Progi: podium 5/10/50/100/500, seria 3/7/13/25/50,
+     * udziały 5/25/100/250/500, tytuły 5/10/50/125/250.
+     * Brak klucza = 0, medal zablokowany.
+     *
+     * @var array<string, array<string, int>>
+     */
+    private const CAREER = [
+        'gracz1@test.pl' => [
+            CareerCatalog::PODIUM => 7,
+            CareerCatalog::WIN_STREAK => 4,
+            CareerCatalog::APPEARANCES => 12,
+            CareerCatalog::TITLES => 2,
+        ],
+        'gracz2@test.pl' => [
+            CareerCatalog::PODIUM => 5,
+            CareerCatalog::WIN_STREAK => 3,
+            CareerCatalog::APPEARANCES => 5,
+            CareerCatalog::TITLES => 5,
+        ],
+        'gracz3@test.pl' => [
+            CareerCatalog::PODIUM => 500,
+            CareerCatalog::WIN_STREAK => 50,
+            CareerCatalog::APPEARANCES => 500,
+            CareerCatalog::TITLES => 250,
+        ],
+        'gracz4@test.pl' => [
+            CareerCatalog::PODIUM => 10,
+            CareerCatalog::WIN_STREAK => 7,
+            CareerCatalog::APPEARANCES => 25,
+            CareerCatalog::TITLES => 10,
+        ],
+        'gracz5@test.pl' => [
+            CareerCatalog::PODIUM => 50,
+            CareerCatalog::WIN_STREAK => 13,
+            CareerCatalog::APPEARANCES => 100,
+            CareerCatalog::TITLES => 50,
+        ],
+        'gracz6@test.pl' => [
+            CareerCatalog::PODIUM => 100,
+            CareerCatalog::WIN_STREAK => 25,
+            CareerCatalog::APPEARANCES => 250,
+            CareerCatalog::TITLES => 125,
+        ],
+        'gracz7@test.pl' => [
+            CareerCatalog::PODIUM => 6,
+            CareerCatalog::WIN_STREAK => 2,
+            CareerCatalog::APPEARANCES => 4,
+        ],
+        'gracz8@test.pl' => [
+            CareerCatalog::PODIUM => 12,
+            CareerCatalog::WIN_STREAK => 8,
+            CareerCatalog::APPEARANCES => 30,
+            CareerCatalog::TITLES => 11,
+        ],
+    ];
+
     public function run(): void
     {
         $users = $this->ensureUsers();
@@ -87,6 +145,7 @@ class DemoPlayersSeeder extends Seeder
         $this->seedHighVisitBadges($users);
         $this->seedQfBadges($users);
         $this->seedFinishBadges($users);
+        $this->seedCareerBadges($users);
 
         $this->command?->info('DemoPlayersSeeder: 8 kont (gracz1@test.pl … gracz8@test.pl), hasło: password');
         $jan = $users['gracz1@test.pl']->player;
@@ -308,6 +367,43 @@ class DemoPlayersSeeder extends Seeder
                     'badge_key' => $key,
                     'times_earned' => $times,
                     'first_unlocked_at' => $now->copy()->subDays(10),
+                    'last_earned_at' => $now,
+                    'source_quality' => 'manual',
+                ]);
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, User>  $users
+     */
+    private function seedCareerBadges(array $users): void
+    {
+        $category = BadgeCategory::Career->value;
+        $now = now();
+
+        foreach (self::CAREER as $email => $hits) {
+            $player = $users[$email]->player ?? null;
+            if ($player === null) {
+                continue;
+            }
+
+            PlayerBadge::query()
+                ->where('player_id', $player->id)
+                ->where('category', $category)
+                ->delete();
+
+            foreach ($hits as $key => $times) {
+                if ($times < 1) {
+                    continue;
+                }
+
+                PlayerBadge::query()->create([
+                    'player_id' => $player->id,
+                    'category' => $category,
+                    'badge_key' => $key,
+                    'times_earned' => $times,
+                    'first_unlocked_at' => $now->copy()->subDays(20),
                     'last_earned_at' => $now,
                     'source_quality' => 'manual',
                 ]);

@@ -98,6 +98,7 @@ class QfBadgeAssembler
             $items[] = [
                 'key' => $key,
                 'label' => QfCatalog::label($key),
+                'description' => QfCatalog::description($key),
                 'timesEarned' => $times,
                 'level' => QfLevelPolicy::levelForHits($key, $times),
                 'levelName' => $levelName,

@@ -11,4 +11,6 @@ enum BadgeCategory: string
     case Qf = 'qf';
 
     case Finish = 'finish';
+
+    case Career = 'career';
 }

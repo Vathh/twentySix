@@ -52,7 +52,7 @@
     }
 
     .btn-mini {
-        @apply text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-150 bg-success text-on-success hover:bg-success-bright;
+        @apply text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-150 bg-accent text-on-accent hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40;
     }
 
     .btn-mini-danger {
@@ -764,6 +764,75 @@
 
     .badge-artwork.is-locked img {
         opacity: 0.4;
+    }
+
+    .badge-card.is-help-open {
+        z-index: 30;
+    }
+
+    .badge-card.is-jumped {
+        animation: badge-jump 1.4s ease;
+    }
+
+    @keyframes badge-jump {
+        0%, 40% { box-shadow: 0 0 0 2px var(--color-accent); }
+        100% { box-shadow: 0 0 0 0 transparent; }
+    }
+
+    .badge-help {
+        position: absolute;
+        top: 0.35rem;
+        right: 0.35rem;
+        left: 0.35rem;
+        z-index: 2;
+        display: flex;
+        justify-content: flex-end;
+        pointer-events: none;
+    }
+
+    .badge-help__btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.25rem;
+        height: 1.25rem;
+        padding: 0;
+        border-radius: 9999px;
+        border: 1px solid var(--color-border);
+        background: var(--color-bg);
+        color: var(--color-text-muted);
+        font-size: 0.75rem;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        pointer-events: auto;
+    }
+
+    .badge-help__btn:hover,
+    .badge-help__btn:focus-visible {
+        color: var(--color-text);
+        border-color: var(--color-accent);
+        outline: none;
+    }
+
+    .badge-help__bubble {
+        position: absolute;
+        top: calc(100% + 0.35rem);
+        right: 0;
+        left: auto;
+        width: max-content;
+        max-width: min(14rem, 100%);
+        margin: 0;
+        padding: 0.4rem 0.55rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--color-accent-border, var(--color-border));
+        background: var(--color-bg-elevated-hover);
+        color: var(--color-text-secondary);
+        font-size: 0.75rem;
+        line-height: 1.35;
+        text-align: left;
+        box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+        pointer-events: auto;
     }
 
     .profile-hero-badge:focus-visible {

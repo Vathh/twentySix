@@ -25,6 +25,7 @@ class LeagueGame extends Model
         'player2_score',
         'winner_id',
         'status',
+        'finished_at',
         'walkover_type',
         'deadline_at',
         'lobby_host_player_id',
@@ -48,6 +49,7 @@ class LeagueGame extends Model
         return [
             'purpose' => LeagueGamePurpose::class,
             'status' => LeagueGameStatus::class,
+            'finished_at' => 'datetime',
             'walkover_type' => LeagueWalkoverType::class,
             'deadline_at' => 'datetime',
             'is_third_place' => 'boolean',

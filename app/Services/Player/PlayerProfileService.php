@@ -9,6 +9,7 @@ use App\Models\Player\Player;
 use App\Models\Users\User;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\Player\PlayerStatRepository;
+use App\Services\Badge\CareerBadgeAssembler;
 use App\Services\Badge\CheckoutWheelAssembler;
 use App\Services\Badge\FinishBadgeAssembler;
 use App\Services\Badge\HighVisitBadgeAssembler;
@@ -32,6 +33,7 @@ class PlayerProfileService
         private HighVisitBadgeAssembler $highVisitBadgeAssembler,
         private QfBadgeAssembler $qfBadgeAssembler,
         private FinishBadgeAssembler $finishBadgeAssembler,
+        private CareerBadgeAssembler $careerBadgeAssembler,
         private PlayerStatRepository $playerStatRepository,
     ) {}
 
@@ -70,6 +72,7 @@ class PlayerProfileService
             'highVisitItems' => $assembled['highVisitItems'],
             'qfItems' => $assembled['qfItems'],
             'finishItems' => $assembled['finishItems'],
+            'careerItems' => $assembled['careerItems'],
             'highlights' => $assembled['highlights'],
         ];
     }
@@ -173,6 +176,7 @@ class PlayerProfileService
             'highVisitItems' => $assembled['highVisitItems'],
             'qfItems' => $assembled['qfItems'],
             'finishItems' => $assembled['finishItems'],
+            'careerItems' => $assembled['careerItems'],
             'highlights' => $assembled['highlights'],
         ];
     }
@@ -211,6 +215,7 @@ class PlayerProfileService
         $highVisitItems = $this->highVisitBadgeAssembler->itemsForPlayer((int) $player->id);
         $qfItems = $this->qfBadgeAssembler->itemsForPlayer((int) $player->id);
         $finishItems = $this->finishBadgeAssembler->itemsForPlayer((int) $player->id);
+        $careerItems = $this->careerBadgeAssembler->itemsForPlayer((int) $player->id);
         $checkoutHits = [];
         foreach ($checkoutItems as $item) {
             $times = (int) $item['timesEarned'];
@@ -235,6 +240,7 @@ class PlayerProfileService
             'highVisitItems' => $highVisitItems,
             'qfItems' => $qfItems,
             'finishItems' => $finishItems,
+            'careerItems' => $careerItems,
             'highlights' => $this->competitionHighlights((int) $player->id),
         ];
     }

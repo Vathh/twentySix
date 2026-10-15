@@ -17,6 +17,7 @@ use App\Models\League\League;
 use App\Models\League\LeagueSeason;
 use App\Repositories\League\LeagueRepository;
 use App\Repositories\League\LeagueSeasonRepository;
+use App\Services\Badge\CareerBadgeService;
 use Carbon\Carbon;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +30,7 @@ class LeagueSeasonLifecycleService
         private LeagueSeasonRepository $leagueSeasonRepository,
         private LeagueSeasonStandingsBuilder $standings,
         private LeagueSeasonAdvanceService $advance,
+        private CareerBadgeService $careerBadgeService,
     ) {}
 
     public function create(
@@ -149,7 +151,9 @@ class LeagueSeasonLifecycleService
                 $this->leagueRepository->replaceRoster($leagueId, $roster);
             }
 
+            $playerIds = $this->careerBadgeService->playerIdsInLeagueSeason((int) $season->id);
             $this->leagueSeasonRepository->delete($season->id);
+            $this->careerBadgeService->syncWinStreakForPlayers($playerIds);
 
             return $leagueId;
         });
