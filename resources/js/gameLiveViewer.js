@@ -63,6 +63,7 @@ export function registerGameLiveViewer(Alpine) {
         overlayFx: config.overlayFx === true,
         flashCallout: null,
         flashCalloutTimer: null,
+        announcedVisitSignature: '',
         remainingShown: [null, null],
         remainingTickCancel: [null, null],
 
@@ -78,9 +79,16 @@ export function registerGameLiveViewer(Alpine) {
                     }
                 },
             );
+            this.announcedVisitSignature = this.lastVisitSignature;
             this.$watch(
                 () => this.lastVisitSignature,
-                () => this.onLastVisitChanged(),
+                (signature) => {
+                    if (!signature || signature === this.announcedVisitSignature) {
+                        return;
+                    }
+                    this.announcedVisitSignature = signature;
+                    this.onLastVisitChanged();
+                },
             );
             this.$watch(
                 () => this.remainingSignature,

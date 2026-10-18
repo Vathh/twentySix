@@ -62,25 +62,34 @@ body.game-overlay-preview {
 }
 
 .game-overlay-dock {
+    --overlay-hub-width: 208px;
+    --overlay-hub-lift: 18px;
     position: absolute;
     left: 50%;
     bottom: 48px;
     transform: translateX(-50%);
-    width: max-content;
-    max-width: min(900px, calc(100vw - 72px));
-    padding-top: 18px;
+    width: min(900px, calc(100vw - 72px));
+    padding-top: var(--overlay-hub-lift);
 }
 
 .game-overlay-scorebug {
     position: relative;
     display: grid;
-    width: max-content;
-    max-width: 100%;
-    grid-template-columns: minmax(0, max-content) 208px minmax(0, max-content);
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) var(--overlay-hub-width) minmax(0, 1fr);
     grid-template-rows: 148px;
     align-items: stretch;
     height: 148px;
+}
+
+.game-overlay-scorebug::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
     background:
+        linear-gradient(90deg, rgba(245, 158, 11, 0.18), transparent 18%, transparent 82%, rgba(245, 158, 11, 0.18)),
         linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 28%),
         linear-gradient(90deg, #121217 0%, #1a1a21 50%, #121217 100%);
     clip-path: polygon(
@@ -99,29 +108,23 @@ body.game-overlay-preview {
         inset 0 -2px 0 rgba(245, 158, 11, 0.85);
 }
 
-.game-overlay-scorebug::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: linear-gradient(90deg, rgba(245, 158, 11, 0.18), transparent 18%, transparent 82%, rgba(245, 158, 11, 0.18));
-}
-
 .game-overlay-player {
     display: grid;
-    grid-template-columns: 8px minmax(0, max-content) max-content;
+    grid-template-columns: 8px minmax(0, 1fr) max-content;
     align-items: center;
     gap: 8px;
     min-width: 0;
     padding: 12px 12px 14px 0;
     position: relative;
     z-index: 1;
+    clip-path: polygon(22px 0, 100% 0, 100% 100%, 22px 100%, 0 calc(100% - 14px), 0 22px);
 }
 
 .game-overlay-player.is-right {
-    grid-template-columns: max-content minmax(0, max-content) 8px;
+    grid-template-columns: max-content minmax(0, 1fr) 8px;
     padding: 12px 0 14px 12px;
     text-align: right;
+    clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% calc(100% - 14px), calc(100% - 22px) 100%, 0 100%);
 }
 
 .game-overlay-rail {
@@ -172,6 +175,7 @@ body.game-overlay-preview {
 
 .game-overlay-name {
     margin: 0;
+    flex: 1 1 auto;
     min-width: 0;
     font-size: 1.85rem;
     font-weight: 700;
@@ -350,8 +354,8 @@ body.game-overlay-preview {
     align-items: center;
     justify-content: center;
     gap: 4px;
-    margin: -18px 0 0;
-    height: calc(100% + 18px);
+    margin: calc(var(--overlay-hub-lift) * -1) 0 0;
+    height: calc(100% + var(--overlay-hub-lift));
     min-height: 0;
     padding: 14px 12px 16px;
     text-align: center;
@@ -514,7 +518,7 @@ body.game-overlay-preview {
 
 .game-overlay-callout {
     position: absolute;
-    inset: 0;
+    inset: calc(var(--overlay-hub-lift, 18px) * -1) 0 0;
     z-index: 4;
     display: flex;
     flex-direction: column;
@@ -522,28 +526,60 @@ body.game-overlay-preview {
     justify-content: center;
     gap: 4px;
     pointer-events: none;
+    background: none;
     animation: overlay-callout-in 0.42s ease-out;
 }
 
+.game-overlay-callout::before,
+.game-overlay-callout::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    background: rgba(8, 8, 12, 0.98);
+    pointer-events: none;
+}
+
+.game-overlay-callout::before {
+    left: 0;
+    right: 0;
+    top: var(--overlay-hub-lift, 18px);
+    bottom: 0;
+    clip-path: polygon(
+        22px 0,
+        calc(100% - 22px) 0,
+        100% 22px,
+        100% calc(100% - 14px),
+        calc(100% - 22px) 100%,
+        22px 100%,
+        0 calc(100% - 14px),
+        0 22px
+    );
+}
+
+.game-overlay-callout::after {
+    top: 0;
+    left: 50%;
+    width: var(--overlay-hub-width, 208px);
+    height: 100%;
+    transform: translateX(-50%);
+    clip-path: polygon(10% 0, 90% 0, 100% 16%, 100% 84%, 90% 100%, 10% 100%, 0 84%, 0 16%);
+}
+
 .game-overlay-callout.is-140 {
-    background: rgba(12, 12, 15, 0.42);
     color: var(--color-text);
 }
 
 .game-overlay-callout.is-170 {
-    background: rgba(12, 12, 15, 0.54);
     color: var(--color-accent);
     text-shadow: 0 0 28px rgba(245, 158, 11, 0.42);
 }
 
 .game-overlay-callout.is-180 {
-    background: rgba(12, 12, 15, 0.62);
     color: var(--color-accent);
     text-shadow: 0 0 42px rgba(245, 158, 11, 0.6);
 }
 
 .game-overlay-callout.is-shot {
-    background: rgba(12, 12, 15, 0.72);
     color: var(--color-accent);
     text-shadow: 0 0 36px rgba(245, 158, 11, 0.5);
 }
@@ -595,15 +631,15 @@ body.game-overlay-preview {
 
 @media (max-width: 900px) {
     .game-overlay-dock {
-        width: max-content;
-        max-width: calc(100vw - 28px);
+        --overlay-hub-width: 168px;
+        --overlay-hub-lift: 12px;
+        width: calc(100vw - 28px);
         bottom: 20px;
     }
 
     .game-overlay-scorebug {
         height: 140px;
         grid-template-rows: 140px;
-        grid-template-columns: minmax(0, max-content) 168px minmax(0, max-content);
     }
 
     .game-overlay-player {
@@ -630,8 +666,8 @@ body.game-overlay-preview {
     }
 
     .game-overlay-hub {
-        margin-top: -12px;
-        height: calc(100% + 12px);
+        margin-top: calc(var(--overlay-hub-lift) * -1);
+        height: calc(100% + var(--overlay-hub-lift));
     }
 
     .game-overlay-scoreline-num {
