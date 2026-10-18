@@ -3,6 +3,7 @@
 namespace App\Domain\Game;
 
 use App\Domain\Concerns\AssertsRelationsLoaded;
+use App\Domain\GameScoring\MatchFormat;
 use App\Domain\PlayerDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\GameStatus;
@@ -29,6 +30,8 @@ class GroupGameDomain extends GameDomain
         public readonly ?PlayerDomain $referee = null,
         public readonly ?int $scoringTokenId = null,
         public readonly ?string $scoringLockExpiresAt = null,
+        /** @var array<string, mixed>|null */
+        public readonly ?array $matchFormat = null,
     ) {
         parent::__construct(
             id: $id,
@@ -74,6 +77,7 @@ class GroupGameDomain extends GameDomain
             referee: $referee,
             scoringTokenId: $game->scoring_token_id !== null ? (int) $game->scoring_token_id : null,
             scoringLockExpiresAt: $game->scoring_lock_expires_at?->toDateTimeString(),
+            matchFormat: MatchFormat::fromRecord($game)->toArray(),
         );
     }
 

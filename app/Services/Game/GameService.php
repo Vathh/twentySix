@@ -252,6 +252,7 @@ class GameService
                         : null,
                     'winnerId' => $game->winner?->id,
                     'status' => $game->status->value,
+                    'matchFormat' => $game->matchFormat,
                     'lockedByOther' => ScoringLock::isHeldByOther(
                         $game->scoringTokenId,
                         $game->scoringLockExpiresAt,

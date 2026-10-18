@@ -3,6 +3,7 @@
 namespace App\Domain\Game;
 
 use App\Domain\Concerns\AssertsRelationsLoaded;
+use App\Domain\GameScoring\MatchFormat;
 use App\Domain\PlayerDomain;
 use App\Domain\Tournament\TournamentDomain;
 use App\DTO\GameResultDTO;
@@ -36,7 +37,9 @@ class PlayoffGameDomain extends GameDomain
         ?PlayerDomain $winner,
         public readonly ?string $winnerDestinationSlot,
         public readonly ?string $loserDestinationSlot,
-        ?GameStatus $status
+        ?GameStatus $status,
+        /** @var array<string, mixed>|null */
+        public readonly ?array $matchFormat = null,
     ) {
         parent::__construct(
             id: $id,
@@ -123,7 +126,8 @@ class PlayoffGameDomain extends GameDomain
             loserDestinationSlot: $game->loser_destination_slot !== null
                 ? (string) $game->loser_destination_slot
                 : null,
-            status: $game->status
+            status: $game->status,
+            matchFormat: MatchFormat::fromRecord($game)->toArray(),
         );
     }
 
@@ -146,7 +150,8 @@ class PlayoffGameDomain extends GameDomain
             winner: $this->winner,
             winnerDestinationSlot: $this->winnerDestinationSlot,
             loserDestinationSlot: $this->loserDestinationSlot,
-            status: $this->status
+            status: $this->status,
+            matchFormat: $this->matchFormat,
         );
     }
 

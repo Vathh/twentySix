@@ -22,6 +22,8 @@ class ActiveGameDTO
         public ?string $bracketSide = null,
         /** @var list<string>|null */
         public ?array $groupPlayerNames = null,
+        /** @var array<string, mixed>|null */
+        public ?array $matchFormat = null,
     ) {}
 
     /**
@@ -46,6 +48,7 @@ class ActiveGameDTO
             roundLabel: null,
             bracketSide: null,
             groupPlayerNames: $groupPlayerNames,
+            matchFormat: $game->matchFormat,
         );
     }
 
@@ -86,6 +89,7 @@ class ActiveGameDTO
             round: $game->round,
             roundLabel: $game->roundLabel(),
             bracketSide: $game->bracketSide->value,
+            matchFormat: $game->matchFormat,
         );
     }
 }
