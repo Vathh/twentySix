@@ -24,6 +24,13 @@
         >Do wysłania</span>
     </div>
 
+    <p
+        class="text-center text-sm text-text-muted mb-3"
+        x-show="formatLabel()"
+        x-text="formatLabel()"
+        x-cloak
+    ></p>
+
     <div
         x-show="leaseLost && !isCancelled"
         x-cloak

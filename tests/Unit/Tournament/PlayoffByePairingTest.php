@@ -45,22 +45,37 @@ class PlayoffByePairingTest extends TestCase
         $this->assertSame([99, 4], $pairs[3]);
     }
 
-    public function test_random_pool_can_produce_bye_vs_bye(): void
+    public function test_byes_face_players_when_there_are_enough_players(): void
     {
         $byeId = 99;
-        $sawByeBye = false;
 
-        for ($i = 0; $i < 200; $i++) {
+        for ($i = 0; $i < 20; $i++) {
             $pairs = PlayoffByePairing::pair([1, 2, 3, 4], 8, $byeId);
             foreach ($pairs as [$a, $b]) {
-                if ($a === $byeId && $b === $byeId) {
-                    $sawByeBye = true;
-                    break 2;
-                }
+                $this->assertFalse($a === $byeId && $b === $byeId);
+                $this->assertTrue($a === $byeId || $b === $byeId);
+            }
+        }
+    }
+
+    public function test_bye_vs_bye_only_when_byes_outnumber_players(): void
+    {
+        $byeId = 99;
+        $pairs = PlayoffByePairing::pair([1, 2], 8, $byeId);
+
+        $byeBye = 0;
+        $playerBye = 0;
+        foreach ($pairs as [$a, $b]) {
+            if ($a === $byeId && $b === $byeId) {
+                $byeBye++;
+            } else {
+                $playerBye++;
             }
         }
 
-        $this->assertTrue($sawByeBye, 'Przy 4 bye w puli losowej powinien czasem wypaść mecz bye vs bye');
+        $this->assertSame(2, $playerBye);
+        $this->assertSame(2, $byeBye);
+        $this->assertCount(4, $pairs);
     }
 
     public function test_next_power_of_two(): void

@@ -192,6 +192,7 @@ class GameScoringStateBuilder
             'legAverage' => GameStatisticsCalculator::legAverage($openLegVisits),
             'gameAverage' => GameStatisticsCalculator::gameAverage($gameVisits),
             'firstNineAverage' => GameStatisticsCalculator::firstNineAverage($openLegVisits),
+            'matchFirstNineAverage' => GameStatisticsCalculator::matchFirstNineAverage($gameVisits),
             'doublePercent' => GameStatisticsCalculator::gameDoublePercent($allLegStats, $playerId),
             'legByLegScores' => $legByLegScores,
             'legsAverages' => $legsAverages,

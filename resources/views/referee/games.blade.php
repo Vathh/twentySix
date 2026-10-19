@@ -147,7 +147,7 @@
                                             <span class="three-dart-average" x-show="row.playerAverage" x-text="row.playerAverage"></span>
                                         </td>
                                         <template x-for="cell in row.cells" :key="row.key + '-' + cell.key">
-                                            <td class="group-col-match text-center">
+                                            <td class="group-col-match text-center" :class="cell.live ? 'group-cell-live' : ''">
                                                 <span class="text-text-muted" x-show="cell.diagonal">X</span>
                                                 <button
                                                     type="button"
@@ -165,9 +165,17 @@
                                                         x-text="cell.sequence"
                                                     ></span>
                                                     <span
-                                                        x-show="!(cell.game && lockingId === ('group-'+cell.game.id)) && !cell.sequence"
-                                                        x-text="cell.text"
+                                                        class="group-live-dot"
+                                                        x-show="!(cell.game && lockingId === ('group-'+cell.game.id)) && cell.live"
+                                                        aria-hidden="true"
                                                     ></span>
+                                                    <span
+                                                        class="inline-flex flex-col items-center leading-tight"
+                                                        x-show="!(cell.game && lockingId === ('group-'+cell.game.id)) && !cell.sequence"
+                                                    >
+                                                        <span x-text="cell.text"></span>
+                                                        <span class="three-dart-average" x-show="cell.average" x-text="cell.average"></span>
+                                                    </span>
                                                 </button>
                                                 <span
                                                     class="sequence-badge"
@@ -179,7 +187,10 @@
                                                     class="inline-flex flex-col items-center text-text-secondary tabular-nums"
                                                     x-show="!cell.diagonal && !cell.playable && !cell.sequence"
                                                 >
-                                                    <span x-text="cell.text"></span>
+                                                    <span>
+                                                        <span class="group-live-dot" x-show="cell.live" aria-hidden="true"></span>
+                                                        <span x-text="cell.text"></span>
+                                                    </span>
                                                     <span class="three-dart-average" x-show="cell.average" x-text="cell.average"></span>
                                                 </span>
                                             </td>

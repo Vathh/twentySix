@@ -25,10 +25,10 @@
         data-playoff-game-card
         @if($gameUrl)
             href="{{ $gameUrl }}"
-            class="bracket-game-card is-link"
+            class="bracket-game-card is-link {{ $game->status === \App\Enums\GameStatus::IN_PROGRESS ? 'is-live' : '' }}"
         @else
             href="#"
-            class="bracket-game-card"
+            class="bracket-game-card {{ $game->status === \App\Enums\GameStatus::IN_PROGRESS ? 'is-live' : '' }}"
             aria-disabled="true"
             tabindex="-1"
             style="pointer-events: none"

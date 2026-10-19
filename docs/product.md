@@ -162,14 +162,14 @@ Wybór **tylko przy starcie** (kreator) — po wystartowaniu bez zmiany typu.
 
 - Bez fazy grupowej → od razu status pucharowy; mecze R1 (i gotowe bye) na tablecie.
 - **Bye dozwolone:** `bracketSize = najbliższa potęga 2 ≥ N` (np. 6 graczy → drabinka 8, 2 bye).
-- Pary R1 + rozmieszczenie bye: **losowo** (bez seedingu z rankingu w tym zakresie).
+- Pary R1: **losowo** (bez seedingu z rankingu). Wolny los staje naprzeciw zawodnika. Dwa wolne losy w jednym meczu tylko wtedy, gdy wolnych losów jest więcej niż zawodników.
 - **Mecz o 3. miejsce: tak** (przegrani półfinałów).
 - Miejsca: 1/2 z finału, 3/4 z meczu o 3., dalej z rundy odpadnięcia (ex aequo w tej samej rundzie).
 
 #### `double_elimination`
 
 - Bez fazy grupowej → od razu drabinka; **bye** jak w SE.
-- Pary R1 WB + bye: **losowo**.
+- Pary R1 WB: **losowo**, z tym samym układem wolnych losów co w SE (wolny los naprzeciw zawodnika, dopóki starcza zawodników).
 - Przegrana w WB = spadek do LB (pierwsza porażka); **druga porażka** = eliminacja i miejsce.
 - **Bez meczu o 3. miejsce.**
 - **Grand final:** wybór admina przy starcie — **jeden mecz** albo **reset** (jeśli LB wygra GF1 → drugi mecz GF2). Gdyby wybór okazał się zbyt kosztowny w implementacji: domyślnie tylko **reset**.
@@ -242,7 +242,7 @@ Logika zgodna z `GroupStandingService` w backendzie (`sortStandings` → `compar
 - Gdy awans jest nierówny (nadwyżka miejsc, nieparzysta liczba grup): kolejny najlepszy dostaje najsłabszego dostępnego rywala z innej grupy; przy remisie miejsca — grupa sąsiednia. Meczów „zwycięzca grupy kontra zwycięzca grupy” jest wtedy tyle, ile musi.
 - Po lewej stronie meczu (`player1`) stoi zawodnik z lepszym miejscem w grupie.
 - Kolejne rundy: zwycięzca idzie dalej według slotów drabinki.
-- Pełna drabinka pocieszenia (bez wolnych losów) używa tej samej reguły na miejscach nieawansujących. Przy wolnych losach pary R1 pocieszenia zostają losowe, jak w SE.
+- Drabinka pocieszenia używa tej samej reguły na miejscach nieawansujących, także gdy są wolne losy. Wolny los dostaje lepsze miejsce grupowe (po jednym). Reszta gra wyższe miejsce z niższym, bez pary z jednej grupy w pierwszej rundzie. Dwa wolne losy w jednym meczu tylko wtedy, gdy wolnych losów jest więcej niż zawodników — inaczej wolny los nie awansuje do kolejnej rundy.
 
 ### Walkower i korekta wyniku
 
@@ -586,6 +586,7 @@ Wspólne dla **quick game online**, **treningu** i (tam gdzie dotyczy) **turniej
 | Pole / etykieta UI | Znaczenie | Kto ma wartość |
 | ------------------ | --------- | -------------- |
 | **ms** — średnia meczowa (`matchAverage` / `gameAverage`) | Średnia 3-dartowa ze **wszystkich** rzutów gracza w meczu (wygrane i przegrane legi + bieżący leg). | Zawsze obaj / wszyscy gracze, gdy mają co najmniej jedną wizytę. |
+| **Pierwsze 9 lotek** (`matchFirstNineAverage`) | Średnia 3-dartowa z okna pierwszych 9 lotek każdego lega (krótki leg wchodzi w całości), zsumowana punktami i lotkami przez cały mecz. | Gracz, który rzucił co najmniej jedną lotkę. |
 | **ls** — średnia legowa bieżąca (`currentLegAverage` / `legAverage`) | Średnia 3-dartowa w **aktualnie trwającym** legu. | Zawsze obaj / wszyscy, gdy mają rzuty w bieżącym legu. |
 | **Najlepszy leg** (sekcja *Średnia*) — `max(legsAverages)` | Najwyższa średnia legowa spośród **zakończonych** legów, w których gracz brał udział — **niezależnie od wyniku lega** (wygrany lub przegrany). | Zawsze liczona dla każdego gracza, który rozegrał co najmniej jeden zakończony leg. |
 | **Najlepszy leg** (sekcja *Osiągi*) — `min(dartsPerLeg)` | **Najmniejsza** liczba lotek potrzebnych graczowi do **zamknięcia lega**, który **wygrał**. To liczba lotek zwycięzcy lega, nie przegranego. | Tylko gracze, którzy **wygrali co najmniej jeden** zakończony leg; inaczej `-`. |

@@ -133,6 +133,8 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::get('/seasons/{season}/standings', [SeasonController::class, 'standings'])->whereNumber('season');
     Route::get('/tournaments', [TournamentCatalogController::class, 'index']);
     Route::get('/tournaments/{tournament}', [TournamentCatalogController::class, 'show'])->whereNumber('tournament');
+    Route::get('/tournaments/{tournament}/groups-live', [TournamentCatalogController::class, 'groupsLive'])->whereNumber('tournament');
+    Route::get('/tournaments/{tournament}/playoff-live', [TournamentCatalogController::class, 'playoffLive'])->whereNumber('tournament');
 
     Route::prefix('tournaments/invitations')->group(function () {
         Route::get('/received', [TournamentInvitationController::class, 'received']);

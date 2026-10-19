@@ -38,14 +38,14 @@ export function matrixCellForPair(game, rowPlayerId, { playableUnfinished = fals
         return { text: '—', average: null, sequence: null, playable: false, game: null };
     }
     if (isFinishedStatus(game.status)) {
-        return { text: scoreForRow(game, rowPlayerId), average: averageLabel(game, rowPlayerId), sequence: null, playable: false, game };
+        return { text: scoreForRow(game, rowPlayerId), average: averageLabel(game, rowPlayerId), sequence: null, live: false, playable: false, game };
     }
     if (game.status === 'in_progress') {
-        const sequence = game.sequence != null ? game.sequence : null;
         return {
-            text: sequence != null ? String(sequence) : '…',
-            average: null,
-            sequence,
+            text: scoreForRow(game, rowPlayerId),
+            average: averageLabel(game, rowPlayerId),
+            sequence: null,
+            live: true,
             playable: playableUnfinished && game.lockedByOther !== true,
             game,
         };

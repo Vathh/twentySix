@@ -53,6 +53,8 @@ class GameStatisticsCalculatorTest extends TestCase
         $this->assertSame(100.0, $stats['bestLegAverage']);
         $this->assertSame(11, $stats['bestLegThrows']);
         $this->assertNotNull($stats['matchAverage']);
+        // leg1: pierwsze 9 lotek 60+85+180; leg2: cały krótki leg 100. (425/12)*3 = 106.25
+        $this->assertSame(106.25, $stats['matchFirstNineAverage']);
     }
 
     public function test_best_leg_average_recalculates_nine_dart_finish_from_visits(): void

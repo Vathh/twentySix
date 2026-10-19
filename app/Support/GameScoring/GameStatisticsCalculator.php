@@ -130,6 +130,7 @@ class GameStatisticsCalculator
      *     plus100: int,
      *     plus140: int,
      *     max180: int,
+     *     matchFirstNineAverage: ?float,
      * }
      */
     public static function playerMatchStats(
@@ -174,6 +175,7 @@ class GameStatisticsCalculator
 
         return [
             'matchAverage' => self::gameAverage($playerVisits),
+            'matchFirstNineAverage' => self::matchFirstNineAverage($playerVisits),
             'bestLegAverage' => $bestLegAverage,
             'currentLegAverage' => $openLegId ? self::legAverage($openLegVisits) : null,
             'bestLegThrows' => $dartsPerWonLeg->isNotEmpty() ? (int) $dartsPerWonLeg->min() : null,
@@ -183,6 +185,67 @@ class GameStatisticsCalculator
             'plus140' => self::countVisitScoresInRange($scores, 140, 180),
             'max180' => self::countVisitScoresInRange($scores, 180, 181),
         ];
+    }
+
+    /**
+     * Średnia pierwszych 9 lotek z całego meczu: suma punktów i lotek z okna first-9 każdego lega.
+     * Krótki leg (mniej niż 9 lotek) wchodzi w całości, tak jak firstNineAverage.
+     *
+     * @param  Collection<int, GameVisit>  $playerVisits
+     */
+    public static function matchFirstNineAverage(Collection $playerVisits): ?float
+    {
+        $points = 0;
+        $darts = 0;
+
+        foreach ($playerVisits->groupBy(fn ($visit) => (int) ($visit->game_leg_id ?? 0)) as $legVisits) {
+            [$legPoints, $legDarts] = self::firstNineWindow($legVisits);
+            $points += $legPoints;
+            $darts += $legDarts;
+        }
+
+        if ($darts <= 0) {
+            return null;
+        }
+
+        return round(($points / $darts) * 3, 2);
+    }
+
+    /**
+     * @param  Collection<int, GameVisit>  $legVisits
+     * @return array{0: int, 1: int}
+     */
+    private static function firstNineWindow(Collection $legVisits): array
+    {
+        $ordered = $legVisits
+            ->sortBy(fn ($visit) => [(int) ($visit->visit_number ?? 0), (int) ($visit->id ?? 0)])
+            ->values();
+
+        if ($ordered->isEmpty()) {
+            return [0, 0];
+        }
+
+        if (self::dartsThrown($ordered) < 9) {
+            return [
+                (int) $ordered->where('bust', false)->sum('score'),
+                self::dartsThrown($ordered),
+            ];
+        }
+
+        $firstThree = $ordered->where('bust', false)->take(3);
+        if ($firstThree->count() < 3) {
+            return [
+                (int) $ordered->where('bust', false)->sum('score'),
+                self::dartsThrown($ordered),
+            ];
+        }
+
+        $darts = (int) $firstThree->sum('darts_in_visit');
+        if ($darts <= 0) {
+            return [0, 0];
+        }
+
+        return [(int) $firstThree->sum('score'), $darts];
     }
 
     /**

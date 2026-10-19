@@ -130,7 +130,7 @@
                                     $title = $isLive ? 'Podgląd na żywo' : ($isFinished ? null : 'Ustaw wynik / walkower');
                                 @endphp
                                 <td
-                                    class="px-2 py-2 text-center {{ (! $isFinished && ! $isLive && $advances) ? 'bg-success-muted/70' : '' }}"
+                                    class="px-2 py-2 text-center {{ $isLive ? 'group-cell-live' : '' }} {{ (! $isFinished && ! $isLive && $advances) ? 'bg-success-muted/70' : '' }}"
                                     data-group-game-id="{{ $cellGame->id }}"
                                     data-row-player-id="{{ $rowPlayer->id }}"
                                     @if($cellGame->sequence) data-sequence="{{ $cellGame->sequence }}" @endif
@@ -141,7 +141,7 @@
                                         class="{{ ($cellGame->sequence && ! $isFinished && ! $isLive) ? 'inline-flex justify-center hover:opacity-80' : $linkClass }}"
                                         @if($cellGame->sequence && ! $isFinished && ! $isLive) title="Mecz {{ $cellGame->sequence }}"
                                         @elseif($title) title="{{ $title }}" @endif
-                                    >@if($cellGame->sequence && ! $isFinished && ! $isLive)<span class="sequence-badge">{{ $cellGame->sequence }}</span>@else<span>{{ $scoreText }}</span>@if($matchAverage !== null)<span class="three-dart-average">{{ \App\Support\AverageFormat::display($matchAverage) }}</span>@endif @endif</a>
+                                    >@if($cellGame->sequence && ! $isFinished && ! $isLive)<span class="sequence-badge">{{ $cellGame->sequence }}</span>@else<span class="inline-flex items-center justify-center gap-1">@if($isLive)<span class="group-live-dot" aria-hidden="true"></span>@endif<span>{{ $scoreText }}</span></span>@if($matchAverage !== null)<span class="three-dart-average">{{ \App\Support\AverageFormat::display($matchAverage) }}</span>@endif @endif</a>
                                 </td>
                             @endif
                         @endforeach

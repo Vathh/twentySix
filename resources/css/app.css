@@ -159,6 +159,27 @@
         @apply hover:border-accent/50 hover:bg-bg-elevated transition cursor-pointer;
     }
 
+    .bracket-game-card.is-live {
+        border-color: var(--color-accent);
+        background: color-mix(in srgb, var(--color-accent) 16%, var(--color-bg-elevated));
+        box-shadow: inset 3px 0 0 var(--color-accent);
+    }
+
+    .group-cell-live {
+        background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+    }
+
+    .group-live-dot {
+        display: inline-block;
+        width: 0.45rem;
+        height: 0.45rem;
+        margin-right: 0.35rem;
+        border-radius: 999px;
+        background: var(--color-accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 28%, transparent);
+        vertical-align: middle;
+    }
+
     .bracket-game-row {
         @apply flex justify-between items-center gap-2 min-h-0;
     }
@@ -2103,6 +2124,13 @@
         border-radius: 0.75rem;
         background: var(--color-bg-deep);
         overflow: hidden;
+    }
+
+    .referee-leg-visits.referee-leg-visits-static {
+        height: auto;
+        min-height: 0;
+        max-height: none;
+        overflow: visible;
     }
 
     .referee-leg-visits-names {

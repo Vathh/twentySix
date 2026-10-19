@@ -174,6 +174,11 @@
                         <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p2['matchAverage']) }}</td>
                     </tr>
                     <tr class="border-b border-border/50">
+                        <td class="py-2.5 px-4 text-text-muted">Pierwsze 9 lotek</td>
+                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p1['matchFirstNineAverage'] ?? null) }}</td>
+                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p2['matchFirstNineAverage'] ?? null) }}</td>
+                    </tr>
+                    <tr class="border-b border-border/50">
                         <td class="py-2.5 px-4 text-text-muted">Najlepszy leg</td>
                         <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p1['bestLegAverage']) }}</td>
                         <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p2['bestLegAverage']) }}</td>

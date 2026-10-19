@@ -61,9 +61,18 @@ function setRunningAverage(root, playerId, value) {
 function renderScoreLink(link, scoreText, average, game) {
 	link.className = cellClassForStatus(game);
 	link.replaceChildren();
+	const line = document.createElement('span');
+	line.className = 'inline-flex items-center justify-center gap-1';
+	if (game.status === 'in_progress') {
+		const dot = document.createElement('span');
+		dot.className = 'group-live-dot';
+		dot.setAttribute('aria-hidden', 'true');
+		line.appendChild(dot);
+	}
 	const score = document.createElement('span');
 	score.textContent = scoreText;
-	link.appendChild(score);
+	line.appendChild(score);
+	link.appendChild(line);
 	const avg = averageText(average);
 	if (avg) {
 		const line = document.createElement('span');
@@ -173,6 +182,7 @@ export function registerTournamentGroupsLive(Alpine) {
 			const cells = root.querySelectorAll(`[data-group-game-id="${game.id}"]`);
 			cells.forEach((td) => {
 				const rowPlayerId = td.getAttribute('data-row-player-id');
+				td.classList.toggle('group-cell-live', game.status === 'in_progress');
 				const link = td.querySelector('a[data-group-game-link]');
 				if (!link) {
 					return;

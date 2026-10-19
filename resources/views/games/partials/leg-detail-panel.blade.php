@@ -49,62 +49,45 @@
     @endif
 
     @if($block['visits']->isNotEmpty())
-        <div class="grid md:grid-cols-2 gap-4">
-            <div>
-                <h4 class="text-sm font-semibold text-accent mb-2">{{ $player1->name }}</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-text">
-                        <thead>
-                        <tr class="text-text-muted border-b border-border">
-                            <th class="text-left py-1 font-medium">#</th>
-                            <th class="text-center font-medium">Pkt</th>
-                            <th class="text-center font-medium">Zostało</th>
-                        </tr>
-                        </thead>
-                        <tbody class="text-text-secondary">
-                        @foreach($block['visits']->where('player_id', $player1->id) as $visit)
-                            <tr class="border-b border-border/50 {{ $visit->bust ? 'opacity-60' : '' }}">
-                                <td class="py-1.5">{{ $visit->visit_number }}</td>
-                                <td class="text-center py-1.5">{{ $visit->bust ? 'Bust' : $visit->score }}</td>
-                                <td class="text-center py-1.5">{{ $visit->remaining_after }}</td>
-                            </tr>
-                        @endforeach
-                        @if($block['visits']->where('player_id', $player1->id)->isEmpty())
-                            <tr>
-                                <td colspan="3" class="py-2 text-text-muted text-center">Brak wizyt</td>
-                            </tr>
-                        @endif
-                        </tbody>
-                    </table>
-                </div>
+        @php
+            $visitRows = \App\Support\GameScoring\H2hLegVisitRows::fromVisits(
+                $block['visits'],
+                (int) $player1->id,
+                (int) $player2->id,
+            );
+        @endphp
+        <div class="referee-leg-visits referee-leg-visits-static">
+            <div class="referee-leg-visits-names">
+                <span class="truncate">{{ $player1->name }}</span>
+                <span class="truncate">{{ $player2->name }}</span>
             </div>
-            <div>
-                <h4 class="text-sm font-semibold text-accent mb-2">{{ $player2->name }}</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-text">
-                        <thead>
-                        <tr class="text-text-muted border-b border-border">
-                            <th class="text-left py-1 font-medium">#</th>
-                            <th class="text-center font-medium">Pkt</th>
-                            <th class="text-center font-medium">Zostało</th>
+            <div class="referee-leg-visits-body">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Rzucone</th>
+                        <th>Pozostało</th>
+                        <th class="is-darts">Lotki</th>
+                        <th>Pozostało</th>
+                        <th>Rzucone</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @forelse($visitRows as $row)
+                        <tr>
+                            <td @class(['is-bust' => $row['leftBust']])>{{ $row['leftThrown'] }}</td>
+                            <td>{{ $row['leftRemaining'] }}</td>
+                            <td class="is-darts">{{ $row['darts'] }}</td>
+                            <td>{{ $row['rightRemaining'] }}</td>
+                            <td @class(['is-bust' => $row['rightBust']])>{{ $row['rightThrown'] }}</td>
                         </tr>
-                        </thead>
-                        <tbody class="text-text-secondary">
-                        @foreach($block['visits']->where('player_id', $player2->id) as $visit)
-                            <tr class="border-b border-border/50 {{ $visit->bust ? 'opacity-60' : '' }}">
-                                <td class="py-1.5">{{ $visit->visit_number }}</td>
-                                <td class="text-center py-1.5">{{ $visit->bust ? 'Bust' : $visit->score }}</td>
-                                <td class="text-center py-1.5">{{ $visit->remaining_after }}</td>
-                            </tr>
-                        @endforeach
-                        @if($block['visits']->where('player_id', $player2->id)->isEmpty())
-                            <tr>
-                                <td colspan="3" class="py-2 text-text-muted text-center">Brak wizyt</td>
-                            </tr>
-                        @endif
-                        </tbody>
-                    </table>
-                </div>
+                    @empty
+                        <tr>
+                            <td colspan="5">Brak podejść w tym legu</td>
+                        </tr>
+                    @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     @else

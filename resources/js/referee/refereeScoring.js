@@ -189,6 +189,23 @@ export function registerRefereeScoring(Alpine) {
             return Number(this.matchFormat?.setsToWinMatch ?? 1) <= 1;
         },
 
+        formatLabel() {
+            const format = this.matchFormat;
+            if (!format) {
+                return '';
+            }
+            const legs = Number(format.legsToWinSet ?? 1);
+            const sets = Number(format.setsToWinMatch ?? 1);
+            const score = format.startingScore ?? 501;
+            if (sets <= 1) {
+                if (format.winMode === 'best_of') {
+                    return `${score} · best of ${format.winLength}`;
+                }
+                return `${score} · do ${legs} legów`;
+            }
+            return `${score} · ${sets} sety · ${legs} legi/set`;
+        },
+
         matchScore(player) {
             if (!player) {
                 return 0;

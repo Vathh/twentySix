@@ -5,8 +5,8 @@ namespace App\Support\Tournament;
 use App\Domain\Tournament\TournamentStartRules;
 
 /**
- * Losowe pary R1: gracze i BYE w jednej puli (bez rozkładania bye).
- * Dwa BYE w jednej parze są dozwolone — BYE awansuje do następnej rundy.
+ * Losowe pary R1. Wolny los staje naprzeciw zawodnika.
+ * Dwa wolne losy w jednej parze tylko wtedy, gdy bye jest więcej niż zawodników.
  */
 final class PlayoffByePairing
 {
@@ -28,11 +28,28 @@ final class PlayoffByePairing
             throw new \InvalidArgumentException("Rozmiar drabinki musi być potęgą 2 (otrzymano {$bracketSize}).");
         }
 
-        $byeCount = $bracketSize - $playerCount;
-        $pool = array_merge(array_values($playerIds), array_fill(0, $byeCount, $byePlayerId));
-        shuffle($pool);
+        $ids = array_values($playerIds);
+        shuffle($ids);
 
-        return self::chunkPairs($pool);
+        $byeCount = $bracketSize - $playerCount;
+        $absorb = min($byeCount, $playerCount);
+        $pairs = [];
+
+        for ($i = 0; $i < $absorb; $i++) {
+            $pairs[] = [$ids[$i], $byePlayerId];
+        }
+
+        $rest = array_slice($ids, $absorb);
+        if ($rest !== []) {
+            $pairs = array_merge($pairs, self::chunkPairs($rest));
+        }
+
+        $extraByes = $byeCount - $absorb;
+        if ($extraByes > 0) {
+            $pairs = array_merge($pairs, self::chunkPairs(array_fill(0, $extraByes, $byePlayerId)));
+        }
+
+        return $pairs;
     }
 
     /**

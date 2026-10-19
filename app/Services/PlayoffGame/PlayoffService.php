@@ -7,6 +7,7 @@ use App\Domain\Game\PlayoffGameDomain;
 use App\Domain\Game\WinnerDestination;
 use App\Domain\GameScoring\MatchFormat;
 use App\Domain\Tournament\DoubleEliminationMatchFormatMap;
+use App\Domain\Tournament\PlayoffConsolationSeeding;
 use App\Domain\Tournament\PlayoffFirstRoundSeeding;
 use App\DTO\GameResultDTO;
 use App\Enums\BracketSide;
@@ -115,24 +116,10 @@ class PlayoffService
      */
     private function pairConsolationFirstRound(array $remaining, int $bracketSize): array
     {
-        $byePlayerId = $this->playerRepository->byePlayerId();
-
-        if (count($remaining) === $bracketSize) {
-            try {
-                return PlayoffFirstRoundSeeding::pair($remaining);
-            } catch (\Throwable) {
-                return PlayoffByePairing::pair(
-                    array_column($remaining, 'player_id'),
-                    $bracketSize,
-                    $byePlayerId,
-                );
-            }
-        }
-
-        return PlayoffByePairing::pair(
-            array_column($remaining, 'player_id'),
+        return PlayoffConsolationSeeding::pair(
+            $remaining,
             $bracketSize,
-            $byePlayerId,
+            $this->playerRepository->byePlayerId(),
         );
     }
 

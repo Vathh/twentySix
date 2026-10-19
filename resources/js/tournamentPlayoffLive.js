@@ -69,16 +69,17 @@ function applyRowWinner(row, isWinner) {
 	row.classList.toggle('font-semibold', isWinner);
 }
 
-function applyCardLink(card, url) {
+function applyCardLink(card, url, status) {
+	const live = status === 'in_progress' ? ' is-live' : '';
 	if (url) {
 		card.setAttribute('href', url);
-		card.className = `${CARD_BASE} ${CARD_CLICKABLE}`;
+		card.className = `${CARD_BASE} ${CARD_CLICKABLE}${live}`;
 		card.removeAttribute('aria-disabled');
 		card.removeAttribute('tabindex');
 		card.style.pointerEvents = '';
 	} else {
 		card.setAttribute('href', '#');
-		card.className = CARD_BASE;
+		card.className = `${CARD_BASE}${live}`;
 		card.setAttribute('aria-disabled', 'true');
 		card.setAttribute('tabindex', '-1');
 		card.style.pointerEvents = 'none';
@@ -217,7 +218,7 @@ export function registerTournamentPlayoffLive(Alpine) {
 				);
 			}
 			if (card) {
-				applyCardLink(card, hrefForGame(game, config.urls));
+				applyCardLink(card, hrefForGame(game, config.urls), game.status);
 			}
 		},
 

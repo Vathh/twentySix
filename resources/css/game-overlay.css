@@ -185,7 +185,7 @@ body.game-overlay-preview {
     padding: 0.12em 0.18em 0.16em 0.04em;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: clip;
     color: var(--color-text);
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
 }
@@ -312,10 +312,10 @@ body.game-overlay-preview {
 }
 
 .game-overlay-score-caption {
-    width: 0;
+    width: max-content;
     min-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
     white-space: nowrap;
     font-size: 0.8rem;
     font-weight: 700;
@@ -331,7 +331,8 @@ body.game-overlay-preview {
 
 .game-overlay-remaining {
     margin: 0;
-    width: 3ch;
+    width: max-content;
+    min-width: 3ch;
     font-size: 4.8rem;
     font-weight: 700;
     letter-spacing: -0.03em;

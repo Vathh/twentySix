@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Api\Concerns\MapsIndexPageForApi;
 use App\Models\Tournament\Tournament;
 use App\Services\Competition\CompetitionShowSerializer;
+use App\Services\Tournament\TournamentGroupMatrixLiveService;
+use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentService;
 use App\Support\Text\PolishFold;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +19,8 @@ class TournamentCatalogController
     public function __construct(
         private TournamentService $tournamentService,
         private CompetitionShowSerializer $showSerializer,
+        private TournamentGroupMatrixLiveService $groupMatrixLiveService,
+        private TournamentPlayoffBracketLiveService $playoffBracketLiveService,
     ) {}
 
     /**
@@ -38,5 +42,15 @@ class TournamentCatalogController
     public function show(Tournament $tournament): JsonResponse
     {
         return response()->json($this->showSerializer->tournament($tournament));
+    }
+
+    public function groupsLive(Tournament $tournament): JsonResponse
+    {
+        return response()->json($this->groupMatrixLiveService->snapshot($tournament->id));
+    }
+
+    public function playoffLive(Tournament $tournament): JsonResponse
+    {
+        return response()->json($this->playoffBracketLiveService->snapshot($tournament->id));
     }
 }
