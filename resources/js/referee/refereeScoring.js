@@ -11,13 +11,18 @@ import {
 } from './api.js';
 import { buildH2hLegVisitRows } from './legVisitRows.js';
 import {
+    bindRefereeLegId,
     clearRefereeOutbox,
+    commandAlreadyApplied,
     dequeueRefereeOutbox,
     enqueueRefereeOutbox,
+    isLegAlreadyOpenMessage,
     isRetryableRefereeError,
     loadRefereeOutbox,
     patchRefereeState,
     refereeOutboxKey,
+    rejectionNotice,
+    replayRefereeEntries,
 } from './refereeOutbox.js';
 
 /**
@@ -61,6 +66,10 @@ export function registerRefereeScoring(Alpine) {
         busy: false,
         error: '',
         syncPending: false,
+        flushInFlight: false,
+        flushQueued: false,
+        flushRetryMs: 3000,
+        flushTimer: null,
         leaseLost: false,
         onOnline: null,
         checkoutOpen: false,
@@ -99,6 +108,7 @@ export function registerRefereeScoring(Alpine) {
                 window.removeEventListener('online', this.onOnline);
                 this.onOnline = null;
             }
+            this.clearFlushRetry();
         },
 
         outboxKey() {
@@ -452,6 +462,12 @@ export function registerRefereeScoring(Alpine) {
         },
 
         async sendOutboxEntry(entry) {
+            if (entry.op === 'startLeg') {
+                return this.api('/legs', {
+                    method: 'POST',
+                    body: entry.payload,
+                });
+            }
             if (entry.op === 'recordVisit') {
                 return this.api(`/legs/${entry.legId}/visits`, {
                     method: 'POST',
@@ -472,28 +488,129 @@ export function registerRefereeScoring(Alpine) {
             return null;
         },
 
-        async flushOutbox() {
-            if (this.inputLocked) {
-                return null;
+        clearFlushRetry() {
+            if (this.flushTimer) {
+                clearTimeout(this.flushTimer);
+                this.flushTimer = null;
             }
+        },
+
+        scheduleFlushRetry() {
+            if (this.flushTimer) {
+                return;
+            }
+            const delay = this.flushRetryMs;
+            this.flushTimer = setTimeout(() => {
+                this.flushTimer = null;
+                this.flushRetryMs = 8000;
+                void this.flushOutbox();
+            }, delay);
+        },
+
+        applyAckedState(state, tail) {
+            if (!state) {
+                return;
+            }
+            this.state = replayRefereeEntries(state, tail);
+            this.maybeAskOpener();
+        },
+
+        async recoverRejected(key, entry, error) {
+            let snapshot = null;
+            try {
+                snapshot = await this.api('/scoring/state');
+            } catch (fetchErr) {
+                if (fetchErr instanceof RefereeApiError && fetchErr.status === 409) {
+                    clearRefereeOutbox(key);
+                    this.refreshSyncPending();
+                    this.clearFlushRetry();
+                    this.markCancelled();
+                    return { continue: false, state: null };
+                }
+                if (
+                    fetchErr instanceof RefereeApiError
+                    && (fetchErr.data?.reason === 'stolen' || fetchErr.status === 403)
+                ) {
+                    clearRefereeOutbox(key);
+                    this.refreshSyncPending();
+                    this.clearFlushRetry();
+                    this.markStolen(fetchErr.message);
+                    return { continue: false, state: null };
+                }
+            }
+            if (snapshot?.game?.status === 'finished') {
+                clearRefereeOutbox(key);
+                this.state = snapshot;
+                this.refreshSyncPending();
+                this.clearFlushRetry();
+                this.maybeAskOpener();
+                return { continue: false, state: snapshot };
+            }
+            if (
+                snapshot
+                && commandAlreadyApplied(entry, snapshot, {
+                    legAlreadyOpen: isLegAlreadyOpenMessage(error),
+                })
+            ) {
+                if (entry.op === 'startLeg' && snapshot.currentLeg?.id) {
+                    dequeueRefereeOutbox(key);
+                    bindRefereeLegId(key, snapshot.currentLeg.id);
+                } else {
+                    dequeueRefereeOutbox(key);
+                }
+                this.applyAckedState(snapshot, loadRefereeOutbox(key));
+                return { continue: true, state: snapshot };
+            }
+            const pending = loadRefereeOutbox(key);
+            const droppedTail = Math.max(0, pending.length - 1);
+            clearRefereeOutbox(key);
+            this.refreshSyncPending();
+            this.clearFlushRetry();
+            if (snapshot) {
+                this.state = snapshot;
+                this.maybeAskOpener();
+            }
+            this.error = rejectionNotice(droppedTail);
+            return { continue: false, state: snapshot };
+        },
+
+        async flushOutboxPass() {
             const key = this.outboxKey();
             let remaining = loadRefereeOutbox(key);
             let last = null;
             while (remaining.length > 0) {
-                const entry = remaining[0];
+                let entry = remaining[0];
                 try {
+                    if (entry.legId == null && entry.op !== 'startLeg') {
+                        this.refreshSyncPending();
+                        return { retryable: true, state: last };
+                    }
                     last = await this.sendOutboxEntry(entry);
-                    if (last) {
-                        this.state = last;
-                        this.maybeAskOpener();
+                    if (entry.op === 'startLeg' && !last?.currentLeg?.id) {
+                        this.refreshSyncPending();
+                        return { retryable: true, state: last };
                     }
                     remaining = dequeueRefereeOutbox(key);
+                    if (entry.op === 'startLeg') {
+                        remaining = bindRefereeLegId(key, last.currentLeg.id);
+                    }
+                    if (last?.game?.status === 'finished') {
+                        clearRefereeOutbox(key);
+                        this.state = last;
+                        this.refreshSyncPending();
+                        this.flushRetryMs = 3000;
+                        this.clearFlushRetry();
+                        this.maybeAskOpener();
+                        return { retryable: false, state: last };
+                    }
+                    this.applyAckedState(last, remaining);
                 } catch (e) {
                     if (e instanceof RefereeApiError && e.data?.reason === 'cancelled') {
                         clearRefereeOutbox(key);
                         this.refreshSyncPending();
+                        this.clearFlushRetry();
                         this.markCancelled();
-                        return null;
+                        return { retryable: false, state: null };
                     }
                     if (
                         e instanceof RefereeApiError
@@ -501,32 +618,66 @@ export function registerRefereeScoring(Alpine) {
                     ) {
                         clearRefereeOutbox(key);
                         this.refreshSyncPending();
+                        this.clearFlushRetry();
                         this.markStolen(e.message);
-                        return null;
+                        return { retryable: false, state: null };
                     }
                     if (e instanceof RefereeApiError && e.status === 409) {
                         clearRefereeOutbox(key);
                         this.refreshSyncPending();
+                        this.clearFlushRetry();
                         this.markCancelled();
-                        return null;
+                        return { retryable: false, state: null };
                     }
                     if (e instanceof RefereeApiError && e.status === 422) {
-                        clearRefereeOutbox(key);
-                        this.refreshSyncPending();
-                        await this.loadState({ quiet: true });
-                        this.error = 'Serwer odrzucił wizytę. Tablica pokazuje zapisany stan meczu.';
-                        return null;
+                        const recovered = await this.recoverRejected(key, entry, e);
+                        if (recovered.continue) {
+                            remaining = loadRefereeOutbox(key);
+                            last = recovered.state ?? last;
+                            continue;
+                        }
+                        return { retryable: false, state: recovered.state ?? null };
                     }
                     if (isRetryableRefereeError(e)) {
                         this.refreshSyncPending();
-                        this.error = 'Zapiszę na serwerze, gdy wróci internet.';
-                        return null;
+                        return { retryable: true, state: last };
                     }
                     throw e;
                 }
             }
             this.refreshSyncPending();
-            return last;
+            this.flushRetryMs = 3000;
+            this.clearFlushRetry();
+            return { retryable: false, state: last };
+        },
+
+        async flushOutbox() {
+            if (this.inputLocked) {
+                return null;
+            }
+            if (this.flushInFlight) {
+                this.flushQueued = true;
+                return null;
+            }
+            this.flushInFlight = true;
+            let last = null;
+            try {
+                do {
+                    this.flushQueued = false;
+                    const pass = await this.flushOutboxPass();
+                    last = pass.state ?? last;
+                    if (pass.retryable) {
+                        this.scheduleFlushRetry();
+                        break;
+                    }
+                } while (this.flushQueued);
+                return last;
+            } catch (e) {
+                this.error = e.message || 'Nie udało się zapisać wizyty.';
+                return last;
+            } finally {
+                this.flushInFlight = false;
+            }
         },
 
         async queueCommands(entries, { optimistic = true } = {}) {
@@ -539,8 +690,32 @@ export function registerRefereeScoring(Alpine) {
                 });
                 this.state = next;
             }
-            this.refreshSyncPending();
-            return this.flushOutbox();
+            void this.flushOutbox();
+            return this.state;
+        },
+
+        openLegId() {
+            if (this.state?.currentLeg?.id && this.state.currentLeg.open !== false) {
+                return this.state.currentLeg.id;
+            }
+            return null;
+        },
+
+        legOpenCommands(legId) {
+            if (legId) {
+                return [];
+            }
+            const pending = loadRefereeOutbox(this.outboxKey());
+            if (pending.some((entry) => entry.op === 'startLeg')) {
+                return [];
+            }
+            return [{
+                op: 'startLeg',
+                payload: {
+                    player1DoubleTracked: false,
+                    player2DoubleTracked: false,
+                },
+            }];
         },
 
         pressDigit(d) {
@@ -694,10 +869,9 @@ export function registerRefereeScoring(Alpine) {
                 return;
             }
 
-            this.busy = true;
             this.error = '';
             try {
-                const legId = await this.ensureLegId();
+                const legId = this.openLegId();
                 const bust = score > remainingBefore;
                 const visitScore = bust ? 0 : score;
                 const remainingAfter = bust
@@ -705,38 +879,28 @@ export function registerRefereeScoring(Alpine) {
                     : remainingBefore - score;
 
                 const clientVisitId = newClientVisitId();
-                const state = await this.queueCommands([{
-                    op: 'recordVisit',
-                    legId,
-                    clientVisitId,
-                    payload: {
-                        playerId: player.playerId,
-                        score: visitScore,
-                        remainingBefore,
-                        remainingAfter,
-                        dartsInVisit: 3,
-                        closedLeg: false,
-                        bust,
+                await this.queueCommands([
+                    ...this.legOpenCommands(legId),
+                    {
+                        op: 'recordVisit',
+                        legId,
                         clientVisitId,
+                        payload: {
+                            playerId: player.playerId,
+                            score: visitScore,
+                            remainingBefore,
+                            remainingAfter,
+                            dartsInVisit: 3,
+                            closedLeg: false,
+                            bust,
+                            clientVisitId,
+                        },
                     },
-                }]);
+                ]);
                 this.input = '';
-                if (
-                    state?.meta?.lastLegClose?.reason === 'loss_threshold'
-                    && state?.game?.status !== 'finished'
-                    && !state?.currentLeg?.id
-                ) {
-                    try {
-                        await this.ensureLegId();
-                    } catch {
-                        // next leg starts on first visit
-                    }
-                }
             } catch (e) {
                 this.error = e.message || 'Nie udało się zapisać wizyty.';
                 await this.loadState({ quiet: true });
-            } finally {
-                this.busy = false;
             }
         },
 
@@ -765,11 +929,10 @@ export function registerRefereeScoring(Alpine) {
                 return;
             }
 
-            this.busy = true;
             this.error = '';
             try {
                 const remainingBefore = this.remaining(player);
-                const legId = await this.ensureLegId();
+                const legId = this.openLegId();
                 const clientVisitId = newClientVisitId();
 
                 const playersPayload = this.players.map((p) => ({
@@ -785,7 +948,8 @@ export function registerRefereeScoring(Alpine) {
                     checkoutDart: p.playerId === player.playerId ? dartsInVisit : null,
                 }));
 
-                const state = await this.queueCommands([
+                await this.queueCommands([
+                    ...this.legOpenCommands(legId),
                     {
                         op: 'recordVisit',
                         legId,
@@ -812,20 +976,10 @@ export function registerRefereeScoring(Alpine) {
                 ]);
                 this.input = '';
                 this.cancelCheckout();
-
-                if (state?.game?.status !== 'finished' && !state?.currentLeg?.id) {
-                    try {
-                        await this.ensureLegId();
-                    } catch {
-                        // next leg starts on first visit
-                    }
-                }
             } catch (e) {
                 this.error = e.message || 'Nie udało się zamknąć lega.';
                 this.cancelCheckout();
                 await this.loadState({ quiet: true });
-            } finally {
-                this.busy = false;
             }
         },
 
@@ -834,10 +988,9 @@ export function registerRefereeScoring(Alpine) {
             if (this.busy || !player?.playerId || !this.bullOffRequired) {
                 return;
             }
-            this.busy = true;
             this.error = '';
             try {
-                const legId = await this.ensureLegId();
+                const legId = this.openLegId();
                 const playersPayload = this.players.map((p) => ({
                     playerId: p.playerId,
                     doubleTracked: false,
@@ -850,28 +1003,22 @@ export function registerRefereeScoring(Alpine) {
                     dartsThrown: null,
                     checkoutDart: null,
                 }));
-                const state = await this.queueCommands([{
-                    op: 'closeLeg',
-                    legId,
-                    payload: {
-                        winnerId: player.playerId,
-                        players: playersPayload,
-                        reason: 'bull_off',
+                await this.queueCommands([
+                    ...this.legOpenCommands(legId),
+                    {
+                        op: 'closeLeg',
+                        legId,
+                        payload: {
+                            winnerId: player.playerId,
+                            players: playersPayload,
+                            reason: 'bull_off',
+                        },
                     },
-                }]);
+                ]);
                 this.input = '';
-                if (state?.game?.status !== 'finished' && !state?.currentLeg?.id) {
-                    try {
-                        await this.ensureLegId();
-                    } catch {
-                        // next leg starts on first visit
-                    }
-                }
             } catch (e) {
                 this.error = e.message || 'Nie udało się zamknąć lega.';
                 await this.loadState({ quiet: true });
-            } finally {
-                this.busy = false;
             }
         },
 
@@ -884,7 +1031,6 @@ export function registerRefereeScoring(Alpine) {
                 this.error = 'Brak wizyty do cofnięcia.';
                 return;
             }
-            this.busy = true;
             this.error = '';
             try {
                 await this.queueCommands([{ op: 'undoVisit', legId }]);
@@ -892,8 +1038,6 @@ export function registerRefereeScoring(Alpine) {
             } catch (e) {
                 this.error = e.message || 'Nie udało się cofnąć wizyty.';
                 await this.loadState({ quiet: true });
-            } finally {
-                this.busy = false;
             }
         },
 
@@ -913,7 +1057,6 @@ export function registerRefereeScoring(Alpine) {
             if (!window.confirm(msg)) {
                 return;
             }
-            this.busy = true;
             this.error = '';
             try {
                 await this.queueCommands([{ op: 'undoVisit', legId }]);
@@ -921,8 +1064,6 @@ export function registerRefereeScoring(Alpine) {
             } catch (e) {
                 this.error = e.message || 'Nie udało się cofnąć wizyty.';
                 await this.loadState({ quiet: true });
-            } finally {
-                this.busy = false;
             }
         },
 

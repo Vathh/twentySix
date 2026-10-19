@@ -531,6 +531,53 @@ class TournamentGameScoringFinalizeTest extends TestCase
         ]);
     }
 
+    public function test_group_scoring_retries_saved_visit_after_leg_is_closed(): void
+    {
+        $this->actAsTournamentTablet($this->tournament);
+
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+            'player1_score' => 0,
+            'player2_score' => 0,
+        ]);
+
+        $start = $this->postJson("/api/group-games/{$game->id}/legs", [
+            'player1DoubleTracked' => false,
+            'player2DoubleTracked' => false,
+        ]);
+        $start->assertOk();
+        $legId = $start->json('currentLeg.id');
+        $clientVisitId = (string) Str::uuid();
+
+        $visit = [
+            'playerId' => $this->player1->id,
+            'score' => 60,
+            'remainingBefore' => 501,
+            'remainingAfter' => 441,
+            'dartsInVisit' => 3,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => $clientVisitId,
+        ];
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits", $visit)->assertOk();
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/close", [
+            'winnerId' => $this->player1->id,
+            'players' => [
+                ['playerId' => $this->player1->id, 'doubleTracked' => false],
+                ['playerId' => $this->player2->id, 'doubleTracked' => false],
+            ],
+        ])->assertOk();
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits", $visit)->assertOk();
+
+        $this->assertDatabaseCount('game_visits', 1);
+    }
+
     public function test_group_scoring_close_leg_is_idempotent(): void
     {
         $game = Game::create([

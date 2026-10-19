@@ -181,10 +181,6 @@ class GameScoringService
         $this->assertScoringActive($game);
         $leg = $this->resolveLegForContext($context, $legId);
 
-        if (! $leg->isOpen()) {
-            throw new DomainException('Leg jest już zamknięty.');
-        }
-
         if (! in_array($dto->playerId, [$context->player1Id, $context->player2Id], true)) {
             throw new DomainException('Gracz nie należy do tego meczu.');
         }
@@ -199,6 +195,14 @@ class GameScoringService
             if ((int) $existing->game_leg_id !== (int) $leg->id) {
                 throw new DomainException('Nieprawidłowa wizyta.');
             }
+            // Powtórka po zgubionej odpowiedzi, gdy close zdążył domknąć leg.
+            if (! $leg->isOpen()) {
+                return $this->broadcastState($context, $game);
+            }
+        }
+
+        if (! $leg->isOpen()) {
+            throw new DomainException('Leg jest już zamknięty.');
         }
 
         if (

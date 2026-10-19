@@ -85,6 +85,12 @@ export function patchRefereeState(state, entry) {
             ),
         };
     }
+    if (entry.op === 'closeLeg' && state.currentLeg) {
+        return {
+            ...state,
+            currentLeg: null,
+        };
+    }
     if (entry.op !== 'recordVisit' || !entry.payload) {
         return state;
     }
@@ -104,4 +110,56 @@ export function patchRefereeState(state, entry) {
                 : player,
         ),
     };
+}
+
+export function replayRefereeEntries(state, entries) {
+    return (entries ?? []).reduce(
+        (next, entry) => patchRefereeState(next, entry) ?? next,
+        state,
+    );
+}
+
+export function bindRefereeLegId(key, legId) {
+    const list = loadRefereeOutbox(key);
+    let binding = true;
+    const next = list.map((entry) => {
+        if (!binding) {
+            return entry;
+        }
+        if (entry.op === 'startLeg') {
+            binding = false;
+            return entry;
+        }
+        if (entry.legId == null) {
+            return { ...entry, legId };
+        }
+        return entry;
+    });
+    saveRefereeOutbox(key, next);
+    return next;
+}
+
+export function isLegAlreadyOpenMessage(error) {
+    return String(error?.message || '').toLowerCase().includes('otwarty');
+}
+
+export function commandAlreadyApplied(entry, snapshot, { legAlreadyOpen = false } = {}) {
+    if (!entry || !snapshot) {
+        return false;
+    }
+    if (entry.op === 'startLeg' && legAlreadyOpen && snapshot.currentLeg?.id) {
+        return true;
+    }
+    if (entry.op === 'closeLeg') {
+        const legs = snapshot.legs ?? [];
+        return legs.some((leg) => Number(leg.id) === Number(entry.legId));
+    }
+    return false;
+}
+
+export function rejectionNotice(droppedTail) {
+    if (droppedTail > 0) {
+        return `Serwer odrzucił wizytę. Cofnięto tablicę do zapisanego stanu. Niezapisane kolejne wpisy: ${droppedTail}. Wpisz je ponownie.`;
+    }
+    return 'Serwer odrzucił wizytę. Tablica pokazuje zapisany stan meczu.';
 }

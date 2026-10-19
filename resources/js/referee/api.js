@@ -25,6 +25,8 @@ export class RefereeApiError extends Error {
     }
 }
 
+const SCORING_REQUEST_TIMEOUT_MS = 5000;
+
 /**
  * @param {string} url
  * @param {{ method?: string, token?: string|null, body?: unknown }} [opts]
@@ -41,21 +43,28 @@ export async function refereeFetch(url, opts = {}) {
         headers['Content-Type'] = 'application/json';
     }
 
-    const res = await fetch(url, {
-        method,
-        headers,
-        body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), SCORING_REQUEST_TIMEOUT_MS);
+    try {
+        const res = await fetch(url, {
+            method,
+            headers,
+            body: body !== undefined ? JSON.stringify(body) : undefined,
+            signal: controller.signal,
+        });
 
-    const { data, text } = await parseJson(res);
-    if (!res.ok) {
-        const message =
-            (data && typeof data === 'object' && data.message) ||
-            text ||
-            `Błąd HTTP ${res.status}`;
-        throw new RefereeApiError(String(message), res.status, data);
+        const { data, text } = await parseJson(res);
+        if (!res.ok) {
+            const message =
+                (data && typeof data === 'object' && data.message) ||
+                text ||
+                `Błąd HTTP ${res.status}`;
+            throw new RefereeApiError(String(message), res.status, data);
+        }
+        return data;
+    } finally {
+        clearTimeout(timer);
     }
-    return data;
 }
 
 export function newClientVisitId() {
