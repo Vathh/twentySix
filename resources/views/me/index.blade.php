@@ -88,15 +88,29 @@
             @else
                 <div class="index-grid">
                     @foreach($organizations as $index => $item)
-                        <x-place-card
-                            kind="organization"
-                            :href="$item['url']"
-                            :name="$item['name']"
-                            :meta="$item['description'] ?: null"
-                            :role-label="$item['roleLabel']"
-                            :role-accent="$item['role'] === 'admin'"
-                            style="--stagger: {{ $index }}"
-                        />
+                        <div>
+                            <x-place-card
+                                kind="organization"
+                                :href="$item['url']"
+                                :name="$item['name']"
+                                :meta="$item['description'] ?: null"
+                                :role-label="$item['roleLabel']"
+                                :role-accent="$item['role'] === 'admin'"
+                                style="--stagger: {{ $index }}"
+                            />
+                            @if($item['role'] !== 'admin')
+                                <form
+                                    method="POST"
+                                    action="{{ route('me.organizations.leave', $item['id']) }}"
+                                    class="mt-2"
+                                    data-confirm="Wypisać się ze składu organizacji {{ $item['name'] }}?"
+                                    onsubmit="return confirm(this.dataset.confirm);"
+                                >
+                                    @csrf
+                                    <button type="submit" class="text-sm text-text-muted underline">Wypisz się</button>
+                                </form>
+                            @endif
+                        </div>
                     @endforeach
                 </div>
             @endif

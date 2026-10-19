@@ -27,10 +27,10 @@
             @endif
         </div>
 
-        <h2 class="section-title text-center">Użytkownicy powiązani z sezonem</h2>
+        <h2 class="section-title text-center">Użytkownicy powiązani z organizacją</h2>
 
         @if($relatedUsers->isEmpty())
-            <p class="empty-state">Brak użytkowników powiązanych z sezonem.</p>
+            <p class="empty-state">Brak użytkowników powiązanych z organizacją.</p>
         @else
             <div class="flex flex-wrap gap-3 justify-center">
                 @foreach($relatedUsers as $user)

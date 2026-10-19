@@ -2,15 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Domain\RelatedRosterInvite;
 use App\Domain\Retention\ApplicationEntityKind;
 use App\Domain\SeasonDomain;
-use App\Enums\AssignableEntityType;
 use App\Models\Season\Season;
 use App\Services\Organization\OrganizationService;
-use App\Services\Player\PlayerService;
 use App\Services\Retention\ApplicationEntityDeletionService;
-use App\Services\Season\SeasonInvitationService;
 use App\Services\Season\SeasonService;
 use App\Services\Season\SeasonStatsService;
 use App\Support\Catalog\CatalogSort;
@@ -24,8 +20,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
-use Throwable;
 
 class SeasonController extends Controller
 {
@@ -33,8 +27,6 @@ class SeasonController extends Controller
         private SeasonService $seasonService,
         private OrganizationService $organizationService,
         private UserService $userService,
-        private PlayerService $playerService,
-        private SeasonInvitationService $seasonInvitationService,
         private SeasonStatsService $seasonStatsService,
         private ApplicationEntityDeletionService $applicationEntityDeletionService,
     ) {}
@@ -89,8 +81,8 @@ class SeasonController extends Controller
 
     public function show(Season $season)
     {
-        $season->loadMissing(['admins', 'organization', 'tournaments']);
-        $season->loadCount(['relatedUsers', 'guests']);
+        $season->loadMissing(['admins', 'organization.admins.player', 'tournaments']);
+        $season->organization?->loadCount(['relatedUsers', 'guests']);
         $seasonDomain = SeasonDomain::fromEloquent($season, ['admins', 'organization', 'tournaments']);
 
         return view('seasons.show', [
@@ -131,164 +123,9 @@ class SeasonController extends Controller
             ->with('success', 'Sezon został usunięty. Przez 90 dni może go przywrócić operator platformy.');
     }
 
-    public function relatedUsers(Request $request, int $seasonId): Factory|View|JsonResponse
-    {
-        $season = $this->loadAndAuthorize($seasonId, ['relatedUsers', 'organization']);
-        $relatedUsers = $this->seasonService->getRelatedUsers($seasonId);
-        $pendingInvitations = $this->seasonInvitationService->getPendingForSeason($seasonId);
-        $excludeFromSearch = $relatedUsers
-            ->concat($pendingInvitations->map(fn ($invitation) => ['id' => $invitation->userId]));
-
-        if ($request->wantsJson()) {
-            try {
-                $users = $this->userService->search(
-                    $excludeFromSearch,
-                    $request->input('q', $request->input('search')),
-                );
-            } catch (ValidationException $e) {
-                return response()->json([
-                    'message' => collect($e->errors())->flatten()->first() ?: 'Nieprawidłowe wyszukiwanie.',
-                    'users' => [],
-                ], 422);
-            }
-
-            return response()->json([
-                'users' => $users
-                    ->map(fn ($user) => [
-                        'id' => $user->id,
-                        'name' => $user->player?->name ?? '—',
-                    ])
-                    ->values()
-                    ->all(),
-            ]);
-        }
-
-        return view('seasons.relatedUsers', [
-            'season' => $season,
-            'relatedUsers' => $relatedUsers,
-            'pendingInvitations' => $pendingInvitations,
-        ]);
-    }
-
-    public function addRelatedUser(Request $request, int $seasonId): RedirectResponse|JsonResponse
-    {
-        $this->loadAndAuthorize($seasonId);
-
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-        ]);
-
-        try {
-            $result = $this->seasonInvitationService->send(
-                $seasonId,
-                (int) $validated['user_id'],
-                (int) Auth::id(),
-            );
-        } catch (\RuntimeException $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['message' => $e->getMessage()], 400);
-            }
-
-            return redirect()
-                ->route('seasons.relatedUsers', $seasonId)
-                ->with('error', $e->getMessage());
-        }
-
-        if ($result->joinedImmediately()) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'ok' => true,
-                    'user' => $result->member,
-                    'message' => RelatedRosterInvite::SELF_JOIN_MESSAGE,
-                ]);
-            }
-
-            return redirect()
-                ->route('seasons.relatedUsers', $seasonId)
-                ->with('success', RelatedRosterInvite::SELF_JOIN_MESSAGE);
-        }
-
-        $invitation = $result->invitation;
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'ok' => true,
-                'invitation' => [
-                    'id' => $invitation->id,
-                    'name' => $invitation->userPlayer->name ?? 'Brak nazwy',
-                ],
-                'message' => 'Wysłano zaproszenie do sezonu',
-            ]);
-        }
-
-        return redirect()
-            ->route('seasons.relatedUsers', $seasonId)
-            ->with('success', 'Wysłano zaproszenie do sezonu');
-    }
-
-    public function cancelRelatedUserInvitation(Request $request, int $seasonId, int $invitation): RedirectResponse|JsonResponse
-    {
-        $this->loadAndAuthorize($seasonId);
-
-        try {
-            $this->seasonInvitationService->cancel($seasonId, $invitation);
-        } catch (\RuntimeException $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['message' => $e->getMessage()], 400);
-            }
-
-            return redirect()
-                ->route('seasons.relatedUsers', $seasonId)
-                ->with('error', $e->getMessage());
-        }
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'ok' => true,
-                'message' => 'Anulowano zaproszenie',
-            ]);
-        }
-
-        return redirect()
-            ->route('seasons.relatedUsers', $seasonId)
-            ->with('success', 'Anulowano zaproszenie');
-    }
-
-    public function removeRelatedUser(Request $request, int $seasonId): RedirectResponse|JsonResponse
-    {
-        $this->loadAndAuthorize($seasonId);
-
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-        ]);
-
-        try {
-            $this->seasonInvitationService->removeMember($seasonId, (int) $validated['user_id']);
-        } catch (\RuntimeException $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['message' => $e->getMessage()], 400);
-            }
-
-            return redirect()
-                ->route('seasons.relatedUsers', $seasonId)
-                ->with('error', $e->getMessage());
-        }
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'ok' => true,
-                'message' => 'Użytkownik usunięty z sezonu',
-            ]);
-        }
-
-        return redirect()
-            ->route('seasons.relatedUsers', $seasonId)
-            ->with('success', 'Użytkownik usunięty z sezonu');
-    }
-
     public function admins(int $seasonId): Factory|View
     {
-        $season = $this->loadAndAuthorize($seasonId, ['relatedUsers']);
+        $season = $this->loadAndAuthorize($seasonId, ['organization']);
         $admins = $season->admins;
         $relatedUsers = $this->seasonService->getRelatedUsers($seasonId)
             ->map(fn ($user) => [
@@ -332,56 +169,6 @@ class SeasonController extends Controller
         return redirect()
             ->route('seasons.admins', $seasonId)
             ->with('success', 'Uprawnienie administratora usunięto pomyślnie');
-    }
-
-    public function guests(int $seasonId): Factory|View
-    {
-        $season = $this->loadAndAuthorize($seasonId, ['guests', 'organization']);
-
-        $guests = $this->userService->sortByName($season->guests);
-
-        return view('seasons.guests', [
-            'season' => $season,
-            'guests' => $guests,
-        ]);
-    }
-
-    /**
-     * @throws Throwable
-     */
-    public function addGuest(Request $request, int $seasonId)
-    {
-        $season = $this->loadAndAuthorize($seasonId, ['organization']);
-
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:20',
-                new \App\Rules\UniquePlayerNameInSeason($seasonId, $season->organization->id),
-            ],
-        ]);
-
-        $this->playerService->createGuest($validated['name'], $seasonId, AssignableEntityType::SEASON);
-
-        return redirect()
-            ->route('seasons.guests', $seasonId)
-            ->with('success', 'Pomyślnie dodano gościa');
-    }
-
-    public function removeGuest(Request $request, int $seasonId)
-    {
-        $this->loadAndAuthorize($seasonId);
-
-        $validated = $request->validate([
-            'player_id' => 'required|exists:players,id',
-        ]);
-
-        $this->playerService->removeGuest($validated['player_id'], AssignableEntityType::SEASON, $seasonId);
-
-        return redirect()
-            ->route('seasons.guests', $seasonId)
-            ->with('success', 'Pomyślnie usunięto gościa');
     }
 
     public function loadAndAuthorize(int $seasonId, array $additionalRelations = []): SeasonDomain

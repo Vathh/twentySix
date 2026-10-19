@@ -126,7 +126,6 @@ class PlayerCareerProfileDemoSeeder extends Seeder
                 'end_date' => '2026-09-30',
             ]);
             $season->admins()->sync([$admin->id]);
-            $season->relatedUsers()->sync([$admin->id, $user->id]);
 
             $guests = $this->createSeasonGuests($season, $organization);
 

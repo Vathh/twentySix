@@ -160,7 +160,7 @@ class TournamentControllerTest extends TestCase
     public function test_start_page_shows_season_roster_and_guests(): void
     {
         $this->player2->update(['name' => 'Anna Testowa']);
-        $this->season->relatedUsers()->attach($this->regularUser->id);
+        $this->organization->relatedUsers()->attach($this->regularUser->id);
 
         $this->actingAs($this->adminUser);
         $tournament = Tournament::create([

@@ -17,12 +17,6 @@
                 <a href="{{ route('seasons.edit', ['season' => $season->id]) }}" class="admin-sidebar-link">
                     ✏️ Edytuj sezon
                 </a>
-                <a href="{{ route('seasons.relatedUsers', $season->id) }}" class="admin-sidebar-link">
-                    👥 Powiązani użytkownicy
-                </a>
-                <a href="{{ route('seasons.guests', $season->id) }}" class="admin-sidebar-link">
-                    👤 Goście
-                </a>
                 <x-delete-application-entity
                     :action="route('seasons.destroy', $season->id)"
                     :name="$season->name"
@@ -48,19 +42,21 @@
                     $relatedUsersUrl = null;
                     $guestsUrl = null;
                 @endphp
-                @seasonAdmin($season)
-                    @php
-                        $relatedUsersUrl = route('seasons.relatedUsers', $season->id);
-                        $guestsUrl = route('seasons.guests', $season->id);
-                    @endphp
-                @endseasonAdmin
+                @if($season->organization)
+                    @organizationAdmin($season->organization)
+                        @php
+                            $relatedUsersUrl = route('organizations.relatedUsers', $season->organization->id);
+                            $guestsUrl = route('organizations.guests', $season->organization->id);
+                        @endphp
+                    @endorganizationAdmin
+                @endif
                 <div class="place-facts mt-4">
                     <section class="place-fact-group">
                         <p class="place-fact-group-label">Społeczność</p>
                         <div class="place-fact-group-items">
                             <x-people-counts
-                                :related-count="$season->relatedUserCount"
-                                :guest-count="$season->guestCount"
+                                :related-count="$season->organization?->relatedUserCount"
+                                :guest-count="$season->organization?->guestCount"
                                 :related-url="$relatedUsersUrl"
                                 :guests-url="$guestsUrl"
                             />

@@ -66,7 +66,7 @@ class AdminParticipationTest extends TestCase
 
         $season = Season::query()->where('name', 'Sezon 1')->firstOrFail();
         $this->assertTrue($season->admins->contains('id', $admin->id));
-        $this->assertTrue($season->relatedUsers->contains('id', $admin->id));
+        $this->assertTrue($organization->fresh()->relatedUsers->contains('id', $admin->id));
     }
 
     public function test_removing_admin_role_keeps_roster_membership(): void
@@ -140,30 +140,11 @@ class AdminParticipationTest extends TestCase
             ->assertSessionHas('error', 'Użytkownik jest już powiązany z tą organizacją');
     }
 
-    public function test_season_and_league_admins_cannot_leave_roster_and_can_join_self(): void
+    public function test_league_admin_cannot_leave_roster_and_can_join_self(): void
     {
         $admin = $this->userWithPlayer('Admin Puli');
         $organization = Organization::query()->create(['name' => 'Klub', 'description' => 'Opis']);
         $organization->admins()->attach($admin->id);
-
-        $season = Season::query()->create([
-            'organization_id' => $organization->id,
-            'name' => 'Sezon',
-            'start_date' => '2026-01-01',
-            'end_date' => '2026-12-31',
-        ]);
-        $season->admins()->attach($admin->id);
-
-        $this->actingAs($admin)
-            ->postJson("/seasons/{$season->id}/relatedUsers/add", ['user_id' => $admin->id])
-            ->assertOk()
-            ->assertJsonPath('user.id', $admin->id);
-
-        $this->assertTrue($season->fresh()->relatedUsers->contains('id', $admin->id));
-
-        $this->actingAs($admin)
-            ->delete("/seasons/{$season->id}/relatedUsers/remove", ['user_id' => $admin->id])
-            ->assertSessionHas('error', RelatedRosterInvite::ADMIN_MEMBERSHIP_MESSAGE);
 
         $league = League::query()->create([
             'organization_id' => $organization->id,
@@ -208,14 +189,12 @@ class AdminParticipationTest extends TestCase
         ]);
 
         DB::table('organization_user')->where('user_id', $admin->id)->delete();
-        DB::table('season_user')->where('user_id', $admin->id)->delete();
         DB::table('league_user')->where('user_id', $admin->id)->delete();
 
         $migration = require database_path('migrations/2026_09_21_210000_backfill_admin_related_users.php');
         $migration->up();
 
         $this->assertTrue($organization->fresh()->relatedUsers->contains('id', $admin->id));
-        $this->assertTrue($season->fresh()->relatedUsers->contains('id', $admin->id));
         $this->assertTrue($league->fresh()->relatedUsers->contains('id', $admin->id));
 
         $migration->up();

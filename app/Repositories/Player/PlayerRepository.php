@@ -101,7 +101,6 @@ class PlayerRepository
     {
         match ($targetType) {
             AssignableEntityType::ORGANIZATION => $this->addToOrganization($name, $targetId),
-            AssignableEntityType::SEASON => $this->addToSeason($name, $targetId),
             AssignableEntityType::LEAGUE => $this->addToLeague($name, $targetId),
         };
     }
@@ -115,7 +114,6 @@ class PlayerRepository
 
         $belongs = match ($targetType) {
             AssignableEntityType::ORGANIZATION => (int) $player->organization_id === $targetId,
-            AssignableEntityType::SEASON => (int) $player->season_id === $targetId,
             AssignableEntityType::LEAGUE => (int) $player->league_id === $targetId,
         };
         if (! $belongs) {
@@ -124,7 +122,6 @@ class PlayerRepository
 
         match ($targetType) {
             AssignableEntityType::ORGANIZATION => $player->organization_id = null,
-            AssignableEntityType::SEASON => $player->season_id = null,
             AssignableEntityType::LEAGUE => $player->league_id = null,
         };
 
@@ -313,15 +310,11 @@ class PlayerRepository
      */
     public function getRelatedPlayers(int $seasonId): Collection
     {
-        $season = Season::with(['organization.relatedUsers.player', 'relatedUsers.player', 'guests'])->findOrFail($seasonId);
-        $seasonRelatedUsersPlayers = $season->relatedUsers->map(fn ($user) => $user->player)->values();
-        $seasonGuests = $season->guests;
+        $season = Season::with(['organization.relatedUsers.player', 'organization.guests'])->findOrFail($seasonId);
         $organizationRelatedUsersPlayers = $season->organization->relatedUsers->map(fn ($user) => $user->player)->values();
         $organizationGuests = $season->organization->guests;
 
         return collect()
-            ->merge($seasonRelatedUsersPlayers)
-            ->merge($seasonGuests)
             ->merge($organizationRelatedUsersPlayers)
             ->merge($organizationGuests)
             ->unique('id')
@@ -329,17 +322,16 @@ class PlayerRepository
     }
 
     /**
-     * Zarejestrowani użytkownicy ze składu organizacji + sezonu (bez gości).
+     * Zarejestrowani użytkownicy ze składu organizacji (bez gości).
      *
      * @return Collection<int, PlayerDomain>
      */
     public function getRelatedRegisteredUsers(int $seasonId): Collection
     {
-        $season = Season::with(['organization.relatedUsers.player', 'relatedUsers.player'])->findOrFail($seasonId);
+        $season = Season::with(['organization.relatedUsers.player'])->findOrFail($seasonId);
 
-        return collect()
-            ->merge($season->relatedUsers->map(fn ($user) => $user->player))
-            ->merge($season->organization->relatedUsers->map(fn ($user) => $user->player))
+        return collect($season->organization->relatedUsers)
+            ->map(fn ($user) => $user->player)
             ->filter()
             ->unique('id')
             ->map(fn ($player) => PlayerDomain::fromEloquent($player))
@@ -347,17 +339,15 @@ class PlayerRepository
     }
 
     /**
-     * Goście sezonu i organizacji (bez zarejestrowanych użytkowników).
+     * Goście organizacji sezonu (bez zarejestrowanych użytkowników).
      *
      * @return Collection<int, PlayerDomain>
      */
     public function getSeasonGuests(int $seasonId): Collection
     {
-        $season = Season::with(['organization.guests', 'guests'])->findOrFail($seasonId);
+        $season = Season::with(['organization.guests'])->findOrFail($seasonId);
 
-        return collect()
-            ->merge($season->guests)
-            ->merge($season->organization->guests)
+        return $season->organization->guests
             ->unique('id')
             ->map(fn ($player) => PlayerDomain::fromEloquent($player))
             ->values();
@@ -367,14 +357,6 @@ class PlayerRepository
     {
         $organization = Organization::findOrFail($organizationId);
         $organization->guests()->create([
-            'name' => $name,
-        ]);
-    }
-
-    private function addToSeason(string $name, int $seasonId): void
-    {
-        $season = Season::findOrFail($seasonId);
-        $season->guests()->create([
             'name' => $name,
         ]);
     }

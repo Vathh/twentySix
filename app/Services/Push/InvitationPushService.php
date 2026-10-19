@@ -60,19 +60,6 @@ class InvitationPushService
         );
     }
 
-    public function notifySeasonInvitation(
-        int $recipientUserId,
-        int $invitationId,
-        string $seasonName,
-    ): void {
-        $this->dispatch(
-            recipientUserId: $recipientUserId,
-            type: InvitationPushType::Season,
-            invitationId: $invitationId,
-            context: ['seasonName' => $seasonName],
-        );
-    }
-
     public function notifyLeagueInvitation(
         int $recipientUserId,
         int $invitationId,

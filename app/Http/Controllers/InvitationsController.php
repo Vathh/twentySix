@@ -8,7 +8,6 @@ use App\Services\League\LeagueGamePlayService;
 use App\Services\League\LeagueInvitationService;
 use App\Services\Organization\OrganizationInvitationService;
 use App\Services\QuickGame\QuickGameLobbyService;
-use App\Services\Season\SeasonInvitationService;
 use App\Services\Tournament\TournamentInvitationService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +20,6 @@ class InvitationsController extends Controller
         private FriendshipService $friendshipService,
         private TournamentInvitationService $tournamentInvitationService,
         private OrganizationInvitationService $organizationInvitationService,
-        private SeasonInvitationService $seasonInvitationService,
         private LeagueInvitationService $leagueInvitationService,
         private QuickGameLobbyService $quickGameLobbyService,
         private LeagueGamePlayService $leagueGamePlayService,
@@ -35,7 +33,6 @@ class InvitationsController extends Controller
         $friendInvitations = $this->friendshipService->getReceivedInvitations($userId);
         $tournamentInvitations = $this->tournamentInvitationService->getReceivedForUser($userId);
         $organizationInvitations = $this->organizationInvitationService->getReceivedForUser($userId);
-        $seasonInvitations = $this->seasonInvitationService->getReceivedForUser($userId);
         $leagueInvitations = $this->leagueInvitationService->getReceivedForUser($userId);
         $quickGameInvitations = $this->quickGameLobbyService->getPendingInvitationsForUser($userId);
         $leagueGameInvitations = $user->player
@@ -46,7 +43,6 @@ class InvitationsController extends Controller
             + $quickGameInvitations->count()
             + $tournamentInvitations->count()
             + $organizationInvitations->count()
-            + $seasonInvitations->count()
             + $leagueInvitations->count();
 
         return view('invitations.index', [
@@ -56,7 +52,6 @@ class InvitationsController extends Controller
             'friendInvitations' => $friendInvitations,
             'tournamentInvitations' => $tournamentInvitations,
             'organizationInvitations' => $organizationInvitations,
-            'seasonInvitations' => $seasonInvitations,
             'leagueInvitations' => $leagueInvitations,
             'quickGameInvitations' => $quickGameInvitations,
             'leagueGameInvitations' => $leagueGameInvitations,
@@ -100,22 +95,6 @@ class InvitationsController extends Controller
         return $this->attempt(
             fn () => $this->organizationInvitationService->reject($invitation, $this->user()->id),
             'Zaproszenie do organizacji zostało odrzucone',
-        );
-    }
-
-    public function acceptSeason(int $invitation): RedirectResponse
-    {
-        return $this->attempt(
-            fn () => $this->seasonInvitationService->accept($invitation, $this->user()->id),
-            'Zaproszenie do sezonu zostało zaakceptowane',
-        );
-    }
-
-    public function rejectSeason(int $invitation): RedirectResponse
-    {
-        return $this->attempt(
-            fn () => $this->seasonInvitationService->reject($invitation, $this->user()->id),
-            'Zaproszenie do sezonu zostało odrzucone',
         );
     }
 

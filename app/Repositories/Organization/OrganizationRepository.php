@@ -92,6 +92,15 @@ class OrganizationRepository
         $organization->relatedUsers()->syncWithoutDetaching([$userId]);
     }
 
+    public function isRelated(int $organizationId, int $userId): bool
+    {
+        return Organization::query()
+            ->findOrFail($organizationId)
+            ->relatedUsers()
+            ->where('users.id', $userId)
+            ->exists();
+    }
+
     public function isAdmin(int $organizationId, int $userId): bool
     {
         return Organization::query()

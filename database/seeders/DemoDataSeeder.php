@@ -259,7 +259,6 @@ class DemoDataSeeder extends Seeder
             'end_date' => $end,
         ]);
         $season->admins()->sync([$admin->id]);
-        $season->relatedUsers()->sync([$admin->id]);
 
         return $season;
     }

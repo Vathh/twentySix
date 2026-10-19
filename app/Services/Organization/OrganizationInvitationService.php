@@ -82,4 +82,13 @@ class OrganizationInvitationService
         $this->organizationService->removeRelatedUser($organizationId, $userId);
         $this->invitationRepository->markRemoved($organizationId, $userId);
     }
+
+    public function leave(int $organizationId, int $userId): void
+    {
+        if (! $this->organizationRepository->isRelated($organizationId, $userId)) {
+            throw new \RuntimeException('Nie jesteś w składzie tej organizacji.');
+        }
+
+        $this->removeMember($organizationId, $userId);
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Repositories\Season;
 
 use App\Domain\AdminRoster;
 use App\Domain\SeasonDomain;
+use App\Models\Organization\Organization;
 use App\Models\Season\Season;
 use App\Models\Users\User;
 use App\Support\Catalog\CatalogSort;
@@ -38,7 +39,7 @@ class SeasonRepository
         $page = max(1, $page);
         $query = Season::query()
             ->with('organization')
-            ->withCount(['tournaments', 'relatedUsers']);
+            ->withCount('tournaments');
         $pattern = PolishFold::likePattern($search);
         if ($pattern !== null) {
             $query->where(function ($inner) use ($pattern) {
@@ -49,7 +50,11 @@ class SeasonRepository
             });
         }
         SeasonCatalogStatus::apply($query, $status);
-        if (! CatalogSort::apply($query, $sort, 'related_users_count')) {
+        if ($sort === CatalogSort::MEMBERS) {
+            $query->orderByRaw('(select count(*) from organization_user where organization_user.organization_id = seasons.organization_id) DESC')
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id');
+        } elseif (! CatalogSort::apply($query, $sort, 'id')) {
             $query->orderByRaw('COALESCE(start_date, end_date, ?) DESC', ['1970-01-01'])
                 ->orderByDesc('id');
         }
@@ -85,43 +90,32 @@ class SeasonRepository
 
             if (! empty($adminsIds)) {
                 $season->admins()->syncWithoutDetaching($adminsIds);
-                $season->relatedUsers()->syncWithoutDetaching($adminsIds);
+                if ($organizationId !== null) {
+                    Organization::query()
+                        ->findOrFail($organizationId)
+                        ->relatedUsers()
+                        ->syncWithoutDetaching($adminsIds);
+                }
             }
         });
     }
 
     /**
+     * Użytkownicy powiązani z organizacją sezonu — pula, z której nadaje się administratorów sezonu.
+     *
      * @return Collection<int, User>
      */
     public function getRelatedUsers(int $seasonId): Collection
     {
-        $season = Season::with(['organization.relatedUsers.player', 'relatedUsers.player'])->findOrFail($seasonId);
-        $seasonRelatedUsers = $season->relatedUsers;
-        $organizationRelatedUsers = $season->organization->relatedUsers;
+        $season = Season::with(['organization.relatedUsers.player'])->findOrFail($seasonId);
 
-        return $seasonRelatedUsers
-            ->merge($organizationRelatedUsers)
-            ->unique('id')
-            ->values();
-    }
-
-    public function addRelatedUser(int $seasonId, int $userId): void
-    {
-        $season = Season::findOrFail($seasonId);
-        $season->relatedUsers()->syncWithoutDetaching([$userId]);
-    }
-
-    public function removeRelatedUser(int $seasonId, int $userId): void
-    {
-        $season = Season::findOrFail($seasonId);
-        $season->relatedUsers()->detach($userId);
+        return $season->organization?->relatedUsers ?? collect();
     }
 
     public function addAdmin(int $seasonId, int $userId): void
     {
         $season = Season::findOrFail($seasonId);
         $season->admins()->syncWithoutDetaching([$userId]);
-        $season->relatedUsers()->syncWithoutDetaching([$userId]);
     }
 
     public function isAdmin(int $seasonId, int $userId): bool
@@ -138,13 +132,6 @@ class SeasonRepository
         $season = Season::withCount('admins')->findOrFail($seasonId);
         AdminRoster::assertCanRemove((int) $season->admins_count, 'Sezon');
         $season->admins()->detach($userId);
-    }
-
-    public function findByIdWithOrganizationAndGuests(int $seasonId): SeasonDomain
-    {
-        $season = Season::with(['organization', 'guests'])->findOrFail($seasonId);
-
-        return SeasonDomain::fromEloquent($season, ['organization', 'guests']);
     }
 
     /**

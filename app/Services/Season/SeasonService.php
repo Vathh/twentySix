@@ -4,9 +4,8 @@ namespace App\Services\Season;
 
 use App\Domain\SeasonDomain;
 use App\Repositories\Organization\OrganizationRepository;
-use App\Repositories\Player\PlayerRepository;
 use App\Repositories\Season\SeasonRepository;
-use App\Services\Player\PlayerService;
+use App\Services\Organization\OrganizationService;
 use App\Support\Catalog\SeasonCatalogStatus;
 use App\Support\Text\PolishFold;
 use Illuminate\Support\Collection;
@@ -18,9 +17,8 @@ class SeasonService
 {
     public function __construct(
         private SeasonRepository $seasonRepository,
-        private PlayerService $playerService,
-        private PlayerRepository $playerRepository,
         private OrganizationRepository $organizationRepository,
+        private OrganizationService $organizationService,
     ) {}
 
     public function getAll(): Collection
@@ -107,51 +105,13 @@ class SeasonService
         return $this->seasonRepository->getRelatedUsers($seasonId);
     }
 
-    public function addRelatedUser(int $seasonId, int $userId): array
-    {
-        // Pobierz gracza użytkownika (domenowy obiekt)
-        $playerDomain = $this->playerRepository->findByUserId($userId);
-
-        // Pobierz sezon z organizacją i gośćmi (domenowy obiekt)
-        $seasonDomain = $this->seasonRepository->findByIdWithOrganizationAndGuests($seasonId);
-
-        // Jeśli użytkownik ma gracza (Player), sprawdź czy nie ma konfliktu z gościem
-        if ($playerDomain) {
-            $playerName = $playerDomain->name;
-
-            // Sprawdź gości w sezonie
-            $guestInSeason = $this->playerService->findGuestByName($playerName, $seasonId, null);
-            if ($guestInSeason) {
-                $newName = $this->playerService->generateUniqueGuestName($playerName, $seasonId, null);
-                $this->playerService->updateGuestName($guestInSeason->id, $newName);
-            }
-
-            // Sprawdź gości w organizacji
-            if ($seasonDomain->organization) {
-                $guestInOrganization = $this->playerService->findGuestByName($playerName, null, $seasonDomain->organization->id);
-                if ($guestInOrganization) {
-                    $newName = $this->playerService->generateUniqueGuestName($playerName, null, $seasonDomain->organization->id);
-                    $this->playerService->updateGuestName($guestInOrganization->id, $newName);
-                }
-            }
-        }
-
-        $this->seasonRepository->addRelatedUser($seasonId, $userId);
-
-        return [
-            'id' => $userId,
-            'name' => $playerDomain?->name ?? '—',
-        ];
-    }
-
-    public function removeRelatedUser(int $seasonId, int $userId): void
-    {
-        $this->seasonRepository->removeRelatedUser($seasonId, $userId);
-    }
-
     public function addAdmin(int $seasonId, int $userId): void
     {
-        $this->addRelatedUser($seasonId, $userId);
+        $season = $this->seasonRepository->findModel($seasonId);
+        if ($season->organization_id !== null) {
+            $this->organizationService->addRelatedUser((int) $season->organization_id, $userId);
+        }
+
         $this->seasonRepository->addAdmin($seasonId, $userId);
     }
 

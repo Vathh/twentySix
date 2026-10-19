@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Organization\Organization;
 use App\Services\Organization\OrganizationInvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,6 +42,20 @@ class OrganizationInvitationController
     /**
      * POST /api/organizations/invitations/{invitationId}/reject
      */
+    /**
+     * POST /api/organizations/{organization}/leave
+     */
+    public function leave(Request $request, Organization $organization): JsonResponse
+    {
+        try {
+            $this->invitationService->leave($organization->id, (int) $request->user()->id);
+
+            return response()->json(['message' => 'Wypisano ze składu organizacji.']);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
     public function reject(Request $request, int $invitationId): JsonResponse
     {
         try {

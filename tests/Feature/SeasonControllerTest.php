@@ -110,54 +110,6 @@ class SeasonControllerTest extends TestCase
         $response->assertSessionHasErrors('seasonName');
     }
 
-    public function test_season_admin_can_add_related_user(): void
-    {
-        $this->actingAs($this->adminUser);
-        $season = Season::create([
-            'name' => 'Test Season',
-            'organization_id' => $this->organization->id,
-            'start_date' => '2024-01-01',
-            'end_date' => '2024-12-31',
-        ]);
-        $season->admins()->attach($this->adminUser->id);
-
-        $response = $this->post("/seasons/{$season->id}/relatedUsers/add", [
-            'user_id' => $this->regularUser->id,
-        ]);
-
-        $response->assertRedirect("/seasons/{$season->id}/relatedUsers");
-        $response->assertSessionHas('success');
-
-        $this->assertFalse($season->fresh()->relatedUsers->contains('id', $this->regularUser->id));
-        $this->assertDatabaseHas('season_invitations', [
-            'season_id' => $season->id,
-            'user_id' => $this->regularUser->id,
-            'status' => 'pending',
-        ]);
-    }
-
-    public function test_season_admin_can_remove_related_user(): void
-    {
-        $this->actingAs($this->adminUser);
-        $season = Season::create([
-            'name' => 'Test Season',
-            'organization_id' => $this->organization->id,
-            'start_date' => '2024-01-01',
-            'end_date' => '2024-12-31',
-        ]);
-        $season->admins()->attach($this->adminUser->id);
-        $season->relatedUsers()->attach($this->regularUser->id);
-
-        $response = $this->delete("/seasons/{$season->id}/relatedUsers/remove", [
-            'user_id' => $this->regularUser->id,
-        ]);
-
-        $response->assertRedirect("/seasons/{$season->id}/relatedUsers");
-        $response->assertSessionHas('success');
-
-        $this->assertFalse($season->fresh()->relatedUsers->contains('id', $this->regularUser->id));
-    }
-
     public function test_season_admin_can_add_admin(): void
     {
         $this->actingAs($this->adminUser);
@@ -168,7 +120,6 @@ class SeasonControllerTest extends TestCase
             'end_date' => '2024-12-31',
         ]);
         $season->admins()->attach($this->adminUser->id);
-        $season->relatedUsers()->attach($this->regularUser->id);
 
         $response = $this->post("/seasons/{$season->id}/admins/add", [
             'user_id' => $this->regularUser->id,
@@ -238,56 +189,6 @@ class SeasonControllerTest extends TestCase
         $response->assertRedirect("/seasons/{$season->id}/admins");
         $response->assertSessionHas('error', 'Sezon musi mieć co najmniej jednego administratora.');
         $this->assertTrue($season->fresh()->admins->contains('id', $this->adminUser->id));
-    }
-
-    public function test_season_admin_can_add_guest(): void
-    {
-        $this->actingAs($this->adminUser);
-        $season = Season::create([
-            'name' => 'Test Season',
-            'organization_id' => $this->organization->id,
-            'start_date' => '2024-01-01',
-            'end_date' => '2024-12-31',
-        ]);
-        $season->admins()->attach($this->adminUser->id);
-
-        $response = $this->post("/seasons/{$season->id}/guests/add", [
-            'name' => 'Guest Player',
-        ]);
-
-        $response->assertRedirect("/seasons/{$season->id}/guests");
-        $response->assertSessionHas('success');
-
-        $this->assertDatabaseHas('players', [
-            'name' => 'Guest Player',
-            'season_id' => $season->id,
-            'user_id' => null,
-        ]);
-    }
-
-    public function test_season_admin_can_remove_guest(): void
-    {
-        $this->actingAs($this->adminUser);
-        $season = Season::create([
-            'name' => 'Test Season',
-            'organization_id' => $this->organization->id,
-            'start_date' => '2024-01-01',
-            'end_date' => '2024-12-31',
-        ]);
-        $season->admins()->attach($this->adminUser->id);
-        $guest = Player::create(['name' => 'Guest', 'season_id' => $season->id, 'organization_id' => $this->organization->id]);
-
-        $response = $this->delete("/seasons/{$season->id}/guests/remove", [
-            'player_id' => $guest->id,
-        ]);
-
-        $response->assertRedirect("/seasons/{$season->id}/guests");
-        $response->assertSessionHas('success');
-
-        $guest->refresh();
-        $this->assertNull($guest->season_id);
-        $this->assertSame($this->organization->id, $guest->organization_id);
-        $this->assertDatabaseHas('players', ['id' => $guest->id]);
     }
 
     public function test_season_show_displays_standings_table(): void

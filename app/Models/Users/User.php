@@ -94,12 +94,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Season::class, 'season_user_admin');
     }
 
-    /** @return BelongsToMany<Season, $this> */
-    public function relatedSeasons(): BelongsToMany
-    {
-        return $this->belongsToMany(Season::class, 'season_user');
-    }
-
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new VerifyEmailNotification);

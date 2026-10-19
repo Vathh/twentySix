@@ -22,7 +22,12 @@ return new class extends Migration
             ->get();
 
         foreach ($seasonAdmins as $admin) {
-            $this->insertMissing('season_user', 'season_id', (int) $admin->season_id, (int) $admin->user_id);
+            $organizationId = DB::table('seasons')->where('id', $admin->season_id)->value('organization_id');
+            if ($organizationId === null) {
+                continue;
+            }
+
+            $this->insertMissing('organization_user', 'organization_id', (int) $organizationId, (int) $admin->user_id);
         }
 
         $leagues = DB::table('leagues')->select('id', 'organization_id')->get();

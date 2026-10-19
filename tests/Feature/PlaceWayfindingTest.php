@@ -158,7 +158,7 @@ class PlaceWayfindingTest extends TestCase
             ->assertSee('place-stat-label">Sezony', false)
             ->assertSee('place-stat-label">Ligi', false)
             ->assertSee('place-stat-label">Turnieje', false)
-            ->assertSee('place-stat-label">Powiązani', false)
+            ->assertSee('place-stat-label">Powiązani użytkownicy', false)
             ->assertSee('place-stat-value"><span class="score-num">1</span>', false)
             ->assertSee('place-stat-label">Goście', false)
             ->assertSee('place-stat-value"><span class="score-num">2</span>', false)
@@ -168,18 +168,20 @@ class PlaceWayfindingTest extends TestCase
         $this->actingAs($admin)
             ->get(route('seasons.show', $season))
             ->assertOk()
-            ->assertSee('place-stat-label">Powiązani', false)
-            ->assertSee('place-stat-value"><span class="score-num">0</span>', false)
-            ->assertSee('place-stat-label">Goście', false)
+            ->assertSee('place-stat-label">Powiązani użytkownicy', false)
             ->assertSee('place-stat-value"><span class="score-num">1</span>', false)
-            ->assertSee(route('seasons.relatedUsers', $season), false)
-            ->assertSee(route('seasons.guests', $season), false);
+            ->assertSee('place-stat-label">Goście', false)
+            ->assertSee('place-stat-value"><span class="score-num">2</span>', false)
+            ->assertSee(route('organizations.relatedUsers', $organization), false)
+            ->assertSee(route('organizations.guests', $organization), false)
+            ->assertDontSee('/seasons/'.$season->id.'/relatedUsers', false)
+            ->assertDontSee('/seasons/'.$season->id.'/guests', false);
 
         auth()->logout();
 
         $this->get(route('organizations.show', $organization))
             ->assertOk()
-            ->assertSee('place-stat-label">Powiązani', false)
+            ->assertSee('place-stat-label">Powiązani użytkownicy', false)
             ->assertSee('place-stat-value"><span class="score-num">1</span>', false)
             ->assertDontSee(route('organizations.relatedUsers', $organization), false);
     }
@@ -198,13 +200,6 @@ class PlaceWayfindingTest extends TestCase
             'name' => 'Gość A',
             'organization_id' => $organization->id,
         ]);
-        $season = Season::create([
-            'organization_id' => $organization->id,
-            'name' => 'Sezon ludzi',
-            'start_date' => '2026-09-01',
-            'end_date' => '2026-12-01',
-        ]);
-        $season->admins()->attach($admin->id);
 
         $this->actingAs($admin)
             ->get(route('organizations.relatedUsers', $organization))
@@ -225,11 +220,5 @@ class PlaceWayfindingTest extends TestCase
             ->assertSee('aria-label="Usuń"', false)
             ->assertDontSee('Dodawanie graczy');
 
-        $this->actingAs($admin)
-            ->get(route('seasons.relatedUsers', $season))
-            ->assertOk()
-            ->assertSee('place-slot--season is-ancestor', false)
-            ->assertSee('place-slot--season is-current', false)
-            ->assertSee(route('organizations.show', $organization), false);
     }
 }

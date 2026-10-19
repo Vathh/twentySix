@@ -127,7 +127,7 @@
                 </section>
             @endif
 
-            @if($organizationInvitations->isNotEmpty() || $seasonInvitations->isNotEmpty() || $leagueInvitations->isNotEmpty())
+            @if($organizationInvitations->isNotEmpty() || $leagueInvitations->isNotEmpty())
                 <section>
                     <h2 class="section-title mt-0">Składy</h2>
                     <ul class="space-y-2">
@@ -136,14 +136,6 @@
                                 @include('invitations.partials.actions', [
                                     'acceptUrl' => route('invitations.organizations.accept', $invitation->id),
                                     'rejectUrl' => route('invitations.organizations.reject', $invitation->id),
-                                ])
-                            </x-invitation-row>
-                        @endforeach
-                        @foreach($seasonInvitations as $invitation)
-                            <x-invitation-row :title="$invitation->seasonName" subtitle="Sezon · {{ $invitation->status->label() }}">
-                                @include('invitations.partials.actions', [
-                                    'acceptUrl' => route('invitations.seasons.accept', $invitation->id),
-                                    'rejectUrl' => route('invitations.seasons.reject', $invitation->id),
                                 ])
                             </x-invitation-row>
                         @endforeach

@@ -41,7 +41,7 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 
 - Wszystko, co gość na webie.
 - Znajomi (zaproszenie + akceptacja — **mobile** i **web**).
-- Akceptacja zaproszeń (znajomi, turniej, skład organizacji/sezonu/ligi, lobby quick game, mecz ligowy) na **mobile** i na **webie** (Konto → Zaproszenia).
+- Akceptacja zaproszeń (znajomi, turniej, skład organizacji i puli ligi, lobby quick game, mecz ligowy) na **mobile** i na **webie** (Konto → Zaproszenia). Wypisanie się ze składu organizacji — w „Gdzie gram”.
 - Własne statystyki i historia: turnieje, liga, quick oraz trening slotu JA (trening tylko na własnym profilu). **Trener osobisty** — w kodzie na później, **nie** w aplikacji.
 - **Mobile:** lobby quick game online, akceptacja zaproszeń (turniej, lobby, znajomi), tablet turniejowy, **mecz treningowy** (lokalny; zalogowany ze slotem JA zapisuje sesję na konto). Ten sam ekran zaproszeń jest też na **webie** (Konto → Zaproszenia); samą rozgrywkę quick game i meczu ligowego gracz kontynuuje w aplikacji.
 - Docelowo: komunikator na webie, odznaczenia, link live quick game.
@@ -260,23 +260,23 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - Wysyłka: admin na **webie** — **na stronie startu turnieju** (bez osobnej podstrony): wyszukiwarka + lista zaproszonych + masowe zaproszenia ze składu organizacji.
 - **Dodaj mnie:** zalogowany admin wpisuje się od razu jako uczestnik (`accepted`), bez pusha i bez akceptacji w aplikacji. To samo, gdy wyśle zaproszenie turniejowe do siebie (wyszukiwarka albo masowy skład). Inni gracze akceptują na mobile albo na stronie Zaproszenia.
 - Akceptacja / wycofanie udziału: **mobile** i **web** (Konto → Zaproszenia).
-- Goście (nazwa od admina): edycja puli gości na ekranach sezonu/organizacji; na stronie startu admin **dodaje gościa do turnieju** z listy powiązanych.
+- Goście (nazwa od admina): edycja puli gości na ekranie organizacji; na stronie startu admin **dodaje gościa do turnieju** z listy powiązanych.
 - **Zgłoszenia przez QR** (✅): gracz skanuje QR na starcie turnieju → admin Dołącz/Odrzuć.
 
 #### Stały skład organizacji (`relatedUsers`)
 
-- Organizacja (i opcjonalnie sezon) utrzymuje listę **powiązanych użytkowników** — **stali bywalcy**, którzy regularnie grają w turniejach tej organizacji.
+- Organizacja utrzymuje jedną listę **powiązanych użytkowników** — **stali bywalcy**, którzy regularnie grają w turniejach tej organizacji. Sezon nie ma własnego składu.
 - Lista **nie wpisuje** nikogo automatycznie do turnieju — służy do **szybkiego masowego wysyłania zaproszeń** (zaznaczenie wielu osób → wyślij zaproszenia).
-- Na stronie startu turnieju skład do masowego invite = **suma `organization.relatedUsers` + `season.relatedUsers` bez duplikatów** (jak dziś `getRelatedPlayers`, ale tylko użytkownicy z kontem — bez gości).
-- **Skład organizacji:** admin na **webie** wysyła zaproszenie (ekran `relatedUsers`); gracz akceptuje na **mobile** albo **webie** (zakładka **Gra**). Do `relatedUsers` wpisuje się **dopiero po akceptacji**. Wyjątek: administrator organizacji jest w składzie od razu (także przy nadaniu roli i dla obecnych adminów). Dopóki jest administratorem, nie schodzi ze składu. Zdjęcie roli admina zostawia go w składzie. Usunięcie ze składu zdejmuje powiązanie; można zaprosić ponownie.
-- **Skład sezonu** i **pula ligi** — ten sam flow co organizacja: zaproszenie z webu, akceptacja na mobile albo webie, wpis na listę dopiero po akceptacji. Administrator sezonu jest od razu w składzie sezonu. Administrator organizacji jest od razu w puli każdej ligi tej organizacji (także przy tworzeniu ligi).
+- Na stronie startu turnieju skład do masowego invite = **`organization.relatedUsers`** (użytkownicy z kontem — bez gości).
+- **Skład organizacji:** admin na **webie** wysyła zaproszenie (ekran `relatedUsers`); gracz akceptuje na **mobile** albo **webie** (zakładka **Gra**). Do `relatedUsers` wpisuje się **dopiero po akceptacji**. Wyjątek: administrator organizacji jest w składzie od razu (także przy nadaniu roli i dla obecnych adminów). Dopóki jest administratorem, nie schodzi ze składu. Zdjęcie roli admina zostawia go w składzie. Usunięcie ze składu zdejmuje powiązanie; można zaprosić ponownie. Gracz może **sam wypisać się** ze składu (tylko siebie) na webie i w aplikacji, w „Gdzie gram” — dopóki nie jest administratorem. Wypisanie nie wycofuje udziału w turnieju ani z puli ligi.
+- Administrator sezonu przy nadaniu roli wchodzi od razu do składu organizacji. **Pula ligi** zostaje osobna: zaproszenie z webu, akceptacja na mobile albo webie, wpis na listę dopiero po akceptacji. Administrator organizacji jest od razu w puli każdej ligi tej organizacji (także przy tworzeniu ligi).
 
 #### Strona startu turnieju (web) — układ B
 
 1. **Uczestnicy turnieju** (na górze; na desktopie sticky z ograniczoną wysokością listy i przewijaniem) — skład startowy; licznik min. graczy; usuwanie (×).
 2. **Dodaj uczestników** — jedna sekcja z zakładkami:
    - **Zarejestrowani:** wyszukiwarka, zaproszenia w toku (bez accepted), stały skład organizacji (masowy invite).
-   - **Goście:** powiązani goście organizacji/sezonu → „Dodaj” do turnieju.
+   - **Goście:** powiązani goście organizacji → „Dodaj” do turnieju.
 3. **Start turnieju** — grupy / awans / tablety (wszyscy z segmentu uczestników).
 
 #### Statusy zaproszenia turniejowego
@@ -312,19 +312,19 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 - `GET /api/organizations/invitations/received`
 - `POST /api/organizations/invitations/{id}/accept`
 - `POST /api/organizations/invitations/{id}/reject`
+- `POST /api/organizations/{id}/leave` — wypisanie się ze składu (tylko własne konto; administrator organizacji nie może, dopóki ma rolę)
 
-#### Zaproszenia do sezonu i puli ligi (`relatedUsers`)
+#### Zaproszenia do puli ligi (`relatedUsers`)
 
 - Ten sam flow co organizacja: **Zaproś** na webie, akceptacja na mobile i webie (zakładka **Gra**).
-- Sezon: `GET/POST /api/seasons/invitations/received|{id}/accept|{id}/reject`
 - Liga: `GET/POST /api/leagues/invitations/received|{id}/accept|{id}/reject` (osobne od zaproszeń do **meczu** ligowego `/api/league-games/...`).
 
 #### Ekran zaproszeń (mobile i web)
 
 - **Jeden ekran** z zakładkami: **Gra** | **Znajomi**. Na webie: Konto → Zaproszenia.
-- **Gra:** zaproszenia do turnieju, organizacji, sezonu, puli ligi, quick game i meczu ligowego.
+- **Gra:** zaproszenia do turnieju, organizacji, puli ligi, quick game i meczu ligowego.
 - Dołączenie do lobby quick game i akceptacja meczu ligowego na webie wykonują tę samą operację co w aplikacji; rozgrywkę gracz kontynuuje na telefonie.
-- Pull-to-refresh na liście. **Push** przy nowym zaproszeniu (znajomi / turniej / organizacja / sezon / liga / lobby / mecz ligowy) — ✅.
+- Pull-to-refresh na liście. **Push** przy nowym zaproszeniu (znajomi / turniej / organizacja / liga / lobby / mecz ligowy) — ✅.
 
 ## Organizacja i punktacja (MVP)
 
@@ -710,7 +710,7 @@ Historyczne rozbieżności z czasów przed `product.md` — **domknięte**. Tabe
 | Rozstawienie playoff | 1. miejsce vs gorsze miejsce z innej grupy; sąsiednie grupy; bez pary z tej samej grupy w R1 | ✅ `PlayoffFirstRoundSeeding` |
 | Rozmiar drabinki | Potęgi 2, max **128** (`playoff_bracket_size`) | ✅ `TournamentStartRules::MAX_BRACKET_SIZE`, `PlayoffBracketFactory` (sloty `round` + `index`) |
 | Warianty SE / DE | Typ przy starcie; bye; miejsca; GF | ✅ [`design_tournament_formats_se_de.md`](design_tournament_formats_se_de.md) |
-| Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile i web (Konto → Zaproszenia); `relatedUsers` org/sezon/liga = zaproszenie | ✅ `TournamentInvitation`, `OrganizationInvitation`, `SeasonInvitation`, `LeagueInvitation`, `InvitationsScreen` |
+| Zaproszenia turniejowe | Encja per turniej; web (start turnieju); akceptacja mobile i web (Konto → Zaproszenia); `relatedUsers` org/liga = zaproszenie | ✅ `TournamentInvitation`, `OrganizationInvitation`, `LeagueInvitation`, `InvitationsScreen` |
 | Dołączenie do quick game | Tylko zaproszenie → akceptacja; brak kodów lobby | ✅ |
 | FFA 2–8 oba tryby urządzeń | `one_device` i `each_own` | ✅ unified FFA |
 | Rotacja openera lega | `(opener + 1) % N` | ✅ |

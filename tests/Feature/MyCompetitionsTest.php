@@ -116,23 +116,6 @@ class MyCompetitionsTest extends TestCase
             ->assertJsonPath('organizations.0.roleLabel', 'Skład');
     }
 
-    public function test_season_related_user_sees_season_without_parent_organization(): void
-    {
-        $member = $this->makeUser('Sezonowy');
-        $org = Organization::create(['name' => 'Org sezonu', 'description' => '']);
-        $season = $this->createCurrentSeason($org, 'Sezon powiązany');
-        $season->relatedUsers()->attach($member->id);
-
-        Sanctum::actingAs($member);
-        $this->getJson('/api/me/competitions')
-            ->assertOk()
-            ->assertJsonCount(1, 'seasons')
-            ->assertJsonPath('seasons.0.id', $season->id)
-            ->assertJsonPath('seasons.0.role', 'member')
-            ->assertJsonPath('seasons.0.roleLabel', 'Skład')
-            ->assertJsonPath('organizations', []);
-    }
-
     public function test_accepted_tournament_invitation_includes_season_pending_does_not(): void
     {
         $accepted = $this->makeUser('Zaakceptowany');
@@ -211,9 +194,19 @@ class MyCompetitionsTest extends TestCase
             'start_date' => now()->addMonth()->toDateString(),
             'end_date' => now()->addYear()->toDateString(),
         ]);
-        $current->relatedUsers()->attach($member->id);
-        $finished->relatedUsers()->attach($member->id);
-        $upcoming->relatedUsers()->attach($member->id);
+        foreach ([$current, $finished, $upcoming] as $season) {
+            $tournament = Tournament::create([
+                'season_id' => $season->id,
+                'name' => 'Turniej '.$season->name,
+                'date' => $season->start_date,
+            ]);
+            TournamentInvitation::create([
+                'tournament_id' => $tournament->id,
+                'user_id' => $member->id,
+                'invited_by' => $member->id,
+                'status' => TournamentInvitationStatus::ACCEPTED,
+            ]);
+        }
 
         Sanctum::actingAs($member);
         $this->getJson('/api/me/competitions')

@@ -20,7 +20,6 @@ use App\Http\Controllers\Api\QuickGameController;
 use App\Http\Controllers\Api\QuickGameFfaController;
 use App\Http\Controllers\Api\QuickGameLobbyController;
 use App\Http\Controllers\Api\SeasonController;
-use App\Http\Controllers\Api\SeasonInvitationController;
 use App\Http\Controllers\Api\TournamentCatalogController;
 use App\Http\Controllers\Api\TournamentInvitationController;
 use App\Http\Controllers\Api\TournamentJoinController;
@@ -49,6 +48,7 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::delete('/push-tokens', [PushTokenController::class, 'destroy']);
 
     Route::get('/me/competitions', [MyCompetitionsController::class, 'index']);
+    Route::post('/organizations/{organization}/leave', [OrganizationInvitationController::class, 'leave']);
 
     Route::prefix('game')->group(function () {
         Route::post('/inProgress', [GameController::class, 'setStatusInProgress']);
@@ -147,12 +147,6 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::get('/received', [OrganizationInvitationController::class, 'received']);
         Route::post('/{invitationId}/accept', [OrganizationInvitationController::class, 'accept'])->whereNumber('invitationId');
         Route::post('/{invitationId}/reject', [OrganizationInvitationController::class, 'reject'])->whereNumber('invitationId');
-    });
-
-    Route::prefix('seasons/invitations')->group(function () {
-        Route::get('/received', [SeasonInvitationController::class, 'received']);
-        Route::post('/{invitationId}/accept', [SeasonInvitationController::class, 'accept'])->whereNumber('invitationId');
-        Route::post('/{invitationId}/reject', [SeasonInvitationController::class, 'reject'])->whereNumber('invitationId');
     });
 
     Route::prefix('leagues/invitations')->group(function () {

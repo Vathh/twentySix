@@ -21,7 +21,6 @@ class UserCompetitionsRepository
             ->with('organization')
             ->where(function ($query) use ($userId) {
                 $query->whereHas('admins', fn ($admins) => $admins->where('users.id', $userId))
-                    ->orWhereHas('relatedUsers', fn ($related) => $related->where('users.id', $userId))
                     ->orWhereHas('organization.admins', fn ($admins) => $admins->where('users.id', $userId))
                     ->orWhereHas(
                         'tournaments.invitations',
