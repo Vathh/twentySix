@@ -89,6 +89,7 @@ export function patchRefereeState(state, entry) {
         return {
             ...state,
             currentLeg: null,
+            pendingClosedLegId: state.currentLeg.id,
         };
     }
     if (entry.op !== 'recordVisit' || !entry.payload) {
@@ -157,7 +158,10 @@ export function commandAlreadyApplied(entry, snapshot, { legAlreadyOpen = false 
     return false;
 }
 
-export function rejectionNotice(droppedTail) {
+export function rejectionNotice(droppedTail, op = null) {
+    if (op === 'undoVisit') {
+        return 'Nie udało się cofnąć wizyty. Tablica pokazuje zapisany stan meczu.';
+    }
     if (droppedTail > 0) {
         return `Serwer odrzucił wizytę. Cofnięto tablicę do zapisanego stanu. Niezapisane kolejne wpisy: ${droppedTail}. Wpisz je ponownie.`;
     }

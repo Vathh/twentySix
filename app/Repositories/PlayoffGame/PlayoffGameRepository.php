@@ -15,6 +15,14 @@ use Illuminate\Support\Facades\DB;
 
 class PlayoffGameRepository
 {
+    public function slotExists(int $tournamentId, string $slot): bool
+    {
+        return PlayoffGame::query()
+            ->where('tournament_id', $tournamentId)
+            ->where('slot', $slot)
+            ->exists();
+    }
+
     public function existsForTournament(int $tournamentId, ?BracketSide $side = null): bool
     {
         $query = PlayoffGame::query()->where('tournament_id', $tournamentId);
@@ -23,6 +31,63 @@ class PlayoffGameRepository
         }
 
         return $query->exists();
+    }
+
+    /**
+     * @return Collection<int, PlayoffGame>
+     */
+    public function mainRoundGames(int $tournamentId, string $round): Collection
+    {
+        return PlayoffGame::query()
+            ->where('tournament_id', $tournamentId)
+            ->where('bracket_side', BracketSide::Main)
+            ->where('round', $round)
+            ->get()
+            ->sortBy(function (PlayoffGame $game): int {
+                $slot = (string) $game->slot;
+                if (! str_contains($slot, '_')) {
+                    return 0;
+                }
+
+                return (int) substr($slot, (int) strrpos($slot, '_') + 1);
+            })
+            ->values();
+    }
+
+    public function replaceScheduledPlayers(PlayoffGame $game, ?int $player1Id, ?int $player2Id): void
+    {
+        if ($game->status !== GameStatus::SCHEDULED) {
+            return;
+        }
+
+        if ((int) $game->player1_id === (int) $player1Id && (int) $game->player2_id === (int) $player2Id) {
+            if ($player1Id !== null || $game->player1_id === null) {
+                if ($player2Id !== null || $game->player2_id === null) {
+                    return;
+                }
+            }
+        }
+
+        $game->player1_id = $player1Id;
+        $game->player2_id = $player2Id;
+        $game->save();
+    }
+
+    public function groupPlayerInStartedMainGame(int $tournamentId, array $playerIds): bool
+    {
+        if ($playerIds === []) {
+            return false;
+        }
+
+        return PlayoffGame::query()
+            ->where('tournament_id', $tournamentId)
+            ->where('bracket_side', BracketSide::Main)
+            ->where('status', '!=', GameStatus::SCHEDULED)
+            ->where(function ($query) use ($playerIds) {
+                $query->whereIn('player1_id', $playerIds)
+                    ->orWhereIn('player2_id', $playerIds);
+            })
+            ->exists();
     }
 
     /**

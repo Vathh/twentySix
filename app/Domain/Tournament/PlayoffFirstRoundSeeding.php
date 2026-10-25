@@ -60,6 +60,128 @@ final class PlayoffFirstRoundSeeding
     }
 
     /**
+     * Wczesne pary tylko przy sąsiednim, równym awansie (parzysta liczba grup, K = 1 albo parzyste).
+     *
+     * @param  array<int, int>  $advancesByGroup
+     */
+    public static function supportsEarlyRelease(array $advancesByGroup): bool
+    {
+        if ($advancesByGroup === [] || count($advancesByGroup) % 2 !== 0) {
+            return false;
+        }
+
+        $counts = array_values($advancesByGroup);
+        $perGroup = (int) $counts[0];
+
+        if (count(array_unique($counts)) !== 1) {
+            return false;
+        }
+
+        return $perGroup === 1 || $perGroup % 2 === 0;
+    }
+
+    /**
+     * Ta sama kolejność slotów co pair() dla pełnych danych. Grupa bez listy
+     * (null) zostawia swój pakiet sąsiedni jako TBD.
+     *
+     * @param  array<int, list<array{player_id: int, group_number: int, place: int}>|null>  $playersByGroup
+     * @param  list<int>  $groupNumbers
+     * @return list<array{0: int|null, 1: int|null}>
+     */
+    public static function pairKnownSlots(array $playersByGroup, array $groupNumbers, int $perGroup): array
+    {
+        if (! self::supportsEarlyRelease(array_fill_keys($groupNumbers, $perGroup))) {
+            throw new InvalidArgumentException('Wczesne pary wymagają równego, sąsiedniego awansu.');
+        }
+
+        $ready = [];
+        foreach ($groupNumbers as $groupNumber) {
+            $players = $playersByGroup[$groupNumber] ?? null;
+            if ($players === null) {
+                continue;
+            }
+            usort(
+                $players,
+                static fn (array $a, array $b): int => $a['place'] <=> $b['place'] ?: $a['player_id'] <=> $b['player_id'],
+            );
+            $ready[$groupNumber] = $players;
+        }
+
+        $bundleReady = static function (int $groupA, int $groupB) use ($ready, $perGroup): bool {
+            return isset($ready[$groupA], $ready[$groupB])
+                && count($ready[$groupA]) === $perGroup
+                && count($ready[$groupB]) === $perGroup;
+        };
+
+        if ($perGroup === 1) {
+            $pairs = [];
+            for ($index = 0; $index < count($groupNumbers); $index += 2) {
+                $groupA = $groupNumbers[$index];
+                $groupB = $groupNumbers[$index + 1];
+                $pairs[] = $bundleReady($groupA, $groupB)
+                    ? self::orderedIds($ready[$groupA][0], $ready[$groupB][0])
+                    : [null, null];
+            }
+
+            return $pairs;
+        }
+
+        $bundleCount = intdiv(count($groupNumbers), 2);
+        $uppers = [];
+        $lowers = [];
+
+        for ($rank = 1; $rank <= intdiv($perGroup, 2); $rank++) {
+            for ($bundle = 0; $bundle < $bundleCount; $bundle++) {
+                $groupA = $groupNumbers[$bundle * 2];
+                $groupB = $groupNumbers[$bundle * 2 + 1];
+                if (! $bundleReady($groupA, $groupB)) {
+                    $uppers[] = [null, null];
+                    $lowers[] = [null, null];
+
+                    continue;
+                }
+                $uppers[] = self::orderedIds(
+                    $ready[$groupA][$rank - 1],
+                    $ready[$groupB][$perGroup - $rank],
+                );
+                $lowers[] = self::orderedIds(
+                    $ready[$groupB][$rank - 1],
+                    $ready[$groupA][$perGroup - $rank],
+                );
+            }
+        }
+
+        if ($bundleCount === 1 && $perGroup > 2) {
+            return self::interleaveNullable($uppers, $lowers);
+        }
+
+        return array_merge($uppers, $lowers);
+    }
+
+    /**
+     * @param  list<array{0: int|null, 1: int|null}>  $uppers
+     * @param  list<array{0: int|null, 1: int|null}>  $lowers
+     * @return list<array{0: int|null, 1: int|null}>
+     */
+    private static function interleaveNullable(array $uppers, array $lowers): array
+    {
+        $first = [];
+        $second = [];
+
+        foreach ($uppers as $index => $upper) {
+            if ($index % 2 === 0) {
+                $first[] = $upper;
+                $second[] = $lowers[$index];
+            } else {
+                $first[] = $lowers[$index];
+                $second[] = $upper;
+            }
+        }
+
+        return array_merge($first, $second);
+    }
+
+    /**
      * @param  list<array{0: int, 1: int}>  $pairs
      * @param  array<int, int>  $groupByPlayerId
      */

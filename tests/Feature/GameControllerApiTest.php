@@ -9,6 +9,8 @@ use App\Enums\PlayoffSlot;
 use App\Enums\TournamentStatus;
 use App\Enums\WinnerDestinationSlot;
 use App\Models\Game\Game;
+use App\Models\Game\GameLeg;
+use App\Models\Game\GameVisit;
 use App\Models\GroupStanding\GroupStanding;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
@@ -262,6 +264,59 @@ class GameControllerApiTest extends TestCase
         $this->getJson('/api/group-games/'.$game->id.'/scoring/state')
             ->assertOk()
             ->assertJsonFragment(['score' => 60]);
+    }
+
+    public function test_release_after_undone_visit_keeps_reopened_leg(): void
+    {
+        $this->actAsTournamentTablet($this->tournament);
+
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $this->postJson('/api/game/inProgress', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertOk();
+
+        $start = $this->postJson("/api/group-games/{$game->id}/legs", [
+            'player1DoubleTracked' => false,
+            'player2DoubleTracked' => false,
+        ])->assertOk();
+        $legId = $start->json('currentLeg.id');
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits", [
+            'playerId' => $this->player1->id,
+            'score' => 41,
+            'remainingBefore' => 501,
+            'remainingAfter' => 460,
+            'dartsInVisit' => 3,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => (string) Str::uuid(),
+        ])->assertOk();
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits/undo")
+            ->assertOk()
+            ->assertJsonPath('currentLeg.open', true);
+
+        $this->postJson('/api/game/release', [
+            'gameId' => $game->id,
+            'type' => 'group',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('games', [
+            'id' => $game->id,
+            'status' => GameStatus::IN_PROGRESS->value,
+        ]);
+        $this->assertNotNull(GameLeg::query()->find($legId));
+        $this->assertTrue(
+            GameVisit::query()->where('game_leg_id', $legId)->where('is_voided', true)->exists(),
+        );
     }
 
     public function test_heartbeat_renews_own_lock_after_expiry(): void
@@ -565,8 +620,9 @@ class GameControllerApiTest extends TestCase
     public function test_user_can_get_active_games(): void
     {
         Sanctum::actingAs($this->user);
+        $otherTokenId = $this->user->createToken('inny-sedzia')->accessToken->id;
 
-        $game1 = Game::create([
+        $scheduled = Game::create([
             'tournament_id' => $this->tournament->id,
             'player1_id' => $this->player1->id,
             'player2_id' => $this->player2->id,
@@ -574,7 +630,7 @@ class GameControllerApiTest extends TestCase
             'status' => GameStatus::SCHEDULED,
         ]);
 
-        $game2 = Game::create([
+        $resumable = Game::create([
             'tournament_id' => $this->tournament->id,
             'player1_id' => $this->player3->id,
             'player2_id' => $this->player4->id,
@@ -582,7 +638,26 @@ class GameControllerApiTest extends TestCase
             'status' => GameStatus::IN_PROGRESS,
         ]);
 
-        // Zakończony mecz nie powinien się pojawić
+        $expiredLock = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player3->id,
+            'group_number' => 2,
+            'status' => GameStatus::IN_PROGRESS,
+            'scoring_token_id' => $otherTokenId,
+            'scoring_lock_expires_at' => now()->subMinute(),
+        ]);
+
+        $heldByOther = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player2->id,
+            'player2_id' => $this->player4->id,
+            'group_number' => 2,
+            'status' => GameStatus::IN_PROGRESS,
+            'scoring_token_id' => $otherTokenId,
+            'scoring_lock_expires_at' => now()->addMinute(),
+        ]);
+
         $finishedGame = Game::create([
             'tournament_id' => $this->tournament->id,
             'player1_id' => $this->player1->id,
@@ -598,11 +673,12 @@ class GameControllerApiTest extends TestCase
                 '*' => ['id', 'type', 'player1', 'player2'],
             ]);
 
-        $games = $response->json();
-        $gameIds = collect($games)->pluck('id')->toArray();
+        $gameIds = collect($response->json())->pluck('id')->toArray();
 
-        $this->assertContains($game1->id, $gameIds);
-        $this->assertNotContains($game2->id, $gameIds);
+        $this->assertContains($scheduled->id, $gameIds);
+        $this->assertContains($resumable->id, $gameIds);
+        $this->assertContains($expiredLock->id, $gameIds);
+        $this->assertNotContains($heldByOther->id, $gameIds);
         $this->assertNotContains($finishedGame->id, $gameIds);
     }
 

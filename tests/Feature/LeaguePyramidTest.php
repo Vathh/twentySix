@@ -524,8 +524,8 @@ class LeaguePyramidTest extends TestCase
             'S',
             'deadline',
             1,
-            '2026-09-01',
-            '2026-10-01',
+            now()->toDateString(),
+            now()->addMonth()->toDateString(),
             null,
             true,
         );

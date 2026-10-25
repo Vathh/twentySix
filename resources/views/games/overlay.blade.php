@@ -126,6 +126,33 @@
                         <span class="game-overlay-scoreline-num" x-text="overlayLegsRight">{{ $liveLegsRight }}</span>
                     </p>
                     <p class="game-overlay-leg-label" x-show="!isFinished" x-text="overlayLegLabel">{{ $liveLegLabel }}</p>
+                    @php
+                        $distanceLegs = (int) ($liveMatchFormat['legsToWinSet'] ?? 1);
+                        $distanceSets = (int) ($liveMatchFormat['setsToWinMatch'] ?? 1);
+                        $distanceMode = $liveMatchFormat['winMode'] ?? 'first_to';
+                        $distanceLength = (int) ($liveMatchFormat['winLength'] ?? $distanceLegs);
+                        $polishCount = function (int $n, string $one, string $few, string $many): string {
+                            $mod10 = $n % 10;
+                            $mod100 = $n % 100;
+                            if ($n === 1) {
+                                return '1 '.$one;
+                            }
+                            if ($mod10 >= 2 && $mod10 <= 4 && ($mod100 < 12 || $mod100 > 14)) {
+                                return $n.' '.$few;
+                            }
+
+                            return $n.' '.$many;
+                        };
+                        if ($distanceSets <= 1) {
+                            $liveDistanceLabel = $distanceMode === 'best_of'
+                                ? 'best of '.$distanceLength
+                                : 'do '.$polishCount($distanceLegs, 'lega', 'legi', 'legów');
+                        } else {
+                            $liveDistanceLabel = 'do '.$polishCount($distanceSets, 'seta', 'sety', 'setów')
+                                .' · '.$polishCount($distanceLegs, 'leg', 'legi', 'legów').'/set';
+                        }
+                    @endphp
+                    <p class="game-overlay-distance">{{ $liveDistanceLabel }}</p>
                     <p class="game-overlay-finished" x-show="isFinished" x-cloak>Koniec</p>
                 </div>
 
@@ -176,6 +203,7 @@
                     x-cloak
                     x-bind:class="calloutClass"
                 >
+                    <span class="game-overlay-callout-name" x-text="calloutPlayerName" x-show="calloutPlayerName" x-cloak></span>
                     <span
                         class="game-overlay-callout-kicker"
                         x-show="flashCallout?.type === 'shot'"

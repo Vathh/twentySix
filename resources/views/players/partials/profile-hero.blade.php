@@ -21,7 +21,7 @@
         ];
     };
     $visitBadges = collect($highVisitItems ?? [])
-        ->filter(fn ($item) => (int) ($item['timesEarned'] ?? 0) > 0 && filled($item['image'] ?? null))
+        ->filter(fn ($item) => ($item['levelName'] ?? 'locked') !== 'locked' && filled($item['image'] ?? null))
         ->map(fn ($item) => $showcaseBadge($item, 1000 - (int) ($item['key'] ?? 0), 'badge-visit-'.$item['key']))
         ->sortBy('sort')
         ->values();

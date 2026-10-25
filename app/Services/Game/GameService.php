@@ -426,6 +426,21 @@ class GameService
     ): void {
         $round = $game->round;
         if (in_array($round, [GameStage::SEMI->value], true)) {
+            $tournament = $this->tournamentRepository->findModel($game->tournamentId);
+            $consolationSize = (int) ($tournament->consolation_bracket_size ?? 0);
+            if ($tournament->has_consolation_third_place && $consolationSize >= 4) {
+                return;
+            }
+
+            $sharedPlace = (int) $tournament->playoff_bracket_size + 3;
+            $loserId = $dto->winnerId === $dto->player1Id ? $dto->player2Id : $dto->player1Id;
+            $this->tournamentResultService->createForPlayoff(
+                $game->tournamentId,
+                $loserId,
+                GameStage::SEMI,
+                $sharedPlace,
+            );
+
             return;
         }
 
@@ -683,6 +698,8 @@ class GameService
             DB::transaction(function () use ($tournamentId) {
                 $this->tournamentRepository->lockForUpdate($tournamentId);
 
+                $this->playoffService->syncEarlyMainSlots($tournamentId);
+
                 if (! $this->gameRepository->checkIfPlayoffShouldBeStarted($tournamentId)) {
                     return;
                 }
@@ -690,10 +707,10 @@ class GameService
                 $tournament = $this->tournamentRepository->findModel($tournamentId);
 
                 if (! $this->playoffGameRepository->existsForTournament($tournamentId, BracketSide::Main)) {
-                    if (! $tournament->has_consolation_bracket) {
-                        $this->tournamentResultService->createForGroupLosers($tournamentId);
-                    }
+                    $this->tournamentResultService->ensureGroupLoserResults($tournamentId);
                     $this->playoffService->generateBracket($tournamentId);
+                } else {
+                    $this->tournamentResultService->ensureGroupLoserResults($tournamentId);
                 }
 
                 if (

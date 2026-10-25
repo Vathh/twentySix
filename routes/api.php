@@ -33,6 +33,10 @@ Route::post('/account/login', [AuthController::class, 'login'])
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail'])
     ->middleware('throttle:6,1');
+Route::post('/account/forgot-password', [AuthController::class, 'forgotPassword'])
+    ->middleware('throttle:password-reset');
+Route::post('/account/reset-password', [AuthController::class, 'resetPassword'])
+    ->middleware('throttle:password-reset');
 
 Route::middleware(['auth:sanctum', 'not.banned'])->prefix('account')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

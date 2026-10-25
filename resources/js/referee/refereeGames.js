@@ -49,7 +49,7 @@ export function registerRefereeGames(Alpine) {
 
         get playoffGames() {
             return this.games
-                .filter((g) => g.type === 'playoff')
+                .filter((g) => g.type === 'playoff' && g.player1?.id && g.player2?.id)
                 .slice()
                 .sort(
                     (a, b) =>

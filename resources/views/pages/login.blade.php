@@ -38,6 +38,10 @@
 
                     <button class="btn btn-primary mt-3" type="submit" name="loginBtn">Zaloguj</button>
 
+                    <p class="text-center mt-3">
+                        <a href="{{ route('password.request') }}" class="text-accent text-sm hover:underline">Nie pamiętam hasła</a>
+                    </p>
+
                     <x-errors/>
                 </div>
             </form>

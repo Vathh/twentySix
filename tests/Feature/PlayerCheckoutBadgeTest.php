@@ -183,7 +183,11 @@ class PlayerCheckoutBadgeTest extends TestCase
         app(GameResultCorrectionService::class)->applyFromWeb(GameKind::GROUP, $game->id, 2, 0);
 
         $this->assertDatabaseCount('player_badge_events', 0);
-        $this->assertDatabaseCount('player_badges', 0);
+        $this->assertDatabaseMissing('player_badges', [
+            'player_id' => $p1->id,
+            'category' => BadgeCategory::Checkout->value,
+            'badge_key' => '121',
+        ]);
         $this->assertDatabaseCount('badge_game_commits', 0);
     }
 
@@ -207,7 +211,12 @@ class PlayerCheckoutBadgeTest extends TestCase
         $this->assertSame(1, $this->checkoutBadgeCount());
 
         app(LeagueSeasonService::class)->recordWalkover($game->id, 'single', $b->id);
-        $this->assertDatabaseCount('player_badges', 0);
+        $this->assertDatabaseMissing('player_badges', [
+            'player_id' => $a->id,
+            'category' => BadgeCategory::Checkout->value,
+            'badge_key' => '121',
+        ]);
+        $this->assertSame(0, $this->checkoutBadgeCount());
 
         $game2 = LeagueGame::create([
             'league_season_id' => $season->id,
@@ -229,7 +238,11 @@ class PlayerCheckoutBadgeTest extends TestCase
         $this->assertDatabaseHas('player_badges', ['badge_key' => '140']);
 
         app(LeagueSeasonService::class)->withdraw($season->id, $a->id);
-        $this->assertDatabaseCount('player_badges', 0);
+        $this->assertDatabaseMissing('player_badges', [
+            'category' => BadgeCategory::Checkout->value,
+            'badge_key' => '140',
+        ]);
+        $this->assertSame(0, $this->checkoutBadgeCount());
     }
 
     #[Test]
@@ -301,10 +314,10 @@ class PlayerCheckoutBadgeTest extends TestCase
         $this->assertSame('iron', $oneEighty['levelName']);
         $this->assertSame(1, $oneEighty['levelNumber']);
         $this->assertSame('Żelazo', $oneEighty['levelLabel']);
-        $this->assertSame(3, $oneEighty['nextThreshold']);
+        $this->assertSame(5, $oneEighty['nextThreshold']);
         $this->assertSame('Brąz', $oneEighty['nextLevelLabel']);
-        $this->assertSame(33, $oneEighty['progressPercent']);
-        $this->assertSame('1/3', $oneEighty['progressLabel']);
+        $this->assertSame(20, $oneEighty['progressPercent']);
+        $this->assertSame('1/5', $oneEighty['progressLabel']);
         $this->assertSame('images/badges/visits/180/iron.png', $oneEighty['image']);
 
         $game2 = $this->createGroupGame($tournament, $p1, $p2, status: GameStatus::FINISHED);
@@ -324,14 +337,15 @@ class PlayerCheckoutBadgeTest extends TestCase
             ->assertOk()
             ->assertSee('Mocny punkciarz')
             ->assertSee('Poziom 1')
-            ->assertSee('2/3')
+            ->assertSee('2/5')
             ->assertDontSee('Żelazo od 1')
             ->assertDontSee('Następny:')
             ->assertSeeInOrder([
                 'profile-hero-badges',
                 'images/badges/visits/180/',
-                'images/badges/visits/140/',
+                'Mocny punkciarz',
                 'images/badges/visits/100/',
+                'images/badges/visits/140/',
             ], false);
     }
 

@@ -91,6 +91,13 @@ export function registerGameLiveViewer(Alpine) {
                 },
             );
             this.$watch(
+                () => [
+                    this.state?.currentLeg?.id ?? '',
+                    this.state?.lastEvent?.id ?? '',
+                ].join(':'),
+                () => this.dismissCalloutIfSuperseded(),
+            );
+            this.$watch(
                 () => this.remainingSignature,
                 () => this.tickRemainingFromState(),
             );
@@ -428,12 +435,17 @@ export function registerGameLiveViewer(Alpine) {
             if (!visit || visit.bust) {
                 return;
             }
+            const playerName = this.playerName(visit.playerId);
+            const legId = this.state?.currentLeg?.id ?? this.state?.lastLegClose?.legId ?? null;
             if (visit.closedLeg) {
                 this.showCallout({
                     type: 'shot',
                     darts: Number(visit.legDarts || visit.dartsInVisit || 0),
                     score: Number(visit.score),
-                }, 2800);
+                    playerName,
+                    visitId: visit.id,
+                    legId,
+                }, 30000);
                 return;
             }
             const tier = visitHighlightTier(visit);
@@ -443,13 +455,45 @@ export function registerGameLiveViewer(Alpine) {
             const duration = {
                 140: 1600,
                 170: 2000,
-                180: 2400,
+                180: 10000,
             }[tier];
             this.showCallout({
                 type: 'high',
                 tier,
                 score: Number(visit.score),
+                playerName,
+                visitId: visit.id,
+                legId,
             }, duration);
+        },
+
+        clearCallout() {
+            this.flashCallout = null;
+            if (this.flashCalloutTimer) {
+                clearTimeout(this.flashCalloutTimer);
+                this.flashCalloutTimer = null;
+            }
+        },
+
+        dismissCalloutIfSuperseded() {
+            const callout = this.flashCallout;
+            if (!callout) {
+                return;
+            }
+            const eventId = this.state?.lastEvent?.id;
+            if (eventId != null && callout.visitId != null && Number(eventId) !== Number(callout.visitId)) {
+                this.clearCallout();
+                return;
+            }
+            const currentLegId = this.state?.currentLeg?.id;
+            if (
+                callout.type === 'shot'
+                && currentLegId != null
+                && callout.legId != null
+                && Number(currentLegId) !== Number(callout.legId)
+            ) {
+                this.clearCallout();
+            }
         },
 
         showCallout(callout, durationMs) {
@@ -458,7 +502,7 @@ export function registerGameLiveViewer(Alpine) {
                 clearTimeout(this.flashCalloutTimer);
             }
             this.flashCalloutTimer = setTimeout(() => {
-                this.flashCallout = null;
+                this.clearCallout();
             }, durationMs);
         },
 
@@ -481,11 +525,11 @@ export function registerGameLiveViewer(Alpine) {
             if (!callout) {
                 return '';
             }
-            if (callout.type === 'shot') {
-                return dartShotLabel(callout.darts) || 'GAME SHOT';
-            }
-
             return String(callout.score ?? '');
+        },
+
+        get calloutPlayerName() {
+            return this.flashCallout?.playerName ?? '';
         },
 
         get calloutSubText() {
@@ -494,7 +538,7 @@ export function registerGameLiveViewer(Alpine) {
                 return '';
             }
 
-            return callout.score ? String(callout.score) : '';
+            return dartShotLabel(callout.darts);
         },
 
         remainingTarget(player, index) {

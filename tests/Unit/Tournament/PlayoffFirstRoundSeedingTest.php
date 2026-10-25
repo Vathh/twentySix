@@ -231,4 +231,40 @@ class PlayoffFirstRoundSeedingTest extends TestCase
 
         return $map;
     }
+
+    public function test_known_slots_match_full_pairing_when_every_group_is_ready(): void
+    {
+        $players = $this->uniform(4, 2);
+        $byGroup = [];
+        foreach ($players as $player) {
+            $byGroup[$player['group_number']][] = $player;
+        }
+
+        $this->assertSame(
+            PlayoffFirstRoundSeeding::pair($players),
+            PlayoffFirstRoundSeeding::pairKnownSlots($byGroup, [1, 2, 3, 4], 2),
+        );
+        $this->assertTrue(PlayoffFirstRoundSeeding::supportsEarlyRelease([1 => 2, 2 => 2, 3 => 2, 4 => 2]));
+        $this->assertFalse(PlayoffFirstRoundSeeding::supportsEarlyRelease([1 => 2, 2 => 2, 3 => 2]));
+        $this->assertFalse(PlayoffFirstRoundSeeding::supportsEarlyRelease([1 => 3, 2 => 3, 3 => 3, 4 => 3]));
+    }
+
+    public function test_known_slots_leave_unfinished_adjacent_groups_empty(): void
+    {
+        $ready = array_values(array_filter(
+            $this->uniform(4, 2),
+            fn (array $player) => $player['group_number'] <= 2,
+        ));
+        $byGroup = [1 => [], 2 => [], 3 => null, 4 => null];
+        foreach ($ready as $player) {
+            $byGroup[$player['group_number']][] = $player;
+        }
+
+        $this->assertSame([
+            [11, 22],
+            [null, null],
+            [21, 12],
+            [null, null],
+        ], PlayoffFirstRoundSeeding::pairKnownSlots($byGroup, [1, 2, 3, 4], 2));
+    }
 }

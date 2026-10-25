@@ -24,7 +24,19 @@
 
             <div class="flex flex-col items-stretch">
                 <h1 class="page-title text-center">Edycja profilu</h1>
-                <p class="text-text-secondary text-center mb-6">{{ $player->name }}</p>
+                <div class="mb-6">
+                    <label class="form-label text-accent" for="name">Nazwa</label>
+                    <input
+                        class="input-field"
+                        id="name"
+                        name="name"
+                        type="text"
+                        maxlength="20"
+                        required
+                        value="{{ old('name', $player->name) }}"
+                    >
+                    <p class="text-text-muted text-xs mt-2">Widoczna wszędzie jako Twój nick. Maks. 20 znaków.</p>
+                </div>
 
                 <div class="flex flex-col items-center gap-3 mb-6">
                     <template x-if="!cropping">

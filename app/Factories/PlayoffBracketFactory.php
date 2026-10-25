@@ -22,6 +22,7 @@ class PlayoffBracketFactory
         array $firstRoundPairs,
         BracketSide $bracketSide = BracketSide::Main,
         string $slotPrefix = '',
+        bool $includeThird = true,
     ): Collection {
         if (! TournamentStartRules::isPowerOfTwo($bracketSize)
             || $bracketSize < 2
@@ -44,7 +45,7 @@ class PlayoffBracketFactory
             ));
         }
 
-        $games = $this->buildTree($tournamentId, $bracketSize, $bracketSide, $slotPrefix);
+        $games = $this->buildTree($tournamentId, $bracketSize, $bracketSide, $slotPrefix, $includeThird);
 
         return $this->assignFirstRoundPlayers($games, $firstRoundPairs, $bracketSize);
     }
@@ -57,6 +58,7 @@ class PlayoffBracketFactory
         int $bracketSize,
         BracketSide $bracketSide,
         string $slotPrefix,
+        bool $includeThird,
     ): Collection {
         $games = collect();
         $matchCount = intdiv($bracketSize, 2);
@@ -72,7 +74,7 @@ class PlayoffBracketFactory
                     bracketSide: $bracketSide,
                 ));
 
-                if ($bracketSize >= 4) {
+                if ($includeThird && $bracketSize >= 4) {
                     $games->push(PlayoffGameDomain::createForBracket(
                         tournamentId: $tournamentId,
                         round: GameStage::THIRD,

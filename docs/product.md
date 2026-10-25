@@ -156,6 +156,7 @@ Wybór **tylko przy starcie** (kreator) — po wystartowaniu bez zmiany typu.
 - Limit awansujących do drabinki: **max 128**. W MVP v1 było 32; generyczny silnik slotów podniósł limit.
 - **Opcjonalna drabinka pocieszenia** (checkbox przy starcie, domyślnie wyłączony): po grupach powstają **dwie niezależne drabinki SE** — główna dla awansujących (o tytuł) oraz pocieszenia dla pozostałych. To **nie** jest double elimination (przegrana w głównej nie zrzuca do pocieszenia).
 - Pocieszenie: rozmiar `nextPowerOfTwo(N − awansujący)`; **bye dozwolone**; format meczu per etap osobno. Miejsca pocieszenia zaczynają się od `playoff_bracket_size + 1` (mistrz pocieszenia nie jest mistrzem turnieju).
+- **Mecz o 3. miejsce w pocieszeniu** jest osobnym checkboxem przy starcie, domyślnie wyłączony, tylko gdy pocieszenie jest włączone i ma co najmniej 4 miejsca. Po starcie nie da się go zmienić. Bez tego meczu obaj przegrani półfinału pocieszenia dzielą miejsce `playoff_bracket_size + 3`. Drabinka główna i single elimination nadal mają mecz o 3. miejsce. Istniejące turnieje z pocieszeniem o rozmiarze co najmniej 4 zachowują ten mecz.
 - UI: **Drabinka główna** / **Drabinka pocieszenia**. Na tablecie sędziowskim — dwa kafelki jak grupy.
 
 #### `single_elimination`
@@ -230,6 +231,7 @@ Logika zgodna z `GroupStandingService` w backendzie (`sortStandings` → `compar
 - **Kolejność na jednej tarczy:** metoda koła, tak żeby zawodnicy jak najrzadziej grali jeden po drugim. Numer meczu widać w komórce tabeli (plakietka), dopóki mecz nie wystartuje.
 - **Sędzia z grupy:** zawodnik, który w tym meczu nie gra. Liczba sędziowanych meczów różni się co najwyżej o jeden. Pod tabelą lista sędziów w kolejności meczów; po zakończeniu meczu to sędziowanie jest przekreślone, a sędzia meczu w trakcie wyróżniony.
 - **Playoff startuje automatycznie** po rozegraniu **ostatniego meczu grupowego** (status turnieju → playoff).
+- Przy **równym, sąsiednim rozstawieniu** (parzysta liczba grup, każda awansuje tyle samo K, K = 1 albo K parzyste) mecz pierwszej rundy powstaje, gdy **obie sąsiednie grupy** są skończone. Status zostaje „Grupy” do ostatniego meczu grupowego. Sloty bez pary nie trafiają na listę sędziego. Korekta wyniku grupy jest zablokowana, gdy mecz playoff z jej zawodnikami już trwa albo jest zakończony; przy meczu oczekującym (albo po jego anulowaniu) korekta aktualizuje parę i nie losuje ponownie istniejącego tie-breaka. Nierówny albo nieparzysty układ grup czeka na wszystkie grupy, jak dotychczas. Pocieszenie nie startuje wcześniej.
 - Drabinka playoff po grupach: pełna, **bez wolnych losów**; auto przeliczenie po korekcie wyniku na webie.
 - Wariantach SE/DE bye są **dozwolone** (patrz sekcja „Warianty turnieju”).
 

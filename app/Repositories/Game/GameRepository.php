@@ -162,6 +162,28 @@ class GameRepository
             ->map(fn ($game) => GroupGameDomain::fromEloquent($game, ['tournament', 'player1', 'player2', 'winner', 'referee']));
     }
 
+    /**
+     * Numery grup, w których każdy mecz jest zakończony.
+     *
+     * @return list<int>
+     */
+    public function finishedGroupNumbers(int $tournamentId): array
+    {
+        return Game::query()
+            ->where('tournament_id', $tournamentId)
+            ->selectRaw(
+                'group_number, SUM(CASE WHEN status != ? THEN 1 ELSE 0 END) as open_count',
+                [GameStatus::FINISHED->value],
+            )
+            ->groupBy('group_number')
+            ->get()
+            ->filter(fn ($row) => (int) $row->open_count === 0)
+            ->pluck('group_number')
+            ->map(fn ($number) => (int) $number)
+            ->values()
+            ->all();
+    }
+
     public function checkIfPlayoffShouldBeStarted(int $tournamentId): bool
     {
         $groupGames = Game::query()->where('tournament_id', $tournamentId);

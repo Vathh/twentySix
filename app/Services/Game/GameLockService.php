@@ -208,6 +208,6 @@ class GameLockService
 
         $legIds = $legs->pluck('id')->all();
 
-        return $this->gameVisitRepository->countActiveForGameLegs($legIds) === 0;
+        return $this->gameVisitRepository->countForGameLegs($legIds) === 0;
     }
 }

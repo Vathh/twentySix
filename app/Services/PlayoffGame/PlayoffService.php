@@ -16,6 +16,8 @@ use App\Enums\GrandFinalMode;
 use App\Enums\PlayerSlot;
 use App\Factories\DoubleEliminationBracketFactory;
 use App\Factories\PlayoffBracketFactory;
+use App\Enums\TournamentFormat;
+use App\Repositories\Game\GameRepository;
 use App\Repositories\GroupStanding\GroupStandingRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
@@ -33,6 +35,7 @@ class PlayoffService
         private PlayoffBracketFactory $bracketFactory,
         private DoubleEliminationBracketFactory $doubleElimFactory,
         private PlayoffGameRepository $gameRepository,
+        private GameRepository $groupGameRepository,
         private PlayerRepository $playerRepository,
         private GroupStandingRepository $groupStandingRepository,
         private TournamentRepository $tournamentRepository,
@@ -61,6 +64,96 @@ class PlayoffService
             $playoffGames,
             $this->formatsByStage($tournamentId, BracketSide::Main),
         );
+    }
+
+    /**
+     * Gdy sąsiednia para grup jest już rozstrzygnięta, tworzy drabinkę główną
+     * (albo uzupełnia oczekujące sloty). Status turnieju zostaje przy grupach.
+     */
+    public function syncEarlyMainSlots(int $tournamentId): void
+    {
+        $tournament = $this->tournamentRepository->findModel($tournamentId);
+        if ($tournament->format !== TournamentFormat::GroupsPlayoff) {
+            return;
+        }
+
+        $rawAdvances = $tournament->group_advances;
+        if (! is_array($rawAdvances) || $rawAdvances === []) {
+            return;
+        }
+
+        $advancesByGroup = [];
+        foreach (array_values($rawAdvances) as $index => $count) {
+            $advancesByGroup[$index + 1] = (int) $count;
+        }
+        if (! PlayoffFirstRoundSeeding::supportsEarlyRelease($advancesByGroup)) {
+            return;
+        }
+
+        $groupNumbers = array_keys($advancesByGroup);
+        sort($groupNumbers);
+        $perGroup = (int) reset($advancesByGroup);
+        $finished = array_flip($this->groupGameRepository->finishedGroupNumbers($tournamentId));
+
+        $playersByGroup = [];
+        foreach ($groupNumbers as $groupNumber) {
+            $playersByGroup[$groupNumber] = isset($finished[$groupNumber]) ? [] : null;
+        }
+
+        foreach ($this->groupStandingRepository->getAdvancingPlayersWithGroups($tournamentId, $advancesByGroup) as $player) {
+            $groupNumber = (int) $player['group_number'];
+            if ($playersByGroup[$groupNumber] === null) {
+                continue;
+            }
+            $playersByGroup[$groupNumber][] = $player;
+        }
+
+        $pairs = PlayoffFirstRoundSeeding::pairKnownSlots($playersByGroup, $groupNumbers, $perGroup);
+        $hasKnownPair = false;
+        foreach ($pairs as $pair) {
+            if ($pair[0] !== null && $pair[1] !== null) {
+                $hasKnownPair = true;
+                break;
+            }
+        }
+        if (! $hasKnownPair) {
+            return;
+        }
+
+        if (! $this->gameRepository->existsForTournament($tournamentId, BracketSide::Main)) {
+            $bracketSize = $this->tournamentRepository->getBracketSize($tournamentId);
+            $playoffGames = $this->bracketFactory->create($tournamentId, $bracketSize, $pairs);
+            $this->gameRepository->createMany(
+                $playoffGames,
+                $this->formatsByStage($tournamentId, BracketSide::Main),
+            );
+
+            return;
+        }
+
+        $bracketSize = $this->tournamentRepository->getBracketSize($tournamentId);
+        $round = \App\Support\Tournament\PlayoffSlotIds::stageForFirstRoundMatchCount(intdiv($bracketSize, 2))->value;
+        $games = $this->gameRepository->mainRoundGames($tournamentId, $round);
+        foreach ($pairs as $index => $pair) {
+            $game = $games->get($index);
+            if ($game === null || $pair[0] === null || $pair[1] === null) {
+                continue;
+            }
+            $this->gameRepository->replaceScheduledPlayers($game, $pair[0], $pair[1]);
+        }
+    }
+
+    public function assertGroupCorrectionAllowed(int $tournamentId, int $groupNumber): void
+    {
+        $playerIds = $this->groupStandingRepository
+            ->getByGroupNumberAndTournamentId($groupNumber, $tournamentId)
+            ->map(fn ($standing) => $standing->player?->id)
+            ->filter()
+            ->all();
+
+        if ($this->gameRepository->groupPlayerInStartedMainGame($tournamentId, $playerIds)) {
+            throw new \DomainException('Nie można zmienić wyniku grupy — mecz playoff z tymi zawodnikami już trwa albo jest zakończony.');
+        }
     }
 
     public function generateConsolationBracket(int $tournamentId): void
@@ -95,12 +188,14 @@ class PlayoffService
         }
 
         $firstRoundPairs = $this->pairConsolationFirstRound($remaining, $consolationSize);
+        $includeThird = (bool) $tournament->has_consolation_third_place && $consolationSize >= 4;
         $playoffGames = $this->bracketFactory->create(
             $tournamentId,
             $consolationSize,
             $firstRoundPairs,
             BracketSide::Consolation,
             PlayoffSlotIds::CONSOLATION_PREFIX,
+            $includeThird,
         );
 
         $this->gameRepository->createMany(
@@ -286,9 +381,13 @@ class PlayoffService
             && PlayoffSlotIds::isFinalSlot(WinnerDestination::parse($gameToUpdate->winnerDestinationSlot)->playoffSlot)
         ) {
             $winnerDestination = WinnerDestination::parse($gameToUpdate->winnerDestinationSlot);
+            $thirdSlot = PlayoffSlotIds::thirdSlotForFinal($winnerDestination->playoffSlot);
+            if (! $this->gameRepository->slotExists($gameToUpdate->tournamentId, $thirdSlot)) {
+                return;
+            }
             $this->advancePlayer(
                 $gameToUpdate->tournamentId,
-                PlayoffSlotIds::thirdSlotForFinal($winnerDestination->playoffSlot),
+                $thirdSlot,
                 $loserId,
                 $winnerDestination->playerSlot,
             );

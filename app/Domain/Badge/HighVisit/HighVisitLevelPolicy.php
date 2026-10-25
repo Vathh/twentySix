@@ -18,9 +18,9 @@ final class HighVisitLevelPolicy
 
     /** @var array<string, list<int>> */
     public const THRESHOLDS = [
-        '100' => [1, 10, 50, 250, 1000],
-        '140' => [1, 5, 25, 100, 500],
-        '180' => [1, 3, 10, 50, 250],
+        '100' => [5, 25, 100, 500, 1500],
+        '140' => [3, 10, 50, 250, 1000],
+        '180' => [1, 5, 25, 100, 500],
     ];
 
     public static function levelForHits(string $key, int $hits): int

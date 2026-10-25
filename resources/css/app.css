@@ -560,7 +560,7 @@
 
     /* Pełne logo = logotyp 26 + napis twentySix (proporcje ~2750×580) */
     .brand-logo {
-        @apply h-10 sm:h-11 w-auto max-w-[min(100%,14rem)] sm:max-w-[16rem] shrink-0 object-contain;
+        @apply h-7 w-auto max-w-[8.5rem] shrink-0 object-contain md:h-11 md:max-w-[16rem];
     }
 
     /* Sam logotyp „26” (proporcje ~920×580) */
@@ -691,6 +691,20 @@
         width: 2.75rem;
         height: 2.75rem;
         font-size: 0.9rem;
+    }
+
+    .site-header .player-avatar--sm {
+        width: 1.75rem;
+        height: 1.75rem;
+        font-size: 0.7rem;
+    }
+
+    @media (min-width: 768px) {
+        .site-header .player-avatar--sm {
+            width: 2.75rem;
+            height: 2.75rem;
+            font-size: 0.9rem;
+        }
     }
 
     .player-avatar--md {

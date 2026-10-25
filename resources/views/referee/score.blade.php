@@ -25,7 +25,7 @@
     </div>
 
     <p
-        class="text-center text-sm text-text-muted mb-3"
+        class="text-center text-base font-semibold text-text mb-3"
         x-show="formatLabel()"
         x-text="formatLabel()"
         x-cloak

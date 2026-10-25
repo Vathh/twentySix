@@ -18,12 +18,12 @@ class GroupStandingService
         private TournamentRepository $tournamentRepository,
     ) {}
 
-    public function updateGroupStandings(int $tournamentId, int $groupNumber): void
+    public function updateGroupStandings(int $tournamentId, int $groupNumber, bool $stableTies = false): void
     {
         $finishedGames = $this->gameRepository->getFinishedGroupGames($tournamentId, $groupNumber);
         $groupStandings = $this->groupStandingRepository->getByGroupNumberAndTournamentId($groupNumber, $tournamentId);
 
-        $sortedStandings = $this->sortStandings($groupStandings, $finishedGames);
+        $sortedStandings = $this->sortStandings($groupStandings, $finishedGames, $stableTies);
 
         $this->groupStandingRepository->updatePlaces($sortedStandings);
     }
@@ -55,7 +55,7 @@ class GroupStandingService
             ));
         }
 
-        $this->updateGroupStandings($tournamentId, $groupNumber);
+        $this->updateGroupStandings($tournamentId, $groupNumber, stableTies: true);
     }
 
     public function updateStandingsDetails(GameResultDTO $dto): void
@@ -82,7 +82,7 @@ class GroupStandingService
      * @param  Collection<int, \App\Domain\Game\GroupGameDomain>  $finishedGames
      * @return Collection<int, GroupStandingDomain>
      */
-    public function sortStandings(Collection $groupStandings, Collection $finishedGames): Collection
+    public function sortStandings(Collection $groupStandings, Collection $finishedGames, bool $stableTies = false): Collection
     {
         $sortedStandings = $groupStandings->sortByDesc(function ($standing) {
             return [$standing->points, $standing->matchUnitsDifference];
@@ -105,7 +105,7 @@ class GroupStandingService
                 continue;
             }
 
-            $sortedGroupStandings = $this->compareByDirectGame($group, $finishedGames);
+            $sortedGroupStandings = $this->compareByDirectGame($group, $finishedGames, $stableTies);
 
             foreach ($sortedGroupStandings as $standing) {
                 $result->push($standing);
@@ -122,7 +122,7 @@ class GroupStandingService
      * @param  Collection<int, GroupGameDomain>  $finishedGames
      * @return Collection<int, GroupStandingDomain>
      */
-    public function compareByDirectGame(Collection $standingsToCompare, Collection $finishedGames): Collection
+    public function compareByDirectGame(Collection $standingsToCompare, Collection $finishedGames, bool $stableTies = false): Collection
     {
         $playerIds = $standingsToCompare->pluck('player.id')->toArray();
 
@@ -132,9 +132,7 @@ class GroupStandingService
         })->values();
 
         if ($directGames->count() === 0) {
-            return $standingsToCompare
-                ->shuffle()
-                ->values();
+            return $this->breakTie($standingsToCompare, $stableTies);
         }
 
         $playerWinsMap = $standingsToCompare->mapWithKeys(function ($standing) use ($directGames) {
@@ -148,10 +146,7 @@ class GroupStandingService
         });
 
         if ($playerWinsMap->unique()->count() === 1) {
-
-            return $standingsToCompare
-                ->shuffle()
-                ->values();
+            return $this->breakTie($standingsToCompare, $stableTies);
         }
 
         $groups = $playerWinsMap->mapToGroups(fn ($wins, $playerId) => [$wins => $playerId])->sortKeysDesc();
@@ -169,7 +164,8 @@ class GroupStandingService
             } else {
                 $resolved = $this->compareByDirectGame(
                     $subset,
-                    $directGames
+                    $directGames,
+                    $stableTies,
                 );
 
                 $result = $result->merge($resolved);
@@ -177,6 +173,24 @@ class GroupStandingService
         }
 
         return $result->values();
+    }
+
+    /**
+     * Pierwsze rozstrzygnięcie remisu jest losowe. Kolejna korekta zostawia
+     * dotychczasową kolejność miejsc, żeby nie przetasować już wylosowanego tie-breaka.
+     *
+     * @param  Collection<int, GroupStandingDomain>  $standings
+     * @return Collection<int, GroupStandingDomain>
+     */
+    private function breakTie(Collection $standings, bool $stableTies): Collection
+    {
+        if ($stableTies) {
+            return $standings
+                ->sortBy(fn ($standing) => [(int) $standing->place, $standing->player->id])
+                ->values();
+        }
+
+        return $standings->shuffle()->values();
     }
 
     public function getLosersGroupStandings(int $tournamentId): Collection

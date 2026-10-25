@@ -545,6 +545,7 @@
                     'oldMatchFormats' => $oldMatchFormats,
                     'oldConsolationMatchFormats' => old('consolationMatchFormats', []),
                     'hasConsolationBracket' => (bool) old('hasConsolationBracket', false),
+                    'hasConsolationThirdPlace' => (bool) old('hasConsolationThirdPlace', false),
                     'minPlayers' => $minPlayers,
                     'minPlayersPerGroup' => $minPlayersPerGroup,
                     'participantCount' => $participantCount,
@@ -733,6 +734,21 @@
                             </label>
                             <input type="hidden" name="hasConsolationBracket"
                                    x-bind:value="hasConsolationBracket ? 1 : 0">
+                            <label class="mt-3 flex items-start gap-3 cursor-pointer"
+                                   x-show="hasConsolationBracket && consolationBracketSize >= 4"
+                                   x-cloak>
+                                <input type="checkbox"
+                                       class="mt-1"
+                                       x-model="hasConsolationThirdPlace">
+                                <span>
+                                    <span class="font-medium text-text-primary">Mecz o 3. miejsce w pocieszeniu</span>
+                                    <span class="block text-text-secondary/70 text-xs mt-0.5">
+                                        Domyślnie wyłączony. Bez tego meczu obaj przegrani półfinału dzielą to samo miejsce.
+                                    </span>
+                                </span>
+                            </label>
+                            <input type="hidden" name="hasConsolationThirdPlace"
+                                   x-bind:value="hasConsolationBracket && consolationBracketSize >= 4 && hasConsolationThirdPlace ? 1 : 0">
                             <p class="text-sm text-text-secondary mt-3"
                                x-show="hasConsolationBracket"
                                x-cloak>
@@ -1096,6 +1112,7 @@
                 stageDartAutoOpened: false,
                 consolationStageDartAutoOpened: false,
                 hasConsolationBracket: !!config.hasConsolationBracket,
+                hasConsolationThirdPlace: !!config.hasConsolationThirdPlace,
                 minPlayers: config.minPlayers ?? 4,
                 minPlayersPerGroup: config.minPlayersPerGroup ?? 3,
                 minGroups: 2,
@@ -1305,9 +1322,13 @@
                     if (!this.hasConsolationBracket || !this.canEnableConsolation) {
                         return [];
                     }
-                    return this.matchFormatStagesByBracketSe[this.consolationBracketSize]
+                    const stages = this.matchFormatStagesByBracketSe[this.consolationBracketSize]
                         ?? this.matchFormatStagesByBracketSe[String(this.consolationBracketSize)]
                         ?? [];
+                    if (!this.hasConsolationThirdPlace || this.consolationBracketSize < 4) {
+                        return stages.filter((stage) => stage.value !== 'THIRD');
+                    }
+                    return stages;
                 },
                 get mainDartLimitsDiffer() {
                     return this.dartLimitsDiffer(this.matchFormats, this.activeFormatStages, this.globalDart);
@@ -1607,6 +1628,9 @@
                     this.syncConsolationMatchFormats();
                 },
                 onConsolationToggle() {
+                    if (!this.hasConsolationBracket) {
+                        this.hasConsolationThirdPlace = false;
+                    }
                     this.syncConsolationMatchFormats();
                 },
             };

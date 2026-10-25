@@ -161,6 +161,7 @@ class TournamentService
         bool $hasConsolationBracket = false,
         ?int $consolationBracketSize = null,
         array $consolationFormatsByStage = [],
+        bool $hasConsolationThirdPlace = false,
     ): bool {
         $this->startValidator->validate(
             playerCount: count($playerIds),
@@ -217,6 +218,7 @@ class TournamentService
                 $hasConsolationBracket,
                 $consolationBracketSize,
                 $consolationFormatsByStage,
+                $hasConsolationThirdPlace,
             ) {
                 if ($this->tournamentRepository->checkIfTournamentCanBeStarted($tournamentId)) {
                     $this->matchFormatRepository->saveForTournament($tournamentId, $formatsByStage);
@@ -236,6 +238,7 @@ class TournamentService
                         groupAdvances: $groupAdvances,
                         hasConsolationBracket: $hasConsolationBracket,
                         consolationBracketSize: $consolationBracketSize,
+                        hasConsolationThirdPlace: $hasConsolationThirdPlace,
                     );
                     $this->updatePointSchemeId($tournamentId, $playersAmount);
                     $this->groupStandingRepository->createEmptyStandings($tournamentId, $groups);
@@ -478,6 +481,7 @@ class TournamentService
         $hasConsolationBracket = $this->wantsConsolationBracket($validated, $requestAll);
         $consolationBracketSize = null;
         $consolationFormatsByStage = [];
+        $hasConsolationThirdPlace = false;
 
         if ($hasConsolationBracket) {
             if ($remaining < 2) {
@@ -494,14 +498,20 @@ class TournamentService
                 ]);
             }
 
+            $hasConsolationThirdPlace = $consolationBracketSize >= 4
+                && $this->wantsFlag($validated, $requestAll, 'hasConsolationThirdPlace');
             $rawConsolation = $requestAll['consolationMatchFormats'] ?? [];
             $consolationFormatsByStage = is_array($rawConsolation) && $rawConsolation !== []
                 ? TournamentMatchFormatRequestParser::fromRunInput(
                     ['matchFormats' => $rawConsolation],
                     $consolationBracketSize,
                     includeGroupStage: false,
+                    includeThird: $hasConsolationThirdPlace,
                 )
-                : TournamentMatchFormatRequestParser::defaultsForEliminationBracketSize($consolationBracketSize);
+                : TournamentMatchFormatRequestParser::defaultsForEliminationBracketSize(
+                    $consolationBracketSize,
+                    includeThird: $hasConsolationThirdPlace,
+                );
         }
 
         return $this->tryCreateGroupGames(
@@ -513,6 +523,7 @@ class TournamentService
             $hasConsolationBracket,
             $consolationBracketSize,
             $consolationFormatsByStage,
+            $hasConsolationThirdPlace,
         );
     }
 
@@ -522,7 +533,16 @@ class TournamentService
      */
     private function wantsConsolationBracket(array $validated, array $requestAll): bool
     {
-        $raw = $validated['hasConsolationBracket'] ?? $requestAll['hasConsolationBracket'] ?? false;
+        return $this->wantsFlag($validated, $requestAll, 'hasConsolationBracket');
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @param  array<string, mixed>  $requestAll
+     */
+    private function wantsFlag(array $validated, array $requestAll, string $key): bool
+    {
+        $raw = $validated[$key] ?? $requestAll[$key] ?? false;
 
         return filter_var($raw, FILTER_VALIDATE_BOOLEAN);
     }

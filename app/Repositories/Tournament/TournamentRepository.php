@@ -196,6 +196,7 @@ class TournamentRepository
         ?\App\Enums\GrandFinalMode $grandFinalMode = null,
         bool $hasConsolationBracket = false,
         ?int $consolationBracketSize = null,
+        bool $hasConsolationThirdPlace = false,
     ): void {
         Tournament::where('id', $tournamentId)->update([
             'format' => $format,
@@ -205,6 +206,7 @@ class TournamentRepository
             'group_advances' => $groupAdvances,
             'has_consolation_bracket' => $hasConsolationBracket,
             'consolation_bracket_size' => $consolationBracketSize,
+            'has_consolation_third_place' => $hasConsolationThirdPlace,
             'tablets_count' => $tabletsCount,
         ]);
     }

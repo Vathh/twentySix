@@ -13,6 +13,8 @@ use Illuminate\Translation\PotentiallyTranslatedString;
  */
 class UniquePlayerNameForRegistered implements ValidationRule
 {
+    public function __construct(private readonly ?int $ignorePlayerId = null) {}
+
     /**
      * Run the validation rule.
      *
@@ -20,12 +22,16 @@ class UniquePlayerNameForRegistered implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $exists = Player::where('name', $value)
-            ->whereNotNull('user_id') // Tylko zarejestrowani gracze
-            ->exists();
+        $query = Player::query()
+            ->where('name', $value)
+            ->whereNotNull('user_id');
 
-        if ($exists) {
-            $fail('Gracz o tej nazwie już istnieje. Wybierz inną nazwę.');
+        if ($this->ignorePlayerId !== null) {
+            $query->where('id', '!=', $this->ignorePlayerId);
+        }
+
+        if ($query->exists()) {
+            $fail('Ta nazwa jest już zajęta.');
         }
     }
 }

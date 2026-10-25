@@ -4,7 +4,9 @@ namespace App\Services\Player;
 
 use App\Domain\Career\CareerWindow;
 use App\Domain\FriendshipInvitationDomain;
+use App\Domain\Game\PlayoffBye;
 use App\Domain\PlayerDomain;
+use App\Rules\UniquePlayerNameForRegistered;
 use App\Models\Player\Player;
 use App\Models\Users\User;
 use App\Repositories\Player\PlayerRepository;
@@ -93,15 +95,39 @@ class PlayerProfileService
             abort(404, 'Profil dostępny tylko dla graczy zarejestrowanych.');
         }
 
-        $validated = Validator::make($data, [
+        $rules = [
             'description' => ['nullable', 'string', 'max:'.PlayerDomain::DESCRIPTION_MAX_LENGTH],
+        ];
+        if (array_key_exists('name', $data)) {
+            $rules['name'] = [
+                'required',
+                'string',
+                'max:'.PlayerDomain::NAME_MAX_LENGTH,
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (mb_strtolower(trim((string) $value)) === mb_strtolower(PlayoffBye::DISPLAY_NAME)) {
+                        $fail('Ta nazwa jest zarezerwowana.');
+                    }
+                },
+                new UniquePlayerNameForRegistered((int) $player->id),
+            ];
+        }
+
+        $validated = Validator::make($data, $rules, [
+            'name.required' => 'Podaj nazwę.',
+            'name.max' => 'Nazwa może mieć maksymalnie '.PlayerDomain::NAME_MAX_LENGTH.' znaków.',
         ])->validate();
 
         $description = array_key_exists('description', $validated)
             ? PlayerDomain::normalizeDescription($validated['description'])
             : null;
 
-        return $this->playerRepository->updateDescription($player, $description);
+        $updated = $this->playerRepository->updateDescription($player, $description);
+
+        if (array_key_exists('name', $validated)) {
+            $updated = $this->playerRepository->updateRegisteredName($updated, trim($validated['name']));
+        }
+
+        return $updated;
     }
 
     /**

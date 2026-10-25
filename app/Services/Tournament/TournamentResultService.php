@@ -21,6 +21,19 @@ class TournamentResultService
         private PlayerRepository $playerRepository,
     ) {}
 
+    public function ensureGroupLoserResults(int $tournamentId): void
+    {
+        $tournament = $this->tournamentRepository->findModel($tournamentId);
+        if ($tournament->has_consolation_bracket) {
+            return;
+        }
+        if ($this->resultRepository->hasEliminationStage($tournamentId, GameStage::GROUP)) {
+            return;
+        }
+
+        $this->createForGroupLosers($tournamentId);
+    }
+
     public function createForGroupLosers(int $tournamentId): void
     {
         $tournament = $this->tournamentRepository->findWithSeasonAndPointSchemeRules($tournamentId);

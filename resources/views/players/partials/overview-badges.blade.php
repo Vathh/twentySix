@@ -18,8 +18,7 @@
     <div class="grid grid-cols-3 gap-2 sm:gap-4">
         @foreach($highVisitItems as $item)
             @php
-                $times = (int) ($item['timesEarned'] ?? 0);
-                $locked = $times < 1;
+                $locked = ($item['levelName'] ?? 'locked') === 'locked';
             @endphp
             <article
                 id="badge-visit-{{ $item['key'] }}"

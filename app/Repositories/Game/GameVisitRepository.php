@@ -73,6 +73,20 @@ class GameVisitRepository
             ->count();
     }
 
+    /**
+     * Aktywne i wycofane. Wycofana wizyta znaczy, że mecz miał już wynik.
+     */
+    public function countForGameLegs(array $gameLegIds): int
+    {
+        if ($gameLegIds === []) {
+            return 0;
+        }
+
+        return GameVisit::query()
+            ->whereIn('game_leg_id', $gameLegIds)
+            ->count();
+    }
+
     public function hasActiveCheckout(int $gameLegId): bool
     {
         return GameVisit::query()

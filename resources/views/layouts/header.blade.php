@@ -1,45 +1,51 @@
+@php
+    $currentPlayer = request()->routeIs('players.show', 'players.edit') ? request()->route('player') : null;
+    $isMyProfile = Auth::check()
+        && Auth::user()->player
+        && $currentPlayer
+        && (int) $currentPlayer->id === (int) Auth::user()->player->id;
+    $kontoActive = $isMyProfile || request()->routeIs('me.*', 'settings.*', 'invitations.*');
+    $rozgrywkiActive = request()->routeIs('organizations.*', 'seasons.*', 'tournaments.*', 'leagues.*', 'league-seasons.*', 'league-games.*')
+        && ! $kontoActive;
+@endphp
 <header class="site-header" x-data="{ navOpen: false }">
-    <div class="container mx-auto flex flex-wrap items-center justify-between gap-3 px-4">
-        <a href="{{ route('pages.home') }}" class="flex items-center gap-2 sm:gap-3 no-underline hover:opacity-95 transition min-w-0">
-            <img
-                class="brand-logo"
-                src="{{ asset('images/logo.svg') }}"
-                alt="twentySix"
-                width="209"
-                height="44"
-            >
+    <div class="container mx-auto flex flex-col gap-3 px-4 md:flex-row md:flex-wrap md:items-center md:justify-between">
+        <div class="flex w-full min-w-0 flex-nowrap items-center gap-2 md:w-auto">
+            <a href="{{ route('pages.home') }}" class="flex shrink-0 items-center no-underline hover:opacity-95 transition">
+                <img
+                    class="brand-logo"
+                    src="{{ asset('images/logo.svg') }}"
+                    alt="twentySix"
+                    width="209"
+                    height="44"
+                >
+            </a>
             @auth
-                <span class="text-text-muted font-normal text-lg sm:text-2xl shrink-0" aria-hidden="true">/</span>
-                <span class="inline-flex items-center gap-2 min-w-0">
-                    @if(Auth::user()->player)
+                <span class="shrink-0 text-lg font-normal text-text-muted md:text-2xl" aria-hidden="true">/</span>
+                @if(Auth::user()->player)
+                    <a href="{{ route('players.show', Auth::user()->player) }}"
+                       class="flex min-w-0 flex-1 items-center gap-2 no-underline transition hover:opacity-95 md:flex-none md:max-w-[14rem]"
+                       @if($isMyProfile) aria-current="page" @endif
+                       title="{{ Auth::user()->player->name }}">
                         <x-player-avatar :player="Auth::user()->player" size="sm" />
-                    @endif
-                    <span class="text-accent text-base sm:text-lg font-semibold truncate max-w-[9rem] sm:max-w-[14rem]">
-                        {{ Auth::user()->player?->name ?? 'Użytkownik' }}
-                    </span>
-                </span>
+                        <span class="min-w-0 truncate text-sm font-semibold text-accent md:text-lg">
+                            {{ Auth::user()->player->name }}
+                        </span>
+                    </a>
+                @else
+                    <span class="min-w-0 truncate text-sm font-semibold text-accent md:text-lg">Użytkownik</span>
+                @endif
             @endauth
-        </a>
+            <button type="button"
+                    class="ml-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border text-text-secondary hover:text-accent hover:border-accent/40 transition md:hidden"
+                    @click="navOpen = !navOpen"
+                    :aria-expanded="navOpen.toString()"
+                    aria-controls="site-nav"
+                    aria-label="Menu">
+                <span class="text-xl leading-none" x-text="navOpen ? '✕' : '☰'"></span>
+            </button>
+        </div>
 
-        <button type="button"
-                class="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg border border-border text-text-secondary hover:text-accent hover:border-accent/40 transition"
-                @click="navOpen = !navOpen"
-                :aria-expanded="navOpen.toString()"
-                aria-controls="site-nav"
-                aria-label="Menu">
-            <span class="text-xl leading-none" x-text="navOpen ? '✕' : '☰'"></span>
-        </button>
-
-        @php
-            $currentPlayer = request()->routeIs('players.show', 'players.edit') ? request()->route('player') : null;
-            $isMyProfile = Auth::check()
-                && Auth::user()->player
-                && $currentPlayer
-                && (int) $currentPlayer->id === (int) Auth::user()->player->id;
-            $kontoActive = $isMyProfile || request()->routeIs('me.*', 'settings.*', 'invitations.*');
-            $rozgrywkiActive = request()->routeIs('organizations.*', 'seasons.*', 'tournaments.*', 'leagues.*', 'league-seasons.*', 'league-games.*')
-                && ! $kontoActive;
-        @endphp
         <nav id="site-nav"
              class="w-full md:w-auto md:flex md:flex-wrap md:items-center md:gap-1"
              :class="navOpen ? 'flex flex-col gap-1 border-t border-border pt-3 mt-1' : 'hidden'">

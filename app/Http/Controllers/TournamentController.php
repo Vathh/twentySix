@@ -484,6 +484,7 @@ class TournamentController extends Controller
             'playoffBracketSize' => ['required_if:tournamentFormat,groups_playoff', 'nullable', 'integer', 'min:4'],
             'grandFinalMode' => ['required_if:tournamentFormat,double_elimination', 'nullable', 'string', 'in:single,reset'],
             'hasConsolationBracket' => ['sometimes', 'boolean'],
+            'hasConsolationThirdPlace' => ['sometimes', 'boolean'],
         ]);
 
         try {

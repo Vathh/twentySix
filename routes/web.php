@@ -11,6 +11,7 @@ use App\Http\Controllers\LeagueSeasonController;
 use App\Http\Controllers\MyCompetitionsController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PagesController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\QuickGameFfaLiveController;
 use App\Http\Controllers\SeasonController;
@@ -84,6 +85,14 @@ Route::post('/email/verification-notification', [EmailVerificationController::cl
     ->middleware('throttle:6,1')
     ->name('verification.send');
 
+Route::get('/forgot-password', [PasswordResetController::class, 'create'])->name('password.request');
+Route::post('/forgot-password', [PasswordResetController::class, 'store'])
+    ->middleware('throttle:password-reset')
+    ->name('password.email');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'update'])
+    ->middleware('throttle:password-reset')
+    ->name('password.update');
 Route::get('/login', [PagesController::class, 'showLoginPage'])->name('pages.loginPanel');
 Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:account-login')

@@ -14,6 +14,9 @@ class PlayerDomain
     /** Maksymalna długość opisu profilu gracza (zgodna z regułą walidacji `max:1000`). */
     public const DESCRIPTION_MAX_LENGTH = 1000;
 
+    /** Nick gracza z kontem (`players.name`). */
+    public const NAME_MAX_LENGTH = 20;
+
     /** @var list<string> */
     private const RELATIONS = ['achievements'];
 

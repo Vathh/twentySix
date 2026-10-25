@@ -79,6 +79,10 @@ class GameResultCorrectionService
     {
         $game = $this->gameRepository->find($gameId);
         $gameModel = $this->gameRepository->findModel($gameId);
+        $this->playoffService->assertGroupCorrectionAllowed(
+            (int) $gameModel->tournament_id,
+            (int) $gameModel->group_number,
+        );
         $this->badgeAwardService->retractForGame(GameKind::GROUP, $gameId);
 
         if ($game->player1 === null || $game->player2 === null) {
@@ -132,6 +136,7 @@ class GameResultCorrectionService
                 (int) $game->player2->id,
                 false,
             );
+            $this->playoffService->syncEarlyMainSlots((int) $gameModel->tournament_id);
 
             return;
         }

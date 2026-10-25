@@ -60,6 +60,19 @@ class PlayerRepository
         return $player->fresh();
     }
 
+    public function updateRegisteredName(Player $player, string $name): Player
+    {
+        if ($player->user_id === null) {
+            return $player;
+        }
+
+        $player->update([
+            'name' => $name,
+        ]);
+
+        return $player->fresh();
+    }
+
     public function updateAvatarPath(Player $player, ?string $path): Player
     {
         $player->forceFill([

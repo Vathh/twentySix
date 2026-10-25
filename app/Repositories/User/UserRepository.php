@@ -5,6 +5,7 @@ namespace App\Repositories\User;
 use App\Domain\PlayerDomain;
 use App\Models\Users\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class UserRepository
 {
@@ -31,6 +32,24 @@ class UserRepository
         $user->update([
             'password' => $password,
         ]);
+    }
+
+    public function rotateRememberToken(User $user): void
+    {
+        $user->forceFill([
+            'remember_token' => Str::random(60),
+        ])->save();
+    }
+
+    public function markEmailVerified(User $user): void
+    {
+        if ($user->hasVerifiedEmail()) {
+            return;
+        }
+
+        $user->forceFill([
+            'email_verified_at' => now(),
+        ])->save();
     }
 
     /**

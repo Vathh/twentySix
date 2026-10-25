@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Domain\Auth\PasswordResetDomain;
 use App\Services\Auth\AccountAuthException;
+use App\Services\Auth\PasswordResetService;
 use App\Services\Auth\AccountAuthService;
 use App\Services\Auth\MobileAppTokenService;
 use App\Services\Auth\PasswordChangeService;
@@ -17,6 +19,7 @@ class AuthController
         private AccountAuthService $accountAuthService,
         private MobileAppTokenService $mobileAppTokenService,
         private PasswordChangeService $passwordChangeService,
+        private PasswordResetService $passwordResetService,
     ) {}
 
     public function tournamentLogin(Request $request): JsonResponse
@@ -53,6 +56,40 @@ class AuthController
             'message' => 'Konto utworzone. Sprawdź email i kliknij link potwierdzający, aby się zalogować.',
             'email' => $user->email,
         ], 201);
+    }
+
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $this->passwordResetService->requestLink($validated['email']);
+
+        return response()->json([
+            'message' => PasswordResetDomain::SENT_MESSAGE,
+        ]);
+    }
+
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'token' => 'required|string',
+            'password' => 'required|string',
+            'password_confirmation' => 'required|string',
+        ]);
+
+        $this->passwordResetService->reset(
+            $validated['email'],
+            $validated['token'],
+            $validated['password'],
+            $validated['password_confirmation'],
+        );
+
+        return response()->json([
+            'message' => PasswordResetDomain::RESET_MESSAGE,
+        ]);
     }
 
     public function resendVerificationEmail(Request $request): JsonResponse

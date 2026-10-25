@@ -32,6 +32,7 @@ class Tournament extends Model
         'group_advances',
         'has_consolation_bracket',
         'consolation_bracket_size',
+        'has_consolation_third_place',
         'tablets_count',
         'join_code',
         'join_code_generated_at',
@@ -45,6 +46,7 @@ class Tournament extends Model
         'grand_final_mode' => \App\Enums\GrandFinalMode::class,
         'group_advances' => 'array',
         'has_consolation_bracket' => 'boolean',
+        'has_consolation_third_place' => 'boolean',
         'join_code_generated_at' => 'datetime',
         'join_code_enabled' => 'boolean',
     ];

@@ -570,7 +570,7 @@ export function registerRefereeScoring(Alpine) {
                 this.state = snapshot;
                 this.maybeAskOpener();
             }
-            this.error = rejectionNotice(droppedTail);
+            this.error = rejectionNotice(droppedTail, entry.op);
             return { continue: false, state: snapshot };
         },
 
@@ -1072,17 +1072,27 @@ export function registerRefereeScoring(Alpine) {
             if (!state) {
                 return null;
             }
-            if (state.currentLeg?.id != null) {
-                return state.currentLeg.id;
-            }
+            const currentLeg = state.currentLeg ?? null;
+            const visits = state.visits ?? [];
             const finishedLegs = state.legs ?? [];
-            if (finishedLegs.length === 0) {
-                return null;
+            const lastFinished = finishedLegs.reduce((latest, leg) => (
+                latest == null || (leg.legNumber ?? 0) >= (latest.legNumber ?? 0) ? leg : latest
+            ), null);
+            const emptyOpenLeg = currentLeg?.open === true && visits.length === 0;
+            if (emptyOpenLeg && lastFinished?.id != null) {
+                return lastFinished.id;
             }
-            const lastFinished = finishedLegs.reduce((latest, leg) =>
-                (leg.legNumber ?? 0) >= (latest.legNumber ?? 0) ? leg : latest,
-            );
-            return lastFinished.id ?? null;
+            if (currentLeg?.id != null) {
+                return currentLeg.id;
+            }
+            const pendingId = state.pendingClosedLegId ?? null;
+            if (pendingId != null) {
+                const alreadyListed = finishedLegs.some((leg) => Number(leg.id) === Number(pendingId));
+                if (!alreadyListed) {
+                    return pendingId;
+                }
+            }
+            return lastFinished?.id ?? null;
         },
 
         wouldUndoClosedLeg() {
@@ -1121,10 +1131,15 @@ export function registerRefereeScoring(Alpine) {
                 window.location.assign(config.gamesUrl);
                 return;
             }
-            if (!window.confirm('Opuścić sędziowanie? Inne urządzenie będzie mogło kontynuować ten mecz od ostatniej wizyty.')) {
+            const hasUnsent = loadRefereeOutbox(this.outboxKey()).length > 0;
+            const leaveMessage = hasUnsent
+                ? 'Są niewysłane wyniki. Przed wyjściem spróbujemy je zapisać. Jeśli zapis się nie uda, przepadną.'
+                : 'Opuścić sędziowanie? Inne urządzenie będzie mogło kontynuować ten mecz od ostatniej wizyty.';
+            if (!window.confirm(leaveMessage)) {
                 return;
             }
             this.leaving = true;
+            await this.flushOutbox();
             clearRefereeOutbox(this.outboxKey());
             try {
                 await refereeFetch('/api/game/release', {

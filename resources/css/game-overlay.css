@@ -435,6 +435,15 @@ body.game-overlay-preview {
     color: var(--color-text-muted);
 }
 
+.game-overlay-distance {
+    margin: 2px 0 0;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text);
+}
+
 .game-overlay-finished {
     margin: 6px 0 0;
     padding: 3px 8px 2px;
@@ -585,6 +594,16 @@ body.game-overlay-preview {
     text-shadow: 0 0 36px rgba(245, 158, 11, 0.5);
 }
 
+.game-overlay-callout-name {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.15;
+    max-width: 100%;
+    text-align: center;
+}
+
 .game-overlay-callout-kicker {
     font-size: 1.05rem;
     font-weight: 700;
@@ -609,17 +628,17 @@ body.game-overlay-preview {
 }
 
 .game-overlay-callout.is-180 .game-overlay-callout-main {
-    font-size: 7rem;
+    font-size: 5.5rem;
     letter-spacing: 0.12em;
 }
 
 .game-overlay-callout.is-shot .game-overlay-callout-main {
-    font-size: 3.1rem;
+    font-size: 4.8rem;
     letter-spacing: 0.06em;
 }
 
 .game-overlay-callout-sub {
-    font-size: 1.2rem;
+    font-size: 1.35rem;
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -697,7 +716,7 @@ body.game-overlay-preview {
     }
 
     .game-overlay-callout.is-shot .game-overlay-callout-main {
-        font-size: 2.2rem;
+        font-size: 3.2rem;
     }
 
     .game-overlay-callout-kicker {

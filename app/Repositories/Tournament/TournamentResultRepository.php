@@ -14,6 +14,14 @@ class TournamentResultRepository
      *
      * @return Collection<int, TournamentResult>
      */
+    public function hasEliminationStage(int $tournamentId, GameStage $stage): bool
+    {
+        return TournamentResult::query()
+            ->where('tournament_id', $tournamentId)
+            ->where('elimination_stage', $stage->value)
+            ->exists();
+    }
+
     public function getAllForTournament(int $tournamentId): Collection
     {
         return TournamentResult::where('tournament_id', $tournamentId)->get();
