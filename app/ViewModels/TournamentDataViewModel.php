@@ -12,6 +12,7 @@ use App\Domain\Tournament\TournamentResultDomain;
 use App\Models\Player\Player;
 use App\Models\Tournament\Tournament;
 use App\Queries\TournamentVisitHighlightsQuery;
+use App\Support\Tournament\GroupRosterOrder;
 use Illuminate\Support\Collection;
 
 class TournamentDataViewModel
@@ -102,7 +103,18 @@ class TournamentDataViewModel
         $result = [];
 
         foreach ($this->tournament->groupStandings as $standing) {
-            $result[$standing->group_number][] = PlayerDomain::fromEloquent($standing->player);
+            $player = PlayerDomain::fromEloquent($standing->player);
+            if ($player === null) {
+                continue;
+            }
+            $result[$standing->group_number][] = $player;
+        }
+
+        foreach ($result as $groupNumber => $players) {
+            $result[$groupNumber] = GroupRosterOrder::byName(
+                $players,
+                fn (PlayerDomain $player) => $player->name,
+            );
         }
 
         return $result;

@@ -283,9 +283,8 @@ class GameScoringService
             }
 
             $fresh = $game->fresh(['player1', 'player2']);
-            $state = $this->broadcastState($context, $fresh);
+            $state = $this->broadcastAndPushBracket($context, $fresh);
             if ($wasClosed) {
-                $this->pushTournamentLive($context, $fresh, includeStandings: false);
                 $this->playerOverviewService->rebuildRegistered([
                     $context->player1Id,
                     $context->player2Id,
@@ -444,19 +443,19 @@ class GameScoringService
         RecordVisitDTO $dto,
     ): array {
         if ($dto->closedLeg) {
-            return $this->broadcastState($context, $game);
+            return $this->broadcastAndPushBracket($context, $game);
         }
 
         $format = $context->matchFormat;
         if (! DartLimitRules::isApplicable($format->dartLimit, $format->isX01())) {
-            return $this->broadcastState($context, $game);
+            return $this->broadcastAndPushBracket($context, $game);
         }
 
         $visits = $this->gameVisitRepository->getActiveForLeg($leg->id);
         $playerIds = [$context->player1Id, $context->player2Id];
         $darts = DartLimitRules::dartsByPlayerId($visits, $playerIds);
         if (! DartLimitRules::isReached($format->dartLimit, $darts)) {
-            return $this->broadcastState($context, $game);
+            return $this->broadcastAndPushBracket($context, $game);
         }
 
         $p1Remaining = VisitRecorder::remainingFromLegVisits(
@@ -489,7 +488,7 @@ class GameScoringService
             );
         }
 
-        return $this->broadcastState($context, $game);
+        return $this->broadcastAndPushBracket($context, $game);
     }
 
     private function assertBullOffCloseAllowed(GameScoringContext $context, GameLeg $leg, int $winnerId): void
@@ -692,6 +691,19 @@ class GameScoringService
         }
 
         $this->playoffBracketLiveService->pushTournamentAfterCommit((int) $game->tournament_id);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function broadcastAndPushBracket(
+        GameScoringContext $context,
+        Game|PlayoffGame|QuickGame|LeagueGame $game,
+    ): array {
+        $state = $this->broadcastState($context, $game);
+        $this->pushTournamentLive($context, $game, includeStandings: false);
+
+        return $state;
     }
 
     /**

@@ -31,6 +31,7 @@ use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentResultService;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\ScoringLock;
+use App\Support\Tournament\GroupRosterOrder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -197,11 +198,9 @@ class GameService
                 continue;
             }
 
-            // Ta sama stała kolejność co tabela grup na stronie turnieju (kolejność zapisu), nie miejsce.
-            $standingRows = ($standingsByGroup->get($groupNumber, collect()))
-                ->sortBy(fn (GroupStandingDomain $standing) => $standing->id)
-                ->values()
-                ->map(fn (GroupStandingDomain $standing) => [
+            // Ta sama kolejność co tabela grup na stronie turnieju: alfabetycznie, nie według miejsca.
+            $standingRows = array_map(
+                fn (GroupStandingDomain $standing) => [
                     'playerId' => $standing->player?->id,
                     'playerName' => $standing->player?->name ?? '—',
                     'userId' => $standing->player?->userId,
@@ -214,8 +213,12 @@ class GameService
                     'matchUnitsDifference' => $standing->matchUnitsDifference,
                     'points' => $standing->points,
                     'place' => $standing->place,
-                ])
-                ->all();
+                ],
+                GroupRosterOrder::byName(
+                    $standingsByGroup->get($groupNumber, collect()),
+                    fn (GroupStandingDomain $standing) => $standing->player?->name,
+                ),
+            );
 
             $gameRows = $groupGames
                 ->sortBy([
@@ -735,6 +738,8 @@ class GameService
                 'trace' => $e->getTraceAsString(),
             ]);
         }
+
+        $this->playoffBracketLiveService->pushTournament($tournamentId);
     }
 
     private function ensurePlayoffStatus(int $tournamentId): void

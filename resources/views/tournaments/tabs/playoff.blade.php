@@ -23,7 +23,14 @@
                 continue;
             }
             $games = collect($gamesByRound[$key])
-                ->sortBy(fn ($game) => $game->slot ?? $game->id ?? 0)
+                ->sortBy(function ($game) {
+                    $slot = (string) ($game->slot ?? '');
+                    if (preg_match('/_(\d+)$/', $slot, $matches) === 1) {
+                        return (int) $matches[1];
+                    }
+
+                    return (int) ($game->id ?? 0);
+                })
                 ->values()
                 ->all();
             $rounds[] = [
@@ -37,7 +44,7 @@
     };
 
     $seRoundOrder = ['SIXTYFOUR', 'THIRTYTWO', 'SIXTEEN', 'EIGHT', 'QUARTER', 'SEMI', 'THIRD', 'FINAL'];
-    $playoffLiveEnabled = $tournament->status === \App\Enums\TournamentStatus::PLAYOFF;
+    $playoffLiveEnabled = $tournament->isLiveOnWeb();
 @endphp
 
 <div

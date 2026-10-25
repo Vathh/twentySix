@@ -206,14 +206,13 @@ export function registerRefereeScoring(Alpine) {
             }
             const legs = Number(format.legsToWinSet ?? 1);
             const sets = Number(format.setsToWinMatch ?? 1);
-            const score = format.startingScore ?? 501;
             if (sets <= 1) {
                 if (format.winMode === 'best_of') {
-                    return `${score} · best of ${format.winLength}`;
+                    return `best of ${format.winLength}`;
                 }
-                return `${score} · do ${legs} legów`;
+                return `do ${legs} legów`;
             }
-            return `${score} · ${sets} sety · ${legs} legi/set`;
+            return `${sets} sety · ${legs} legi/set`;
         },
 
         matchScore(player) {

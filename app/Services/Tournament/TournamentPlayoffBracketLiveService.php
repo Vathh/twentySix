@@ -86,6 +86,7 @@ class TournamentPlayoffBracketLiveService
 
         return [
             'id' => $gameId,
+            'slot' => $game->slot,
             'player1Id' => $game->player1Id,
             'player2Id' => $game->player2Id,
             'player1Name' => $game->player1?->name,

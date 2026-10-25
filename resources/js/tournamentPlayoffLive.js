@@ -173,10 +173,28 @@ export function registerTournamentPlayoffLive(Alpine) {
 			(payload.games ?? []).forEach((game) => this.applyGame(game));
 		},
 
+		cardRoot(game) {
+			if (game?.id) {
+				const byId = this.$el.querySelector(`[data-playoff-game-id="${game.id}"]`);
+				if (byId) {
+					return byId;
+				}
+			}
+			if (game?.slot) {
+				const slot = window.CSS?.escape ? CSS.escape(String(game.slot)) : String(game.slot);
+				return this.$el.querySelector(`[data-playoff-slot="${slot}"]`);
+			}
+
+			return null;
+		},
+
 		applyGame(game) {
-			const root = this.$el.querySelector(`[data-playoff-game-id="${game.id}"]`);
+			const root = this.cardRoot(game);
 			if (!root) {
 				return;
+			}
+			if (game.id) {
+				root.setAttribute('data-playoff-game-id', String(game.id));
 			}
 
 			const name1 = root.querySelector('[data-playoff-p1-name]');

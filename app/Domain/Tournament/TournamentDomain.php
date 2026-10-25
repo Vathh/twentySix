@@ -164,6 +164,20 @@ class TournamentDomain
         return in_array($this->status, [TournamentStatus::PLAYOFF, TournamentStatus::FINISHED]);
     }
 
+    /** Drabinka jest do pokazania od startu, także z pustymi polami w fazie grupowej. */
+    public function showsBracketPreview(): bool
+    {
+        if (! $this->isStarted()) {
+            return false;
+        }
+
+        if ($this->hasPlayoffBracket() || $this->format->isEliminationOnly()) {
+            return true;
+        }
+
+        return ($this->playoffBracketSize ?? 0) >= 2;
+    }
+
     /** Faza grupowa albo playoff — strona WWW nasłuchuje końca turnieju. */
     public function isLiveOnWeb(): bool
     {

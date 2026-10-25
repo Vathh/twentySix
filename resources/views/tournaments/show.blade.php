@@ -77,7 +77,7 @@
                     </nav>
 
                     @if($tab === 'playoff')
-                        @if($tournament->hasPlayoffBracket())
+                        @if($tournament->showsBracketPreview())
                             @include('tournaments.tabs.playoff', [
                                 'playoffGames' => $playoffGames,
                                 'bracketHeading' => $isEliminationOnly ? 'Drabinka' : 'Playoff',

@@ -444,14 +444,13 @@ body.game-overlay-preview {
     color: var(--color-text);
 }
 
-.game-overlay-finished {
+.game-overlay-distance.is-finished {
     margin: 6px 0 0;
     padding: 3px 8px 2px;
     border-radius: 2px;
     font-size: 0.84rem;
     font-weight: 700;
     letter-spacing: 0.16em;
-    text-transform: uppercase;
     background: var(--color-success-muted);
     color: var(--color-success-bright);
 }
@@ -595,13 +594,16 @@ body.game-overlay-preview {
 }
 
 .game-overlay-callout-name {
-    font-size: 1rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    line-height: 1.15;
-    max-width: 100%;
+    line-height: 1.1;
+    max-width: 92%;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .game-overlay-callout-kicker {
@@ -674,6 +676,10 @@ body.game-overlay-preview {
     .game-overlay-name {
         font-size: 1.15rem;
         letter-spacing: 0.04em;
+    }
+
+    .game-overlay-callout-name {
+        font-size: 1.3rem;
     }
 
     .game-overlay-opener {

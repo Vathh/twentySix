@@ -4,6 +4,7 @@ namespace App\Repositories\GroupStanding;
 
 use App\Domain\GroupStandingDomain;
 use App\Models\GroupStanding\GroupStanding;
+use App\Support\Tournament\GroupRosterOrder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -149,13 +150,14 @@ class GroupStandingRepository
 
         $result = [];
         foreach ($grouped as $groupNumber => $standings) {
-            $names = $standings
-                ->map(fn (GroupStanding $standing) => $standing->player?->name)
-                ->filter(fn ($name) => is_string($name) && $name !== '')
-                ->unique()
-                ->sort(SORT_NATURAL | SORT_FLAG_CASE)
-                ->values()
-                ->all();
+            $names = GroupRosterOrder::byName(
+                $standings
+                    ->map(fn (GroupStanding $standing) => $standing->player?->name)
+                    ->filter(fn ($name) => is_string($name) && $name !== '')
+                    ->unique()
+                    ->all(),
+                fn (string $name) => $name,
+            );
             $result[(int) $groupNumber] = $names;
         }
 

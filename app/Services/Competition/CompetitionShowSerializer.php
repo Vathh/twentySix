@@ -19,6 +19,8 @@ use App\Models\Tournament\Tournament;
 use App\Queries\GetTournamentData;
 use App\Services\Season\SeasonStatsService;
 use App\Services\Stats\CompetitionThreeDartAverageService;
+use App\Services\Tournament\PlayoffBracketOutline;
+use App\Support\Tournament\GroupRosterOrder;
 use App\ViewModels\TournamentDataViewModel;
 use Illuminate\Support\Collection;
 
@@ -28,6 +30,7 @@ class CompetitionShowSerializer
         private SeasonStatsService $seasonStatsService,
         private GetTournamentData $getTournamentData,
         private CompetitionThreeDartAverageService $threeDartAverages,
+        private PlayoffBracketOutline $playoffBracketOutline,
     ) {}
 
     /**
@@ -171,7 +174,7 @@ class CompetitionShowSerializer
                 'statusLabel' => $tournament->status->label(),
                 'statusVariant' => $tournament->status->badgeVariant(),
                 'isStarted' => $tournament->isStarted(),
-                'hasPlayoff' => $tournament->hasPlayoffBracket(),
+                'hasPlayoff' => $tournament->showsBracketPreview(),
                 'tracksSeasonPoints' => $tournament->tracksSeasonPoints(),
                 'format' => $tournament->format->value,
                 'showStageInResults' => $showStageInResults,
@@ -185,8 +188,18 @@ class CompetitionShowSerializer
             'availableTabs' => $this->availableTabs($tournament),
             'results' => $this->mapResults($viewModel->results(), $showStageInResults, $averages),
             'groups' => $this->mapGroups($viewModel, $averages),
-            'playoff' => $this->mapPlayoff($viewModel->playoffGames(), $averages),
-            'consolationPlayoff' => $this->mapPlayoff($viewModel->playoffGames(BracketSide::Consolation), $averages),
+            'playoff' => $this->mapPlayoff(
+                $this->playoffBracketOutline->fill($viewModel->tournament, $viewModel->playoffGames(), BracketSide::Main),
+                $averages,
+            ),
+            'consolationPlayoff' => $this->mapPlayoff(
+                $this->playoffBracketOutline->fill(
+                    $viewModel->tournament,
+                    $viewModel->playoffGames(BracketSide::Consolation),
+                    BracketSide::Consolation,
+                ),
+                $averages,
+            ),
             'achievements' => $this->mapAchievements($viewModel->achievements()),
         ];
     }
@@ -200,8 +213,12 @@ class CompetitionShowSerializer
             return [];
         }
 
+        if ($tournament->format->isEliminationOnly()) {
+            return ['results', 'playoff', 'achievements'];
+        }
+
         $tabs = ['results', 'groups', 'achievements'];
-        if ($tournament->hasPlayoffBracket()) {
+        if ($tournament->showsBracketPreview()) {
             array_splice($tabs, 1, 0, ['playoff']);
         }
 
@@ -247,10 +264,8 @@ class CompetitionShowSerializer
             $groupNumber = (int) $groupNumber;
             /** @var array<int, GroupStandingDomain> $standings */
             $standings = $standingsByGroup[$groupNumber] ?? [];
-            $standingRows = collect($standings)
-                ->sortBy(fn (GroupStandingDomain $s) => $s->place > 0 ? $s->place : PHP_INT_MAX)
-                ->values()
-                ->map(fn (GroupStandingDomain $s) => [
+            $standingRows = array_map(
+                fn (GroupStandingDomain $s) => [
                     'playerId' => $s->player?->id,
                     'playerName' => $s->player?->name ?? '—',
                     'userId' => $s->player?->userId,
@@ -263,8 +278,9 @@ class CompetitionShowSerializer
                     'matchUnitsDifference' => $s->matchUnitsDifference,
                     'points' => $s->points,
                     'place' => $s->place,
-                ])
-                ->all();
+                ],
+                GroupRosterOrder::byName($standings, fn (GroupStandingDomain $s) => $s->player?->name),
+            );
 
             $seenGameIds = [];
             $gameRows = [];

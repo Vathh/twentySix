@@ -20,7 +20,11 @@
         return $score !== null ? (string) $score : '';
     };
 @endphp
-<div class="w-full" @if($game->id) data-playoff-game-id="{{ $game->id }}" @endif>
+<div
+    class="w-full"
+    @if($game->slot) data-playoff-slot="{{ $game->slot }}" @endif
+    @if($game->id) data-playoff-game-id="{{ $game->id }}" @endif
+>
     <a
         data-playoff-game-card
         @if($gameUrl)

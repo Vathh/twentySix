@@ -20,6 +20,8 @@ use App\Services\Tournament\TournamentGuestParticipantService;
 use App\Services\Tournament\TournamentInvitationService;
 use App\Services\Tournament\TournamentJoinRequestService;
 use App\Services\Stats\CompetitionThreeDartAverageService;
+use App\Enums\BracketSide;
+use App\Services\Tournament\PlayoffBracketOutline;
 use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentService;
 use App\Services\Tournament\TournamentStartPageService;
@@ -46,6 +48,7 @@ class TournamentController extends Controller
         private GameAuthorizationService $gameAuthorizationService,
         private TournamentGroupMatrixLiveService $groupMatrixLiveService,
         private TournamentPlayoffBracketLiveService $playoffBracketLiveService,
+        private PlayoffBracketOutline $playoffBracketOutline,
         private CompetitionThreeDartAverageService $threeDartAverages,
         private TournamentStartPageService $startPageService,
         private TournamentCancelService $tournamentCancelService,
@@ -132,8 +135,16 @@ class TournamentController extends Controller
             'groupStandings' => $viewModel->groupStandings(),
             'players' => $viewModel->players(),
             'games' => $viewModel->games(),
-            'playoffGames' => $viewModel->playoffGames(),
-            'consolationPlayoffGames' => $viewModel->playoffGames(\App\Enums\BracketSide::Consolation),
+            'playoffGames' => $this->playoffBracketOutline->fill(
+                $viewModel->tournament,
+                $viewModel->playoffGames(),
+                BracketSide::Main,
+            ),
+            'consolationPlayoffGames' => $this->playoffBracketOutline->fill(
+                $viewModel->tournament,
+                $viewModel->playoffGames(BracketSide::Consolation),
+                BracketSide::Consolation,
+            ),
             'groupNumbers' => $viewModel->groupNumbers(),
             'groupPlayoffHighlights' => $viewModel->groupPlayoffHighlights(),
             'achievements' => $viewModel->achievements(),

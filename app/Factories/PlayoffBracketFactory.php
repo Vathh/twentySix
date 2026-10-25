@@ -51,6 +51,32 @@ class PlayoffBracketFactory
     }
 
     /**
+     * Puste sloty całej drabinki, zanim powstaną rekordy meczów.
+     *
+     * @return Collection<int, PlayoffGameDomain>
+     */
+    public function skeleton(
+        int $tournamentId,
+        int $bracketSize,
+        BracketSide $bracketSide = BracketSide::Main,
+        string $slotPrefix = '',
+        bool $includeThird = true,
+    ): Collection {
+        if (! TournamentStartRules::isPowerOfTwo($bracketSize)
+            || $bracketSize < 2
+            || $bracketSize > TournamentStartRules::MAX_BRACKET_SIZE
+        ) {
+            throw new InvalidArgumentException(sprintf(
+                'Rozmiar drabinki musi być potęgą 2 z przedziału 2–%d (otrzymano %d).',
+                TournamentStartRules::MAX_BRACKET_SIZE,
+                $bracketSize,
+            ));
+        }
+
+        return $this->buildTree($tournamentId, $bracketSize, $bracketSide, $slotPrefix, $includeThird);
+    }
+
+    /**
      * @return Collection<int, PlayoffGameDomain>
      */
     private function buildTree(

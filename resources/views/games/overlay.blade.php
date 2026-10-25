@@ -152,8 +152,11 @@
                                 .' · '.$polishCount($distanceLegs, 'leg', 'legi', 'legów').'/set';
                         }
                     @endphp
-                    <p class="game-overlay-distance">{{ $liveDistanceLabel }}</p>
-                    <p class="game-overlay-finished" x-show="isFinished" x-cloak>Koniec</p>
+                    <p
+                        class="game-overlay-distance{{ $liveFinished ? ' is-finished' : '' }}"
+                        x-bind:class="{ 'is-finished': isFinished }"
+                        x-text='isFinished ? "Koniec" : @js($liveDistanceLabel)'
+                    >{{ $liveFinished ? 'Koniec' : $liveDistanceLabel }}</p>
                 </div>
 
                 <div
