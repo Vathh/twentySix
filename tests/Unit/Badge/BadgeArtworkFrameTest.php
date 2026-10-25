@@ -21,6 +21,21 @@ class BadgeArtworkFrameTest extends TestCase
         $this->assertGreaterThan($iron['width'], $bronze['width']);
     }
 
+    #[Test]
+    public function quick_finish_emblem_stays_centered_when_the_dart_sticks_out(): void
+    {
+        $placement = BadgeArtworkFrame::measure(
+            dirname(__DIR__, 3).'/public/images/badges/qf/9/gold.png',
+        );
+
+        // Lotka wystaje w górę i w prawo, więc tarcza w pliku siedzi niżej i bardziej w lewo.
+        // Ramka podnosi i dosuwa rysunek, żeby środek tarczy wypadł na środku.
+        $this->assertEqualsWithDelta(-4.5, $placement['top'], 1.0);
+        $this->assertEqualsWithDelta(6.3, $placement['left'], 1.0);
+        $this->assertEqualsWithDelta(95.7, $placement['width'], 2.0);
+        $this->assertEqualsWithDelta($placement['width'], $placement['height'], 0.1);
+    }
+
     private function png(string $key, string $level): string
     {
         return dirname(__DIR__, 3)."/public/images/badges/visits/{$key}/{$level}.png";

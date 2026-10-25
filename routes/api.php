@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FriendshipController;
 use App\Http\Controllers\Api\GameController;
+use App\Http\Controllers\Api\GameDetailController;
 use App\Http\Controllers\Api\GameScoring\GroupGameScoringController;
 use App\Http\Controllers\Api\GameScoring\LeagueGameScoringController;
 use App\Http\Controllers\Api\GameScoring\PlayoffGameScoringController;
@@ -62,6 +63,10 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::get('/active', [GameController::class, 'getActiveGames']);
         Route::get('/remaining-groups', [GameController::class, 'getRemainingGroups']);
     });
+
+    Route::get('/games/{type}/{id}', [GameDetailController::class, 'show'])
+        ->whereNumber('id')
+        ->where('type', 'quick|group|playoff|league');
 
     Route::prefix('group-games/{game}')->whereNumber('game')->group(function () {
         Route::get('/scoring/state', [GroupGameScoringController::class, 'state']);

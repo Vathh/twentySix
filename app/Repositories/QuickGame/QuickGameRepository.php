@@ -105,7 +105,9 @@ class QuickGameRepository
     public function getResultsForGame(int $quickGameId): Collection
     {
         return \App\Models\QuickGame\QuickGameResult::query()
+            ->with('player')
             ->where('quick_game_id', $quickGameId)
+            ->orderBy('place')
             ->get();
     }
 

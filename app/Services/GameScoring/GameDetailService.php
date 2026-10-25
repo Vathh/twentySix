@@ -14,10 +14,13 @@ use App\Repositories\Game\GameRepository;
 use App\Repositories\Game\GameVisitRepository;
 use App\Repositories\League\LeagueGameRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
+use App\Repositories\QuickGame\QuickGameFfaSessionRepository;
+use App\Repositories\QuickGame\QuickGameFfaVisitRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
 use App\Support\GameScoring\GameLegsSetGrouper;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
+use App\Support\GameScoring\H2hLegVisitRows;
 use App\Support\Tournament\PlayoffRoundLabel;
 use DomainException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -34,6 +37,8 @@ class GameDetailService
         private GameVisitRepository $gameVisitRepository,
         private GameLegPlayerStatRepository $gameLegPlayerStatRepository,
         private GameAuthorizationService $gameAuthorizationService,
+        private QuickGameFfaSessionRepository $ffaSessionRepository,
+        private QuickGameFfaVisitRepository $ffaVisitRepository,
     ) {}
 
     /**
@@ -46,6 +51,21 @@ class GameDetailService
         [$context, $game, $label, $subtitle, $backUrl] = $this->resolveDisplay($kind, $id);
 
         return $this->assemble($context, $game, $label, $subtitle, $backUrl, withVisitDetail: true);
+    }
+
+    /**
+     * Ten sam detal co strona WWW, w kształcie JSON dla aplikacji.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildForApi(GameKind $kind, int $id): array
+    {
+        $payload = GameDetailApiPayload::from($this->build($kind, $id));
+        if ($kind !== GameKind::QUICK || ($payload['sets'] ?? []) !== []) {
+            return $payload;
+        }
+
+        return $this->mergeQuickFfaDetail($id, $payload);
     }
 
     /**
@@ -328,6 +348,152 @@ class GameDetailService
             ->sort()
             ->values()
             ->all();
+    }
+
+    /**
+     * Szybki mecz FFA nie zapisuje legów w game_legs — wizyty są przy sesji.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function mergeQuickFfaDetail(int $quickGameId, array $payload): array
+    {
+        $session = $this->ffaSessionRepository->findByQuickGameId($quickGameId);
+        if ($session === null) {
+            return $payload;
+        }
+
+        $results = $this->quickGameRepository->getResultsForGame($quickGameId);
+        $names = [];
+        $roster = [];
+        foreach ($results as $result) {
+            $playerId = (int) $result->player_id;
+            $name = (string) ($result->player->name ?? '—');
+            $names[$playerId] = $name;
+            $roster[] = [
+                'id' => $playerId,
+                'name' => $name,
+                'score' => (int) $result->score,
+                'place' => (int) $result->place,
+                'average' => $result->average !== null ? (float) $result->average : null,
+            ];
+        }
+        if ($roster !== []) {
+            $payload['roster'] = $roster;
+        }
+
+        $visits = $this->ffaVisitRepository->getActiveForSession($session);
+        if ($visits->isEmpty()) {
+            return $payload;
+        }
+
+        $player1Id = (int) ($payload['player1']['id'] ?? 0);
+        $player2Id = (int) ($payload['player2']['id'] ?? 0);
+        $headToHead = count($roster) <= 2 && $player1Id > 0 && $player2Id > 0;
+
+        $legs = collect();
+        $visitCopies = collect();
+        $setsLegs = [];
+        foreach ($visits->groupBy(fn ($visit) => (int) $visit->leg_number) as $legNumber => $legVisits) {
+            $closer = $legVisits->first(fn ($visit) => (bool) $visit->closed_leg);
+            $winnerId = $closer ? (int) $closer->player_id : null;
+            $leg = (object) [
+                'id' => (int) $legNumber,
+                'finished_at' => $closer ? $session->finished_at ?? now() : null,
+                'winner_id' => $winnerId,
+            ];
+            $legs->push($leg);
+
+            $copies = $legVisits->map(fn ($visit) => (object) [
+                'id' => (int) $visit->id,
+                'player_id' => (int) $visit->player_id,
+                'score' => (int) $visit->score,
+                'bust' => (bool) $visit->bust,
+                'game_leg_id' => (int) $legNumber,
+                'visit_number' => (int) $visit->visit_number,
+                'darts_in_visit' => (int) $visit->darts_in_visit,
+                'closed_leg' => (bool) $visit->closed_leg,
+                'remaining_before' => $visit->remaining_before,
+                'remaining_after' => $visit->remaining_after,
+            ]);
+            $visitCopies = $visitCopies->concat($copies);
+
+            $block = [
+                'legNumber' => (int) $legNumber,
+                'legInSetNumber' => (int) $legNumber,
+                'finished' => $closer !== null,
+                'winnerId' => $winnerId,
+                'winnerName' => $winnerId !== null ? ($names[$winnerId] ?? null) : null,
+                'playerStats' => [],
+                'visits' => [],
+                'turns' => [],
+            ];
+            if ($headToHead) {
+                $block['visits'] = H2hLegVisitRows::fromVisits($copies, $player1Id, $player2Id);
+            } else {
+                $block['turns'] = $copies->map(fn ($visit) => [
+                    'playerId' => (int) $visit->player_id,
+                    'name' => $names[(int) $visit->player_id] ?? '—',
+                    'thrown' => $visit->bust ? 'Bust' : (string) $visit->score,
+                    'remaining' => $visit->remaining_after !== null && $visit->remaining_after !== ''
+                        ? (string) $visit->remaining_after
+                        : ($visit->bust && $visit->remaining_before !== null ? (string) $visit->remaining_before : '-'),
+                    'bust' => (bool) $visit->bust,
+                    'darts' => (int) $visit->darts_in_visit,
+                ])->values()->all();
+            }
+            $setsLegs[] = $block;
+        }
+
+        if ($setsLegs !== []) {
+            $payload['sets'] = [[
+                'setNumber' => 1,
+                'legs' => $setsLegs,
+            ]];
+        }
+
+        if ($headToHead) {
+            $payload['players'] = [
+                $this->ffaPlayerDetail($visitCopies, $legs, $player1Id, $names[$player1Id] ?? ($payload['player1']['name'] ?? '—')),
+                $this->ffaPlayerDetail($visitCopies, $legs, $player2Id, $names[$player2Id] ?? ($payload['player2']['name'] ?? '—')),
+            ];
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function ffaPlayerDetail(Collection $visits, Collection $legs, int $playerId, string $name): array
+    {
+        $stats = GameStatisticsCalculator::playerMatchStats($visits, $legs, collect(), $playerId, null);
+        $playerVisits = $visits->where('player_id', $playerId);
+        $hf = $playerVisits
+            ->where('bust', false)
+            ->where('closed_leg', true)
+            ->filter(fn ($visit) => (int) $visit->score >= 100)
+            ->map(fn ($visit) => (int) $visit->score)
+            ->values()
+            ->all();
+        $qf = [];
+        foreach ($legs as $leg) {
+            if ($leg->finished_at === null || (int) $leg->winner_id !== $playerId) {
+                continue;
+            }
+            $darts = (int) $playerVisits->where('game_leg_id', $leg->id)->sum('darts_in_visit');
+            if ($darts > 0 && $darts < 20) {
+                $qf[] = $darts;
+            }
+        }
+        sort($qf);
+
+        return array_merge($stats, [
+            'id' => $playerId,
+            'name' => $name,
+            'hf' => $hf,
+            'qf' => $qf,
+        ]);
     }
 
     public static function kindFromRoute(string $type): GameKind
