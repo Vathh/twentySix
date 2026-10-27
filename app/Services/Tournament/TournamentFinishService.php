@@ -7,6 +7,7 @@ use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
 use App\Events\TournamentFinished;
 use App\Repositories\Tournament\TournamentRepository;
+use App\Services\Activity\ActivityRecorder;
 use App\Services\Badge\CareerBadgeService;
 use Illuminate\Support\Facades\DB;
 
@@ -16,6 +17,7 @@ class TournamentFinishService
         private TournamentRepository $tournamentRepository,
         private LoginCodeService $loginCodeService,
         private CareerBadgeService $careerBadgeService,
+        private ActivityRecorder $activityRecorder,
     ) {}
 
     /**
@@ -53,6 +55,8 @@ class TournamentFinishService
             $this->loginCodeService->revokeForTournament($tournamentId);
             $this->careerBadgeService->syncFinishedTournament($tournamentId);
         });
+
+        $this->activityRecorder->tournamentChampion($tournamentId);
 
         event(new TournamentFinished($tournamentId));
 

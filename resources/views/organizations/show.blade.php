@@ -87,6 +87,22 @@
                     </section>
                 </div>
 
+                @auth
+                    @if(!empty($feedMute['allowed']))
+                        <form method="POST" action="{{ $feedMute['muted']
+                            ? route('organizations.feed-unmute', $organization->id)
+                            : route('organizations.feed-mute', $organization->id) }}" class="mt-4">
+                            @csrf
+                            @if($feedMute['muted'])
+                                @method('DELETE')
+                            @endif
+                            <button type="submit" class="btn btn-mini">
+                                {{ $feedMute['muted'] ? 'Przywróć organizację na stronie głównej' : 'Wycisz organizację na stronie głównej' }}
+                            </button>
+                        </form>
+                    @endif
+                @endauth
+
                 <x-section-head title="Sezony turniejowe" class="mt-8">
                     <x-slot:action>
                         @organizationAdmin($organization)

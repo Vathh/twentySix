@@ -10,6 +10,7 @@ use App\Enums\GameKind;
 use App\Repositories\Badge\CareerBadgeReadRepository;
 use App\Repositories\Badge\PlayerBadgeRepository;
 use App\Repositories\Player\PlayerRepository;
+use App\Services\Activity\PlayerAchievementPublisher;
 use Illuminate\Support\Facades\DB;
 
 class CareerBadgeService
@@ -18,6 +19,7 @@ class CareerBadgeService
         private CareerBadgeReadRepository $careerBadgeReadRepository,
         private PlayerBadgeRepository $playerBadgeRepository,
         private PlayerRepository $playerRepository,
+        private PlayerAchievementPublisher $achievements,
     ) {}
 
     /**
@@ -55,6 +57,8 @@ class CareerBadgeService
             $this->playerBadgeRepository->insertEvents(CareerCatalog::SOURCE_KIND, $tournamentId, $events);
             $this->recount($deleted, $events);
         });
+
+        $this->achievements->syncTournament($tournamentId);
     }
 
     public function syncWinStreak(int $playerId): void

@@ -91,6 +91,16 @@ class TournamentResultRepository
         );
     }
 
+    public function championPlayerId(int $tournamentId): ?int
+    {
+        $playerId = TournamentResult::query()
+            ->where('tournament_id', $tournamentId)
+            ->where('place', 1)
+            ->value('player_id');
+
+        return $playerId === null ? null : (int) $playerId;
+    }
+
     public function clearPodiumStage(int $tournamentId, GameStage $stage): void
     {
         TournamentResult::where('tournament_id', $tournamentId)

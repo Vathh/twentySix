@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Career;
 
+use App\Domain\Career\CareerSnapshotMetrics;
 use App\Enums\CareerSource;
 use App\Models\Career\PlayerGameSnapshot;
 use App\Models\Player\Player;
@@ -103,6 +104,45 @@ class PlayerGameSnapshotRepository
                 'occurred_at' => $row->occurred_at?->toDateTimeString() ?? '',
             ])
             ->all();
+    }
+
+    public function findForSourceable(int $playerId, Model $sourceable): ?PlayerGameSnapshot
+    {
+        return PlayerGameSnapshot::query()
+            ->where('player_id', $playerId)
+            ->where('sourceable_type', $sourceable->getMorphClass())
+            ->where('sourceable_id', $sourceable->getKey())
+            ->first();
+    }
+
+    public function bestAverageExcept(int $playerId, CarbonInterface $at, string $sourceableType, int $sourceableId): ?float
+    {
+        $best = null;
+        $rows = PlayerGameSnapshot::query()
+            ->where('player_id', $playerId)
+            ->whereIn('source', [CareerSource::Tournament->value, CareerSource::League->value])
+            ->where('occurred_at', '<=', $at)
+            ->where(function ($query) use ($sourceableType, $sourceableId) {
+                $query->where('sourceable_type', '!=', $sourceableType)
+                    ->orWhere('sourceable_id', '!=', $sourceableId);
+            })
+            ->get(['metrics', 'game_type']);
+
+        foreach ($rows as $row) {
+            if (! CareerSnapshotMetrics::isX01((string) $row->game_type)) {
+                continue;
+            }
+            $average = is_array($row->metrics) ? ($row->metrics['average'] ?? null) : null;
+            if (! is_numeric($average)) {
+                continue;
+            }
+            $average = round((float) $average, 2);
+            if ($best === null || $average > $best) {
+                $best = $average;
+            }
+        }
+
+        return $best;
     }
 
     public function existsForPlayer(Player $player): bool

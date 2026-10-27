@@ -253,6 +253,29 @@ class GameVisitRepository
     }
 
     /**
+     * Najwcześniejsza niewykreślona wizyta 180 na gracza.
+     *
+     * @return array<int, string> player_id => occurred_at
+     */
+    public function earliest180AtByPlayer(): array
+    {
+        $rows = DB::table('game_visits')
+            ->where('score', 180)
+            ->where('bust', false)
+            ->where('is_voided', false)
+            ->groupBy('player_id')
+            ->selectRaw('player_id, MIN(created_at) as occurred_at')
+            ->get();
+
+        $earliest = [];
+        foreach ($rows as $row) {
+            $earliest[(int) $row->player_id] = (string) $row->occurred_at;
+        }
+
+        return $earliest;
+    }
+
+    /**
      * @param  list<int>  $ids
      * @return list<int>
      */

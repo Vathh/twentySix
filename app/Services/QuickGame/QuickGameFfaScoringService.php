@@ -2,6 +2,7 @@
 
 namespace App\Services\QuickGame;
 
+use App\Domain\Activity\Definitions\PlayerFirst180Activity;
 use App\Domain\GameScoring\DartLimitRules;
 use App\Domain\GameScoring\MatchFormat;
 use App\Domain\GameScoring\MatchFormatScoring;
@@ -23,6 +24,7 @@ use App\Repositories\Player\PlayerRepository;
 use App\Repositories\QuickGame\QuickGameFfaPresenceRepository;
 use App\Repositories\QuickGame\QuickGameFfaSessionRepository;
 use App\Repositories\QuickGame\QuickGameFfaVisitRepository;
+use App\Services\Activity\ActivityRecorder;
 use App\Support\QuickGameFfa\FfaStateBroadcaster;
 use App\Support\QuickGameFfa\FfaTurnNormalize;
 use App\Support\QuickGameFfa\QuickGameFfaStateBuilder;
@@ -45,6 +47,7 @@ class QuickGameFfaScoringService
         private QuickGameFfaCatch40ScoringService $catch40ScoringService,
         private QuickGameFfaCricket56ScoringService $cricket56ScoringService,
         private FfaSubmitGuard $submitGuard,
+        private ActivityRecorder $activityRecorder,
     ) {}
 
     /**
@@ -391,6 +394,9 @@ class QuickGameFfaScoringService
                 }
             } else {
                 $this->visitRepository->create($session, (int) $session->current_leg_number, $dto);
+                if ($dto->score === PlayerFirst180Activity::SCORE && ! $dto->bust) {
+                    $this->activityRecorder->playerFirst180($dto->playerId);
+                }
                 if (VisitRecorder::isVisitComplete($dto->bust, $dto->closedLeg, $dto->dartsInVisit)) {
                     $this->applyTurnAfterVisit($session, $dto, $playerIds, $leftIds);
                 }

@@ -15,6 +15,7 @@ import { registerRelatedUserSearch } from './relatedUserSearch.js';
 import { registerPlayerSearch } from './playerSearch.js';
 import { registerCheckoutWheels } from './checkoutWheel.js';
 import { registerFriendsPanel } from './friendsPanel.js';
+import { registerFeedPost } from './feedPost.js';
 import { registerPlayerCareer } from './playerCareer.js';
 import { registerPlayerAvatarCrop } from './playerAvatarCrop.js';
 
@@ -33,6 +34,7 @@ registerRelatedUserSearch(alpine);
 registerPlayerSearch(alpine);
 registerCheckoutWheels();
 registerFriendsPanel(alpine);
+registerFeedPost(alpine);
 registerPlayerCareer(alpine);
 registerPlayerAvatarCrop(alpine);
 

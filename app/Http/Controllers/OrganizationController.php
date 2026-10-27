@@ -2,21 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Activity\FeedMuteSubject;
 use App\Domain\GameScoring\MatchFormat;
 use App\Domain\OrganizationDomain;
 use App\Domain\RelatedRosterInvite;
+use App\Domain\Retention\ApplicationEntityKind;
 use App\Enums\AssignableEntityType;
 use App\Models\Organization\Organization;
-use App\Domain\Retention\ApplicationEntityKind;
+use App\Services\Activity\FeedService;
 use App\Services\League\LeagueService;
 use App\Services\Organization\OrganizationInvitationService;
-use App\Services\Retention\ApplicationEntityDeletionService;
-use App\Support\Retention\ConfirmedEntityDeletion;
 use App\Services\Organization\OrganizationService;
 use App\Services\Player\PlayerService;
+use App\Services\Retention\ApplicationEntityDeletionService;
 use App\Services\User\UserService;
 use App\Support\Catalog\CatalogSort;
 use App\Support\Organization\OrganizationMatchFormatPresets;
+use App\Support\Retention\ConfirmedEntityDeletion;
 use App\Support\Text\PolishFold;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -35,6 +37,7 @@ class OrganizationController extends Controller
         private PlayerService $playerService,
         private LeagueService $leagueService,
         private ApplicationEntityDeletionService $applicationEntityDeletionService,
+        private FeedService $feed,
     ) {
         $this->authorizeResource(Organization::class, 'organization');
     }
@@ -99,6 +102,9 @@ class OrganizationController extends Controller
             'organization' => $organizationDomain,
             'seasons' => $seasons,
             'leagues' => $this->leagueService->listForOrganization($organization->id),
+            'feedMute' => Auth::check()
+                ? $this->feed->muteState(Auth::user(), FeedMuteSubject::Organization, (string) $organization->id)
+                : null,
         ]);
     }
 

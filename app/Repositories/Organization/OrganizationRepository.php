@@ -8,6 +8,7 @@ use App\Models\Organization\Organization;
 use App\Support\Catalog\CatalogSort;
 use App\Support\Text\PolishFold;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class OrganizationRepository
 {
@@ -90,6 +91,18 @@ class OrganizationRepository
         $organization = Organization::findOrFail($organizationId);
         $organization->admins()->syncWithoutDetaching([$userId]);
         $organization->relatedUsers()->syncWithoutDetaching([$userId]);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function relatedOrganizationIds(int $userId): array
+    {
+        return DB::table('organization_user')
+            ->where('user_id', $userId)
+            ->pluck('organization_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     public function isRelated(int $organizationId, int $userId): bool

@@ -137,6 +137,21 @@ class FriendshipRepository
     /**
      * Sprawdza czy użytkownicy są znajomymi
      */
+    /**
+     * @return list<int>
+     */
+    public function friendIds(int $userId): array
+    {
+        $asUser = DB::table('friendships')->where('user_id', $userId)->pluck('friend_id');
+        $asFriend = DB::table('friendships')->where('friend_id', $userId)->pluck('user_id');
+
+        return $asUser->merge($asFriend)
+            ->unique()
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
     public function areFriends(int $userId, int $friendId): bool
     {
         return DB::table('friendships')

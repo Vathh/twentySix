@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Activity\FeedMuteSubject;
 use App\Models\Player\Player;
+use App\Services\Activity\FeedService;
 use App\Services\Friends\FriendshipService;
 use App\Services\Player\PlayerAvatarService;
 use App\Services\Player\PlayerGameHistoryService;
@@ -23,6 +25,7 @@ class PlayerController extends Controller
         private PlayerProfileService $playerProfileService,
         private PlayerService $playerService,
         private PlayerAvatarService $playerAvatarService,
+        private FeedService $feed,
     ) {}
 
     public function search(Request $request): View|JsonResponse
@@ -57,10 +60,24 @@ class PlayerController extends Controller
 
     public function show(Player $player): View|RedirectResponse
     {
-        return view('players.show', $this->playerProfileService->buildWebShow(
+        $data = $this->playerProfileService->buildWebShow(
             $player,
             Auth::user(),
-        ));
+        );
+        $viewer = Auth::user();
+        $data['feedMute'] = $viewer && $player->user_id
+            ? $this->feed->muteState($viewer, FeedMuteSubject::User, (string) $player->user_id)
+            : null;
+        $data['profileFeed'] = $this->feed->profile($viewer, $player, null);
+
+        return view('players.show', $data);
+    }
+
+    public function profileFeed(Request $request, Player $player): JsonResponse
+    {
+        return response()->json(
+            $this->feed->profile(Auth::user(), $player, $request->query('cursor')),
+        );
     }
 
     public function edit(Player $player): View

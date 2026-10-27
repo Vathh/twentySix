@@ -34,7 +34,7 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 
 ### Niezarejestrowany
 
-- **Web:** przeglądanie publicznych organizacji, turniejów, wyników, tabel i statystyk (docelowo także pojedynczych meczów).
+- **Web:** przeglądanie publicznych organizacji, turniejów, wyników, tabel i statystyk (docelowo także pojedynczych meczów). Publiczna tablica profilu gracza, gdy właściciel zostawił ustawienie „wszyscy”.
 - **Mobile:** mecze **treningowe** bez zapisu do bazy (offline lub z internetem — wynik znika po meczu); quick game online wymaga konta i sieci.
 
 ### Zarejestrowany
@@ -43,6 +43,7 @@ W n01 gracze turniejowi są tymczasowymi nazwami bez przypisanych osiągnięć i
 - Znajomi (zaproszenie + akceptacja — **mobile** i **web**).
 - Akceptacja zaproszeń (znajomi, turniej, skład organizacji i puli ligi, lobby quick game, mecz ligowy) na **mobile** i na **webie** (Konto → Zaproszenia). Wypisanie się ze składu organizacji — w „Gdzie gram”.
 - Własne statystyki i historia: turnieje, liga, quick oraz trening slotu JA (trening tylko na własnym profilu). **Trener osobisty** — w kodzie na później, **nie** w aplikacji.
+- **Tablica** bańki (znajomi i składy organizacji, z wyciszeniami): na webie strona główna zalogowanego. W aplikacji jest pierwszym ekranem po zalogowaniu na konto; dolny pasek nie ma na nią osobnego przycisku, wraca się logo w lewym górnym rogu. Profil gracza ma zakładkę **Tablica** obok **Podsumowania** — domyślnie publiczną, właściciel może ją zawęzić. Katalog i reguły: [`design_activity_feed.md`](design_activity_feed.md).
 - **Mobile:** lobby quick game online, akceptacja zaproszeń (turniej, lobby, znajomi), tablet turniejowy, **mecz treningowy** (lokalny; zalogowany ze slotem JA zapisuje sesję na konto). Ten sam ekran zaproszeń jest też na **webie** (Konto → Zaproszenia); samą rozgrywkę quick game i meczu ligowego gracz kontynuuje w aplikacji.
 - Docelowo: komunikator na webie, odznaczenia, link live quick game.
 

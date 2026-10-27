@@ -2,6 +2,7 @@
 
 namespace App\Models\Users;
 
+use App\Domain\Activity\ProfileFeedVisibility;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
@@ -34,6 +35,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'email',
         'password',
+        'profile_feed_visibility',
     ];
 
     /**
@@ -58,6 +60,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'can_create_organizations' => 'boolean',
             'banned_at' => 'datetime',
+            'profile_feed_visibility' => ProfileFeedVisibility::class,
         ];
     }
 

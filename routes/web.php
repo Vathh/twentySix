@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\ActivityEngagementController;
+use App\Http\Controllers\ActivityFeedWebController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\FriendInvitationController;
@@ -117,8 +119,28 @@ Route::middleware(['auth', 'platform.admin'])->prefix('admin')->name('admin.')->
         ->name('deleted.restore');
 });
 
+Route::middleware('auth')->group(function () {
+    Route::get('/feed/activities/{activity}/comments', [ActivityEngagementController::class, 'comments'])
+        ->whereNumber('activity')
+        ->name('feed.comments.index');
+    Route::post('/feed/activities/{activity}/comments', [ActivityEngagementController::class, 'storeComment'])
+        ->whereNumber('activity')
+        ->name('feed.comments.store');
+    Route::delete('/feed/comments/{comment}', [ActivityEngagementController::class, 'destroyComment'])
+        ->whereNumber('comment')
+        ->name('feed.comments.destroy');
+    Route::put('/feed/activities/{activity}/reaction', [ActivityEngagementController::class, 'react'])
+        ->whereNumber('activity')
+        ->name('feed.reactions.activity');
+    Route::put('/feed/comments/{comment}/reaction', [ActivityEngagementController::class, 'reactToComment'])
+        ->whereNumber('comment')
+        ->name('feed.reactions.comment');
+});
+
 Route::middleware('auth')->prefix('settings')->name('settings.')->group(function () {
     Route::get('/', [SettingsController::class, 'index'])->name('index');
+    Route::get('/feed', [ActivityFeedWebController::class, 'edit'])->name('feed.edit');
+    Route::put('/feed', [ActivityFeedWebController::class, 'update'])->name('feed.update');
     Route::get('/password', [SettingsController::class, 'editPassword'])->name('password.edit');
     Route::put('/password', [SettingsController::class, 'updatePassword'])->name('password.update');
 });
@@ -169,8 +191,11 @@ Route::get('/players/{player}/edit', [PlayerController::class, 'edit'])->middlew
 Route::put('/players/{player}', [PlayerController::class, 'update'])->middleware('auth')->name('players.update');
 Route::get('/players/{player}', [PlayerController::class, 'show'])->name('players.show');
 Route::get('/players/{player}/games', [PlayerController::class, 'gameHistory'])->name('players.games');
+Route::get('/players/{player}/feed', [PlayerController::class, 'profileFeed'])->name('players.feed');
 Route::get('/players/{player}/career', [PlayerController::class, 'career'])->name('players.career');
 Route::post('/players/{player}/add-friend', [PlayerController::class, 'addFriend'])->name('players.add-friend')->middleware('auth');
+Route::post('/players/{player}/feed-mute', [ActivityFeedWebController::class, 'mutePlayer'])->name('players.feed-mute')->middleware('auth');
+Route::delete('/players/{player}/feed-mute', [ActivityFeedWebController::class, 'unmutePlayer'])->name('players.feed-unmute')->middleware('auth');
 Route::get('/friends/panel', [FriendsController::class, 'panel'])->name('friends.panel')->middleware('auth');
 Route::post('/friends/invitations/{invitation}/accept', [FriendInvitationController::class, 'accept'])->name('friends.invitations.accept')->middleware('auth');
 Route::post('/friends/invitations/{invitation}/reject', [FriendInvitationController::class, 'reject'])->name('friends.invitations.reject')->middleware('auth');
@@ -179,6 +204,12 @@ Route::resource('organizations', OrganizationController::class)->except(['destro
 Route::delete('/organizations/{organization}', [OrganizationController::class, 'destroy'])
     ->middleware('auth')
     ->name('organizations.destroy');
+Route::post('/organizations/{organization}/feed-mute', [ActivityFeedWebController::class, 'muteOrganization'])
+    ->middleware('auth')
+    ->name('organizations.feed-mute');
+Route::delete('/organizations/{organization}/feed-mute', [ActivityFeedWebController::class, 'unmuteOrganization'])
+    ->middleware('auth')
+    ->name('organizations.feed-unmute');
 Route::prefix('organizations/{organization}')->group(function () {
     Route::get('/relatedUsers', [OrganizationController::class, 'relatedUsers'])->name('organizations.relatedUsers');
     Route::post('/relatedUsers/add', [OrganizationController::class, 'addRelatedUser'])->name('organizations.relatedUsers.add');

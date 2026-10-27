@@ -7,6 +7,37 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('playerProfileData', () => ({
         activeTab: 'overview',
+        feed: {
+            extra: [],
+            nextCursor: @json($profileFeed['nextCursor'] ?? null),
+            loading: false
+        },
+        loadOlderFeed() {
+            if (this.feed.loading || !this.feed.nextCursor) return;
+            this.feed.loading = true;
+            fetch('{{ route('players.feed', $player) }}?cursor=' + encodeURIComponent(this.feed.nextCursor), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                this.feed.extra = this.feed.extra.concat(data.items || []);
+                this.feed.nextCursor = data.nextCursor || null;
+            })
+            .finally(() => { this.feed.loading = false; });
+        },
+        feedAgo(iso) {
+            const date = new Date(iso);
+            if (Number.isNaN(date.getTime())) return '';
+            const minutes = Math.round((Date.now() - date.getTime()) / 60000);
+            if (minutes < 1) return 'przed chwilą';
+            if (minutes < 60) return minutes + ' min temu';
+            const hours = Math.round(minutes / 60);
+            if (hours < 24) return hours + ' godz. temu';
+            const days = Math.round(hours / 24);
+            if (days === 1) return 'wczoraj';
+            if (days < 30) return days + ' dni temu';
+            return date.toLocaleDateString('pl-PL');
+        },
         gameHistory: {
             items: @json($gameHistoryItems),
             hasMore: @json($gameHistoryHasMore),
@@ -97,7 +128,13 @@ document.addEventListener('alpine:init', () => {
                     @click="activeTab = 'overview'"
                     :class="activeTab === 'overview' ? 'bg-accent/20 text-accent border-accent/50' : 'border-border text-text-secondary hover:bg-bg-elevated'"
                     class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
-                Przegląd
+                Podsumowanie
+            </button>
+            <button type="button"
+                    @click="activeTab = 'feed'"
+                    :class="activeTab === 'feed' ? 'bg-accent/20 text-accent border-accent/50' : 'border-border text-text-secondary hover:bg-bg-elevated'"
+                    class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
+                Tablica
             </button>
             <button type="button"
                     @click="activeTab = 'history'"
@@ -119,11 +156,16 @@ document.addEventListener('alpine:init', () => {
             </button>
         </div>
 
-        {{-- Zakładka: Przegląd --}}
+        {{-- Zakładka: Podsumowanie --}}
         <div x-show="activeTab === 'overview'" x-cloak class="space-y-4">
             @include('players.partials.stats-tables')
             @include('players.partials.overview-record')
             @include('players.partials.overview-activity')
+        </div>
+
+        {{-- Zakładka: Tablica --}}
+        <div x-show="activeTab === 'feed'" x-cloak>
+            @include('players.partials.profile-feed')
         </div>
 
         {{-- Zakładka: Statystyki --}}

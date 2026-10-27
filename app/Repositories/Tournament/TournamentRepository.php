@@ -5,8 +5,8 @@ namespace App\Repositories\Tournament;
 use App\Domain\AdminRoster;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\TournamentFormat;
-use App\Enums\TournamentStatus;
 use App\Enums\TournamentInvitationStatus;
+use App\Enums\TournamentStatus;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Support\Catalog\CatalogSort;
@@ -104,6 +104,18 @@ class TournamentRepository
     public function findModel(int $tournamentId, array $relations = []): Tournament
     {
         return Tournament::with($relations)->findOrFail($tournamentId);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function finishedIds(): array
+    {
+        return Tournament::query()
+            ->where('status', \App\Enums\TournamentStatus::FINISHED)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     public function lockForUpdate(int $tournamentId): Tournament

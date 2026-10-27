@@ -8,6 +8,7 @@ use App\Factories\TournamentResultsFactory;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\Tournament\TournamentRepository;
 use App\Repositories\Tournament\TournamentResultRepository;
+use App\Services\Activity\ActivityRecorder;
 use App\Services\GroupStanding\GroupStandingService;
 
 class TournamentResultService
@@ -19,6 +20,7 @@ class TournamentResultService
         private TournamentResultRepository $resultRepository,
         private TournamentOverallPlaceService $overallPlaceService,
         private PlayerRepository $playerRepository,
+        private ActivityRecorder $activityRecorder,
     ) {}
 
     public function ensureGroupLoserResults(int $tournamentId): void
@@ -89,6 +91,7 @@ class TournamentResultService
     public function syncFinalPodium(int $tournamentId, int $winnerId, int $player1Id, int $player2Id): void
     {
         $this->syncPodium($tournamentId, $winnerId, $player1Id, $player2Id, GameStage::FINAL, 1);
+        $this->activityRecorder->tournamentChampionIfFinished($tournamentId);
     }
 
     public function syncThirdPodium(int $tournamentId, int $winnerId, int $player1Id, int $player2Id): void

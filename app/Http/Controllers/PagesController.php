@@ -2,15 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Activity\FeedService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 class PagesController extends Controller
 {
+    public function __construct(private FeedService $feed) {}
+
     public function showHomePage(): Factory|View
     {
-        return view('pages.home');
+        $feed = null;
+        if (Auth::check()) {
+            $feed = $this->feed->home(Auth::user(), request()->query('cursor'));
+        }
+
+        return view('pages.home', [
+            'feed' => $feed,
+        ]);
     }
 
     public function showLoginPage(): Response

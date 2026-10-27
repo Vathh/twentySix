@@ -6,6 +6,7 @@ use App\DTO\QuickGameFfa\RecordFfaVisitDTO;
 use App\Models\QuickGame\QuickGameFfaSession;
 use App\Models\QuickGame\QuickGameFfaVisit;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class QuickGameFfaVisitRepository
 {
@@ -115,5 +116,26 @@ class QuickGameFfaVisitRepository
             'client_visit_id' => (string) \Illuminate\Support\Str::uuid(),
             'close_reason' => \App\Domain\GameScoring\DartLimitRules::CLOSE_BULL_OFF,
         ]);
+    }
+
+    /**
+     * @return array<int, string> player_id => occurred_at
+     */
+    public function earliest180AtByPlayer(): array
+    {
+        $rows = DB::table('quick_game_ffa_visits')
+            ->where('score', 180)
+            ->where('bust', false)
+            ->where('is_voided', false)
+            ->groupBy('player_id')
+            ->selectRaw('player_id, MIN(created_at) as occurred_at')
+            ->get();
+
+        $earliest = [];
+        foreach ($rows as $row) {
+            $earliest[(int) $row->player_id] = (string) $row->occurred_at;
+        }
+
+        return $earliest;
     }
 }

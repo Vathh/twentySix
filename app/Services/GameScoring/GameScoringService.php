@@ -2,6 +2,7 @@
 
 namespace App\Services\GameScoring;
 
+use App\Domain\Activity\Definitions\PlayerFirst180Activity;
 use App\Domain\GameScoring\DartLimitRules;
 use App\Domain\GameScoring\MatchFormatScoring;
 use App\Domain\GameScoring\VisitRecorder;
@@ -23,6 +24,7 @@ use App\Repositories\Game\GameVisitRepository;
 use App\Repositories\League\LeagueGameRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
+use App\Services\Activity\ActivityRecorder;
 use App\Services\Badge\BadgeAwardService;
 use App\Services\Badge\CareerBadgeService;
 use App\Services\Career\PlayerCareerSnapshotService;
@@ -55,6 +57,7 @@ class GameScoringService
         private PlayerOverviewService $playerOverviewService,
         private BadgeAwardService $badgeAwardService,
         private CareerBadgeService $careerBadgeService,
+        private ActivityRecorder $activityRecorder,
     ) {}
 
     public function resolveGroupGame(int $gameId): array
@@ -235,6 +238,9 @@ class GameScoringService
             $this->assertCanRecordVisitDuringDartLimit($context, $leg, $dto);
             $visitNumber = $this->gameVisitRepository->nextVisitNumber($leg->id);
             $this->gameVisitRepository->create($leg->id, $visitNumber, $dto);
+            if ($dto->score === PlayerFirst180Activity::SCORE && ! $dto->bust) {
+                $this->activityRecorder->playerFirst180($dto->playerId);
+            }
 
             return $this->applyDartLimitAfterVisit($context, $game, $leg, $dto);
         });

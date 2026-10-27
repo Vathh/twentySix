@@ -5,8 +5,8 @@ namespace App\Services\Badge;
 use App\Domain\Badge\BadgeCategory;
 use App\Domain\Badge\BadgeDetector;
 use App\Domain\Badge\Checkout\CheckoutBadgeDetector;
-use App\Domain\Badge\FinishedGame;
 use App\Domain\Badge\Finish\FinishBadgeDetector;
+use App\Domain\Badge\FinishedGame;
 use App\Domain\Badge\GameEligibility;
 use App\Domain\Badge\HighVisit\HighVisitBadgeDetector;
 use App\Domain\Badge\Qf\QfBadgeDetector;
@@ -24,6 +24,7 @@ use App\Repositories\Game\GameVisitRepository;
 use App\Repositories\League\LeagueGameRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\PlayoffGame\PlayoffGameRepository;
+use App\Services\Activity\PlayerAchievementPublisher;
 use App\Support\GameScoring\GameScoringContext;
 use Illuminate\Support\Facades\DB;
 
@@ -45,6 +46,7 @@ class BadgeAwardService
         private QfBadgeDetector $qfBadgeDetector,
         private FinishBadgeDetector $finishBadgeDetector,
         CheckoutBadgeDetector $checkoutDetector,
+        private PlayerAchievementPublisher $achievements,
     ) {
         $this->detectors = [$checkoutDetector, $highVisitDetector, $qfBadgeDetector, $finishBadgeDetector];
     }
@@ -84,6 +86,7 @@ class BadgeAwardService
             );
         }
         $this->playerBadgeRepository->insertCommit($sourceKind, $sourceId);
+        $this->achievements->syncMatch($context->kind, $sourceId);
     }
 
     /**
@@ -228,6 +231,9 @@ class BadgeAwardService
                 );
             }
         });
+
+        $kind = GameKind::from($sourceKind);
+        $this->achievements->syncMatch($kind, $sourceId);
     }
 
     private function buildFinishedGame(GameScoringContext $context): FinishedGame

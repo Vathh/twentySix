@@ -84,6 +84,19 @@
                                 <button type="submit" class="btn btn-mini border border-accent text-accent bg-transparent hover:bg-accent/10">Odrzuć</button>
                             </form>
                         @endif
+                        @if(!empty($feedMute['allowed']))
+                            <form method="POST" action="{{ $feedMute['muted']
+                                ? route('players.feed-unmute', $player)
+                                : route('players.feed-mute', $player) }}">
+                                @csrf
+                                @if($feedMute['muted'])
+                                    @method('DELETE')
+                                @endif
+                                <button type="submit" class="btn btn-mini">
+                                    {{ $feedMute['muted'] ? 'Przywróć na stronie głównej' : 'Wycisz na stronie głównej' }}
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 @endauth
             </div>

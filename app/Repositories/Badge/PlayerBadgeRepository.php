@@ -204,6 +204,65 @@ class PlayerBadgeRepository
         return $latest;
     }
 
+    /**
+     * @return list<int>
+     */
+    public function playerIdsForSource(string $sourceKind, int $sourceId): array
+    {
+        return PlayerBadgeEvent::query()
+            ->where('source_kind', $sourceKind)
+            ->where('source_id', $sourceId)
+            ->distinct()
+            ->pluck('player_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /**
+     * @return list<array{category: string, key: string, amount: int}>
+     */
+    public function amountsForPlayerSource(int $playerId, string $sourceKind, int $sourceId): array
+    {
+        $totals = [];
+        $rows = PlayerBadgeEvent::query()
+            ->where('player_id', $playerId)
+            ->where('source_kind', $sourceKind)
+            ->where('source_id', $sourceId)
+            ->get(['category', 'badge_key', 'amount']);
+
+        foreach ($rows as $row) {
+            $key = $row->category.'|'.$row->badge_key;
+            $totals[$key] ??= [
+                'category' => (string) $row->category,
+                'key' => (string) $row->badge_key,
+                'amount' => 0,
+            ];
+            $totals[$key]['amount'] += (int) $row->amount;
+        }
+
+        return array_values($totals);
+    }
+
+    public function hitsBeforeSource(int $playerId, string $category, string $key, string $sourceKind, int $sourceId): int
+    {
+        $firstId = PlayerBadgeEvent::query()
+            ->where('player_id', $playerId)
+            ->where('source_kind', $sourceKind)
+            ->where('source_id', $sourceId)
+            ->min('id');
+
+        if ($firstId === null) {
+            return 0;
+        }
+
+        return (int) PlayerBadgeEvent::query()
+            ->where('player_id', $playerId)
+            ->where('category', $category)
+            ->where('badge_key', $key)
+            ->where('id', '<', $firstId)
+            ->sum('amount');
+    }
+
     public function findOne(int $playerId, string $category, string $badgeKey): ?PlayerBadge
     {
         return PlayerBadge::query()

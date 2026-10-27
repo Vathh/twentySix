@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\ActivityEngagementController;
+use App\Http\Controllers\Api\ActivityFeedController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FriendshipController;
 use App\Http\Controllers\Api\GameController;
@@ -39,6 +41,9 @@ Route::post('/account/forgot-password', [AuthController::class, 'forgotPassword'
 Route::post('/account/reset-password', [AuthController::class, 'resetPassword'])
     ->middleware('throttle:password-reset');
 
+Route::get('/players/{player}/feed', [ActivityFeedController::class, 'profile'])
+    ->whereNumber('player');
+
 Route::middleware(['auth:sanctum', 'not.banned'])->prefix('account')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/session/refresh', [AuthController::class, 'refreshSession']);
@@ -53,6 +58,23 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::delete('/push-tokens', [PushTokenController::class, 'destroy']);
 
     Route::get('/me/competitions', [MyCompetitionsController::class, 'index']);
+
+    Route::get('/feed', [ActivityFeedController::class, 'home']);
+    Route::get('/feed/preferences', [ActivityFeedController::class, 'preferences']);
+    Route::put('/feed/preferences', [ActivityFeedController::class, 'updatePreferences']);
+    Route::get('/feed/mutes', [ActivityFeedController::class, 'muteState']);
+    Route::post('/feed/mutes', [ActivityFeedController::class, 'mute']);
+    Route::delete('/feed/mutes', [ActivityFeedController::class, 'unmute']);
+    Route::get('/feed/activities/{activity}/comments', [ActivityEngagementController::class, 'comments'])
+        ->whereNumber('activity');
+    Route::post('/feed/activities/{activity}/comments', [ActivityEngagementController::class, 'storeComment'])
+        ->whereNumber('activity');
+    Route::delete('/feed/comments/{comment}', [ActivityEngagementController::class, 'destroyComment'])
+        ->whereNumber('comment');
+    Route::put('/feed/activities/{activity}/reaction', [ActivityEngagementController::class, 'react'])
+        ->whereNumber('activity');
+    Route::put('/feed/comments/{comment}/reaction', [ActivityEngagementController::class, 'reactToComment'])
+        ->whereNumber('comment');
     Route::post('/organizations/{organization}/leave', [OrganizationInvitationController::class, 'leave']);
 
     Route::prefix('game')->group(function () {

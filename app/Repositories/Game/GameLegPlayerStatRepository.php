@@ -2,8 +2,11 @@
 
 namespace App\Repositories\Game;
 
+use App\Domain\Activity\PersonalBestDiff;
 use App\DTO\GameScoring\CloseLegPlayerStatsDTO;
 use App\Models\Game\GameLegPlayerStat;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class GameLegPlayerStatRepository
@@ -112,5 +115,77 @@ class GameLegPlayerStatRepository
             ->whereIn('game_leg_id', $gameLegIds)
             ->with('player')
             ->get();
+    }
+
+    /**
+     * Finish i lotka zwycięzcy w tym meczu.
+     *
+     * @return array{highestHf: ?int, fastestQf: ?int}
+     */
+    public function winnerMarksForGame(string $gameColumn, int $gameId, int $playerId): array
+    {
+        $column = $this->gameColumn($gameColumn);
+
+        return $this->marks($this->winnerLegs($playerId)->where('game_legs.'.$column, $gameId));
+    }
+
+    /**
+     * Najlepszy finish i lotka ze starszych meczów, bez nóg tego meczu.
+     *
+     * @return array{highestHf: ?int, fastestQf: ?int}
+     */
+    public function winnerMarksBefore(int $playerId, CarbonInterface $before, string $gameColumn, int $gameId): array
+    {
+        $column = $this->gameColumn($gameColumn);
+        $query = $this->winnerLegs($playerId)
+            ->where('game_legs.finished_at', '<=', $before)
+            ->where(function ($legs) use ($column, $gameId) {
+                $legs->where('game_legs.'.$column, '!=', $gameId)
+                    ->orWhereNull('game_legs.'.$column);
+            });
+
+        return $this->marks($query);
+    }
+
+    private function gameColumn(string $gameColumn): string
+    {
+        if (! in_array($gameColumn, ['game_id', 'playoff_game_id', 'league_game_id'], true)) {
+            throw new \InvalidArgumentException('Nieznana kolumna meczu.');
+        }
+
+        return $gameColumn;
+    }
+
+    private function winnerLegs(int $playerId): Builder
+    {
+        return GameLegPlayerStat::query()
+            ->join('game_legs', 'game_legs.id', '=', 'game_leg_player_stats.game_leg_id')
+            ->where('game_leg_player_stats.player_id', $playerId)
+            ->whereColumn('game_legs.winner_id', 'game_leg_player_stats.player_id')
+            ->whereNotNull('game_legs.finished_at')
+            ->where(function ($query) {
+                $query->whereNotNull('game_legs.game_id')
+                    ->orWhereNotNull('game_legs.playoff_game_id')
+                    ->orWhereNotNull('game_legs.league_game_id');
+            });
+    }
+
+    /**
+     * @return array{highestHf: ?int, fastestQf: ?int}
+     */
+    private function marks(Builder $query): array
+    {
+        $highestHf = (clone $query)
+            ->where('game_leg_player_stats.highest_finish', '>=', PersonalBestDiff::HF_MIN)
+            ->max('game_leg_player_stats.highest_finish');
+        $fastestQf = (clone $query)
+            ->whereNotNull('game_leg_player_stats.darts_thrown')
+            ->where('game_leg_player_stats.darts_thrown', '<', PersonalBestDiff::QF_UNDER)
+            ->min('game_leg_player_stats.darts_thrown');
+
+        return [
+            'highestHf' => $highestHf !== null ? (int) $highestHf : null,
+            'fastestQf' => $fastestQf !== null ? (int) $fastestQf : null,
+        ];
     }
 }

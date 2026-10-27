@@ -4,6 +4,7 @@
 
 @section('content')
 
+    @guest
     <div class="flex items-center justify-center w-full min-h-[70vh] px-4">
         <div class="home-hero">
             <img
@@ -19,23 +20,20 @@
             <p class="text-xs sm:text-sm mb-4 sm:mb-5 text-text-secondary max-w-md mx-auto">
                 Śledź rankingi i rozgrywki — wszystko w jednym miejscu.
             </p>
-            <div class="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center">
-                <a href="/tournaments" class="btn btn-primary">Zobacz turnieje</a>
-                <a href="{{ route('referee.login') }}" class="btn btn-secondary">Sędziowanie turnieju</a>
-            </div>
-            @if(config('mobile.apk_download_url'))
-                <div class="mt-3 flex justify-center">
-                    <a
-                        href="{{ config('mobile.apk_download_url') }}"
-                        class="btn btn-secondary"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Pobierz aplikację mobilną
-                    </a>
-                </div>
-            @endif
+            @include('pages.partials.home-actions')
         </div>
     </div>
+    @endguest
+
+    @auth
+    <div class="w-full max-w-xl mx-auto px-4 py-8">
+        <div class="mb-6 text-center">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent mb-2">twentySix</p>
+            <h2 class="text-lg font-bold text-text mb-3 tracking-tight">Twoja tablica</h2>
+            @include('pages.partials.home-actions')
+        </div>
+        @include('pages.partials.feed', ['feed' => $feed])
+    </div>
+    @endauth
 
 @endsection

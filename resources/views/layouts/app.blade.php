@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'twentySix')</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/favicon.svg') }}">
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('favicon.png') }}">
@@ -64,6 +65,13 @@
     </div>
 
     @include('layouts.footer')
+
+    <script>
+        window.feedEngagement = {
+            signedIn: @json(auth()->check()),
+            loginUrl: @json(route('pages.loginPanel')),
+        };
+    </script>
 
     @yield('scripts')
 </body>

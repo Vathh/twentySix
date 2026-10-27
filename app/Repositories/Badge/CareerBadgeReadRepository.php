@@ -23,6 +23,14 @@ class CareerBadgeReadRepository
      */
     public function winsInOrder(int $playerId): array
     {
+        return array_map(fn (array $row) => $row['win'], $this->streakRows($playerId));
+    }
+
+    /**
+     * @return list<array{at: mixed, kind: string, id: int, win: bool}>
+     */
+    public function streakRows(int $playerId): array
+    {
         $rows = [];
 
         foreach ($this->streakSources() as [$model, $status, $kind]) {
@@ -57,7 +65,24 @@ class CareerBadgeReadRepository
             return $left['id'] <=> $right['id'];
         });
 
-        return array_map(fn (array $row) => $row['win'], $rows);
+        return $rows;
+    }
+
+    /**
+     * @return list<array{kind: string, id: int}>
+     */
+    public function finishedCompetitiveIds(): array
+    {
+        $rows = [];
+
+        foreach ($this->streakSources() as [$model, $status, $kind]) {
+            $ids = $model::query()->where('status', $status)->orderBy('id')->pluck('id');
+            foreach ($ids as $id) {
+                $rows[] = ['kind' => $kind, 'id' => (int) $id];
+            }
+        }
+
+        return $rows;
     }
 
     /**
