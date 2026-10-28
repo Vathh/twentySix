@@ -28,6 +28,11 @@ final class TournamentChampionActivity implements ActivityDefinition
         return true;
     }
 
+    public function authoredByOrganization(): bool
+    {
+        return true;
+    }
+
     public function kind(): array
     {
         return ['code' => 'win', 'label' => 'Wygrana'];

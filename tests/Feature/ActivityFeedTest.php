@@ -40,12 +40,17 @@ class ActivityFeedTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'items')
             ->assertJsonPath('items.0.sentence', $sentence)
-            ->assertJsonPath('items.0.commentCount', 0);
+            ->assertJsonPath('items.0.commentCount', 0)
+            ->assertJsonPath('items.0.header.name', 'Apagon')
+            ->assertJsonPath('items.0.header.organizationId', $organization->id)
+            ->assertJsonPath('items.0.header.playerId', null);
 
         $this->actingAs($viewer)
             ->get('/')
             ->assertOk()
-            ->assertSee($sentence, false);
+            ->assertSee($sentence, false)
+            ->assertSee(route('organizations.show', $organization), false)
+            ->assertDontSee(route('players.show', Player::query()->where('user_id', $andrzej->id)->value('id')), false);
 
         $this->actingAs($viewer)
             ->get(route('settings.feed.edit'))
@@ -74,6 +79,35 @@ class ActivityFeedTest extends TestCase
         $this->actingAs($viewer, 'sanctum')
             ->getJson('/api/feed')
             ->assertJsonCount(0, 'items');
+    }
+
+    public function test_guest_champion_is_plain_text_and_the_club_signs_the_card(): void
+    {
+        [$viewer, , $organization, $tournament] = $this->club();
+        app(OrganizationRepository::class)->addRelatedUser($organization->id, $viewer->id);
+
+        $guest = Player::query()->create(['name' => 'jjj']);
+        TournamentResult::query()
+            ->where('tournament_id', $tournament->id)
+            ->update(['player_id' => $guest->id]);
+
+        app(ActivityRecorder::class)->tournamentChampion($tournament->id);
+
+        $this->actingAs($viewer, 'sanctum')
+            ->getJson('/api/feed')
+            ->assertOk()
+            ->assertJsonPath('items.0.header.name', 'Apagon')
+            ->assertJsonPath('items.0.header.playerId', null)
+            ->assertJsonPath('items.0.actor.name', 'jjj')
+            ->assertJsonPath('items.0.actor.userId', null)
+            ->assertJsonPath('items.0.sentence', 'jjj właśnie wygrał turniej Piątkowe Granie w Apagon.');
+
+        $this->actingAs($viewer)
+            ->get('/')
+            ->assertOk()
+            ->assertSee('jjj właśnie wygrał turniej Piątkowe Granie w Apagon.', false)
+            ->assertDontSee(route('players.show', $guest), false)
+            ->assertSee(route('organizations.show', $organization), false);
     }
 
     public function test_muting_the_organization_keeps_the_friend_channel(): void

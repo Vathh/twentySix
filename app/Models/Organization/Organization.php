@@ -16,15 +16,28 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Organization extends Model
 {
     use SoftDeletes;
+
     public $timestamps = true;
 
-    protected $fillable = ['name', 'description', 'match_format_presets'];
+    protected $fillable = ['name', 'description', 'logo_path', 'match_format_presets'];
 
     protected function casts(): array
     {
         return [
             'match_format_presets' => 'array',
         ];
+    }
+
+    public function logoUrl(): ?string
+    {
+        if (! is_string($this->logo_path) || $this->logo_path === '') {
+            return null;
+        }
+
+        $version = $this->updated_at?->getTimestamp() ?? 0;
+        $url = url('/storage/'.ltrim($this->logo_path, '/'));
+
+        return $version > 0 ? $url.'?v='.$version : $url;
     }
 
     /** @return BelongsToMany<User, $this> */

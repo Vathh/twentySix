@@ -30,6 +30,11 @@ final class PlayerFirst180Activity implements ActivityDefinition
         return false;
     }
 
+    public function authoredByOrganization(): bool
+    {
+        return false;
+    }
+
     public function kind(): array
     {
         return ['code' => 'maximum', 'label' => '180'];

@@ -41,6 +41,10 @@
                     :organization-name="$organization->name"
                 />
 
+                <div class="mb-4 flex justify-center">
+                    <x-player-avatar :name="$organization->name" :avatar-url="$logoUrl" size="lg" />
+                </div>
+
                 @if(filled($organization->description))
                     <p class="place-lead">{{ $organization->description }}</p>
                 @endif

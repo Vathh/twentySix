@@ -12,14 +12,21 @@
         <template x-for="item in feed.extra" :key="item.id">
             <li class="feed-post" x-data="feedPost(item)">
                 <div class="feed-post-head">
-                    <a class="feed-post-avatar" :href="item.actor && item.actor.playerId ? ('/players/' + item.actor.playerId) : null">
+                    <a class="feed-post-avatar" x-show="item.header && item.header.url" x-cloak :href="item.header && item.header.url">
                         <span class="player-avatar player-avatar--sm">
-                            <img x-show="item.actor && item.actor.avatarUrl" :src="item.actor && item.actor.avatarUrl" alt="" class="feed-post-photo">
-                            <span class="player-avatar-fallback" x-show="!(item.actor && item.actor.avatarUrl)" x-text="item.actor ? item.actor.initials : ''"></span>
+                            <img x-show="item.header && item.header.avatarUrl" :src="item.header && item.header.avatarUrl" alt="" class="feed-post-photo">
+                            <span class="player-avatar-fallback" x-show="!(item.header && item.header.avatarUrl)" x-text="item.header ? item.header.initials : ''"></span>
                         </span>
                     </a>
+                    <span class="feed-post-avatar" x-show="!(item.header && item.header.url)" x-cloak>
+                        <span class="player-avatar player-avatar--sm">
+                            <img x-show="item.header && item.header.avatarUrl" :src="item.header && item.header.avatarUrl" alt="" class="feed-post-photo">
+                            <span class="player-avatar-fallback" x-show="!(item.header && item.header.avatarUrl)" x-text="item.header ? item.header.initials : ''"></span>
+                        </span>
+                    </span>
                     <div class="min-w-0">
-                        <a class="feed-post-name" :href="item.actor && item.actor.playerId ? ('/players/' + item.actor.playerId) : null" x-text="item.actor ? item.actor.name : ''"></a>
+                        <a class="feed-post-name" x-show="item.header && item.header.url" x-cloak :href="item.header && item.header.url" x-text="item.header ? item.header.name : ''"></a>
+                        <p class="feed-post-name" x-show="!(item.header && item.header.url)" x-cloak x-text="item.header ? item.header.name : ''"></p>
                         <p class="feed-post-meta">
                             <span x-text="feedAgo(item.occurredAt)"></span>
                             <span> · </span>

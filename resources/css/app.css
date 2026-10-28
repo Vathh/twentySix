@@ -577,9 +577,8 @@
     }
 
     .profile-tabs {
-        @apply sticky z-30 -mx-4 px-4 mb-6 flex gap-2 border-b border-border pt-2 pb-2 overflow-x-auto;
+        @apply sticky top-0 z-30 -mx-4 px-4 mb-6 flex gap-2 border-b border-border pt-2 pb-2 overflow-x-auto;
         @apply bg-bg-deep/90 backdrop-blur-md;
-        top: var(--site-header-h, 4.25rem);
     }
 
     .career-section-head {
@@ -2549,10 +2548,120 @@
         @apply mb-3 flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border bg-bg-elevated/60 text-sm text-text-muted;
     }
 
-    /* --- Friends panel --- */
-    .friends-panel {
-        @apply fixed right-0 top-0 bottom-0 w-72 max-w-[min(85vw,18rem)] z-40 flex flex-col
-            bg-bg-deep/95 backdrop-blur-md border-l border-border shadow-xl;
+    /* --- Friends rail --- */
+    .app-frame {
+        display: flex;
+        flex: 1 1 auto;
+        align-items: flex-start;
+        min-width: 0;
+        min-height: 0;
+        width: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .app-frame > main {
+        align-self: stretch;
+        min-width: 0;
+        min-height: 100%;
+        overflow: visible;
+    }
+
+    .friends-rail {
+        position: sticky;
+        top: 0;
+        align-self: flex-start;
+        height: calc(100dvh - var(--site-header-h, 4.25rem) - var(--site-footer-h, 2.25rem));
+        max-height: calc(100dvh - var(--site-header-h, 4.25rem) - var(--site-footer-h, 2.25rem));
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        flex: 0 0 18rem;
+        width: 18rem;
+        min-width: 0;
+        min-height: 0;
+        overflow: visible;
+        border-left: 1px solid var(--color-border);
+        background-color: color-mix(in srgb, var(--color-bg-deep) 96%, transparent);
+        transition: flex-basis 180ms ease, width 180ms ease;
+    }
+
+    .friends-rail.is-collapsed,
+    html.friends-rail-collapsed .friends-rail {
+        flex-basis: 0;
+        width: 0;
+        border-left-width: 0;
+        background-color: transparent;
+    }
+
+    .friends-rail-toggle {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 4.5rem;
+        transform: translate(-100%, -50%);
+        color: var(--color-text-muted);
+        background-color: var(--color-bg-elevated);
+        border: 1px solid var(--color-border);
+        border-right: 0;
+        border-radius: 0.6rem 0 0 0.6rem;
+        cursor: pointer;
+    }
+
+    .friends-rail-toggle:hover {
+        color: var(--color-accent);
+    }
+
+    .friends-rail.is-collapsed .friends-rail-toggle,
+    html.friends-rail-collapsed .friends-rail-toggle {
+        left: auto;
+        right: 0;
+        transform: translateY(-50%);
+        border-right: 1px solid var(--color-border);
+    }
+
+    .friends-rail-chevron {
+        width: 1.1rem;
+        height: 1.1rem;
+    }
+
+    html:not(.friends-rail-collapsed) .friends-rail:not(.is-collapsed) .friends-rail-chevron {
+        transform: rotate(180deg);
+    }
+
+    .friends-rail-body {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .friends-rail.is-collapsed .friends-rail-body,
+    html.friends-rail-collapsed .friends-rail-body {
+        display: none;
+    }
+
+    @media (max-width: 767px) {
+        .app-frame {
+            position: relative;
+        }
+
+        html:not(.friends-rail-collapsed) .friends-rail:not(.is-collapsed) {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            height: auto;
+            max-width: min(18rem, 85vw);
+        }
     }
 
     .friends-panel-header {
@@ -2577,6 +2686,9 @@
     }
 
     .app-shell {
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
         background-color: var(--color-bg);
         background-image:
             radial-gradient(ellipse 80% 50% at 50% -20%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent),
@@ -2613,6 +2725,7 @@
         position: relative;
         z-index: 1;
     }
+
 }
 
 @layer utilities {

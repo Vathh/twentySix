@@ -1,19 +1,19 @@
 @php
-    $actor = $item['actor'] ?? [];
-    $name = $actor['name'] ?? '';
-    $playerId = $actor['playerId'] ?? null;
+    $header = $item['header'] ?? $item['actor'] ?? [];
+    $name = $header['name'] ?? '';
+    $url = $header['url'] ?? null;
     $kind = $item['kind']['label'] ?? 'Historia';
     $when = \Carbon\Carbon::parse($item['occurredAt'])->locale(app()->getLocale())->diffForHumans();
 @endphp
 
 <li class="feed-post" x-data="feedPost(@js($item))">
     <div class="feed-post-head">
-        @if($playerId)
-            <a href="{{ route('players.show', $playerId) }}" class="feed-post-avatar" aria-label="{{ $name }}">
+        @if($url)
+            <a href="{{ $url }}" class="feed-post-avatar" aria-label="{{ $name }}">
                 <x-player-avatar
                     :name="$name"
-                    :initials="$actor['initials'] ?? null"
-                    :avatar-url="$actor['avatarUrl'] ?? null"
+                    :initials="$header['initials'] ?? null"
+                    :avatar-url="$header['avatarUrl'] ?? null"
                     size="sm"
                 />
             </a>
@@ -21,15 +21,15 @@
             <span class="feed-post-avatar">
                 <x-player-avatar
                     :name="$name"
-                    :initials="$actor['initials'] ?? null"
-                    :avatar-url="$actor['avatarUrl'] ?? null"
+                    :initials="$header['initials'] ?? null"
+                    :avatar-url="$header['avatarUrl'] ?? null"
                     size="sm"
                 />
             </span>
         @endif
         <div class="min-w-0">
-            @if($playerId)
-                <a href="{{ route('players.show', $playerId) }}" class="feed-post-name">{{ $name }}</a>
+            @if($url)
+                <a href="{{ $url }}" class="feed-post-name">{{ $name }}</a>
             @else
                 <p class="feed-post-name">{{ $name }}</p>
             @endif

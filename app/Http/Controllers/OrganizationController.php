@@ -9,14 +9,17 @@ use App\Domain\RelatedRosterInvite;
 use App\Domain\Retention\ApplicationEntityKind;
 use App\Enums\AssignableEntityType;
 use App\Models\Organization\Organization;
+use App\Models\Player\Player;
 use App\Services\Activity\FeedService;
 use App\Services\League\LeagueService;
 use App\Services\Organization\OrganizationInvitationService;
+use App\Services\Organization\OrganizationLogoService;
 use App\Services\Organization\OrganizationService;
 use App\Services\Player\PlayerService;
 use App\Services\Retention\ApplicationEntityDeletionService;
 use App\Services\User\UserService;
 use App\Support\Catalog\CatalogSort;
+use App\Support\Media\SquareJpeg;
 use App\Support\Organization\OrganizationMatchFormatPresets;
 use App\Support\Retention\ConfirmedEntityDeletion;
 use App\Support\Text\PolishFold;
@@ -38,6 +41,7 @@ class OrganizationController extends Controller
         private LeagueService $leagueService,
         private ApplicationEntityDeletionService $applicationEntityDeletionService,
         private FeedService $feed,
+        private OrganizationLogoService $organizationLogoService,
     ) {
         $this->authorizeResource(Organization::class, 'organization');
     }
@@ -100,6 +104,7 @@ class OrganizationController extends Controller
 
         return view('organizations.show', [
             'organization' => $organizationDomain,
+            'logoUrl' => $organization->logoUrl(),
             'seasons' => $seasons,
             'leagues' => $this->leagueService->listForOrganization($organization->id),
             'feedMute' => Auth::check()
@@ -115,6 +120,8 @@ class OrganizationController extends Controller
 
         return view('organizations.edit', [
             'organization' => $organizationDomain,
+            'logoUrl' => $organization->logoUrl(),
+            'logoInitials' => Player::initialsFromName($organization->name),
             'startingScoreOptions' => MatchFormat::ALLOWED_STARTING_SCORES,
             'matchFormatStages' => OrganizationMatchFormatPresets::stageOptions(),
             'matchFormats' => old(
@@ -132,6 +139,11 @@ class OrganizationController extends Controller
             'matchFormats' => 'nullable|array',
         ]);
 
+        $logo = $request->file('logo');
+        if ($logo !== null) {
+            SquareJpeg::assertImage($logo, 'logo');
+        }
+
         $presets = OrganizationMatchFormatPresets::fromFormInput(
             is_array($validated['matchFormats'] ?? null) ? $validated['matchFormats'] : [],
         );
@@ -142,6 +154,12 @@ class OrganizationController extends Controller
             $validated['description'] ?? null,
             $presets,
         );
+
+        if ($logo !== null) {
+            $this->organizationLogoService->store($organization, $logo);
+        } elseif ($request->boolean('remove_logo')) {
+            $this->organizationLogoService->remove($organization);
+        }
 
         return redirect()
             ->route('organizations.show', $organization->id)

@@ -5,13 +5,13 @@ namespace App\Services\Player;
 use App\Models\Player\Player;
 use App\Models\Users\User;
 use App\Repositories\Player\PlayerRepository;
+use App\Support\Media\SquareJpeg;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 
 class PlayerAvatarService
 {
-    public const SIZE = 512;
+    public const SIZE = SquareJpeg::SIZE;
 
     public function __construct(
         private PlayerRepository $playerRepository,
@@ -22,7 +22,7 @@ class PlayerAvatarService
         $this->assertOwner($player, $actor);
         $this->validateUpload($file);
 
-        $binary = $this->renderSquareJpeg($file);
+        $binary = SquareJpeg::encode($file, 'avatar');
         $path = 'avatars/'.$player->id.'.jpg';
         $previous = $player->avatar_path;
 
@@ -48,12 +48,7 @@ class PlayerAvatarService
 
     public function validateUpload(UploadedFile $file): void
     {
-        validator(
-            ['avatar' => $file],
-            ['avatar' => ['required', 'image', 'mimes:jpeg,png,webp', 'max:2048']],
-            [],
-            ['avatar' => 'zdjęcie'],
-        )->validate();
+        SquareJpeg::assertImage($file, 'avatar');
     }
 
     private function assertOwner(Player $player, User $actor): void
@@ -66,47 +61,5 @@ class PlayerAvatarService
         if (! $player->user_id || $player->is_bye) {
             abort(404, 'Profil dostępny tylko dla graczy zarejestrowanych.');
         }
-    }
-
-    private function renderSquareJpeg(UploadedFile $file): string
-    {
-        $contents = file_get_contents($file->getRealPath());
-        $src = $contents !== false ? @imagecreatefromstring($contents) : false;
-
-        if ($src === false) {
-            throw ValidationException::withMessages([
-                'avatar' => 'Nie udało się odczytać obrazu.',
-            ]);
-        }
-
-        $width = imagesx($src);
-        $height = imagesy($src);
-        if ($width < 1 || $height < 1) {
-            imagedestroy($src);
-            throw ValidationException::withMessages([
-                'avatar' => 'Nie udało się odczytać obrazu.',
-            ]);
-        }
-
-        $side = min($width, $height);
-        $srcX = (int) floor(($width - $side) / 2);
-        $srcY = (int) floor(($height - $side) / 2);
-
-        $dst = imagecreatetruecolor(self::SIZE, self::SIZE);
-        imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, self::SIZE, self::SIZE, $side, $side);
-        imagedestroy($src);
-
-        ob_start();
-        $written = imagejpeg($dst, null, 85);
-        $jpeg = ob_get_clean();
-        imagedestroy($dst);
-
-        if ($written !== true || ! is_string($jpeg) || $jpeg === '') {
-            throw ValidationException::withMessages([
-                'avatar' => 'Nie udało się zapisać obrazu.',
-            ]);
-        }
-
-        return $jpeg;
     }
 }

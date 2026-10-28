@@ -9,12 +9,59 @@
     <div class="flex justify-center items-start min-h-[70vh] px-4 py-8">
         <form class="form-card w-full max-w-3xl"
               action="{{ route('organizations.update', $organization->id) }}"
-              method="POST">
+              method="POST"
+              enctype="multipart/form-data"
+              x-data="playerAvatarCrop(@js([
+                  'avatarUrl' => $logoUrl,
+                  'initials' => $logoInitials,
+              ]))">
             @csrf
             @method('PUT')
+            <input type="hidden" name="remove_logo" :value="removed ? '1' : '0'">
+            <input type="file" name="logo" class="hidden" x-ref="avatarInput" tabindex="-1" aria-hidden="true">
+            <input type="file"
+                   class="hidden"
+                   x-ref="picker"
+                   accept="image/jpeg,image/png,image/webp"
+                   @change="pick($event)">
 
             <div class="flex flex-col items-stretch">
                 <h1 class="page-title text-center">Edycja organizacji</h1>
+
+                <div class="flex flex-col items-center gap-3 mb-6">
+                    <template x-if="!cropping">
+                        <div class="flex flex-col items-center gap-3">
+                            <template x-if="showImage">
+                                <img class="player-avatar player-avatar--lg" :src="previewUrl" alt="" x-on:error="previewUrl = ''">
+                            </template>
+                            <template x-if="!showImage">
+                                <span class="player-avatar player-avatar--lg">
+                                    <span class="player-avatar-fallback" x-text="initials"></span>
+                                </span>
+                            </template>
+                            <div class="flex flex-wrap justify-center gap-2">
+                                <button class="btn btn-mini" type="button" @click="openPicker()">Wybierz logo</button>
+                                <button class="btn btn-mini" type="button" x-show="showImage" x-cloak @click="remove()">Usuń logo</button>
+                            </div>
+                            <p class="text-text-muted text-xs text-center">JPEG, PNG lub WebP, do 2 MB. Po wyborze przytniesz kadr do kwadratu.</p>
+                        </div>
+                    </template>
+
+                    <template x-if="cropping">
+                        <div class="w-full">
+                            <p class="text-text-secondary text-sm text-center mb-3">Przesuń zdjęcie i ustaw kwadratowy kadr.</p>
+                            <div class="avatar-crop-frame overflow-hidden rounded-lg border border-border">
+                                <img x-ref="cropImage" :src="sourceUrl" alt="" @load="startCropper()">
+                            </div>
+                            <div class="flex flex-wrap justify-center gap-2 mt-3">
+                                <button class="btn btn-mini" type="button" @click="zoom(-0.1)">Oddal</button>
+                                <button class="btn btn-mini" type="button" @click="zoom(0.1)">Przybliż</button>
+                                <button class="btn btn-primary" type="button" @click="confirmCrop()">Przytnij</button>
+                                <button class="btn btn-mini" type="button" @click="cancelCrop()">Anuluj</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
 
                 <label class="form-label text-accent" for="organizationName">Nazwa organizacji</label>
                 <input

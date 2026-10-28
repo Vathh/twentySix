@@ -150,6 +150,14 @@ class OrganizationRepository
         $organization->save();
     }
 
+    public function updateLogoPath(Organization $organization, ?string $path): Organization
+    {
+        $organization->logo_path = $path;
+        $organization->save();
+
+        return $organization;
+    }
+
     public function findByIdWithGuests(int $organizationId): OrganizationDomain
     {
         $organization = Organization::with('guests')->findOrFail($organizationId);

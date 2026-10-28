@@ -1,14 +1,37 @@
-/** Panel znajomych w layoutcie — listy ładują się dopiero po otwarciu. */
+/** Pasek znajomych między nawigacją a stopką. Lista ładuje się przy pierwszym otwarciu. */
 export function registerFriendsPanel(Alpine) {
 	Alpine.data('friendsPanel', (config) => ({
-		open: false,
+		collapsed: false,
 		html: '',
 		loading: false,
+		loaded: false,
 		error: false,
 
-		async show() {
-			this.open = true;
-			if (this.loading) {
+		init() {
+			const stored = localStorage.getItem('friends-rail');
+			const narrow = window.matchMedia('(max-width: 767px)').matches;
+			this.collapsed = stored === '1' || (stored === null && narrow);
+			this.sync();
+			if (!this.collapsed) {
+				this.load();
+			}
+		},
+
+		toggle() {
+			this.collapsed = !this.collapsed;
+			localStorage.setItem('friends-rail', this.collapsed ? '1' : '0');
+			this.sync();
+			if (!this.collapsed) {
+				this.load();
+			}
+		},
+
+		sync() {
+			document.documentElement.classList.toggle('friends-rail-collapsed', this.collapsed);
+		},
+
+		async load() {
+			if (this.loading || this.loaded) {
 				return;
 			}
 			this.error = false;
@@ -24,16 +47,13 @@ export function registerFriendsPanel(Alpine) {
 					throw new Error('friends-panel');
 				}
 				this.html = await res.text();
+				this.loaded = true;
 			} catch {
 				this.error = true;
 				this.html = '';
 			} finally {
 				this.loading = false;
 			}
-		},
-
-		hide() {
-			this.open = false;
 		},
 	}));
 }

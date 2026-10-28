@@ -4,6 +4,7 @@ namespace App\Services\Activity;
 
 use App\Domain\Activity\ActivityRegistry;
 use App\Models\Activity\Activity;
+use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use Carbon\CarbonInterface;
 
@@ -28,6 +29,7 @@ class ActivityCardPresenter
             'kind' => $this->registry->kind((string) $activity->type),
             'sentence' => $this->registry->sentence($activity->type, $payload),
             'occurredAt' => $activity->occurred_at?->toIso8601String(),
+            'header' => $this->header($activity, $payload, $player),
             'actor' => [
                 'playerId' => $activity->actor_player_id === null ? null : (int) $activity->actor_player_id,
                 'userId' => $activity->actor_user_id === null ? null : (int) $activity->actor_user_id,
@@ -36,7 +38,9 @@ class ActivityCardPresenter
                 'avatarUrl' => $player?->avatarUrl(),
             ],
             'links' => [
-                'playerId' => $activity->actor_player_id === null ? null : (int) $activity->actor_player_id,
+                'playerId' => $activity->actor_user_id === null || $activity->actor_player_id === null
+                    ? null
+                    : (int) $activity->actor_player_id,
                 'tournamentId' => isset($payload['tournamentId']) ? (int) $payload['tournamentId'] : null,
                 'organizationId' => $activity->organization_id === null ? null : (int) $activity->organization_id,
             ],
@@ -46,6 +50,48 @@ class ActivityCardPresenter
                 'counts' => $counts === [] ? (object) [] : $counts,
                 'mine' => $engagement['mine'] ?? null,
             ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array{name: string, initials: string, avatarUrl: ?string, url: ?string, playerId: ?int, organizationId: ?int}
+     */
+    private function header(Activity $activity, array $payload, ?Player $player): array
+    {
+        $definition = $this->registry->find((string) $activity->type);
+        if ($definition?->authoredByOrganization()) {
+            $organization = $activity->relationLoaded('organization') ? $activity->organization : null;
+            $name = trim((string) ($payload['organizationName'] ?? ''));
+            if ($name === '' && $organization instanceof Organization) {
+                $name = $organization->name;
+            }
+            if ($name === '') {
+                $name = 'Organizacja';
+            }
+            $organizationId = $activity->organization_id === null ? null : (int) $activity->organization_id;
+
+            return [
+                'name' => $name,
+                'initials' => Player::initialsFromName($name),
+                'avatarUrl' => $organization instanceof Organization ? $organization->logoUrl() : null,
+                'url' => $organizationId === null ? null : route('organizations.show', $organizationId),
+                'playerId' => null,
+                'organizationId' => $organizationId,
+            ];
+        }
+
+        $name = (string) ($payload['actorName'] ?? '');
+        $registered = $activity->actor_user_id !== null && $activity->actor_player_id !== null;
+        $playerId = $registered ? (int) $activity->actor_player_id : null;
+
+        return [
+            'name' => $name,
+            'initials' => $player?->initials() ?? Player::initialsFromName($name),
+            'avatarUrl' => $player?->avatarUrl(),
+            'url' => $playerId === null ? null : route('players.show', $playerId),
+            'playerId' => $playerId,
+            'organizationId' => null,
         ];
     }
 

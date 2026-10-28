@@ -38,22 +38,30 @@ registerFeedPost(alpine);
 registerPlayerCareer(alpine);
 registerPlayerAvatarCrop(alpine);
 
-function registerSiteHeaderOffset() {
+function registerSiteChromeOffsets() {
     const header = document.querySelector('.site-header');
-    if (!header) {
-        return;
-    }
+    const footer = document.querySelector('.site-footer');
     const sync = () => {
-        document.documentElement.style.setProperty('--site-header-h', `${header.offsetHeight}px`);
+        if (header) {
+            document.documentElement.style.setProperty('--site-header-h', `${header.offsetHeight}px`);
+        }
+        if (footer) {
+            document.documentElement.style.setProperty('--site-footer-h', `${footer.offsetHeight}px`);
+        }
     };
     sync();
     if (typeof ResizeObserver !== 'undefined') {
-        new ResizeObserver(sync).observe(header);
+        if (header) {
+            new ResizeObserver(sync).observe(header);
+        }
+        if (footer) {
+            new ResizeObserver(sync).observe(footer);
+        }
     }
     window.addEventListener('resize', sync);
 }
 
-registerSiteHeaderOffset();
+registerSiteChromeOffsets();
 
 window.Alpine = alpine;
 alpine.start();

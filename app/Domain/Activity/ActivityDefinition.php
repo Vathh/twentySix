@@ -15,6 +15,9 @@ interface ActivityDefinition
 
     public function replacesExisting(): bool;
 
+    /** Nagłówek karty to organizacja. Zdanie nadal nazywa zawodnika. */
+    public function authoredByOrganization(): bool;
+
     /**
      * Rodzaj osiągnięcia na karcie. Nowy typ wydarzenia deklaruje swój rodzaj tutaj.
      *

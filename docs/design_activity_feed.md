@@ -21,7 +21,9 @@ Zdanie idzie jednym szablonem: imię, „właśnie”, co się stało. Karta nie
 
 ## Karta
 
-Nagłówek: okrągły awatar i imię (link do profilu), pod spodem czas i rodzaj osiągnięcia. Treść to zdanie. Pod spodem serce z liczbą i „Komentarze” z liczbą. Ten sam układ na stronie głównej i na zakładce Tablica, na webie i w aplikacji.
+Nagłówek: okrągły awatar i nazwa, pod spodem czas i rodzaj osiągnięcia. Treść to zdanie. Pod spodem serce z liczbą i „Komentarze” z liczbą. Ten sam układ na stronie głównej i na zakładce Tablica, na webie i w aplikacji.
+
+Wpis zawodnika podpisuje zawodnik. Link do profilu jest tylko wtedy, gdy ma konto — gość zostaje zwykłym napisem, bo jego profil zwraca 404. Wygrana turnieju jest wpisem organizacji: w nagłówku jest nazwa i logo klubu, a w zdaniu nadal imię zwycięzcy.
 
 | Rodzaj | Kod | Typy |
 | --- | --- | --- |

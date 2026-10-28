@@ -28,6 +28,11 @@ final class PlayerPersonalBestActivity implements ActivityDefinition
         return true;
     }
 
+    public function authoredByOrganization(): bool
+    {
+        return false;
+    }
+
     public function kind(): array
     {
         return ['code' => 'record', 'label' => 'Rekord'];

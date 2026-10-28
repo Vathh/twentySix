@@ -53,11 +53,11 @@
 
             <div class="relative w-full md:w-auto"
                  x-data="{ open: false }"
-                 @mouseenter="if (window.matchMedia('(min-width: 768px)').matches) open = true"
-                 @mouseleave="if (window.matchMedia('(min-width: 768px)').matches) open = false">
+                 @click.outside="open = false"
+                 @keydown.escape.window="open = false">
                 <button type="button"
                         class="nav-btn inline-flex items-center gap-1 w-full md:w-auto {{ $rozgrywkiActive ? 'active' : '' }}"
-                        @click="if (!window.matchMedia('(min-width: 768px)').matches) open = !open"
+                        @click="open = !open"
                         :aria-expanded="open.toString()"
                         aria-haspopup="true"
                         aria-controls="nav-rozgrywki-menu">
@@ -93,6 +93,7 @@
             </div>
 
             <a href='{{ route('players.search') }}' class="nav-btn {{ request()->routeIs('players.*') && ! $isMyProfile ? 'active' : '' }}" @click="navOpen = false">Szukaj graczy</a>
+            <a href="{{ route('referee.login') }}" class="nav-btn {{ request()->routeIs('referee.*') ? 'active' : '' }}" @click="navOpen = false">Sędziowanie</a>
 
             @platformAdmin
                 <a href='{{ route('admin.dashboard') }}' class="nav-btn {{ request()->routeIs('admin.*') ? 'active' : '' }}" @click="navOpen = false">Panel</a>
@@ -104,21 +105,13 @@
             @endguest
 
             @auth
-                <button type="button"
-                        class="nav-btn w-full md:w-auto text-left"
-                        :class="open && 'active'"
-                        @click="open ? hide() : show(); navOpen = false"
-                        :aria-expanded="open.toString()"
-                        aria-controls="friends-panel">
-                    Znajomi ({{ $friendsCount }})
-                </button>
                 <div class="relative w-full md:w-auto"
                      x-data="{ open: false }"
-                     @mouseenter="if (window.matchMedia('(min-width: 768px)').matches) open = true"
-                     @mouseleave="if (window.matchMedia('(min-width: 768px)').matches) open = false">
+                     @click.outside="open = false"
+                     @keydown.escape.window="open = false">
                     <button type="button"
                             class="nav-btn inline-flex items-center gap-1 w-full md:w-auto {{ $kontoActive ? 'active' : '' }}"
-                            @click="if (!window.matchMedia('(min-width: 768px)').matches) open = !open"
+                            @click="open = !open"
                             :aria-expanded="open.toString()"
                             aria-haspopup="true"
                             aria-controls="nav-konto-menu">

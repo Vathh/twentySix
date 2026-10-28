@@ -134,7 +134,7 @@ class ActivityRepository
         }
 
         $rows = $query
-            ->with('actorPlayer.user')
+            ->with(['actorPlayer.user', 'organization'])
             ->orderByDesc('occurred_at')
             ->orderByDesc('id')
             ->limit($limit + 1)
@@ -170,7 +170,7 @@ class ActivityRepository
         }
 
         $rows = $query
-            ->with('actorPlayer.user')
+            ->with(['actorPlayer.user', 'organization'])
             ->orderByDesc('occurred_at')
             ->orderByDesc('id')
             ->limit($limit + 1)

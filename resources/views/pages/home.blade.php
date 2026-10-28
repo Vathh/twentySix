@@ -5,6 +5,7 @@
 @section('content')
 
     @guest
+    @include('pages.partials.home-download')
     <div class="flex items-center justify-center w-full min-h-[70vh] px-4">
         <div class="home-hero">
             <img
@@ -26,12 +27,8 @@
     @endguest
 
     @auth
-    <div class="w-full max-w-xl mx-auto px-4 py-8">
-        <div class="mb-6 text-center">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent mb-2">twentySix</p>
-            <h2 class="text-lg font-bold text-text mb-3 tracking-tight">Twoja tablica</h2>
-            @include('pages.partials.home-actions')
-        </div>
+    <div class="w-full max-w-xl mx-auto px-4 py-2">
+        @include('pages.partials.home-download')
         @include('pages.partials.feed', ['feed' => $feed])
     </div>
     @endauth
