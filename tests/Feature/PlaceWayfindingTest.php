@@ -74,6 +74,33 @@ class PlaceWayfindingTest extends TestCase
             ->assertSee(route('seasons.show', $season), false);
     }
 
+    public function test_organization_one_off_tournament_shows_the_club_without_a_season(): void
+    {
+        $organization = Organization::create([
+            'name' => 'Klub luzem',
+            'description' => 'Opis',
+        ]);
+        $tournament = Tournament::create([
+            'name' => 'Sparing w klubie',
+            'season_id' => null,
+            'organization_id' => $organization->id,
+            'date' => '2026-10-05',
+            'status' => TournamentStatus::CREATED,
+        ]);
+
+        $this->get(route('organizations.show', $organization))
+            ->assertOk()
+            ->assertSee('Turnieje jednorazowe')
+            ->assertSee('Sparing w klubie');
+
+        $this->get(route('tournaments.show', $tournament))
+            ->assertOk()
+            ->assertSee('Turniej jednorazowy')
+            ->assertSee('Klub luzem')
+            ->assertSee('place-slot--organization is-ancestor', false)
+            ->assertDontSee('place-slot--season', false);
+    }
+
     public function test_one_off_tournament_shows_only_its_own_slot(): void
     {
         $tournament = Tournament::create([

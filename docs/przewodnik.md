@@ -44,7 +44,7 @@ To główna ścieżka produktu: **organizacja → turniej → skład → start �
 
 ### 1. Organizacja i sezon (web)
 
-Organizator tworzy **organizację**, a w niej **sezon**. Turnieje należą do sezonu (albo są turniejami jednorazowymi).
+Organizator tworzy **organizację**, a w niej **sezon**. Turnieje sezonu należą do sezonu. Turniej jednorazowy też należy do organizacji, ale nie do sezonu.
 
 ![01 — lista organizacji / sezon](assets/screenshots/01-web-organizacja-sezon.png)
 

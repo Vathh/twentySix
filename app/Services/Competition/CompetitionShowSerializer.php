@@ -6,9 +6,9 @@ use App\Domain\Game\GroupGameDomain;
 use App\Domain\Game\PlayoffGameDomain;
 use App\Domain\Game\WinnerDestination;
 use App\Domain\GroupStandingDomain;
-use App\Domain\Stats\ThreeDartAverageSet;
 use App\Domain\OrganizationDomain;
 use App\Domain\SeasonDomain;
+use App\Domain\Stats\ThreeDartAverageSet;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\BracketSide;
 use App\Enums\GameStage;
@@ -17,6 +17,7 @@ use App\Models\Organization\Organization;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Queries\GetTournamentData;
+use App\Repositories\Tournament\TournamentRepository;
 use App\Services\Season\SeasonStatsService;
 use App\Services\Stats\CompetitionThreeDartAverageService;
 use App\Services\Tournament\PlayoffBracketOutline;
@@ -31,6 +32,7 @@ class CompetitionShowSerializer
         private GetTournamentData $getTournamentData,
         private CompetitionThreeDartAverageService $threeDartAverages,
         private PlayoffBracketOutline $playoffBracketOutline,
+        private TournamentRepository $tournaments,
     ) {}
 
     /**
@@ -56,6 +58,16 @@ class CompetitionShowSerializer
                 'name' => $league->name,
             ])
             ->all();
+        $oneOffTournaments = $this->tournaments
+            ->oneOffForOrganization($organization->id)
+            ->map(fn (Tournament $tournament) => [
+                'id' => (int) $tournament->id,
+                'name' => $tournament->name,
+                'date' => $tournament->date?->format('Y-m-d'),
+                'statusLabel' => $tournament->status->label(),
+                'statusVariant' => $tournament->status->badgeVariant(),
+            ])
+            ->all();
 
         return [
             'organization' => [
@@ -67,6 +79,7 @@ class CompetitionShowSerializer
             ],
             'seasons' => $seasons,
             'leagues' => $leagues,
+            'oneOffTournaments' => $oneOffTournaments,
         ];
     }
 
@@ -157,7 +170,7 @@ class CompetitionShowSerializer
     {
         $tournament = $viewModel->tournament();
         $season = $viewModel->season();
-        $organization = $season?->organization;
+        $organization = $viewModel->hostOrganization();
 
         $showStageInResults = $tournament->format !== \App\Enums\TournamentFormat::DoubleElimination;
         $averages = $this->threeDartAverages->forTournamentMatches(
@@ -179,9 +192,7 @@ class CompetitionShowSerializer
                 'format' => $tournament->format->value,
                 'showStageInResults' => $showStageInResults,
             ],
-            'organization' => $organization
-                ? ['id' => $organization->id, 'name' => $organization->name]
-                : null,
+            'organization' => $organization,
             'season' => $season
                 ? ['id' => $season->id, 'name' => $season->name]
                 : null,

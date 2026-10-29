@@ -42,6 +42,7 @@ class TournamentDomain
         public readonly ?array $groupAdvances = null,
         public readonly ?int $tabletsCount = null,
         public readonly TournamentFormat $format = TournamentFormat::GroupsPlayoff,
+        public readonly ?string $organizationName = null,
     ) {}
 
     public static function fromEloquent(Tournament $tournament, array $with = []): self
@@ -77,7 +78,29 @@ class TournamentDomain
             groupAdvances: $tournament->group_advances,
             tabletsCount: $tournament->tablets_count,
             format: $tournament->format ?? TournamentFormat::GroupsPlayoff,
+            organizationName: self::organizationName($tournament, $with),
         );
+    }
+
+    /**
+     * @param  list<string>  $with
+     */
+    private static function organizationName(Tournament $tournament, array $with): ?string
+    {
+        if ($tournament->relationLoaded('organization')) {
+            $direct = $tournament->organization?->name;
+            if (is_string($direct) && $direct !== '') {
+                return $direct;
+            }
+        }
+
+        if (! in_array('season', $with, true)) {
+            return null;
+        }
+
+        $fromSeason = $tournament->season?->organization?->name;
+
+        return is_string($fromSeason) && $fromSeason !== '' ? $fromSeason : null;
     }
 
     /**
@@ -118,11 +141,22 @@ class TournamentDomain
         return $this->date?->format('Y-m-d');
     }
 
-    /** Nagłówek listy: „Organizacja – nazwa turnieju”, jeśli znana jest organizacja sezonu. */
+    public function hostOrganizationName(): ?string
+    {
+        if (is_string($this->organizationName) && $this->organizationName !== '') {
+            return $this->organizationName;
+        }
+
+        $fromSeason = $this->season?->organization?->name;
+
+        return is_string($fromSeason) && $fromSeason !== '' ? $fromSeason : null;
+    }
+
+    /** Nagłówek listy: „Organizacja – nazwa turnieju”, gdy organizacja jest znana. */
     public function displayTitle(): string
     {
-        $organizationName = $this->season?->organization?->name;
-        if (is_string($organizationName) && $organizationName !== '') {
+        $organizationName = $this->hostOrganizationName();
+        if ($organizationName !== null) {
             return $organizationName.' - '.$this->name;
         }
 

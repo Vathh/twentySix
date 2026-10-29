@@ -16,6 +16,7 @@ import { registerPlayerSearch } from './playerSearch.js';
 import { registerCheckoutWheels } from './checkoutWheel.js';
 import { registerFriendsPanel } from './friendsPanel.js';
 import { registerFeedPost } from './feedPost.js';
+import { observeFeedEnd, registerHomeFeed } from './activityFeed.js';
 import { registerPlayerCareer } from './playerCareer.js';
 import { registerPlayerAvatarCrop } from './playerAvatarCrop.js';
 
@@ -35,6 +36,7 @@ registerPlayerSearch(alpine);
 registerCheckoutWheels();
 registerFriendsPanel(alpine);
 registerFeedPost(alpine);
+registerHomeFeed(alpine);
 registerPlayerCareer(alpine);
 registerPlayerAvatarCrop(alpine);
 
@@ -63,5 +65,6 @@ function registerSiteChromeOffsets() {
 
 registerSiteChromeOffsets();
 
+window.observeFeedEnd = observeFeedEnd;
 window.Alpine = alpine;
 alpine.start();

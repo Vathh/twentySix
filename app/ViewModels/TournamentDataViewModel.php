@@ -213,6 +213,22 @@ class TournamentDataViewModel
     }
 
     /**
+     * @return array{id: int, name: string}|null
+     */
+    public function hostOrganization(): ?array
+    {
+        $organization = $this->tournament->hostOrganization();
+        if ($organization === null) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $organization->id,
+            'name' => $organization->name,
+        ];
+    }
+
+    /**
      * @return Collection<int, array{player: PlayerDomain, max: int, one_seventy: int, qf: list<AchievementDomain|\stdClass>, hf: list<AchievementDomain>}>
      */
     public function achievements(): Collection

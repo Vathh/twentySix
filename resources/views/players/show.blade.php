@@ -10,18 +10,48 @@ document.addEventListener('alpine:init', () => {
         feed: {
             extra: [],
             nextCursor: @json($profileFeed['nextCursor'] ?? null),
-            loading: false
+            loading: false,
+            error: '',
+            paused: false
+        },
+        init() {
+            this.$nextTick(() => {
+                if (typeof window.observeFeedEnd !== 'function') return;
+                window.observeFeedEnd(this.$root.querySelector('[data-feed-end]'), () => this.loadOlderFeed());
+            });
+            this.$watch('activeTab', (tab) => {
+                if (tab !== 'feed') return;
+                this.$nextTick(() => {
+                    const node = this.$root.querySelector('[data-feed-end]');
+                    if (!node) return;
+                    const rect = node.getBoundingClientRect();
+                    if (rect.top <= window.innerHeight + 320) this.loadOlderFeed();
+                });
+            });
+        },
+        retryOlderFeed() {
+            this.feed.paused = false;
+            this.feed.error = '';
+            this.loadOlderFeed();
         },
         loadOlderFeed() {
-            if (this.feed.loading || !this.feed.nextCursor) return;
+            if (this.feed.loading || this.feed.paused || !this.feed.nextCursor) return;
             this.feed.loading = true;
+            this.feed.error = '';
             fetch('{{ route('players.feed', $player) }}?cursor=' + encodeURIComponent(this.feed.nextCursor), {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
             })
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) throw new Error('feed');
+                return r.json();
+            })
             .then(data => {
                 this.feed.extra = this.feed.extra.concat(data.items || []);
                 this.feed.nextCursor = data.nextCursor || null;
+            })
+            .catch(() => {
+                this.feed.error = 'Nie udało się wczytać starszych wpisów.';
+                this.feed.paused = true;
             })
             .finally(() => { this.feed.loading = false; });
         },

@@ -7,6 +7,7 @@ use App\Domain\Tournament\TournamentDomain;
 use App\Enums\TournamentFormat;
 use App\Enums\TournamentInvitationStatus;
 use App\Enums\TournamentStatus;
+use App\Models\Organization\Organization;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Support\Catalog\CatalogSort;
@@ -25,7 +26,7 @@ class TournamentRepository
     public function getAll(): Collection
     {
         return Tournament::query()
-            ->with(['season.organization'])
+            ->with(['season.organization', 'organization'])
             ->get()
             ->map(fn (Tournament $tournament) => TournamentDomain::fromEloquent($tournament, ['season']));
     }
@@ -39,7 +40,7 @@ class TournamentRepository
     {
         $page = max(1, $page);
         $query = Tournament::query()
-            ->with(['season.organization'])
+            ->with(['season.organization', 'organization'])
             ->withCount(['invitations as members_count' => function ($invitations) {
                 $invitations->where('status', TournamentInvitationStatus::ACCEPTED);
             }]);
@@ -48,6 +49,9 @@ class TournamentRepository
             $query->where(function ($inner) use ($pattern) {
                 $inner->whereRaw(PolishFold::likeSql('tournaments.name'), PolishFold::likeBindings($pattern))
                     ->orWhereHas('season.organization', function ($organization) use ($pattern) {
+                        $organization->whereRaw(PolishFold::likeSql('organizations.name'), PolishFold::likeBindings($pattern));
+                    })
+                    ->orWhereHas('organization', function ($organization) use ($pattern) {
                         $organization->whereRaw(PolishFold::likeSql('organizations.name'), PolishFold::likeBindings($pattern));
                     });
             });
@@ -73,9 +77,11 @@ class TournamentRepository
         string $name,
         ?string $date,
         ?int $createdByUserId = null,
+        ?int $organizationId = null,
     ): int {
         $tournament = Tournament::create([
             'season_id' => $seasonId,
+            'organization_id' => $seasonId === null ? $organizationId : null,
             'name' => $name,
             'date' => $date,
         ]);
@@ -93,9 +99,33 @@ class TournamentRepository
             if ($seasonAdminIds->isNotEmpty()) {
                 $tournament->admins()->syncWithoutDetaching($seasonAdminIds->all());
             }
+        } elseif ($organizationId !== null) {
+            $organizationAdminIds = Organization::query()
+                ->with('admins')
+                ->findOrFail($organizationId)
+                ->admins
+                ->pluck('id');
+            if ($organizationAdminIds->isNotEmpty()) {
+                $tournament->admins()->syncWithoutDetaching($organizationAdminIds->all());
+            }
         }
 
         return (int) $tournament->id;
+    }
+
+    /**
+     * Turnieje jednorazowe organizacji (bez sezonu), od najnowszej daty.
+     *
+     * @return Collection<int, Tournament>
+     */
+    public function oneOffForOrganization(int $organizationId): Collection
+    {
+        return Tournament::query()
+            ->where('organization_id', $organizationId)
+            ->whereNull('season_id')
+            ->orderByRaw('COALESCE(date, ?) DESC', ['1970-01-01'])
+            ->orderByDesc('id')
+            ->get();
     }
 
     /**
@@ -265,13 +295,16 @@ class TournamentRepository
     }
 
     /**
-     * Zwraca organization_id dla turnieju (przez sezon). Null jeśli turniej nie ma sezonu.
+     * Organizacja turnieju: własna dla jednorazowego, albo organizacja sezonu.
      */
     public function getOrganizationIdForTournament(int $tournamentId): ?int
     {
         $tournament = Tournament::with('season')->find($tournamentId);
+        if ($tournament === null) {
+            return null;
+        }
 
-        return $tournament?->season?->organization_id;
+        return $tournament->organization_id ?? $tournament->season?->organization_id;
     }
 
     /**
@@ -289,7 +322,7 @@ class TournamentRepository
 
     public function findByJoinCode(string $code): ?Tournament
     {
-        return Tournament::with(['season.organization'])
+        return Tournament::with(['season.organization', 'organization'])
             ->where('join_code', $code)
             ->first();
     }

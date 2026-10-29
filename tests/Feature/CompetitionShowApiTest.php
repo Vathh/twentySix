@@ -61,7 +61,8 @@ class CompetitionShowApiTest extends TestCase
             ->assertJsonCount(1, 'seasons')
             ->assertJsonPath('seasons.0.name', 'Sezon 1')
             ->assertJsonCount(1, 'leagues')
-            ->assertJsonPath('leagues.0.name', 'Liga A');
+            ->assertJsonPath('leagues.0.name', 'Liga A')
+            ->assertJsonCount(0, 'oneOffTournaments');
     }
 
     public function test_organization_show_404(): void

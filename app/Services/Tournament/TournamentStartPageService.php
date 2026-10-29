@@ -128,7 +128,12 @@ class TournamentStartPageService
             : 4;
         $seByeCount = max(0, $seBracketSize - $participantCount);
 
-        $organizationPresets = $tournament->season?->organization?->matchFormatPresets;
+        $tournamentModel->loadMissing(['organization', 'season.organization']);
+        $hostOrganization = $tournamentModel->organization ?? $tournamentModel->season?->organization;
+        $organizationPresets = $hostOrganization?->match_format_presets;
+        if (! is_array($organizationPresets)) {
+            $organizationPresets = [];
+        }
         $defaultMatchFormatsByStage = OrganizationMatchFormatPresets::defaultsByStage(
             $organizationPresets !== [] ? $organizationPresets : null,
         );

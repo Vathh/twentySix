@@ -730,6 +730,14 @@
         @apply mt-3 text-[15px] leading-6 text-text;
     }
 
+    a.feed-post-mention {
+        @apply font-semibold text-accent;
+    }
+
+    a.feed-post-mention:hover {
+        text-decoration: underline;
+    }
+
     .feed-post-bar,
     .feed-comment-actions {
         @apply mt-3 flex items-center gap-4;

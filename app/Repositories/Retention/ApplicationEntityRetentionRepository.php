@@ -167,10 +167,19 @@ class ApplicationEntityRetentionRepository
     {
         $seasonIds = Season::query()->where('organization_id', $organizationId)->pluck('id')->all();
         $leagueIds = League::query()->where('organization_id', $organizationId)->pluck('id')->all();
+        $tournamentIds = array_values(array_unique(array_merge(
+            $this->idsWhereIn(Tournament::class, 'season_id', $seasonIds),
+            Tournament::query()
+                ->where('organization_id', $organizationId)
+                ->whereNull('season_id')
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all(),
+        )));
 
         return [
             [ApplicationEntityKind::Season, $seasonIds],
-            [ApplicationEntityKind::Tournament, $this->idsWhereIn(Tournament::class, 'season_id', $seasonIds)],
+            [ApplicationEntityKind::Tournament, $tournamentIds],
             [ApplicationEntityKind::League, $leagueIds],
             [ApplicationEntityKind::LeagueSeason, $this->idsWhereIn(LeagueSeason::class, 'league_id', $leagueIds)],
         ];
@@ -227,6 +236,7 @@ class ApplicationEntityRetentionRepository
 
         return $seasons
             ->concat($this->trashedRows(ApplicationEntityKind::Tournament, 'season_id', $seasons->pluck('id')->all()))
+            ->concat($this->trashedRows(ApplicationEntityKind::Tournament, 'organization_id', [$organizationId]))
             ->concat($leagues)
             ->concat($this->trashedRows(ApplicationEntityKind::LeagueSeason, 'league_id', $leagues->pluck('id')->all()));
     }

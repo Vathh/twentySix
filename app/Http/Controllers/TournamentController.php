@@ -5,27 +5,27 @@ namespace App\Http\Controllers;
 use App\Domain\Retention\ApplicationEntityKind;
 use App\Domain\Tournament\TournamentDomain;
 use App\Domain\Tournament\TournamentStartRules;
+use App\Enums\BracketSide;
 use App\Models\Tournament\Tournament;
 use App\Queries\GetTournamentData;
 use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\Retention\ApplicationEntityDeletionService;
-use App\Support\Catalog\CatalogSort;
-use App\Support\Catalog\TournamentCatalogStatus;
-use App\Support\Retention\ConfirmedEntityDeletion;
-use App\Support\Text\PolishFold;
+use App\Services\Stats\CompetitionThreeDartAverageService;
 use App\Services\Tournament\LoginCodeService;
+use App\Services\Tournament\PlayoffBracketOutline;
 use App\Services\Tournament\TournamentCancelService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentGuestParticipantService;
 use App\Services\Tournament\TournamentInvitationService;
 use App\Services\Tournament\TournamentJoinRequestService;
-use App\Services\Stats\CompetitionThreeDartAverageService;
-use App\Enums\BracketSide;
-use App\Services\Tournament\PlayoffBracketOutline;
 use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentService;
 use App\Services\Tournament\TournamentStartPageService;
 use App\Services\User\UserService;
+use App\Support\Catalog\CatalogSort;
+use App\Support\Catalog\TournamentCatalogStatus;
+use App\Support\Retention\ConfirmedEntityDeletion;
+use App\Support\Text\PolishFold;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -78,12 +78,24 @@ class TournamentController extends Controller
         ]);
     }
 
-    public function create(Request $request): Factory|View
+    public function create(Request $request): Factory|View|RedirectResponse
     {
-        $seasonId = $request->query('seasonId');
-        $this->tournamentService->assertCanCreate($seasonId !== null ? (int) $seasonId : null);
+        [$seasonId, $organizationId] = $this->createTarget($request);
+        if ($seasonId === null && $organizationId === null) {
+            return redirect()
+                ->route('tournaments.index')
+                ->with('error', 'Turniej jednorazowy dodaje się wewnątrz organizacji.');
+        }
 
-        return view('tournaments.create', ['seasonId' => $seasonId]);
+        $this->tournamentService->assertCanCreate($seasonId, $organizationId);
+
+        return view('tournaments.create', [
+            'seasonId' => $seasonId,
+            'organizationId' => $organizationId,
+            'organizationName' => $organizationId === null
+                ? null
+                : $this->tournamentService->organizationName($organizationId),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -93,15 +105,21 @@ class TournamentController extends Controller
             'date' => 'required|date',
         ]);
 
-        $seasonId = $request->query('seasonId');
-        $resolvedSeasonId = $seasonId !== null ? (int) $seasonId : null;
-        $this->tournamentService->assertCanCreate($resolvedSeasonId);
+        [$seasonId, $organizationId] = $this->createTarget($request);
+        if ($seasonId === null && $organizationId === null) {
+            return redirect()
+                ->route('tournaments.index')
+                ->with('error', 'Turniej jednorazowy dodaje się wewnątrz organizacji.');
+        }
+
+        $this->tournamentService->assertCanCreate($seasonId, $organizationId);
 
         $tournamentId = $this->tournamentService->create(
-            $resolvedSeasonId,
+            $seasonId,
             $validated['tournamentName'],
             $validated['date'],
             Auth::id(),
+            $organizationId,
         );
 
         if ($seasonId !== null) {
@@ -129,8 +147,13 @@ class TournamentController extends Controller
             ? $this->loginCodeService->loginUrl($loginCode)
             : null;
 
+        $tournament->loadMissing('organization');
+        $organizationId = $season?->organization?->id ?? $tournament->organization?->id;
+
         return view('tournaments.show', [
             'tournament' => $tournamentDomain,
+            'organizationName' => $season?->organization?->name ?? $tournament->organization?->name,
+            'organizationUrl' => $organizationId === null ? null : route('organizations.show', $organizationId),
             'season' => $season,
             'groupStandings' => $viewModel->groupStandings(),
             'players' => $viewModel->players(),
@@ -217,15 +240,37 @@ class TournamentController extends Controller
         $this->gameAuthorizationService->authorizeManageTournament($tournament);
         ConfirmedEntityDeletion::validate($request, $tournament->name);
         $seasonId = $tournament->season_id;
+        $organizationId = $tournament->organization_id;
         $this->applicationEntityDeletionService->hide(
             ApplicationEntityKind::Tournament,
             $tournament->id,
             (int) Auth::id(),
         );
 
+        $back = $seasonId
+            ? route('seasons.show', $seasonId)
+            : ($organizationId ? route('organizations.show', $organizationId) : route('tournaments.index'));
+
         return redirect()
-            ->to($seasonId ? route('seasons.show', $seasonId) : route('tournaments.index'))
+            ->to($back)
             ->with('success', 'Turniej został usunięty. Przez 90 dni może go przywrócić operator platformy.');
+    }
+
+    /**
+     * @return array{0: ?int, 1: ?int}
+     */
+    private function createTarget(Request $request): array
+    {
+        $seasonRaw = $request->input('seasonId', $request->query('seasonId'));
+        $organizationRaw = $request->input('organizationId', $request->query('organizationId'));
+        $seasonId = is_numeric($seasonRaw) ? (int) $seasonRaw : null;
+        $organizationId = is_numeric($organizationRaw) ? (int) $organizationRaw : null;
+
+        if ($seasonId !== null) {
+            return [$seasonId, null];
+        }
+
+        return [null, $organizationId];
     }
 
     public function start(Request $request, int $tournamentId): Factory|View

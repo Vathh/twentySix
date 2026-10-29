@@ -58,6 +58,16 @@ class Organization extends Model
         return $this->hasManyThrough(Tournament::class, Season::class);
     }
 
+    /**
+     * Turnieje jednorazowe: należą do organizacji, nie do sezonu.
+     *
+     * @return HasMany<Tournament, $this>
+     */
+    public function oneOffTournaments(): HasMany
+    {
+        return $this->hasMany(Tournament::class)->whereNull('season_id');
+    }
+
     /** @return HasMany<League, $this> */
     public function leagues(): HasMany
     {

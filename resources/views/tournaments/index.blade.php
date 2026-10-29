@@ -10,18 +10,16 @@
         :url="route('tournaments.index')"
         kind="tournament"
         heading="Turnieje"
-        lead="Turnieje w organizacjach i turnieje jednorazowe."
+        lead="Turnieje w sezonach i turnieje jednorazowe organizacji."
         placeholder="Nazwa turnieju lub organizacji…"
         empty-title="Brak turniejów"
-        empty-description="Gdy pojawią się turnieje w organizacjach lub jednorazowe, zobaczysz je tutaj."
+        empty-description="Gdy pojawią się turnieje w sezonie albo jednorazowe w organizacji, zobaczysz je tutaj."
         :query="$query"
         :summary="$summary"
         :page="$page"
         :sort="$sort"
         :status="$status"
         show-status-filter
-        :create-url="auth()->check() && auth()->user()->can_create_organizations ? route('tournaments.create') : null"
-        create-label="Dodaj turniej"
     />
 
 @endsection

@@ -31,7 +31,7 @@ class OrganizationRepository
     {
         $page = max(1, $page);
         $query = Organization::query()
-            ->withCount(['seasons', 'tournaments', 'relatedUsers']);
+            ->withCount(['seasons', 'tournaments', 'oneOffTournaments', 'relatedUsers']);
         PolishFold::restrict($query, 'organizations.name', $search);
         if (! CatalogSort::apply($query, $sort, 'related_users_count')) {
             $query->orderByDesc('updated_at')->orderByDesc('id');

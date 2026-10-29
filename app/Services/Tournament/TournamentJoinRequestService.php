@@ -102,7 +102,7 @@ class TournamentJoinRequestService
         return [
             'tournamentId' => $tournament->id,
             'tournamentName' => $tournament->name,
-            'organizationName' => $tournament->season?->organization?->name,
+            'organizationName' => $tournament->hostOrganization()?->name,
             'canApply' => $canApply,
             'reason' => $reason,
             'alreadyParticipant' => $alreadyParticipant,

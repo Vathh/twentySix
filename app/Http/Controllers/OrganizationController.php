@@ -17,6 +17,7 @@ use App\Services\Organization\OrganizationLogoService;
 use App\Services\Organization\OrganizationService;
 use App\Services\Player\PlayerService;
 use App\Services\Retention\ApplicationEntityDeletionService;
+use App\Services\Tournament\TournamentService;
 use App\Services\User\UserService;
 use App\Support\Catalog\CatalogSort;
 use App\Support\Media\SquareJpeg;
@@ -42,6 +43,7 @@ class OrganizationController extends Controller
         private ApplicationEntityDeletionService $applicationEntityDeletionService,
         private FeedService $feed,
         private OrganizationLogoService $organizationLogoService,
+        private TournamentService $tournamentService,
     ) {
         $this->authorizeResource(Organization::class, 'organization');
     }
@@ -107,6 +109,7 @@ class OrganizationController extends Controller
             'logoUrl' => $organization->logoUrl(),
             'seasons' => $seasons,
             'leagues' => $this->leagueService->listForOrganization($organization->id),
+            'oneOffTournaments' => $this->tournamentService->oneOffCards($organization->id),
             'feedMute' => Auth::check()
                 ? $this->feed->muteState(Auth::user(), FeedMuteSubject::Organization, (string) $organization->id)
                 : null,

@@ -26,8 +26,8 @@
 
                 <x-place-bar
                     current="tournament"
-                    :organization-name="$season?->organization?->name"
-                    :organization-url="$season?->organization ? route('organizations.show', $season->organization->id) : null"
+                    :organization-name="$organizationName"
+                    :organization-url="$organizationUrl"
                     :season-name="$season?->name"
                     :season-url="$season ? route('seasons.show', $season->id) : null"
                     :tournament-name="$tournament->name"

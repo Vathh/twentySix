@@ -22,12 +22,17 @@ class ActivityCardPresenter
         $name = (string) ($payload['actorName'] ?? '');
         $player = $activity->relationLoaded('actorPlayer') ? $activity->actorPlayer : null;
         $counts = $engagement['counts'] ?? [];
+        $sentence = $this->registry->sentence($activity->type, $payload);
+        $playerId = $activity->actor_user_id === null || $activity->actor_player_id === null
+            ? null
+            : (int) $activity->actor_player_id;
 
         return [
             'id' => (int) $activity->id,
             'type' => $activity->type,
             'kind' => $this->registry->kind((string) $activity->type),
-            'sentence' => $this->registry->sentence($activity->type, $payload),
+            'sentence' => $sentence,
+            'sentenceParts' => $this->sentenceParts($sentence, $name, $playerId),
             'occurredAt' => $activity->occurred_at?->toIso8601String(),
             'header' => $this->header($activity, $payload, $player),
             'actor' => [
@@ -38,9 +43,7 @@ class ActivityCardPresenter
                 'avatarUrl' => $player?->avatarUrl(),
             ],
             'links' => [
-                'playerId' => $activity->actor_user_id === null || $activity->actor_player_id === null
-                    ? null
-                    : (int) $activity->actor_player_id,
+                'playerId' => $playerId,
                 'tournamentId' => isset($payload['tournamentId']) ? (int) $payload['tournamentId'] : null,
                 'organizationId' => $activity->organization_id === null ? null : (int) $activity->organization_id,
             ],
@@ -49,6 +52,31 @@ class ActivityCardPresenter
             'reactions' => [
                 'counts' => $counts === [] ? (object) [] : $counts,
                 'mine' => $engagement['mine'] ?? null,
+            ],
+        ];
+    }
+
+    /**
+     * Imię zarejestrowanego gracza na początku zdania prowadzi do jego profilu.
+     *
+     * @return list<array{text: string, url: ?string, playerId: ?int}>
+     */
+    private function sentenceParts(string $sentence, string $actorName, ?int $playerId): array
+    {
+        if ($playerId === null || $actorName === '' || ! str_starts_with($sentence, $actorName)) {
+            return [['text' => $sentence, 'url' => null, 'playerId' => null]];
+        }
+
+        return [
+            [
+                'text' => $actorName,
+                'url' => route('players.show', $playerId),
+                'playerId' => $playerId,
+            ],
+            [
+                'text' => substr($sentence, strlen($actorName)),
+                'url' => null,
+                'playerId' => null,
             ],
         ];
     }

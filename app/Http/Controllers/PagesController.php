@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Activity\FeedService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,12 +13,15 @@ class PagesController extends Controller
 {
     public function __construct(private FeedService $feed) {}
 
-    public function showHomePage(): Factory|View
+    public function showHomePage(): Factory|View|JsonResponse
     {
-        $feed = null;
-        if (Auth::check()) {
-            $feed = $this->feed->home(Auth::user(), request()->query('cursor'));
+        if (request()->expectsJson()) {
+            abort_unless(Auth::check(), 401);
+
+            return response()->json($this->feed->home(Auth::user(), request()->query('cursor')));
         }
+
+        $feed = Auth::check() ? $this->feed->home(Auth::user(), null) : null;
 
         return view('pages.home', [
             'feed' => $feed,

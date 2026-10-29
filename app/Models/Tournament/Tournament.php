@@ -6,6 +6,7 @@ use App\Enums\TournamentStatus;
 use App\Models\Achievements\Achievement;
 use App\Models\Game\Game;
 use App\Models\GroupStanding\GroupStanding;
+use App\Models\Organization\Organization;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\PointScheme\PointScheme;
 use App\Models\Season\Season;
@@ -19,9 +20,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Tournament extends Model
 {
     use SoftDeletes;
+
     protected $fillable = [
         'name',
         'season_id',
+        'organization_id',
         'date',
         'status',
         'format',
@@ -55,6 +58,25 @@ class Tournament extends Model
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
+    }
+
+    /**
+     * Organizacja turnieju jednorazowego. Turniej sezonu bierze ją z sezonu.
+     *
+     * @return BelongsTo<Organization, $this>
+     */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function hostOrganization(): ?Organization
+    {
+        if ($this->organization_id !== null) {
+            return $this->organization;
+        }
+
+        return $this->season?->organization;
     }
 
     /** @return HasMany<Achievement, $this> */

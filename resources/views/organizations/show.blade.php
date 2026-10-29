@@ -52,7 +52,8 @@
                 @php
                     $seasonCount = $seasons->count();
                     $leagueCount = $leagues->count();
-                    $tournamentCount = $seasons->sum(fn ($season) => (int) ($season->tournamentCount ?? 0));
+                    $tournamentCount = $seasons->sum(fn ($season) => (int) ($season->tournamentCount ?? 0))
+                        + count($oneOffTournaments);
                     $relatedUsersUrl = null;
                     $guestsUrl = null;
                 @endphp
@@ -172,6 +173,41 @@
                                 :href="route('leagues.show', $league)"
                                 :name="$league->name"
                                 :meta="$league->divisions->count().' '.($league->divisions->count() === 1 ? 'szczebel' : 'szczeble')"
+                            />
+                        @endforeach
+                    </div>
+                @endif
+
+                <x-section-head title="Turnieje jednorazowe" class="mt-12 mb-1">
+                    <x-slot:action>
+                        @organizationAdmin($organization)
+                            @if($oneOffTournaments !== [])
+                                <x-add-action :href="route('tournaments.create').'?organizationId='.$organization->id">Dodaj turniej</x-add-action>
+                            @endif
+                        @endorganizationAdmin
+                    </x-slot:action>
+                </x-section-head>
+                <p class="text-text-muted text-sm mb-3">Pojedyncze turnieje tej organizacji — poza sezonem.</p>
+                @if($oneOffTournaments === [])
+                    <x-empty-state
+                        class="!py-10"
+                        title="Brak turniejów jednorazowych"
+                        description="Turniej jednorazowy należy do organizacji, ale nie wchodzi do sezonu."
+                    >
+                        @organizationAdmin($organization)
+                            <x-add-action :href="route('tournaments.create').'?organizationId='.$organization->id">Dodaj turniej</x-add-action>
+                        @endorganizationAdmin
+                    </x-empty-state>
+                @else
+                    <div class="place-grid">
+                        @foreach($oneOffTournaments as $tournament)
+                            <x-place-card
+                                kind="tournament"
+                                :href="route('tournaments.show', ['tournament' => $tournament['id']])"
+                                :name="$tournament['name']"
+                                :meta="$tournament['meta']"
+                                :status-label="$tournament['statusLabel']"
+                                :status-variant="$tournament['statusVariant']"
                             />
                         @endforeach
                     </div>

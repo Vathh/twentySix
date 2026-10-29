@@ -16,6 +16,7 @@ use App\Enums\TournamentStatus;
 use App\Models\Tournament\Tournament;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\GroupStanding\GroupStandingRepository;
+use App\Repositories\Organization\OrganizationRepository;
 use App\Repositories\Season\SeasonRepository;
 use App\Repositories\Tournament\TournamentMatchFormatRepository;
 use App\Repositories\Tournament\TournamentRepository;
@@ -26,7 +27,6 @@ use App\Support\Text\PolishFold;
 use App\Support\Tournament\PlayoffByePairing;
 use App\Support\Tournament\TournamentMatchFormatRequestParser;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -47,9 +47,10 @@ class TournamentService
         private \App\Services\PlayoffGame\PlayoffService $playoffService,
         private SeasonRepository $seasonRepository,
         private PlayerService $playerService,
+        private OrganizationRepository $organizationRepository,
     ) {}
 
-    public function assertCanCreate(?int $seasonId): void
+    public function assertCanCreate(?int $seasonId, ?int $organizationId = null): void
     {
         if ($seasonId !== null) {
             $season = $this->seasonRepository->findModel($seasonId, ['admins']);
@@ -58,7 +59,14 @@ class TournamentService
             return;
         }
 
-        abort_unless(Auth::user()?->can_create_organizations, 403);
+        if ($organizationId !== null) {
+            $organization = $this->organizationRepository->findModel($organizationId, ['admins']);
+            Gate::authorize('update', $organization);
+
+            return;
+        }
+
+        abort(403);
     }
 
     /**
@@ -110,7 +118,7 @@ class TournamentService
                     'url' => route('tournaments.show', ['tournament' => $tournament->id]),
                     'title' => $tournament->displayTitle(),
                     'name' => $tournament->name,
-                    'context' => $tournament->season?->organization?->name,
+                    'context' => $tournament->hostOrganizationName(),
                     'description' => null,
                     'meta' => $date ?? 'Data nieustawiona',
                     'subtitle' => $date ? 'Data rozgrywek: '.$date : null,
@@ -130,8 +138,36 @@ class TournamentService
         string $name,
         ?string $date = null,
         ?int $createdByUserId = null,
+        ?int $organizationId = null,
     ): int {
-        return $this->tournamentRepository->create($seasonId, $name, $date, $createdByUserId);
+        return $this->tournamentRepository->create($seasonId, $name, $date, $createdByUserId, $organizationId);
+    }
+
+    public function organizationName(int $organizationId): string
+    {
+        return $this->organizationRepository->findModel($organizationId)->name;
+    }
+
+    /**
+     * @return list<array{id: int, name: string, date: ?string, meta: string, statusLabel: string, statusVariant: string}>
+     */
+    public function oneOffCards(int $organizationId): array
+    {
+        return $this->tournamentRepository
+            ->oneOffForOrganization($organizationId)
+            ->map(function (Tournament $tournament) {
+                $date = $tournament->date?->locale(app()->getLocale())->translatedFormat('j F Y');
+
+                return [
+                    'id' => (int) $tournament->id,
+                    'name' => $tournament->name,
+                    'date' => $tournament->date?->format('Y-m-d'),
+                    'meta' => $date ?? 'Data nieustalona',
+                    'statusLabel' => $tournament->status->label(),
+                    'statusVariant' => $tournament->status->badgeVariant(),
+                ];
+            })
+            ->all();
     }
 
     public function addAdmin(int $tournamentId, int $userId): void

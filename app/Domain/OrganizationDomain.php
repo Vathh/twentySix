@@ -71,7 +71,7 @@ class OrganizationDomain
             relatedUserCount: self::relationCount($organization, 'related_users_count', 'relatedUsers', $with),
             guestCount: self::relationCount($organization, 'guests_count', 'guests', $with),
             seasonCount: self::relationCount($organization, 'seasons_count', 'seasons', $with),
-            tournamentCount: self::relationCount($organization, 'tournaments_count', 'tournaments', $with),
+            tournamentCount: self::tournamentCount($organization, $with),
         );
     }
 
@@ -112,6 +112,20 @@ class OrganizationDomain
     public function hasMatchFormatPresets(): bool
     {
         return $this->matchFormatPresets !== [];
+    }
+
+    /**
+     * @param  list<string>  $with
+     */
+    private static function tournamentCount(Organization $organization, array $with): ?int
+    {
+        $seasonTournaments = self::relationCount($organization, 'tournaments_count', 'tournaments', $with);
+        $oneOffTournaments = self::relationCount($organization, 'one_off_tournaments_count', 'oneOffTournaments', $with);
+        if ($seasonTournaments === null && $oneOffTournaments === null) {
+            return null;
+        }
+
+        return (int) ($seasonTournaments ?? 0) + (int) ($oneOffTournaments ?? 0);
     }
 
     /**

@@ -35,12 +35,12 @@ class ActivityDraftFactory
             return null;
         }
 
-        $tournament = $this->tournamentRepository->findModelOrNull($tournamentId, ['season.organization']);
+        $tournament = $this->tournamentRepository->findModelOrNull($tournamentId, ['season.organization', 'organization']);
         if ($tournament === null) {
             return null;
         }
 
-        $organization = $tournament->season?->organization;
+        $organization = $tournament->hostOrganization();
         $definition = new TournamentChampionActivity;
 
         return new ActivityDraft(

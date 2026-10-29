@@ -34,23 +34,33 @@ class ActivityFeedTest extends TestCase
         $this->assertDatabaseCount('activities', 1);
 
         $sentence = 'Andrzej właśnie wygrał turniej Piątkowe Granie w Apagon.';
+        $playerId = (int) Player::query()->where('user_id', $andrzej->id)->value('id');
 
         $this->actingAs($viewer, 'sanctum')
             ->getJson('/api/feed')
             ->assertOk()
             ->assertJsonCount(1, 'items')
             ->assertJsonPath('items.0.sentence', $sentence)
+            ->assertJsonPath('items.0.sentenceParts.0.text', 'Andrzej')
+            ->assertJsonPath('items.0.sentenceParts.0.playerId', $playerId)
             ->assertJsonPath('items.0.commentCount', 0)
             ->assertJsonPath('items.0.header.name', 'Apagon')
             ->assertJsonPath('items.0.header.organizationId', $organization->id)
             ->assertJsonPath('items.0.header.playerId', null);
 
         $this->actingAs($viewer)
-            ->get('/')
+            ->get('/?cursor=not-a-real-cursor')
             ->assertOk()
-            ->assertSee($sentence, false)
+            ->assertSee('właśnie wygrał turniej Piątkowe Granie w Apagon.', false)
             ->assertSee(route('organizations.show', $organization), false)
-            ->assertDontSee(route('players.show', Player::query()->where('user_id', $andrzej->id)->value('id')), false);
+            ->assertSee(route('players.show', $playerId), false)
+            ->assertSee('data-feed-end', false)
+            ->assertDontSee('>Starsze<', false);
+
+        $this->actingAs($viewer)
+            ->getJson('/')
+            ->assertOk()
+            ->assertJsonPath('items.0.sentenceParts.0.playerId', $playerId);
 
         $this->actingAs($viewer)
             ->get(route('settings.feed.edit'))
@@ -100,7 +110,9 @@ class ActivityFeedTest extends TestCase
             ->assertJsonPath('items.0.header.playerId', null)
             ->assertJsonPath('items.0.actor.name', 'jjj')
             ->assertJsonPath('items.0.actor.userId', null)
-            ->assertJsonPath('items.0.sentence', 'jjj właśnie wygrał turniej Piątkowe Granie w Apagon.');
+            ->assertJsonPath('items.0.sentence', 'jjj właśnie wygrał turniej Piątkowe Granie w Apagon.')
+            ->assertJsonPath('items.0.sentenceParts.0.playerId', null)
+            ->assertJsonPath('items.0.sentenceParts.0.url', null);
 
         $this->actingAs($viewer)
             ->get('/')
@@ -163,7 +175,8 @@ class ActivityFeedTest extends TestCase
             ->assertOk()
             ->assertSee('Podsumowanie')
             ->assertSee('Tablica')
-            ->assertSee($sentence, false);
+            ->assertSee('właśnie wygrał turniej Piątkowe Granie w Apagon.', false)
+            ->assertSee(route('players.show', $player), false);
 
         $this->get(route('players.feed', $player))
             ->assertOk()

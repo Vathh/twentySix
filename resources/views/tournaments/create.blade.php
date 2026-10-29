@@ -6,16 +6,21 @@
 
     <div class="flex justify-center items-center min-h-[70vh] px-4">
         <form class="form-card"
-              action="{{ route('tournaments.store') }}{{ $seasonId ? '?seasonId='.$seasonId : '' }}"
+              action="{{ route('tournaments.store') }}"
               method="POST">
             @csrf
+            @if($seasonId)
+                <input type="hidden" name="seasonId" value="{{ $seasonId }}">
+            @elseif($organizationId)
+                <input type="hidden" name="organizationId" value="{{ $organizationId }}">
+            @endif
             <div class="flex flex-col items-stretch">
                 <h1 class="page-title text-center">Tworzenie nowego turnieju</h1>
 
                 @if($seasonId)
                     <p class="card-description text-center mb-6">Turniej zostanie dodany do wybranego sezonu.</p>
                 @else
-                    <p class="card-description text-center mb-6">Turniej jednorazowy — bez powiązania z organizacją i sezonem.</p>
+                    <p class="card-description text-center mb-6">Turniej jednorazowy organizacji {{ $organizationName }}. Nie wchodzi do żadnego sezonu.</p>
                 @endif
 
                 <label class="form-label text-accent" for="tournamentName">Nazwa turnieju</label>
@@ -40,7 +45,7 @@
                 @if($seasonId)
                     <a href="{{ route('seasons.show', ['season' => $seasonId]) }}" class="btn btn-secondary mt-4 text-center">Powrót do sezonu</a>
                 @else
-                    <a href="{{ route('tournaments.index') }}" class="btn btn-secondary mt-4 text-center">Powrót do turniejów</a>
+                    <a href="{{ route('organizations.show', ['organization' => $organizationId]) }}" class="btn btn-secondary mt-4 text-center">Powrót do organizacji</a>
                 @endif
 
                 <x-errors/>

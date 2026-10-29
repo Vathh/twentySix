@@ -36,6 +36,14 @@
             <p class="feed-post-meta">{{ $when }} · {{ $kind }}</p>
         </div>
     </div>
-    <p class="feed-post-body">{{ $item['sentence'] }}</p>
+    <p class="feed-post-body">
+        @foreach($item['sentenceParts'] ?? [['text' => $item['sentence'], 'url' => null]] as $part)
+            @if(!empty($part['url']))
+                <a href="{{ $part['url'] }}" class="feed-post-mention">{{ $part['text'] }}</a>
+            @else
+                {{ $part['text'] }}
+            @endif
+        @endforeach
+    </p>
     @include('activity.engagement', ['seed' => $item])
 </li>
