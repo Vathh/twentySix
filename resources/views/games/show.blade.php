@@ -21,6 +21,10 @@
                 </a>
             @elseif($status === 'finished')
                 <span class="px-2 py-0.5 rounded text-xs bg-success-muted text-success-bright border border-success/30">Zakończony</span>
+            @elseif($status === 'voided')
+                <span class="px-2 py-0.5 rounded text-xs bg-bg-deep text-text-muted border border-border">Anulowany</span>
+            @elseif($status === 'lobby')
+                <span class="px-2 py-0.5 rounded text-xs bg-warning/15 text-warning border border-warning/30">Lobby</span>
             @endif
         </div>
 
@@ -30,46 +34,7 @@
             </div>
         @endif
 
-        <h1 class="page-title mb-6">
-            @if($player1->user_id)
-                <a href="{{ route('players.show', $player1) }}" class="hover:text-accent hover:underline transition-colors">{{ $player1->name }}</a>
-            @else
-                {{ $player1->name }}
-            @endif
-            <span class="text-text-muted font-normal">vs</span>
-            @if($player2->user_id)
-                <a href="{{ route('players.show', $player2) }}" class="hover:text-accent hover:underline transition-colors">{{ $player2->name }}</a>
-            @else
-                {{ $player2->name }}
-            @endif
-        </h1>
-
-        <div class="bg-bg-elevated rounded-lg p-6 mb-8 border border-border text-center">
-            <p class="text-text-muted text-sm mb-1">{{ $formatLabel ?? '501 · do 2 legów' }}</p>
-            <p class="text-text-muted text-sm mb-2">Wynik meczu ({{ $scoreUnit ?? 'legi' }})</p>
-            <p class="text-4xl font-bold text-text score-num">
-                <span class="{{ (int)$winnerId === (int)$player1->id ? 'text-accent' : 'text-text' }}">{{ $player1Score }}</span>
-                <span class="text-text-muted mx-3">:</span>
-                <span class="{{ (int)$winnerId === (int)$player2->id ? 'text-accent' : 'text-text' }}">{{ $player2Score }}</span>
-            </p>
-            @if($status !== 'finished')
-                <p class="text-text-muted text-xs mt-2">
-                    @if($status === 'in_progress')
-                        @if($canCorrectResult ?? false)
-                            Mecz w trakcie — możesz wymusić wynik końcowy poniżej.
-                        @else
-                            Mecz w trakcie.
-                        @endif
-                    @else
-                        @if($canCorrectResult ?? false)
-                            Mecz jeszcze nie rozegrany — możesz ustawić wynik lub walkover poniżej.
-                        @else
-                            Mecz jeszcze nie rozegrany.
-                        @endif
-                    @endif
-                </p>
-            @endif
-        </div>
+        @include('games.partials.match-board')
 
         @if($canCorrectResult ?? false)
             <div class="bg-bg-deep rounded-lg p-6 mb-8 border border-accent/40">
@@ -142,9 +107,13 @@
             </div>
         @endif
 
+        @include('games.partials.league-manage')
+
         @include('games.partials.cancel-game', [
             'canCancelGame' => $canCancelGame ?? false,
-            'cancelAction' => route('games.cancel', ['type' => $kind, 'id' => $gameId]),
+            'cancelAction' => $kind === 'league'
+                ? route('league-games.cancel', $gameId)
+                : route('games.cancel', ['type' => $kind, 'id' => $gameId]),
         ])
 
         @php
@@ -154,88 +123,52 @@
             $fmtInt = static fn ($v) => $v !== null ? (string) $v : '—';
         @endphp
 
-        <h2 class="section-title mb-4">Statystyki meczu</h2>
-        <div class="bg-bg-elevated rounded-lg border border-border mb-8 overflow-x-auto">
-            <table class="w-full text-sm text-text min-w-[320px]">
-                <thead>
-                    <tr class="border-b border-border bg-bg-deep/60">
-                        <th class="text-left py-3 px-4 text-text-muted font-medium w-2/5"></th>
-                        <th class="text-center py-3 px-4 text-accent font-semibold">{{ $p1['name'] }}</th>
-                        <th class="text-center py-3 px-4 text-accent font-semibold">{{ $p2['name'] }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="border-b border-border bg-accent/10">
-                        <td colspan="3" class="py-2 px-4 text-accent font-semibold text-xs uppercase tracking-wide">Średnia (3 lotki)</td>
-                    </tr>
-                    <tr class="border-b border-border/50">
-                        <td class="py-2.5 px-4 text-text-muted">Cała gra</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p1['matchAverage']) }}</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p2['matchAverage']) }}</td>
-                    </tr>
-                    <tr class="border-b border-border/50">
-                        <td class="py-2.5 px-4 text-text-muted">Pierwsze 9 lotek</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p1['matchFirstNineAverage'] ?? null) }}</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p2['matchFirstNineAverage'] ?? null) }}</td>
-                    </tr>
-                    <tr class="border-b border-border/50">
-                        <td class="py-2.5 px-4 text-text-muted">Najlepszy leg</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p1['bestLegAverage']) }}</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p2['bestLegAverage']) }}</td>
-                    </tr>
-                    @if($status === 'in_progress')
-                        <tr class="border-b border-border/50">
-                            <td class="py-2.5 px-4 text-text-muted">Aktualny leg</td>
-                            <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p1['currentLegAverage']) }}</td>
-                            <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtAvg($p2['currentLegAverage']) }}</td>
-                        </tr>
-                    @endif
+        @php
+            $statGroups = [
+                [
+                    'title' => 'Średnia (3 lotki)',
+                    'rows' => array_values(array_filter([
+                        ['Cała gra', $fmtAvg($p1['matchAverage']), $fmtAvg($p2['matchAverage'])],
+                        ['Pierwsze 9 lotek', $fmtAvg($p1['matchFirstNineAverage'] ?? null), $fmtAvg($p2['matchFirstNineAverage'] ?? null)],
+                        ['Najlepszy leg', $fmtAvg($p1['bestLegAverage']), $fmtAvg($p2['bestLegAverage'])],
+                        $status === 'in_progress'
+                            ? ['Aktualny leg', $fmtAvg($p1['currentLegAverage']), $fmtAvg($p2['currentLegAverage'])]
+                            : null,
+                    ])),
+                ],
+                [
+                    'title' => 'Osiągi',
+                    'rows' => [
+                        ['Najlepszy leg (lotki)', $fmtInt($p1['bestLegThrows']), $fmtInt($p2['bestLegThrows'])],
+                        ['60+', $p1['plus60'], $p2['plus60']],
+                        ['80+', $p1['plus80'], $p2['plus80']],
+                        ['100+', $p1['plus100'], $p2['plus100']],
+                        ['140+', $p1['plus140'], $p2['plus140']],
+                        ['180', $p1['max180'], $p2['max180']],
+                        ['HF (finish)', $p1['hf'] !== [] ? implode(', ', $p1['hf']) : '—', $p2['hf'] !== [] ? implode(', ', $p2['hf']) : '—'],
+                        ['QF (lotki)', $p1['qf'] !== [] ? implode(', ', $p1['qf']) : '—', $p2['qf'] !== [] ? implode(', ', $p2['qf']) : '—'],
+                    ],
+                ],
+            ];
+        @endphp
 
-                    <tr class="border-b border-border bg-accent/10">
-                        <td colspan="3" class="py-2 px-4 text-accent font-semibold text-xs uppercase tracking-wide">Osiągi</td>
-                    </tr>
-                    <tr class="border-b border-border/50">
-                        <td class="py-2.5 px-4 text-text-muted">Najlepszy leg (lotki)</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtInt($p1['bestLegThrows']) }}</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $fmtInt($p2['bestLegThrows']) }}</td>
-                    </tr>
-                    <tr class="border-b border-border/50">
-                        <td class="py-2.5 px-4 text-text-muted">60+</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p1['plus60'] }}</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p2['plus60'] }}</td>
-                    </tr>
-                    <tr class="border-b border-border/50">
-                        <td class="py-2.5 px-4 text-text-muted">80+</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p1['plus80'] }}</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p2['plus80'] }}</td>
-                    </tr>
-                    <tr class="border-b border-border/50">
-                        <td class="py-2.5 px-4 text-text-muted">100+</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p1['plus100'] }}</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p2['plus100'] }}</td>
-                    </tr>
-                    <tr class="border-b border-border/50">
-                        <td class="py-2.5 px-4 text-text-muted">140+</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p1['plus140'] }}</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p2['plus140'] }}</td>
-                    </tr>
-                    <tr class="border-b border-border/50">
-                        <td class="py-2.5 px-4 text-text-muted">180</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p1['max180'] }}</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium">{{ $p2['max180'] }}</td>
-                    </tr>
-                    <tr class="border-b border-border/50">
-                        <td class="py-2.5 px-4 text-text-muted">HF (finish)</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p1['hf'] !== [] ? implode(', ', $p1['hf']) : '—' }}</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p2['hf'] !== [] ? implode(', ', $p2['hf']) : '—' }}</td>
-                    </tr>
-                    <tr class="border-b border-border/50">
-                        <td class="py-2.5 px-4 text-text-muted">QF (lotki)</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p1['qf'] !== [] ? implode(', ', $p1['qf']) : '—' }}</td>
-                        <td class="py-2.5 px-4 text-center text-text-secondary font-medium text-xs">{{ $p2['qf'] !== [] ? implode(', ', $p2['qf']) : '—' }}</td>
-                    </tr>
-                </tbody>
-            </table>
+        <h2 class="section-title mb-4">Statystyki meczu</h2>
+        <div class="match-stats mb-8">
+            <div class="match-stats-row match-stats-head">
+                <span>{{ $p1['name'] }}</span>
+                <span></span>
+                <span>{{ $p2['name'] }}</span>
+            </div>
+            @foreach($statGroups as $group)
+                <p class="match-stats-group">{{ $group['title'] }}</p>
+                @foreach($group['rows'] as $row)
+                    <div class="match-stats-row">
+                        <span class="match-stats-value score-num">{{ $row[1] }}</span>
+                        <span class="match-stats-label">{{ $row[0] }}</span>
+                        <span class="match-stats-value score-num">{{ $row[2] }}</span>
+                    </div>
+                @endforeach
+            @endforeach
         </div>
 
         <h2 class="section-title mb-4">Legi i wizyty</h2>

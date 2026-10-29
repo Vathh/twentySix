@@ -8,6 +8,7 @@ export function registerPlayerAvatarCrop(Alpine) {
 		previewUrl: config.avatarUrl || '',
 		removed: false,
 		cropping: false,
+		saving: false,
 		cropper: null,
 		sourceUrl: '',
 
@@ -55,7 +56,7 @@ export function registerPlayerAvatarCrop(Alpine) {
 
 		async confirmCrop() {
 			if (!this.cropper) {
-				return;
+				return false;
 			}
 
 			const canvas = this.cropper.getCroppedCanvas({
@@ -63,6 +64,10 @@ export function registerPlayerAvatarCrop(Alpine) {
 				height: 512,
 				imageSmoothingQuality: 'high',
 			});
+			if (!canvas) {
+				return false;
+			}
+
 			const blob = await new Promise((resolve) => {
 				canvas.toBlob(resolve, 'image/jpeg', 0.85);
 			});
@@ -72,7 +77,7 @@ export function registerPlayerAvatarCrop(Alpine) {
 			this.revokeSource();
 
 			if (!blob) {
-				return;
+				return false;
 			}
 
 			const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
@@ -85,6 +90,29 @@ export function registerPlayerAvatarCrop(Alpine) {
 			}
 			this.previewUrl = URL.createObjectURL(blob);
 			this.removed = false;
+
+			return true;
+		},
+
+		async save(event) {
+			if (!this.cropping) {
+				return;
+			}
+
+			event.preventDefault();
+			if (this.saving) {
+				return;
+			}
+
+			this.saving = true;
+			const form = event.target;
+			const cropped = await this.confirmCrop();
+			if (!cropped) {
+				this.saving = false;
+				return;
+			}
+
+			form.submit();
 		},
 
 		cancelCrop() {

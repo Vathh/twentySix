@@ -129,9 +129,7 @@ class GameViewController extends Controller
         [$detail, $context, $game] = $this->gameDetailService->buildShell($kind, $id);
         $initialState = $this->gameScoringService->getState($context, $game);
 
-        $overlayShowUrl = $kind === GameKind::LEAGUE
-            ? route('league-games.show', $id)
-            : route('games.show', ['type' => $type, 'id' => $id]);
+        $overlayShowUrl = route('games.show', ['type' => $type, 'id' => $id]);
 
         return view('games.overlay', array_merge($detail, [
             'initialState' => $initialState,

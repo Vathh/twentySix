@@ -168,11 +168,11 @@ class LeagueSeasonController extends Controller
             ->with('success', 'Sezon ligowy został usunięty. Przez 90 dni może go przywrócić operator platformy.');
     }
 
-    public function showGame(LeagueGame $leagueGame): Factory|View
+    public function showGame(LeagueGame $leagueGame): RedirectResponse
     {
         $this->authorize('view', $leagueGame);
 
-        return view('league-games.show', $this->leagueSeasonService->gameShowData($leagueGame->id));
+        return redirect()->route('games.show', ['type' => 'league', 'id' => $leagueGame->id]);
     }
 
     public function updateResult(Request $request, LeagueGame $leagueGame): RedirectResponse
@@ -191,7 +191,7 @@ class LeagueSeasonController extends Controller
         );
 
         return redirect()
-            ->route('league-games.show', $leagueGame)
+            ->route('games.show', ['type' => 'league', 'id' => $leagueGame->id])
             ->with('success', 'Zapisano wynik.');
     }
 
@@ -211,7 +211,7 @@ class LeagueSeasonController extends Controller
         );
 
         return redirect()
-            ->route('league-games.show', $leagueGame)
+            ->route('games.show', ['type' => 'league', 'id' => $leagueGame->id])
             ->with('success', 'Zapisano walkower.');
     }
 
@@ -241,7 +241,7 @@ class LeagueSeasonController extends Controller
         $this->gameCancelService->cancel(GameKind::LEAGUE, $leagueGame->id);
 
         return redirect()
-            ->route('league-games.show', $leagueGame)
+            ->route('games.show', ['type' => 'league', 'id' => $leagueGame->id])
             ->with('success', 'Mecz anulowany. Można rozegrać go od nowa.');
     }
 }

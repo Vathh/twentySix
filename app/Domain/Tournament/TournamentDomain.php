@@ -8,6 +8,7 @@ use App\Domain\Game\GroupGameDomain;
 use App\Domain\GroupStandingDomain;
 use App\Domain\SeasonDomain;
 use App\Enums\TournamentFormat;
+use App\Models\Organization\Organization;
 use App\Enums\TournamentStatus;
 use App\Models\Tournament\Tournament;
 use Carbon\Carbon;
@@ -43,6 +44,8 @@ class TournamentDomain
         public readonly ?int $tabletsCount = null,
         public readonly TournamentFormat $format = TournamentFormat::GroupsPlayoff,
         public readonly ?string $organizationName = null,
+        public readonly ?string $organizationLogoPath = null,
+        public readonly int $organizationLogoVersion = 0,
     ) {}
 
     public static function fromEloquent(Tournament $tournament, array $with = []): self
@@ -79,7 +82,25 @@ class TournamentDomain
             tabletsCount: $tournament->tablets_count,
             format: $tournament->format ?? TournamentFormat::GroupsPlayoff,
             organizationName: self::organizationName($tournament, $with),
+            organizationLogoPath: self::organizationLogoPath($tournament, $with),
+            organizationLogoVersion: self::organizationLogoVersion($tournament, $with),
         );
+    }
+
+    /**
+     * @param  list<string>  $with
+     */
+    private static function hostOrganization(Tournament $tournament, array $with): ?Organization
+    {
+        if ($tournament->relationLoaded('organization') && $tournament->organization !== null) {
+            return $tournament->organization;
+        }
+
+        if (! in_array('season', $with, true)) {
+            return null;
+        }
+
+        return $tournament->season?->organization;
     }
 
     /**
@@ -87,20 +108,31 @@ class TournamentDomain
      */
     private static function organizationName(Tournament $tournament, array $with): ?string
     {
-        if ($tournament->relationLoaded('organization')) {
-            $direct = $tournament->organization?->name;
-            if (is_string($direct) && $direct !== '') {
-                return $direct;
-            }
+        $name = self::hostOrganization($tournament, $with)?->name;
+
+        return is_string($name) && $name !== '' ? $name : null;
+    }
+
+    /**
+     * @param  list<string>  $with
+     */
+    private static function organizationLogoPath(Tournament $tournament, array $with): ?string
+    {
+        $path = self::hostOrganization($tournament, $with)?->logo_path;
+
+        return is_string($path) && $path !== '' ? $path : null;
+    }
+
+    /**
+     * @param  list<string>  $with
+     */
+    private static function organizationLogoVersion(Tournament $tournament, array $with): int
+    {
+        if (self::organizationLogoPath($tournament, $with) === null) {
+            return 0;
         }
 
-        if (! in_array('season', $with, true)) {
-            return null;
-        }
-
-        $fromSeason = $tournament->season?->organization?->name;
-
-        return is_string($fromSeason) && $fromSeason !== '' ? $fromSeason : null;
+        return (int) (self::hostOrganization($tournament, $with)?->updated_at?->getTimestamp() ?? 0);
     }
 
     /**
@@ -150,6 +182,17 @@ class TournamentDomain
         $fromSeason = $this->season?->organization?->name;
 
         return is_string($fromSeason) && $fromSeason !== '' ? $fromSeason : null;
+    }
+
+    public function hostLogoUrl(): ?string
+    {
+        if ($this->organizationLogoPath !== null) {
+            $url = url('/storage/'.ltrim($this->organizationLogoPath, '/'));
+
+            return $this->organizationLogoVersion > 0 ? $url.'?v='.$this->organizationLogoVersion : $url;
+        }
+
+        return $this->season?->organization?->logoUrl();
     }
 
     /** Nagłówek listy: „Organizacja – nazwa turnieju”, gdy organizacja jest znana. */

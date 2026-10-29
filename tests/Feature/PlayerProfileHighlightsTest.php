@@ -117,7 +117,8 @@ class PlayerProfileHighlightsTest extends TestCase
             ->assertOk()
             ->assertSeeInOrder([
                 'Najszybsza lotka',
-                '11 lotek',
+                '11',
+                'lotek',
                 'Najwyższy finish',
                 '140',
             ], false);

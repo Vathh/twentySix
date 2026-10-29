@@ -9,6 +9,7 @@ use App\Services\Season\SeasonService;
 use App\Support\Text\PolishFold;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class SeasonController
 {
@@ -37,7 +38,10 @@ class SeasonController
      */
     public function show(Season $season): JsonResponse
     {
-        return response()->json($this->showSerializer->season($season));
+        $payload = $this->showSerializer->season($season);
+        $payload['canManage'] = Gate::allows('update', $season);
+
+        return response()->json($payload);
     }
 
     /**

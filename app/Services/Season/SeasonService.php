@@ -3,6 +3,7 @@
 namespace App\Services\Season;
 
 use App\Domain\SeasonDomain;
+use App\Models\Player\Player;
 use App\Repositories\Organization\OrganizationRepository;
 use App\Repositories\Season\SeasonRepository;
 use App\Services\Organization\OrganizationService;
@@ -54,6 +55,10 @@ class SeasonService
                     'url' => route('seasons.show', ['season' => $season->id]),
                     'title' => $season->displayTitle(),
                     'name' => $season->name,
+                    'logoUrl' => $season->organization?->logoUrl(),
+                    'initials' => $season->organization !== null
+                        ? Player::initialsFromName($season->organization->name)
+                        : null,
                     'context' => $season->organization?->name,
                     'description' => null,
                     'meta' => implode(' · ', $meta),

@@ -7,6 +7,7 @@ use App\Domain\Tournament\TournamentDomain;
 use App\Domain\Tournament\TournamentStartRules;
 use App\Enums\BracketSide;
 use App\Models\Tournament\Tournament;
+use App\Models\Users\User;
 use App\Queries\GetTournamentData;
 use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\Retention\ApplicationEntityDeletionService;
@@ -129,11 +130,11 @@ class TournamentController extends Controller
         }
 
         return redirect()
-            ->route('tournaments.start', ['tournament' => $tournamentId])
+            ->route('tournaments.show', ['tournament' => $tournamentId])
             ->with('success', 'Pomyślnie stworzono turniej jednorazowy!');
     }
 
-    public function show(Tournament $tournament)
+    public function show(Request $request, Tournament $tournament)
     {
         $viewModel = $this->getTournamentGroupResults->get($tournament->id);
         $season = $viewModel->season();
@@ -149,6 +150,17 @@ class TournamentController extends Controller
 
         $tournament->loadMissing('organization');
         $organizationId = $season?->organization?->id ?? $tournament->organization?->id;
+        $roster = null;
+        $join = null;
+        $participantCount = 0;
+        $minPlayers = TournamentStartRules::MIN_PLAYERS;
+        if (! $tournamentDomain->isStarted()) {
+            $roster = $this->startPageService->build($tournamentDomain, $tournament->id, $request);
+            $roster['canManageParticipants'] = $canManageTournament;
+            $participantCount = (int) $roster['participantCount'];
+            $minPlayers = (int) $roster['minPlayers'];
+            $join = $this->joinRequestService->statusForUser($tournament, Auth::id());
+        }
 
         return view('tournaments.show', [
             'tournament' => $tournamentDomain,
@@ -180,6 +192,10 @@ class TournamentController extends Controller
             'canManageTournament' => $canManageTournament,
             'loginCode' => $loginCode,
             'loginUrl' => $loginUrl,
+            'roster' => $roster,
+            'join' => $join,
+            'participantCount' => $participantCount,
+            'minPlayers' => $minPlayers,
         ]);
     }
 
@@ -210,8 +226,8 @@ class TournamentController extends Controller
         $this->tournamentCancelService->cancel($tournament->id);
 
         return redirect()
-            ->route('tournaments.start', $tournament)
-            ->with('success', 'Rozgrywki anulowane. Możesz wystartować turniej od nowa.');
+            ->route('tournaments.show', $tournament)
+            ->with('success', 'Rozgrywki anulowane. Możesz ułożyć skład i wystartować turniej od nowa.');
     }
 
     public function joinRequestsLive(Tournament $tournament): JsonResponse
@@ -273,11 +289,34 @@ class TournamentController extends Controller
         return [null, $organizationId];
     }
 
-    public function start(Request $request, int $tournamentId): Factory|View
+    public function start(Request $request, int $tournamentId): Factory|View|RedirectResponse
     {
         $tournament = $this->loadAndAuthorize($tournamentId);
+        if ($tournament->isStarted()) {
+            return redirect()->route('tournaments.show', $tournamentId);
+        }
 
         return view('tournaments.start', $this->startPageService->build($tournament, $tournamentId, $request));
+    }
+
+    public function applyJoinRequest(Tournament $tournament): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user instanceof User) {
+            return redirect()->guest(route('pages.loginPanel'));
+        }
+
+        try {
+            $this->joinRequestService->applyToTournament($tournament, $user);
+        } catch (RuntimeException $e) {
+            return redirect()
+                ->route('tournaments.show', $tournament)
+                ->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('tournaments.show', $tournament)
+            ->with('success', 'Zgłoszenie wysłane — czekaj na akceptację organizatora.');
     }
 
     public function searchInvitationUsers(Request $request, int $tournamentId): JsonResponse

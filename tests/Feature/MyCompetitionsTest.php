@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\TournamentInvitationStatus;
+use App\Enums\TournamentStatus;
 use App\Models\League\League;
 use App\Models\League\LeagueDivision;
 use App\Models\League\LeagueDivisionMember;
@@ -49,6 +50,7 @@ class MyCompetitionsTest extends TestCase
             ->get(route('me.index'))
             ->assertOk()
             ->assertSee('Gdzie gram')
+            ->assertSee('Nie masz teraz turnieju do rozegrania ani do prowadzenia.')
             ->assertSee('Nie jesteś powiązany z żadnym trwającym sezonem turniejowym.')
             ->assertSee('Nie jesteś w żadnej lidze piramidowej.')
             ->assertSee('Nie jesteś powiązany z żadną organizacją.')
@@ -59,6 +61,7 @@ class MyCompetitionsTest extends TestCase
         Sanctum::actingAs($outsider);
         $this->getJson('/api/me/competitions')
             ->assertOk()
+            ->assertJsonPath('tournaments', [])
             ->assertJsonPath('seasons', [])
             ->assertJsonPath('leagues', [])
             ->assertJsonPath('organizations', [])
@@ -199,6 +202,7 @@ class MyCompetitionsTest extends TestCase
                 'season_id' => $season->id,
                 'name' => 'Turniej '.$season->name,
                 'date' => $season->start_date,
+                'status' => $season->is($current) ? TournamentStatus::GROUP : TournamentStatus::FINISHED,
             ]);
             TournamentInvitation::create([
                 'tournament_id' => $tournament->id,
@@ -213,15 +217,97 @@ class MyCompetitionsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'seasons')
             ->assertJsonPath('seasons.0.id', $current->id)
-            ->assertJsonPath('seasons.0.name', 'Sezon trwający');
+            ->assertJsonPath('seasons.0.name', 'Sezon trwający')
+            ->assertJsonCount(1, 'tournaments')
+            ->assertJsonPath('tournaments.0.name', 'Turniej Sezon trwający')
+            ->assertJsonPath('tournaments.0.role', 'member');
 
         $this->withoutVite();
         $this->actingAs($member)
             ->get(route('me.index'))
             ->assertOk()
             ->assertSee('Sezon trwający')
+            ->assertSee('Turniej Sezon trwający')
             ->assertDontSee('Sezon zakończony')
-            ->assertDontSee('Sezon przyszły');
+            ->assertDontSee('Sezon przyszły')
+            ->assertDontSee('Turniej Sezon zakończony')
+            ->assertDontSee('Turniej Sezon przyszły');
+    }
+
+    public function test_hub_lists_open_tournaments_for_admin_and_accepted_player(): void
+    {
+        $admin = $this->makeUser('Prowadzący');
+        $player = $this->makeUser('Grający');
+        $pending = $this->makeUser('Czekający');
+        $org = Organization::create(['name' => 'Klub wieczoru', 'description' => '']);
+        $org->admins()->attach($admin->id);
+        $oneOff = Tournament::create([
+            'organization_id' => $org->id,
+            'name' => 'Turniej na sali',
+            'date' => now()->addDay()->toDateString(),
+            'status' => TournamentStatus::GROUP,
+        ]);
+        $done = Tournament::create([
+            'organization_id' => $org->id,
+            'name' => 'Turniej archiwalny',
+            'date' => now()->subMonth()->toDateString(),
+            'status' => TournamentStatus::FINISHED,
+        ]);
+        $season = $this->createCurrentSeason($org, 'Sezon wieczoru');
+        $seasonTournament = Tournament::create([
+            'season_id' => $season->id,
+            'name' => 'Otwarte',
+            'date' => now()->toDateString(),
+            'status' => TournamentStatus::CREATED,
+        ]);
+        TournamentInvitation::create([
+            'tournament_id' => $seasonTournament->id,
+            'user_id' => $player->id,
+            'invited_by' => $admin->id,
+            'status' => TournamentInvitationStatus::ACCEPTED,
+        ]);
+        TournamentInvitation::create([
+            'tournament_id' => $seasonTournament->id,
+            'user_id' => $pending->id,
+            'invited_by' => $admin->id,
+            'status' => TournamentInvitationStatus::PENDING,
+        ]);
+
+        Sanctum::actingAs($admin);
+        $adminHub = $this->getJson('/api/me/competitions')
+            ->assertOk()
+            ->assertJsonCount(2, 'tournaments')
+            ->assertJsonPath('tournaments.0.name', 'Turniej na sali')
+            ->assertJsonPath('tournaments.0.role', 'admin')
+            ->assertJsonPath('tournaments.0.roleLabel', 'Admin')
+            ->assertJsonPath('tournaments.0.organizationName', 'Klub wieczoru')
+            ->assertJsonPath('tournaments.0.statusLabel', 'Grupy')
+            ->assertJsonPath('tournaments.1.name', 'Otwarte')
+            ->assertJsonPath('tournaments.1.seasonName', 'Sezon wieczoru')
+            ->assertJsonMissingPath('tournaments.0.url');
+
+        $this->assertNotContains($done->id, collect($adminHub->json('tournaments'))->pluck('id'));
+
+        Sanctum::actingAs($player);
+        $this->getJson('/api/me/competitions')
+            ->assertOk()
+            ->assertJsonCount(1, 'tournaments')
+            ->assertJsonPath('tournaments.0.id', $seasonTournament->id)
+            ->assertJsonPath('tournaments.0.role', 'member')
+            ->assertJsonPath('tournaments.0.roleLabel', 'Zawodnik');
+
+        Sanctum::actingAs($pending);
+        $this->getJson('/api/me/competitions')
+            ->assertOk()
+            ->assertJsonPath('tournaments', []);
+
+        $this->withoutVite();
+        $this->actingAs($admin)
+            ->get(route('me.index'))
+            ->assertOk()
+            ->assertSee('Turniej na sali')
+            ->assertSee(route('tournaments.show', $oneOff), false)
+            ->assertDontSee('Turniej archiwalny');
     }
 
     private function seedForeignCompetition(): void

@@ -44,7 +44,7 @@ Route::prefix('referee')->name('referee.')->group(function () {
 });
 
 Route::get('/games/{type}/{id}', [GameViewController::class, 'show'])
-    ->where('type', 'group|playoff|quick')
+    ->where('type', 'group|playoff|quick|league')
     ->whereNumber('id')
     ->name('games.show');
 Route::post('/games/{type}/{id}/result', [GameViewController::class, 'updateResult'])
@@ -58,7 +58,7 @@ Route::post('/games/{type}/{id}/cancel', [GameViewController::class, 'cancel'])
     ->middleware('auth')
     ->name('games.cancel');
 Route::get('/games/{type}/{id}/live', [GameViewController::class, 'live'])
-    ->where('type', 'group|playoff|quick')
+    ->where('type', 'group|playoff|quick|league')
     ->whereNumber('id')
     ->name('games.live');
 Route::get('/games/{type}/{id}/overlay', [GameViewController::class, 'overlay'])
@@ -298,6 +298,7 @@ Route::prefix('tournaments/{tournament}')->group(function () {
     Route::post('/join-code/regenerate', [TournamentController::class, 'regenerateJoinCode'])->name('tournaments.join-code.regenerate');
     Route::post('/join-code/toggle', [TournamentController::class, 'toggleJoinCode'])->name('tournaments.join-code.toggle');
     Route::post('/tablet-login-code/regenerate', [TournamentController::class, 'regenerateTabletLoginCode'])->name('tournaments.tablet-login-code.regenerate');
+    Route::post('/join-requests', [TournamentController::class, 'applyJoinRequest'])->name('tournaments.join-requests.store')->middleware('auth');
     Route::post('/join-requests/{joinRequest}/approve', [TournamentController::class, 'approveJoinRequest'])->name('tournaments.join-requests.approve');
     Route::post('/join-requests/{joinRequest}/reject', [TournamentController::class, 'rejectJoinRequest'])->name('tournaments.join-requests.reject');
     Route::post('/participants/guests/add', [TournamentController::class, 'addGuestParticipant'])->name('tournaments.participants.guests.add');

@@ -60,10 +60,6 @@
                             <span class="overview-scope overview-scope--form">{{ $relationChip }}</span>
                         @endif
                     </p>
-                    <p class="profile-hero-highlights">
-                        <span>Najszybsza lotka <strong>{{ $highlights['fastestQf'] !== null ? $highlights['fastestQf'].' lotek' : '–' }}</strong></span>
-                        <span>Najwyższy finish <strong>{{ $highlights['highestHf'] !== null ? $highlights['highestHf'] : '–' }}</strong></span>
-                    </p>
                 </div>
                 @auth
                     <div class="profile-hero-actions">
@@ -99,6 +95,29 @@
                         @endif
                     </div>
                 @endauth
+            </div>
+
+            <div class="profile-hero-highlights">
+                <div class="profile-hero-highlight">
+                    <span class="profile-hero-highlight-label">Najszybsza lotka</span>
+                    <strong class="profile-hero-highlight-value">
+                        @if($highlights['fastestQf'] !== null)
+                            {{ $highlights['fastestQf'] }}<span class="profile-hero-highlight-unit">lotek</span>
+                        @else
+                            <span class="profile-hero-highlight-empty">–</span>
+                        @endif
+                    </strong>
+                </div>
+                <div class="profile-hero-highlight">
+                    <span class="profile-hero-highlight-label">Najwyższy finish</span>
+                    <strong class="profile-hero-highlight-value">
+                        @if($highlights['highestHf'] !== null)
+                            {{ $highlights['highestHf'] }}
+                        @else
+                            <span class="profile-hero-highlight-empty">–</span>
+                        @endif
+                    </strong>
+                </div>
             </div>
 
             <section class="profile-hero-badges" aria-label="Odznaczenia">

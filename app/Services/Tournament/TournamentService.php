@@ -13,6 +13,7 @@ use App\Enums\GameStatus;
 use App\Enums\GrandFinalMode;
 use App\Enums\TournamentFormat;
 use App\Enums\TournamentStatus;
+use App\Models\Player\Player;
 use App\Models\Tournament\Tournament;
 use App\Repositories\Game\GameRepository;
 use App\Repositories\GroupStanding\GroupStandingRepository;
@@ -112,13 +113,16 @@ class TournamentService
         return [
             'items' => $pageData['items']->map(function ($tournament) {
                 $date = $tournament->getPlayDateFormatted();
+                $host = $tournament->hostOrganizationName();
 
                 return [
                     'id' => $tournament->id,
                     'url' => route('tournaments.show', ['tournament' => $tournament->id]),
                     'title' => $tournament->displayTitle(),
                     'name' => $tournament->name,
-                    'context' => $tournament->hostOrganizationName(),
+                    'logoUrl' => $tournament->hostLogoUrl(),
+                    'initials' => $host !== null ? Player::initialsFromName($host) : null,
+                    'context' => $host,
                     'description' => null,
                     'meta' => $date ?? 'Data nieustawiona',
                     'subtitle' => $date ? 'Data rozgrywek: '.$date : null,

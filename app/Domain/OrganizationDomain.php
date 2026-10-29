@@ -32,6 +32,7 @@ class OrganizationDomain
         public readonly ?int $guestCount = null,
         public readonly ?int $seasonCount = null,
         public readonly ?int $tournamentCount = null,
+        public readonly ?string $logoPath = null,
     ) {}
 
     public static function fromEloquent(Organization $organization, array $with = []): self
@@ -72,6 +73,9 @@ class OrganizationDomain
             guestCount: self::relationCount($organization, 'guests_count', 'guests', $with),
             seasonCount: self::relationCount($organization, 'seasons_count', 'seasons', $with),
             tournamentCount: self::tournamentCount($organization, $with),
+            logoPath: is_string($organization->logo_path) && $organization->logo_path !== ''
+                ? $organization->logo_path
+                : null,
         );
     }
 
@@ -102,6 +106,18 @@ class OrganizationDomain
     public function getUpdatedAtFormatted(): string
     {
         return $this->updatedAt->locale((string) config('app.locale'))->translatedFormat('j F Y');
+    }
+
+    public function logoUrl(): ?string
+    {
+        if ($this->logoPath === null) {
+            return null;
+        }
+
+        $version = $this->updatedAt->getTimestamp();
+        $url = url('/storage/'.ltrim($this->logoPath, '/'));
+
+        return $version > 0 ? $url.'?v='.$version : $url;
     }
 
     public function getAdminsIds(): array

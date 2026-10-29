@@ -99,7 +99,7 @@ class TournamentCancelTest extends TestCase
                 'current_password' => 'password',
             ]);
 
-        $response->assertRedirect(route('tournaments.start', $tournament));
+        $response->assertRedirect(route('tournaments.show', $tournament));
         $response->assertSessionHas('success');
 
         $tournament->refresh();

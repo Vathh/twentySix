@@ -2,12 +2,10 @@
 
 namespace App\Services\League;
 
-use App\Domain\GameScoring\MatchFormat;
 use App\Domain\Stats\ThreeDartAverageSet;
 use App\Domain\League\LeagueMatchdayCalendar;
 use App\Domain\League\LeagueStandingRow;
 use App\Enums\LeagueGamePurpose;
-use App\Enums\LeagueGameStatus;
 use App\Enums\LeagueSeasonStatus;
 use App\Models\League\LeagueGame;
 use App\Models\League\LeagueSeason;
@@ -185,28 +183,6 @@ class LeagueSeasonQueryService
             'divisions' => $divisions,
             'tiebreakGames' => collect($data['tiebreakGames'])->map(fn (LeagueGame $game) => $this->mapGameForApi($game, $averages))->values()->all(),
             'playoffGames' => collect($data['playoffGames'])->map(fn (LeagueGame $game) => $this->mapGameForApi($game, $averages))->values()->all(),
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function gameShowData(int $gameId): array
-    {
-        $game = $this->leagueSeasonRepository->findGame($gameId);
-        $format = MatchFormat::fromRecord($game);
-
-        return [
-            'game' => $game,
-            'season' => $game->season,
-            'league' => $game->season->league,
-            'organization' => $game->season->league->organization,
-            'format' => $format,
-            'canManage' => $game->season->status->isOpen()
-                && $game->status !== LeagueGameStatus::VOIDED
-                && ! in_array($game->status, [LeagueGameStatus::LOBBY, LeagueGameStatus::IN_PROGRESS], true),
-            'canCancelGame' => $game->season->status->isOpen()
-                && in_array($game->status, [LeagueGameStatus::LOBBY, LeagueGameStatus::IN_PROGRESS], true),
         ];
     }
 

@@ -5,6 +5,7 @@ namespace App\Services\User;
 use App\Models\League\League;
 use App\Models\Organization\Organization;
 use App\Models\Season\Season;
+use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Repositories\User\UserCompetitionsRepository;
 
@@ -16,6 +17,7 @@ class UserCompetitionsService
 
     /**
      * @return array{
+     *     tournaments: list<array<string, mixed>>,
      *     seasons: list<array<string, mixed>>,
      *     leagues: list<array<string, mixed>>,
      *     organizations: list<array<string, mixed>>
@@ -99,7 +101,37 @@ class UserCompetitionsService
             ->values()
             ->all();
 
+        $tournaments = $this->userCompetitionsRepository->tournamentsForUser($userId)
+            ->map(function (Tournament $tournament) use ($adminSeasonIds, $adminOrganizationIds, $userId, $withUrls) {
+                $host = $tournament->hostOrganization();
+                $isAdmin = $tournament->admins->contains('id', $userId)
+                    || ($tournament->season_id !== null && in_array((int) $tournament->season_id, $adminSeasonIds, true))
+                    || ($host !== null && in_array((int) $host->id, $adminOrganizationIds, true));
+
+                $row = [
+                    'id' => $tournament->id,
+                    'name' => $tournament->name,
+                    'organizationId' => $host?->id,
+                    'organizationName' => $host?->name,
+                    'seasonId' => $tournament->season_id,
+                    'seasonName' => $tournament->season?->name,
+                    'date' => $tournament->date?->format('Y-m-d'),
+                    'status' => $tournament->status?->value,
+                    'statusLabel' => $tournament->status?->label() ?? 'Zaplanowany',
+                    'role' => $isAdmin ? 'admin' : 'member',
+                    'roleLabel' => $isAdmin ? 'Admin' : 'Zawodnik',
+                ];
+                if ($withUrls) {
+                    $row['url'] = route('tournaments.show', $tournament);
+                }
+
+                return $row;
+            })
+            ->values()
+            ->all();
+
         return [
+            'tournaments' => $tournaments,
             'seasons' => $seasons,
             'leagues' => $leagues,
             'organizations' => $organizations,

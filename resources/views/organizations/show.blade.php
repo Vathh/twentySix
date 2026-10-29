@@ -36,18 +36,18 @@
         <div class="detail-main">
             <div class="detail-content">
 
-                <x-place-bar
-                    current="organization"
-                    :organization-name="$organization->name"
-                />
-
-                <div class="mb-4 flex justify-center">
-                    <x-player-avatar :name="$organization->name" :avatar-url="$logoUrl" size="lg" />
-                </div>
-
-                @if(filled($organization->description))
-                    <p class="place-lead">{{ $organization->description }}</p>
-                @endif
+                <nav class="place-bar" aria-label="Gdzie jesteś">
+                    <div class="place-slot place-slot--organization is-current org-hero" aria-current="page">
+                        <div class="org-hero-copy">
+                            <span class="place-kind">Organizacja</span>
+                            <h1 class="place-name">{{ $organization->name }}</h1>
+                            @if(filled($organization->description))
+                                <p class="place-lead org-hero-lead">{{ $organization->description }}</p>
+                            @endif
+                        </div>
+                        <x-player-avatar :name="$organization->name" :avatar-url="$logoUrl" size="lg" />
+                    </div>
+                </nav>
 
                 @php
                     $seasonCount = $seasons->count();

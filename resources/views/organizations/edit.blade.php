@@ -14,7 +14,8 @@
               x-data="playerAvatarCrop(@js([
                   'avatarUrl' => $logoUrl,
                   'initials' => $logoInitials,
-              ]))">
+              ]))"
+              @submit="save($event)">
             @csrf
             @method('PUT')
             <input type="hidden" name="remove_logo" :value="removed ? '1' : '0'">
@@ -43,7 +44,7 @@
                                 <button class="btn btn-mini" type="button" @click="openPicker()">Wybierz logo</button>
                                 <button class="btn btn-mini" type="button" x-show="showImage" x-cloak @click="remove()">Usuń logo</button>
                             </div>
-                            <p class="text-text-muted text-xs text-center">JPEG, PNG lub WebP, do 2 MB. Po wyborze przytniesz kadr do kwadratu.</p>
+                            <p class="text-text-muted text-xs text-center">JPEG, PNG lub WebP, do 2 MB. Po wyborze ustaw kwadratowy kadr — zapis go zatwierdzi.</p>
                         </div>
                     </template>
 
@@ -200,7 +201,7 @@
                     @endforeach
                 </div>
 
-                <button class="btn btn-primary" type="submit">Zapisz zmiany</button>
+                <button class="btn btn-primary" type="submit" :disabled="saving">Zapisz zmiany</button>
                 <a href="{{ route('organizations.show', $organization->id) }}" class="btn btn-secondary mt-4 text-center">Powrót</a>
 
                 <x-errors/>

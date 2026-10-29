@@ -3,9 +3,18 @@
 
     <nav class="flex flex-col space-y-3">
         @if(!$tournament->isStarted())
-            <a href="{{ route('tournaments.start', $tournament->id) }}" class="admin-sidebar-link">
-                ➕ Rozpocznij turniej
-            </a>
+            @if(($participantCount ?? 0) >= ($minPlayers ?? 4))
+                <a href="{{ route('tournaments.start', $tournament->id) }}" class="admin-sidebar-link">
+                    ➕ Wystartuj
+                </a>
+            @else
+                <span class="admin-sidebar-link opacity-50 cursor-not-allowed" aria-disabled="true">
+                    ➕ Wystartuj
+                </span>
+                <p class="text-text-secondary text-xs">
+                    Potrzeba co najmniej {{ $minPlayers ?? 4 }} osób w składzie.
+                </p>
+            @endif
         @elseif($tournament->canCancelPlay())
             <button type="button" data-cancel-play class="admin-sidebar-link w-full text-left text-danger" @click="cancelOpen = true">
                 Anuluj rozgrywki

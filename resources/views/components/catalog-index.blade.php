@@ -166,7 +166,15 @@
                 >
                     <p class="catalog-context" x-show="item.context" x-text="item.context"></p>
                     <div class="place-card-head">
-                        <span class="place-card-name" x-text="item.name"></span>
+                        <div class="place-card-identity">
+                            <template x-if="item.initials">
+                                <span class="player-avatar player-avatar--md">
+                                    <img x-show="item.logoUrl" :src="item.logoUrl" alt="" x-on:error="item.logoUrl = null">
+                                    <span class="player-avatar-fallback" x-show="!item.logoUrl" x-text="item.initials"></span>
+                                </span>
+                            </template>
+                            <span class="place-card-name" x-text="item.name"></span>
+                        </div>
                         <span
                             x-show="item.status_label"
                             class="shrink-0 inline-flex items-center"
@@ -201,7 +209,7 @@
                             </span>
                         </template>
                     </div>
-                    <p class="catalog-activity" x-show="item.activity" x-text="'aktywność ' + item.activity"></p>
+                    <p class="catalog-activity" x-show="item.activity" x-text="'ostatnia aktywność ' + item.activity"></p>
                     <p class="place-card-meta" x-show="item.meta" x-text="item.meta"></p>
                 </div>
             </a>

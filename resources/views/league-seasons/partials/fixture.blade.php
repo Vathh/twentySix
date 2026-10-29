@@ -4,7 +4,7 @@
     $player1Average = $threeDartAverages->leagueMatchAverage((int) $game->id, (int) $game->player1_id);
     $player2Average = $threeDartAverages->leagueMatchAverage((int) $game->id, (int) $game->player2_id);
 @endphp
-<a href="{{ route('league-games.show', $game) }}" class="block">
+<a href="{{ route('games.show', ['type' => 'league', 'id' => $game->id]) }}" class="block">
     <div class="list-item flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
         <span>
             {{ $game->player1?->name }}

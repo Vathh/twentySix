@@ -9,6 +9,7 @@ use App\Services\Organization\OrganizationService;
 use App\Support\Text\PolishFold;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class OrganizationController
 {
@@ -37,6 +38,9 @@ class OrganizationController
      */
     public function show(Organization $organization): JsonResponse
     {
-        return response()->json($this->showSerializer->organization($organization));
+        $payload = $this->showSerializer->organization($organization);
+        $payload['canManage'] = Gate::allows('update', $organization);
+
+        return response()->json($payload);
     }
 }

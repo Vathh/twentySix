@@ -8,6 +8,8 @@ use App\Models\Game\Game;
 use App\Models\League\LeagueGame;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\QuickGame\QuickGame;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use App\Repositories\Game\GameLegPlayerStatRepository;
 use App\Repositories\Game\GameLegRepository;
 use App\Repositories\Game\GameRepository;
@@ -169,7 +171,9 @@ class GameDetailService
             $game,
             'Liga',
             $game->season?->league?->name,
-            route('league-games.show', $game),
+            $game->season
+                ? route('league-seasons.show', $game->season)
+                : route('pages.home'),
         ];
     }
 
@@ -240,6 +244,14 @@ class GameDetailService
         $tournamentId = ($game instanceof Game || $game instanceof PlayoffGame)
             ? (int) $game->tournament_id
             : null;
+        $status = $game->status instanceof \BackedEnum ? $game->status->value : (string) $game->status;
+        $leagueFields = $game instanceof LeagueGame
+            ? $this->leaguePageFields($game, $status)
+            : $this->emptyLeaguePageFields();
+        $canCorrectResult = $this->gameAuthorizationService->canCorrectTournamentGame(
+            $tournamentId,
+            $context->kind,
+        );
 
         return [
             'kind' => $context->kind->value,
@@ -256,19 +268,9 @@ class GameDetailService
             'scoreToWin' => $context->matchFormat->scoreToWin(),
             'walkoverScoreLine' => $context->matchFormat->walkoverScoreLine(),
             'usesSetScore' => $context->matchFormat->usesSetScore(),
-            'canCorrectResult' => $this->gameAuthorizationService->canCorrectTournamentGame(
-                $tournamentId,
-                $context->kind,
-            ),
-            'canCancelGame' => $this->gameAuthorizationService->canCorrectTournamentGame(
-                $tournamentId,
-                $context->kind,
-            ) && (
-                $game->status instanceof GameStatus
-                    ? $game->status === GameStatus::IN_PROGRESS
-                    : (string) ($game->status instanceof \BackedEnum ? $game->status->value : $game->status) === 'in_progress'
-            ),
-            'status' => $game->status instanceof \BackedEnum ? $game->status->value : (string) $game->status,
+            'canCorrectResult' => $canCorrectResult,
+            'canCancelGame' => $leagueFields['canCancelLeague'] || ($canCorrectResult && $status === GameStatus::IN_PROGRESS->value),
+            'status' => $status,
             'player1' => $game->player1,
             'player2' => $game->player2,
             'player1Score' => (int) $game->player1_score,
@@ -277,10 +279,59 @@ class GameDetailService
             'players' => $players,
             'legsDetail' => $legsDetail,
             'legsBySet' => $legsBySet,
+            ...$leagueFields,
             'broadcastChannel' => $context->broadcastChannelName(),
-            'isLive' => $game->status instanceof GameStatus
-                ? $game->status === GameStatus::IN_PROGRESS
-                : (string) ($game->status instanceof \BackedEnum ? $game->status->value : $game->status) === 'in_progress',
+            'isLive' => $status === GameStatus::IN_PROGRESS->value,
+        ];
+    }
+
+    /**
+     * @return array{leagueMatchdayLabel: null, leagueDeadline: null, leagueOverdue: false, leagueWalkoverLabel: null, canManageLeague: false, canCancelLeague: false}
+     */
+    private function emptyLeaguePageFields(): array
+    {
+        return [
+            'leagueMatchdayLabel' => null,
+            'leagueDeadline' => null,
+            'leagueOverdue' => false,
+            'leagueWalkoverLabel' => null,
+            'canManageLeague' => false,
+            'canCancelLeague' => false,
+        ];
+    }
+
+    /**
+     * @return array{leagueMatchdayLabel: ?string, leagueDeadline: ?string, leagueOverdue: bool, leagueWalkoverLabel: ?string, canManageLeague: bool, canCancelLeague: bool}
+     */
+    private function leaguePageFields(LeagueGame $game, string $status): array
+    {
+        $game->loadMissing(['matchday', 'season.league.organization.admins']);
+        $isAdmin = Auth::check() && Gate::allows('update', $game);
+        $seasonOpen = $game->season?->status?->isOpen() ?? false;
+        $walkover = $game->walkover_type instanceof \BackedEnum
+            ? $game->walkover_type->value
+            : (string) ($game->walkover_type ?? 'none');
+
+        return [
+            'leagueMatchdayLabel' => $game->matchday
+                ? 'Kolejka '.$game->matchday->round_number.' · '.$game->matchday->windowLabel()
+                : null,
+            'leagueDeadline' => $game->deadline_at?->format('Y-m-d'),
+            'leagueOverdue' => $status === 'scheduled'
+                && $game->deadline_at !== null
+                && $game->deadline_at->isPast(),
+            'leagueWalkoverLabel' => match ($walkover) {
+                'single' => 'Walkower',
+                'both' => 'Walkower obustronny',
+                default => null,
+            },
+            'canManageLeague' => $seasonOpen
+                && $isAdmin
+                && $status !== 'voided'
+                && ! in_array($status, ['lobby', 'in_progress'], true),
+            'canCancelLeague' => $seasonOpen
+                && $isAdmin
+                && in_array($status, ['lobby', 'in_progress'], true),
         ];
     }
 

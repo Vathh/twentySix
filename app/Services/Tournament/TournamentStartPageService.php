@@ -234,6 +234,185 @@ class TournamentStartPageService
     }
 
     /**
+     * Skład i opcje kreatora startu dla aplikacji (bez adresów akcji web).
+     *
+     * @return array<string, mixed>
+     */
+    public function apiSetup(int $tournamentId): array
+    {
+        $tournamentModel = $this->tournamentRepository->findModel($tournamentId, ['organization', 'season.organization']);
+        if ($tournamentModel->status === TournamentStatus::CREATED) {
+            $tournamentModel = $this->joinRequestService->ensureJoinCode($tournamentModel);
+        }
+
+        $seasonId = $tournamentModel->season_id !== null ? (int) $tournamentModel->season_id : null;
+        $invitations = $this->invitationService->getForTournament($tournamentId);
+        $invitationByUserId = $invitations->keyBy(fn ($inv) => $inv->userId);
+        $participantCount = count($this->buildParticipantsLive($tournamentId));
+        $groupCountOptions = TournamentStartRules::allowedGroupCountsForPlayers($participantCount);
+        $bracketOptions = TournamentStartRules::bracketOptionsByGroupCountForPlayers($participantCount);
+        $host = $tournamentModel->organization ?? $tournamentModel->season?->organization;
+        $presets = is_array($host?->match_format_presets) ? $host->match_format_presets : [];
+        $defaultFormats = OrganizationMatchFormatPresets::defaultsByStage($presets !== [] ? $presets : null);
+        $seBracketSize = $participantCount >= TournamentStartRules::MIN_PLAYERS
+            ? \App\Support\Tournament\PlayoffByePairing::nextPowerOfTwo($participantCount)
+            : 4;
+
+        $stageMap = function (array $stages): array {
+            return array_map(
+                static fn (GameStage $stage): array => [
+                    'value' => $stage->value,
+                    'label' => $stage->label(),
+                ],
+                $stages,
+            );
+        };
+
+        $byBracket = [];
+        $byBracketSe = [];
+        $byBracketDe = [];
+        foreach ([2, 4, 8, 16, 32, 64, 128] as $bracketSize) {
+            $byBracket[(string) $bracketSize] = $stageMap(GameStage::forPlayoffBracketSize($bracketSize));
+            $byBracketSe[(string) $bracketSize] = $stageMap(GameStage::forEliminationBracketSize($bracketSize));
+            $byBracketDe[(string) $bracketSize] = $stageMap(GameStage::forEliminationBracketSize($bracketSize, includeThird: false));
+        }
+
+        $regulars = $seasonId === null
+            ? []
+            : $this->playerService
+                ->getRelatedRegisteredUsers($seasonId)
+                ->map(function ($player) use ($invitationByUserId) {
+                    $invitation = $invitationByUserId->get($player->userId);
+
+                    return [
+                        'userId' => $player->userId,
+                        'playerId' => $player->id,
+                        'name' => $player->name,
+                        'invitationStatus' => $invitation?->status?->value,
+                        'canInvite' => $invitation === null || $invitation->status->canReinvite(),
+                    ];
+                })
+                ->sortBy('name')
+                ->values()
+                ->all();
+
+        $tournamentGuestIds = $this->playerService->getTournamentGuestParticipants($tournamentId)->pluck('id');
+        $relatedGuests = $seasonId === null
+            ? []
+            : $this->playerService
+                ->getSeasonGuests($seasonId)
+                ->map(fn ($guest) => [
+                    'playerId' => $guest->id,
+                    'name' => $guest->name,
+                    'inTournament' => $tournamentGuestIds->contains($guest->id),
+                ])
+                ->sortBy('name')
+                ->values()
+                ->all();
+
+        $preview = [];
+        foreach (TournamentStartRules::startConfigPreview($participantCount) as $groupsCount => $brackets) {
+            $preview[(string) $groupsCount] = [];
+            foreach ($brackets as $bracketSize => $row) {
+                $preview[(string) $groupsCount][(string) $bracketSize] = [
+                    'groupSizes' => array_values($row['groupSizes']),
+                    'advances' => array_values($row['advances']),
+                ];
+            }
+        }
+
+        $bracketOptionsJson = [];
+        foreach ($bracketOptions as $groupsCount => $options) {
+            $bracketOptionsJson[(string) $groupsCount] = $options;
+        }
+
+        $requests = $tournamentModel->status === TournamentStatus::CREATED
+            ? $this->joinRequestService->pendingSnapshot($tournamentId)['requests']
+            : [];
+
+        return [
+            'tournament' => [
+                'id' => (int) $tournamentModel->id,
+                'name' => $tournamentModel->name,
+                'status' => $tournamentModel->status->value,
+                'statusLabel' => $tournamentModel->status->label(),
+                'canManageParticipants' => $tournamentModel->status === TournamentStatus::CREATED,
+            ],
+            'participants' => array_map(
+                static fn (array $row): array => [
+                    'kind' => $row['kind'],
+                    'userId' => $row['userId'],
+                    'playerId' => $row['playerId'],
+                    'name' => $row['name'],
+                    'invitationId' => $row['invitationId'],
+                ],
+                $this->buildParticipantsLive($tournamentId),
+            ),
+            'participantCount' => $participantCount,
+            'minPlayers' => TournamentStartRules::MIN_PLAYERS,
+            'invitationPipeline' => array_map(
+                static fn (array $row): array => [
+                    'id' => $row['id'],
+                    'userId' => $row['userId'],
+                    'name' => $row['name'],
+                    'status' => $row['status'],
+                    'statusLabel' => $row['statusLabel'],
+                    'isPending' => $row['isPending'],
+                    'canReinvite' => $row['canReinvite'],
+                ],
+                $this->buildInvitationPipelineLive($tournamentId),
+            ),
+            'regulars' => $regulars,
+            'relatedGuests' => $relatedGuests,
+            'joinRequests' => array_map(
+                static fn (array $row): array => [
+                    'id' => $row['id'],
+                    'playerName' => $row['playerName'],
+                    'createdAt' => $row['createdAt'],
+                ],
+                $requests,
+            ),
+            'joinCode' => $tournamentModel->join_code,
+            'joinCodeEnabled' => (bool) $tournamentModel->join_code_enabled,
+            'joinUrl' => $tournamentModel->join_code
+                ? $this->joinRequestService->joinUrl($tournamentModel)
+                : null,
+            'groupCountOptions' => array_values($groupCountOptions),
+            'bracketOptionsByGroupCount' => $bracketOptionsJson,
+            'startConfigPreview' => $preview,
+            'seBracketSize' => $seBracketSize,
+            'seByeCount' => max(0, $seBracketSize - $participantCount),
+            'defaultMatchFormatsByStage' => $defaultFormats,
+            'matchFormatStagesByBracket' => $byBracket,
+            'matchFormatStagesByBracketSe' => $byBracketSe,
+            'matchFormatStagesByBracketDe' => $byBracketDe,
+            'startingScoreOptions' => MatchFormat::ALLOWED_STARTING_SCORES,
+        ];
+    }
+
+    /**
+     * Nazwy osób już w puli startowej. Bez adresów akcji admina.
+     *
+     * @return array{participantCount: int, minPlayers: int, participants: list<array{name: string, kind: string}>}
+     */
+    public function publicRoster(int $tournamentId): array
+    {
+        $participants = $this->participantsList(
+            $this->invitationService->getForTournament($tournamentId),
+            $this->playerService->getTournamentGuestParticipants($tournamentId),
+        )->map(fn (array $row) => [
+            'name' => $row['name'],
+            'kind' => $row['kind'],
+        ])->values()->all();
+
+        return [
+            'participantCount' => count($participants),
+            'minPlayers' => TournamentStartRules::MIN_PLAYERS,
+            'participants' => $participants,
+        ];
+    }
+
+    /**
      * Zaakceptowani uczestnicy (użytkownicy + goście), posortowani po nazwie.
      *
      * @param  \Illuminate\Support\Collection  $invitations

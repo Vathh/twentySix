@@ -11,7 +11,8 @@
               x-data="playerAvatarCrop(@js([
                   'avatarUrl' => $player->avatarUrl(),
                   'initials' => $player->initials(),
-              ]))">
+              ]))"
+              @submit="save($event)">
             @csrf
             @method('PUT')
             <input type="hidden" name="remove_avatar" :value="removed ? '1' : '0'">
@@ -53,7 +54,7 @@
                                 <button class="btn btn-mini" type="button" @click="openPicker()">Wybierz zdjęcie</button>
                                 <button class="btn btn-mini" type="button" x-show="showImage" x-cloak @click="remove()">Usuń zdjęcie</button>
                             </div>
-                            <p class="text-text-muted text-xs text-center">JPEG, PNG lub WebP, do 2 MB. Po wyborze przytniesz kadr do kwadratu.</p>
+                            <p class="text-text-muted text-xs text-center">JPEG, PNG lub WebP, do 2 MB. Po wyborze ustaw kwadratowy kadr — zapis go zatwierdzi.</p>
                         </div>
                     </template>
 
@@ -90,10 +91,9 @@
                 </div>
 
                 <div class="flex flex-wrap gap-3 justify-center">
-                    <button class="btn btn-primary" type="submit" :disabled="cropping">Zapisz</button>
+                    <button class="btn btn-primary" type="submit" :disabled="saving">Zapisz</button>
                     <a href="{{ route('players.show', $player) }}" class="btn btn-mini border border-border text-text-secondary bg-transparent hover:bg-bg-elevated">Anuluj</a>
                 </div>
-                <p class="text-text-muted text-xs text-center mt-3" x-show="cropping" x-cloak>Najpierw zatwierdź kadr albo anuluj.</p>
 
                 <x-errors/>
             </div>

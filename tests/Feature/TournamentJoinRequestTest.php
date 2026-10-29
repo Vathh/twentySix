@@ -168,17 +168,47 @@ class TournamentJoinRequestTest extends TestCase
             ->assertJsonPath('canApply', true);
     }
 
-    public function test_start_page_shows_join_code(): void
+    public function test_show_page_holds_roster_and_start_page_is_format_only(): void
     {
         $this->actingAs($this->admin)
-            ->get(route('tournaments.start', $this->tournament->id))
+            ->get(route('tournaments.show', $this->tournament->id))
             ->assertOk()
             ->assertSee('ABCD1234')
             ->assertSee('Dołącz przez QR')
             ->assertSee('tournamentJoinRequestsLive')
-            ->assertSee('Dodaj uczestników powyżej, aby wystartować turniej.')
+            ->assertSee('Wystartuj');
+
+        $this->actingAs($this->admin)
+            ->get(route('tournaments.start', $this->tournament->id))
+            ->assertOk()
+            ->assertSee('Przejdź do składu')
             ->assertSee('Rodzaj turnieju')
-            ->assertSee('participantCount >= minPlayers', false);
+            ->assertSee('participantCount >= minPlayers', false)
+            ->assertDontSee('Dołącz przez QR');
+    }
+
+    public function test_player_can_apply_from_tournament_page_without_code(): void
+    {
+        $this->actingAs($this->player)
+            ->get(route('tournaments.show', $this->tournament->id))
+            ->assertOk()
+            ->assertSee('Zgłoś się')
+            ->assertDontSee('Dołącz przez QR');
+
+        $this->actingAs($this->player)
+            ->post(route('tournaments.join-requests.store', $this->tournament->id))
+            ->assertRedirect(route('tournaments.show', $this->tournament->id));
+
+        $this->assertDatabaseHas('tournament_join_requests', [
+            'tournament_id' => $this->tournament->id,
+            'user_id' => $this->player->id,
+            'status' => TournamentJoinRequestStatus::PENDING->value,
+        ]);
+
+        Sanctum::actingAs($this->player);
+        $this->postJson('/api/tournaments/'.$this->tournament->id.'/join-request')
+            ->assertOk()
+            ->assertJsonPath('join.alreadyPending', true);
     }
 
     public function test_admin_can_remove_participant_via_json(): void

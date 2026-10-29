@@ -10,9 +10,40 @@
             <span class="entity-rule" aria-hidden="true"></span>
         </header>
         <p class="text-text-muted mb-8 max-w-2xl text-sm">
-            Trwające sezony turniejowe, ligi i organizacje, w których jesteś w składzie, grasz albo którymi zarządzasz.
+            Trwające turnieje, sezony turniejowe, ligi i organizacje, w których jesteś w składzie, grasz albo którymi zarządzasz.
             Publiczny katalog jest w <a href="{{ route('organizations.index') }}" class="text-accent underline">Rozgrywkach</a>.
         </p>
+
+        <section class="mb-8">
+            <h2 class="section-title mt-0">Turnieje</h2>
+            @if(count($tournaments) === 0)
+                <p class="text-text-muted text-sm">Nie masz teraz turnieju do rozegrania ani do prowadzenia.</p>
+            @else
+                <div class="index-grid">
+                    @foreach($tournaments as $index => $item)
+                        @php
+                            $tournamentMeta = collect([
+                                $item['organizationName'] ?? null,
+                                $item['seasonName'] ?? null,
+                                filled($item['date'] ?? null)
+                                    ? \Illuminate\Support\Carbon::parse($item['date'])->locale(app()->getLocale())->translatedFormat('j F Y')
+                                    : null,
+                                $item['statusLabel'] ?? null,
+                            ])->filter()->implode(' · ');
+                        @endphp
+                        <x-place-card
+                            kind="tournament"
+                            :href="$item['url']"
+                            :name="$item['name']"
+                            :meta="$tournamentMeta"
+                            :role-label="$item['roleLabel']"
+                            :role-accent="$item['role'] === 'admin'"
+                            style="--stagger: {{ $index }}"
+                        />
+                    @endforeach
+                </div>
+            @endif
+        </section>
 
         <section class="mb-8">
             <h2 class="section-title mt-0">Sezony</h2>

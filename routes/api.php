@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\SeasonController;
 use App\Http\Controllers\Api\TournamentCatalogController;
 use App\Http\Controllers\Api\TournamentInvitationController;
 use App\Http\Controllers\Api\TournamentJoinController;
+use App\Http\Controllers\Api\TournamentManageController;
 use App\Http\Controllers\Api\TrainingGameController;
 use Illuminate\Support\Facades\Route;
 
@@ -166,6 +167,22 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::get('/tournaments/{tournament}', [TournamentCatalogController::class, 'show'])->whereNumber('tournament');
     Route::get('/tournaments/{tournament}/groups-live', [TournamentCatalogController::class, 'groupsLive'])->whereNumber('tournament');
     Route::get('/tournaments/{tournament}/playoff-live', [TournamentCatalogController::class, 'playoffLive'])->whereNumber('tournament');
+    Route::get('/tournaments/{tournament}/setup', [TournamentManageController::class, 'setup'])->whereNumber('tournament');
+    Route::get('/tournaments/{tournament}/users', [TournamentManageController::class, 'searchUsers'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/invitations', [TournamentManageController::class, 'invite'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/join-self', [TournamentManageController::class, 'joinSelf'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/join-request', [TournamentManageController::class, 'applyJoin'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/invitations/{invitation}/cancel', [TournamentManageController::class, 'cancelInvitation'])->whereNumber(['tournament', 'invitation']);
+    Route::post('/tournaments/{tournament}/invitations/{invitation}/remove', [TournamentManageController::class, 'removeParticipant'])->whereNumber(['tournament', 'invitation']);
+    Route::post('/tournaments/{tournament}/guests', [TournamentManageController::class, 'addGuest'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/guests/related', [TournamentManageController::class, 'addRelatedGuest'])->whereNumber('tournament');
+    Route::delete('/tournaments/{tournament}/guests', [TournamentManageController::class, 'removeGuest'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/join-requests/{joinRequest}/approve', [TournamentManageController::class, 'approveJoinRequest'])->whereNumber(['tournament', 'joinRequest']);
+    Route::post('/tournaments/{tournament}/join-requests/{joinRequest}/reject', [TournamentManageController::class, 'rejectJoinRequest'])->whereNumber(['tournament', 'joinRequest']);
+    Route::post('/tournaments/{tournament}/start', [TournamentManageController::class, 'start'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/tablet-code', [TournamentManageController::class, 'regenerateTabletCode'])->whereNumber('tournament');
+    Route::post('/organizations/{organization}/tournaments', [TournamentManageController::class, 'storeForOrganization'])->whereNumber('organization');
+    Route::post('/seasons/{season}/tournaments', [TournamentManageController::class, 'storeForSeason'])->whereNumber('season');
 
     Route::prefix('tournaments/invitations')->group(function () {
         Route::get('/received', [TournamentInvitationController::class, 'received']);

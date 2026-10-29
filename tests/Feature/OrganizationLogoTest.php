@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\GameStage;
 use App\Models\Organization\Organization;
+use App\Models\Season\Season;
+use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Services\Organization\OrganizationService;
 use App\Services\Player\PlayerService;
@@ -58,6 +60,12 @@ class OrganizationLogoTest extends TestCase
             ->assertOk()
             ->assertSee('/storage/organization-logos/'.$model->id.'.jpg', false);
 
+        $index = $this->getJson(route('organizations.index'))->assertOk();
+        $card = collect($index->json('items'))->firstWhere('name', 'Apagon');
+        $this->assertIsArray($card);
+        $this->assertStringContainsString('/storage/organization-logos/'.$model->id.'.jpg', $card['logoUrl']);
+        $this->assertSame('AP', $card['initials']);
+
         $this->actingAs($admin)
             ->post(route('organizations.update', $model), [
                 '_method' => 'PUT',
@@ -70,6 +78,48 @@ class OrganizationLogoTest extends TestCase
 
         $this->assertNull($model->fresh()->logo_path);
         Storage::disk('public')->assertMissing('organization-logos/'.$model->id.'.jpg');
+    }
+
+    public function test_season_and_tournament_cards_show_the_organization_logo(): void
+    {
+        $organization = Organization::create([
+            'name' => 'Apagon',
+            'description' => '',
+        ]);
+        $organization->update([
+            'logo_path' => 'organization-logos/'.$organization->id.'.jpg',
+        ]);
+        Season::create([
+            'name' => 'Sezon letni',
+            'organization_id' => $organization->id,
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+        ]);
+        $season = Season::query()->where('name', 'Sezon letni')->firstOrFail();
+        Tournament::create([
+            'name' => 'Puchar sezonu',
+            'season_id' => $season->id,
+            'date' => '2026-06-01',
+        ]);
+        Tournament::create([
+            'name' => 'Turniej jednorazowy',
+            'organization_id' => $organization->id,
+            'date' => '2026-07-01',
+        ]);
+
+        $seasonCard = collect($this->getJson(route('seasons.index'))->assertOk()->json('items'))
+            ->firstWhere('name', 'Sezon letni');
+        $this->assertIsArray($seasonCard);
+        $this->assertStringContainsString('/storage/organization-logos/'.$organization->id.'.jpg', $seasonCard['logoUrl']);
+        $this->assertSame('AP', $seasonCard['initials']);
+
+        $cards = collect($this->getJson(route('tournaments.index'))->assertOk()->json('items'));
+        foreach (['Puchar sezonu', 'Turniej jednorazowy'] as $name) {
+            $card = $cards->firstWhere('name', $name);
+            $this->assertIsArray($card);
+            $this->assertStringContainsString('/storage/organization-logos/'.$organization->id.'.jpg', $card['logoUrl']);
+            $this->assertSame('AP', $card['initials']);
+        }
     }
 
     public function test_member_cannot_upload_a_logo(): void

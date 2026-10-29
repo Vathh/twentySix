@@ -34,7 +34,7 @@
 
 <span {{ $attributes->merge(['class' => 'player-avatar '.$sizeClass]) }}>
     @if($url)
-        <img src="{{ $url }}" alt="" onerror="this.remove(); this.nextElementSibling.hidden = false;">
+        <img src="{{ $url }}" alt="" onerror="var fallback = this.nextElementSibling; if (fallback) fallback.hidden = false; this.remove();">
         <span class="player-avatar-fallback" hidden>{{ $mono }}</span>
     @else
         <span class="player-avatar-fallback">{{ $mono }}</span>

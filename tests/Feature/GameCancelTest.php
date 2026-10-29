@@ -163,7 +163,7 @@ class GameCancelTest extends TestCase
 
         $this->post(route('league-games.cancel', $game), [
             'current_password' => 'password',
-        ])->assertRedirect(route('league-games.show', $game));
+        ])->assertRedirect(route('games.show', ['type' => 'league', 'id' => $game->id]));
 
         $game->refresh();
         $this->assertSame(LeagueGameStatus::SCHEDULED, $game->status);
@@ -180,7 +180,7 @@ class GameCancelTest extends TestCase
 
         $this->post(route('league-games.cancel', $game), [
             'current_password' => 'password',
-        ])->assertRedirect(route('league-games.show', $game));
+        ])->assertRedirect(route('games.show', ['type' => 'league', 'id' => $game->id]));
 
         $this->assertSame(LeagueGameStatus::SCHEDULED, $game->fresh()->status);
     }

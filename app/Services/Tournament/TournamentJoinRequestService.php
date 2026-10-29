@@ -72,6 +72,27 @@ class TournamentJoinRequestService
             throw new \RuntimeException('Nieprawidłowy kod turnieju.');
         }
 
+        $state = $this->statusForUser($tournament, $userId);
+
+        return [
+            'tournamentId' => $tournament->id,
+            'tournamentName' => $tournament->name,
+            'organizationName' => $tournament->hostOrganization()?->name,
+            'canApply' => $state['canApply'],
+            'reason' => $state['reason'],
+            'alreadyParticipant' => $state['alreadyParticipant'],
+            'alreadyPending' => $state['alreadyPending'],
+            'joinCode' => $tournament->join_code,
+        ];
+    }
+
+    /**
+     * Stan zgłoszenia zalogowanego gracza, bez kodu dołączenia.
+     *
+     * @return array{canApply: bool, reason: ?string, alreadyParticipant: bool, alreadyPending: bool}
+     */
+    public function statusForUser(Tournament $tournament, ?int $userId): array
+    {
         $canApply = true;
         $reason = null;
         $alreadyParticipant = false;
@@ -100,14 +121,10 @@ class TournamentJoinRequestService
         }
 
         return [
-            'tournamentId' => $tournament->id,
-            'tournamentName' => $tournament->name,
-            'organizationName' => $tournament->hostOrganization()?->name,
             'canApply' => $canApply,
             'reason' => $reason,
             'alreadyParticipant' => $alreadyParticipant,
             'alreadyPending' => $alreadyPending,
-            'joinCode' => $tournament->join_code,
         ];
     }
 
@@ -118,6 +135,11 @@ class TournamentJoinRequestService
             throw new \RuntimeException('Nieprawidłowy kod turnieju.');
         }
 
+        return $this->applyToTournament($tournament, $user);
+    }
+
+    public function applyToTournament(Tournament $tournament, User $user): TournamentJoinRequest
+    {
         $this->assertNotStarted($tournament);
 
         if (! $tournament->join_code_enabled) {

@@ -3,6 +3,7 @@
 namespace App\Services\Organization;
 
 use App\Domain\OrganizationDomain;
+use App\Models\Player\Player;
 use App\Repositories\League\LeagueRepository;
 use App\Repositories\Organization\OrganizationRepository;
 use App\Repositories\Player\PlayerRepository;
@@ -43,6 +44,8 @@ class OrganizationService
                 'url' => route('organizations.show', ['organization' => $organization->id]),
                 'title' => $organization->displayTitle(),
                 'name' => $organization->name,
+                'logoUrl' => $organization->logoUrl(),
+                'initials' => Player::initialsFromName($organization->name),
                 'context' => null,
                 'stats' => [
                     self::stat('seasons', $organization->seasonCount ?? 0, 'sezon', 'sezony', 'sezonów'),

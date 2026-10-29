@@ -2,6 +2,7 @@
 
 namespace App\Services\GameScoring;
 
+use App\Models\Player\Player;
 use App\Support\GameScoring\H2hLegVisitRows;
 
 /**
@@ -64,6 +65,8 @@ final class GameDetailApiPayload
             'subtitle' => $detail['subtitle'],
             'formatLabel' => $detail['formatLabel'],
             'scoreUnit' => $detail['scoreUnit'],
+            'leagueMatchdayLabel' => $detail['leagueMatchdayLabel'] ?? null,
+            'leagueWalkoverLabel' => $detail['leagueWalkoverLabel'] ?? null,
             'usesSetScore' => (bool) ($detail['usesSetScore'] ?? false),
             'status' => $detail['status'],
             'player1' => self::playerRef($player1),
@@ -82,10 +85,16 @@ final class GameDetailApiPayload
             return null;
         }
 
+        $name = (string) ($player->name ?? '—');
+
         return [
             'id' => (int) $player->id,
-            'name' => (string) ($player->name ?? '—'),
+            'name' => $name,
             'userId' => $player->user_id !== null ? (int) $player->user_id : null,
+            'initials' => method_exists($player, 'initials')
+                ? $player->initials()
+                : Player::initialsFromName($name),
+            'avatarUrl' => method_exists($player, 'avatarUrl') ? $player->avatarUrl() : null,
         ];
     }
 

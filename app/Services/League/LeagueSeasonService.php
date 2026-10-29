@@ -132,14 +132,6 @@ class LeagueSeasonService
         return $this->advanceService->advance($seasonId);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function gameShowData(int $gameId): array
-    {
-        return $this->query->gameShowData($gameId);
-    }
-
     public function backfillFinishedSeasonChampions(): int
     {
         return $this->lifecycle->backfillFinishedSeasonChampions();

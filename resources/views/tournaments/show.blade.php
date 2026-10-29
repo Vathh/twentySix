@@ -46,6 +46,9 @@
                 @endif
 
                 @if(! $tournament->isStarted())
+                    @if(is_array($roster))
+                        @include('tournaments.partials.roster', $roster)
+                    @endif
                     <p class="text-center text-text-muted mt-10">
                         Turniej jeszcze się nie rozpoczął. Wyniki i tabele pojawią się po starcie.
                     </p>
