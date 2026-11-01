@@ -386,6 +386,26 @@ class PlayoffGameRepository
     }
 
     /**
+     * Mecze playoff w trakcie — pasek overlay.
+     *
+     * @return Collection<int, PlayoffGame>
+     */
+    public function listInProgressForTournament(int $tournamentId): Collection
+    {
+        return PlayoffGame::query()
+            ->with(['player1:id,name,is_bye', 'player2:id,name,is_bye'])
+            ->where('tournament_id', $tournamentId)
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->whereNotNull('player1_id')
+            ->whereNotNull('player2_id')
+            ->whereHas('player1', fn ($query) => $query->where('is_bye', false))
+            ->whereHas('player2', fn ($query) => $query->where('is_bye', false))
+            ->orderBy('slot')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
      * @return Collection<int, PlayoffGame>
      */
     public function listFinished(): Collection

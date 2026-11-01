@@ -63,14 +63,23 @@ class GameScoringStateBuilder
         ];
 
         $playerIds = [$context->player1Id, $context->player2Id];
-        $legOpenerIndex = $openLeg
-            ? VisitRecorder::legOpenerIndexForLeg(
+        $status = $game->status instanceof \BackedEnum ? $game->status->value : (string) $game->status;
+        $legOpenerIndex = 0;
+        if ($openLeg) {
+            $legOpenerIndex = VisitRecorder::legOpenerIndexForLeg(
                 $allVisits,
                 $playerIds,
-                $openLeg->id,
+                (int) $openLeg->id,
                 (int) $openLeg->leg_number,
-            )
-            : 0;
+            );
+        } elseif ($status !== 'finished' && $legs->isNotEmpty()) {
+            $legOpenerIndex = VisitRecorder::legOpenerIndexForLeg(
+                $allVisits,
+                $playerIds,
+                null,
+                $legs->count() + 1,
+            );
+        }
 
         $finishedLegs = $legs->whereNotNull('finished_at')->values();
         $lastFinished = $finishedLegs->sortByDesc('leg_number')->first();
@@ -94,7 +103,7 @@ class GameScoringStateBuilder
             'game' => [
                 'id' => $context->gameId,
                 'kind' => $context->kind->value,
-                'status' => $game->status instanceof \BackedEnum ? $game->status->value : (string) $game->status,
+                'status' => $status,
                 'tournamentId' => $context->tournamentId,
                 'startingScore' => $context->startingScore(),
                 'player1LegsWon' => $isSingleSet ? $player1MatchScore : (int) ($game->player1_legs_in_set ?? 0),

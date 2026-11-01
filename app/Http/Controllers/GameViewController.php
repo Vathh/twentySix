@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\GameKind;
 use App\Enums\GameStatus;
 use App\Http\Requests\WebGameResultRequest;
+use App\Services\Game\GameOverlayTickerService;
 use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\GameScoring\GameCancelService;
 use App\Services\GameScoring\GameDetailService;
@@ -15,6 +16,7 @@ use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class GameViewController extends Controller
@@ -25,6 +27,7 @@ class GameViewController extends Controller
         private GameResultCorrectionService $gameResultCorrectionService,
         private GameCancelService $gameCancelService,
         private GameAuthorizationService $gameAuthorizationService,
+        private GameOverlayTickerService $gameOverlayTickerService,
     ) {}
 
     public function show(string $type, int $id): View
@@ -139,6 +142,27 @@ class GameViewController extends Controller
             'overlayPreview' => $request->boolean('preview'),
             'reverb' => ReverbClientConfig::forWeb(),
         ]));
+    }
+
+    public function overlayTicker(Request $request, string $type, int $id): Response
+    {
+        $kind = GameDetailService::kindFromRoute($type);
+
+        return response()->view('games.overlay-ticker', [
+            'items' => $this->gameOverlayTickerService->items($kind, $id),
+            'stateUrl' => route('games.overlay-ticker.state', ['type' => $type, 'id' => $id]),
+            'overlayBg' => $request->query('bg') === 'solid' ? 'solid' : 'transparent',
+            'overlayPreview' => $request->boolean('preview'),
+        ], 200, ['Cache-Control' => 'no-store, no-cache, must-revalidate']);
+    }
+
+    public function overlayTickerState(string $type, int $id): JsonResponse
+    {
+        $kind = GameDetailService::kindFromRoute($type);
+
+        return response()
+            ->json(['items' => $this->gameOverlayTickerService->items($kind, $id)])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     /**

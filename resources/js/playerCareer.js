@@ -8,6 +8,7 @@ export function registerPlayerCareer(alpine) {
         hero: initial.hero || {},
         series: initial.series || { x01_average: [], double_pct: [] },
         table: initial.table || emptyCareerTable(),
+        chartTip: null,
         loading: false,
         filterStuck: false,
         filterBarH: 0,
@@ -136,6 +137,7 @@ export function registerPlayerCareer(alpine) {
                 this.hero = data.hero || {};
                 this.series = data.series || { x01_average: [], double_pct: [] };
                 this.table = data.table || emptyCareerTable();
+                this.chartTip = null;
             } finally {
                 this.loading = false;
             }
@@ -179,6 +181,35 @@ export function registerPlayerCareer(alpine) {
         qf(value) {
             return value == null ? '–' : `${value} lotek`;
         },
+
+        hideChartTip(chartId) {
+            if (this.chartTip?.id === chartId) {
+                this.chartTip = null;
+            }
+        },
+
+        moveChartTip(event, chart, chartId) {
+            const svg = event.currentTarget.querySelector('svg');
+            const hit = readTrendHit(chart, svg, event.clientX, event.clientY);
+            if (!hit) {
+                this.hideChartTip(chartId);
+                return;
+            }
+            const host = event.currentTarget.getBoundingClientRect();
+            const dotLeft = hit.clientX - host.left;
+            const dotTop = hit.clientY - host.top;
+            const tipEl = event.currentTarget.querySelector('.career-chart-tip');
+            const tipW = tipEl && tipEl.offsetWidth > 0 ? tipEl.offsetWidth : TREND_TIP_W;
+            const tipH = tipEl && tipEl.offsetHeight > 0 ? tipEl.offsetHeight : TREND_TIP_H;
+            const place = placeChartTip(dotLeft, dotTop, host, tipW, tipH);
+            this.chartTip = {
+                id: chartId,
+                valueLabel: formatTrendHit(hit.value, chart.kind),
+                dateLabel: formatChartDate(hit.date),
+                dotStyle: { left: `${dotLeft}px`, top: `${dotTop}px` },
+                tipStyle: { left: `${place.left}px`, top: `${place.top}px` },
+            };
+        },
     }));
 }
 
@@ -198,6 +229,123 @@ function emptyCareerTable() {
 const CHART_W = 640;
 const CHART_H = 220;
 const PAD = { l: 48, r: 14, t: 14, b: 34 };
+const TREND_TIP_W = 96;
+const TREND_TIP_H = 44;
+
+function formatTrendHit(value, kind) {
+    if (kind === 'percent') {
+        return `${Number(value).toFixed(1)}%`;
+    }
+    return Number(value).toFixed(2);
+}
+
+function clientToSvg(svg, clientX, clientY) {
+    const ctm = svg.getScreenCTM?.();
+    if (!ctm) {
+        return null;
+    }
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const local = pt.matrixTransform(ctm.inverse());
+    return { x: local.x, y: local.y };
+}
+
+function svgToClient(svg, x, y) {
+    const ctm = svg.getScreenCTM?.();
+    if (!ctm) {
+        return null;
+    }
+    const pt = svg.createSVGPoint();
+    pt.x = x;
+    pt.y = y;
+    const screen = pt.matrixTransform(ctm);
+    return { x: screen.x, y: screen.y };
+}
+
+export function pointAtTrendX(samples, svgX) {
+    if (!samples || samples.length < 2) {
+        return null;
+    }
+    const first = samples[0];
+    const last = samples[samples.length - 1];
+    if (svgX <= first.x) {
+        return { x: first.x, y: first.y, value: first.value, date: first.date };
+    }
+    if (svgX >= last.x) {
+        return { x: last.x, y: last.y, value: last.value, date: last.date };
+    }
+    for (let i = 0; i < samples.length - 1; i += 1) {
+        const a = samples[i];
+        const b = samples[i + 1];
+        if (svgX < a.x || svgX > b.x) {
+            continue;
+        }
+        const span = b.x - a.x;
+        const t = span === 0 ? 0 : (svgX - a.x) / span;
+        return {
+            x: a.x + (b.x - a.x) * t,
+            y: a.y + (b.y - a.y) * t,
+            value: a.value + (b.value - a.value) * t,
+            date: t <= 0.5 ? a.date : b.date,
+        };
+    }
+    return null;
+}
+
+function readTrendHit(chart, svg, clientX, clientY) {
+    if (!chart?.samples || !svg) {
+        return null;
+    }
+    const local = clientToSvg(svg, clientX, clientY);
+    if (!local) {
+        return null;
+    }
+    const point = pointAtTrendX(chart.samples, local.x);
+    if (!point) {
+        return null;
+    }
+    const screen = svgToClient(svg, point.x, point.y);
+    if (!screen) {
+        return null;
+    }
+    return {
+        value: point.value,
+        date: point.date,
+        clientX: screen.x,
+        clientY: screen.y,
+    };
+}
+
+function placeChartTip(dotLeft, dotTop, host, tipW, tipH) {
+    const gap = 10;
+    const margin = 8;
+    let left = dotLeft - tipW / 2;
+    let top = dotTop - tipH - gap;
+    const maxLeft = Math.max(4, host.width - tipW - 4);
+    const maxTop = Math.max(4, host.height - tipH - 4);
+    left = Math.min(Math.max(left, 4), maxLeft);
+    if (top < 4) {
+        top = dotTop + gap;
+    }
+    top = Math.min(Math.max(top, 4), maxTop);
+
+    const viewRight = host.left + left + tipW;
+    const viewBottom = host.top + top + tipH;
+    if (viewRight > window.innerWidth - margin) {
+        left -= viewRight - (window.innerWidth - margin);
+    }
+    if (host.left + left < margin) {
+        left += margin - (host.left + left);
+    }
+    if (viewBottom > window.innerHeight - margin) {
+        top -= viewBottom - (window.innerHeight - margin);
+    }
+    if (host.top + top < margin) {
+        top += margin - (host.top + top);
+    }
+    return { left, top };
+}
 
 /**
  * @param {Array<{t?: string, value?: number|null}>} points
@@ -228,11 +376,12 @@ export function buildTrendChart(points, options) {
     const span = scale.max - scale.min || 1;
     const stepX = rows.length === 1 ? 0 : plot.w / (rows.length - 1);
 
-    const coords = values.map((v, i) => {
-        const x = plot.x + i * stepX;
-        const y = plot.y + plot.h - ((v - scale.min) / span) * plot.h;
-        return { x, y };
-    });
+    const samples = values.map((v, i) => ({
+        x: plot.x + i * stepX,
+        y: plot.y + plot.h - ((v - scale.min) / span) * plot.h,
+        value: v,
+        date: rows[i].t ?? '',
+    }));
 
     const yTicks = scale.ticks.map((v) => ({
         y: plot.y + plot.h - ((v - scale.min) / span) * plot.h,
@@ -243,7 +392,7 @@ export function buildTrendChart(points, options) {
         const isFirst = index === 0;
         const isLast = index === rows.length - 1;
         return {
-            x: coords[index].x,
+            x: samples[index].x,
             y: plot.y + plot.h + 18,
             label: formatChartDate(rows[index].t),
             anchor: isFirst ? 'start' : (isLast ? 'end' : 'middle'),
@@ -254,7 +403,9 @@ export function buildTrendChart(points, options) {
         w: CHART_W,
         h: CHART_H,
         plot,
-        d: `M ${coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')}`,
+        kind: options.kind,
+        samples,
+        d: `M ${samples.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')}`,
         yTicks,
         xTicks,
         axisY2: plot.x + plot.w,

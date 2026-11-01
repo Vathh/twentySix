@@ -442,13 +442,108 @@ class TournamentGameScoringFinalizeTest extends TestCase
         $response->assertOk()->assertJson(['success' => false]);
     }
 
+    public function test_between_legs_the_other_player_opens_the_next_leg(): void
+    {
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+            'legs_to_win_set' => 3,
+            'sets_to_win_match' => 1,
+        ]);
+
+        $this->closeScoringLeg(
+            'group-games',
+            $game->id,
+            $this->player1->id,
+            $this->player1->id,
+            $this->player2->id,
+        );
+
+        $this->getJson("/api/group-games/{$game->id}/scoring/state")
+            ->assertOk()
+            ->assertJsonPath('currentLeg', null)
+            ->assertJsonPath('game.status', 'in_progress')
+            ->assertJsonPath('turn.legOpenerIndex', 1)
+            ->assertJsonPath('turn.currentPlayerIndex', 1);
+
+        $this->postJson("/api/group-games/{$game->id}/legs", [
+            'player1DoubleTracked' => false,
+            'player2DoubleTracked' => false,
+        ])->assertOk()
+            ->assertJsonPath('currentLeg.legNumber', 2)
+            ->assertJsonPath('turn.legOpenerIndex', 1)
+            ->assertJsonPath('turn.currentPlayerIndex', 1);
+    }
+
+    public function test_between_legs_returns_to_player_one_when_player_two_opened(): void
+    {
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+            'legs_to_win_set' => 3,
+            'sets_to_win_match' => 1,
+        ]);
+
+        $this->closeScoringLeg(
+            'group-games',
+            $game->id,
+            $this->player2->id,
+            $this->player1->id,
+            $this->player2->id,
+        );
+
+        $this->getJson("/api/group-games/{$game->id}/scoring/state")
+            ->assertOk()
+            ->assertJsonPath('turn.legOpenerIndex', 0)
+            ->assertJsonPath('turn.currentPlayerIndex', 0);
+    }
+
+    public function test_finished_match_does_not_preview_another_leg_opener(): void
+    {
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+            'legs_to_win_set' => 2,
+            'sets_to_win_match' => 1,
+        ]);
+
+        $this->closeScoringLeg(
+            'group-games',
+            $game->id,
+            $this->player1->id,
+            $this->player1->id,
+            $this->player2->id,
+        );
+        $closed = $this->closeScoringLeg(
+            'group-games',
+            $game->id,
+            $this->player1->id,
+            $this->player1->id,
+            $this->player2->id,
+        );
+
+        $game->refresh();
+        $this->assertSame(GameStatus::FINISHED, $game->status);
+        $closed->assertJsonPath('game.status', 'finished')
+            ->assertJsonPath('turn.legOpenerIndex', 0);
+    }
+
     private function closeScoringLeg(
         string $prefix,
         int $gameId,
         int $winnerId,
         int $player1Id,
         int $player2Id,
-    ): void {
+    ) {
         $start = $this->postJson("/api/{$prefix}/{$gameId}/legs", [
             'player1DoubleTracked' => false,
             'player2DoubleTracked' => false,
@@ -467,7 +562,7 @@ class TournamentGameScoringFinalizeTest extends TestCase
             'clientVisitId' => (string) Str::uuid(),
         ])->assertOk();
 
-        $this->postJson("/api/{$prefix}/{$gameId}/legs/{$legId}/close", [
+        return $this->postJson("/api/{$prefix}/{$gameId}/legs/{$legId}/close", [
             'winnerId' => $winnerId,
             'players' => [
                 ['playerId' => $player1Id, 'doubleTracked' => false],

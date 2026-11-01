@@ -65,6 +65,14 @@ Route::get('/games/{type}/{id}/overlay', [GameViewController::class, 'overlay'])
     ->where('type', 'group|playoff|quick|league')
     ->whereNumber('id')
     ->name('games.overlay');
+Route::get('/games/{type}/{id}/overlay-ticker', [GameViewController::class, 'overlayTicker'])
+    ->where('type', 'group|playoff')
+    ->whereNumber('id')
+    ->name('games.overlay-ticker');
+Route::get('/games/{type}/{id}/overlay-ticker/state', [GameViewController::class, 'overlayTickerState'])
+    ->where('type', 'group|playoff')
+    ->whereNumber('id')
+    ->name('games.overlay-ticker.state');
 Route::get('/games/{type}/{id}/live/state', [GameViewController::class, 'liveState'])
     ->where('type', 'group|playoff|quick|league')
     ->whereNumber('id')

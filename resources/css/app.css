@@ -642,6 +642,55 @@
         @apply text-sm font-semibold text-text mb-3;
     }
 
+    .career-chart-plot {
+        position: relative;
+    }
+
+    .career-chart-plot.is-hot {
+        cursor: crosshair;
+    }
+
+    .career-chart-dot {
+        position: absolute;
+        z-index: 2;
+        width: 9px;
+        height: 9px;
+        margin-left: -4.5px;
+        margin-top: -4.5px;
+        border-radius: 999px;
+        pointer-events: none;
+        background: var(--color-accent);
+        border: 2px solid var(--color-bg-elevated);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 55%, transparent);
+    }
+
+    .career-chart-tip {
+        position: absolute;
+        z-index: 3;
+        min-width: 88px;
+        padding: 6px 8px;
+        border-radius: 8px;
+        pointer-events: none;
+        background: #16161a;
+        border: 1px solid color-mix(in srgb, var(--color-border) 80%, #27272a);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .career-chart-tip-value {
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #fafafa;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .career-chart-tip-date {
+        margin-top: 2px;
+        font-size: 11px;
+        line-height: 1.2;
+        color: #a1a1aa;
+    }
+
     .career-highlight-grid {
         @apply grid grid-cols-2 sm:grid-cols-4 gap-2;
     }

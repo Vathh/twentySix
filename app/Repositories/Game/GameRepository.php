@@ -246,6 +246,27 @@ class GameRepository
     }
 
     /**
+     * Mecze grupowe w trakcie — pasek overlay.
+     *
+     * @return Collection<int, Game>
+     */
+    public function listInProgressForTournament(int $tournamentId): Collection
+    {
+        return Game::query()
+            ->with(['player1:id,name,is_bye', 'player2:id,name,is_bye'])
+            ->where('tournament_id', $tournamentId)
+            ->where('status', GameStatus::IN_PROGRESS)
+            ->whereNotNull('player1_id')
+            ->whereNotNull('player2_id')
+            ->whereHas('player1', fn ($query) => $query->where('is_bye', false))
+            ->whereHas('player2', fn ($query) => $query->where('is_bye', false))
+            ->orderBy('group_number')
+            ->orderBy('sequence')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
      * Zapisuje zmiany na modelu Game (np. po mutacjach stanu scoringu w Service).
      */
     public function save(Game $game): void

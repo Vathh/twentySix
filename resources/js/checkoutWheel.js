@@ -1323,11 +1323,28 @@ class CheckoutWheel {
 
     moveTip(event) {
         if (!this.tip || this.tip.hidden) return;
-        const rect = this.host.getBoundingClientRect();
-        const x = event.clientX - rect.left + 14;
-        const y = event.clientY - rect.top + 16;
-        this.tip.style.left = `${Math.min(x, rect.width - 200)}px`;
-        this.tip.style.top = `${Math.min(y, rect.height - 80)}px`;
+        const gap = 14;
+        const margin = 12;
+        const host = this.host.getBoundingClientRect();
+        const tipW = this.tip.offsetWidth;
+        const tipH = this.tip.offsetHeight;
+        const maxLeft = window.innerWidth - margin - tipW;
+        const maxTop = window.innerHeight - margin - tipH;
+
+        let viewLeft = event.clientX + gap;
+        if (viewLeft > maxLeft) {
+            viewLeft = event.clientX - tipW - gap;
+        }
+        viewLeft = Math.min(Math.max(viewLeft, margin), Math.max(margin, maxLeft));
+
+        let viewTop = event.clientY + gap;
+        if (viewTop > maxTop) {
+            viewTop = event.clientY - tipH - gap;
+        }
+        viewTop = Math.min(Math.max(viewTop, margin), Math.max(margin, maxTop));
+
+        this.tip.style.left = `${viewLeft - host.left}px`;
+        this.tip.style.top = `${viewTop - host.top}px`;
     }
 
     hideTip() {

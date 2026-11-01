@@ -60,6 +60,17 @@ export function isRetryableRefereeError(error) {
     return status >= 500 || status === 408 || status === 429 || status === 0;
 }
 
+function startingScoreOf(state) {
+    const format = state?.game?.matchFormat ?? state?.meta?.matchFormat;
+    const value = Number(
+        format?.startingScore
+        ?? state?.game?.startingScore
+        ?? state?.meta?.startingScore
+        ?? 501,
+    );
+    return Number.isFinite(value) && value > 0 ? value : 501;
+}
+
 export function patchRefereeState(state, entry) {
     if (!state || !entry) {
         return state;
@@ -86,10 +97,31 @@ export function patchRefereeState(state, entry) {
         };
     }
     if (entry.op === 'closeLeg' && state.currentLeg) {
+        const players = state.players ?? [];
+        const n = players.length > 0 ? players.length : 2;
+        const turn = state.turn ?? { currentPlayerIndex: 0, legOpenerIndex: 0 };
+        const opener = Number(turn.legOpenerIndex ?? 0);
+        const safeOpener = Number.isInteger(opener) && opener >= 0 && opener < n ? opener : 0;
+        const nextOpener = (safeOpener + 1) % n;
+        const startingScore = startingScoreOf(state);
+        const closedLegNumber = Number(state.currentLeg.legNumber ?? turn.legNumber ?? 0);
+
         return {
             ...state,
             currentLeg: null,
             pendingClosedLegId: state.currentLeg.id,
+            visits: [],
+            legOpenerIndex: nextOpener,
+            turn: {
+                ...turn,
+                currentPlayerIndex: nextOpener,
+                legOpenerIndex: nextOpener,
+                legNumber: closedLegNumber + 1,
+            },
+            players: players.map((player) => ({
+                ...player,
+                remaining: startingScore,
+            })),
         };
     }
     if (entry.op !== 'recordVisit' || !entry.payload) {

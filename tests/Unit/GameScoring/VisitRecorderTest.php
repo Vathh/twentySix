@@ -201,6 +201,45 @@ class VisitRecorderTest extends TestCase
         $this->assertSame(1, VisitRecorder::legOpenerIndexForLeg($allVisits, $playerIds, 3, 3));
     }
 
+    public function test_leg_opener_index_rotates_before_next_leg_exists(): void
+    {
+        $playerIds = [10, 20];
+        $openedByFirst = [
+            (object) [
+                'player_id' => 10,
+                'game_leg_id' => 1,
+                'visit_number' => 1,
+                'score' => 60,
+                'remaining_before' => 501,
+                'remaining_after' => 441,
+                'darts_in_visit' => 3,
+                'closed_leg' => false,
+                'bust' => false,
+                'id' => 1,
+            ],
+        ];
+        $openedBySecond = [
+            (object) [
+                'player_id' => 20,
+                'game_leg_id' => 1,
+                'visit_number' => 1,
+                'score' => 60,
+                'remaining_before' => 501,
+                'remaining_after' => 441,
+                'darts_in_visit' => 3,
+                'closed_leg' => false,
+                'bust' => false,
+                'id' => 1,
+            ],
+        ];
+
+        $this->assertSame(0, VisitRecorder::legOpenerIndexForLeg([], $playerIds, null, 1));
+        $this->assertSame(1, VisitRecorder::legOpenerIndexForLeg($openedByFirst, $playerIds, null, 2));
+        $this->assertSame(0, VisitRecorder::legOpenerIndexForLeg($openedByFirst, $playerIds, null, 3));
+        $this->assertSame(0, VisitRecorder::legOpenerIndexForLeg($openedBySecond, $playerIds, null, 2));
+        $this->assertSame(1, VisitRecorder::legOpenerIndexForLeg($openedBySecond, $playerIds, null, 3));
+    }
+
     public function test_remaining_from_leg_visits(): void
     {
         $visits = [

@@ -166,7 +166,10 @@ final class VisitRecorder
     }
 
     /**
-     * Indeks gracza rozpoczynającego bieżący leg (rotacja od pierwszej wizyty meczu).
+     * Indeks gracza rozpoczynającego leg (rotacja od pierwszej wizyty meczu).
+     *
+     * $openLegId = null oznacza leg jeszcze nieutworzony (przerwa między legami).
+     * Pusty leg liczy openera jako (opener meczu + numer lega − 1) % N.
      *
      * @param  iterable<int, array<string, mixed>|object>  $allVisits
      * @param  array<int, int>  $playerIds
@@ -177,22 +180,25 @@ final class VisitRecorder
         ?int $openLegId,
         int $openLegNumber,
     ): int {
-        if ($playerIds === [] || $openLegId === null) {
+        if ($playerIds === []) {
             return 0;
         }
 
         $visitList = self::collectVisits($allVisits);
-        $openLegVisits = $visitList
-            ->where('legKey', $openLegId)
-            ->sortBy([
-                ['visitNumber', 'asc'],
-                ['id', 'asc'],
-            ]);
 
-        if ($openLegVisits->isNotEmpty()) {
-            $idx = array_search($openLegVisits->first()['playerId'], $playerIds, true);
+        if ($openLegId !== null) {
+            $openLegVisits = $visitList
+                ->where('legKey', $openLegId)
+                ->sortBy([
+                    ['visitNumber', 'asc'],
+                    ['id', 'asc'],
+                ]);
 
-            return $idx !== false ? (int) $idx : 0;
+            if ($openLegVisits->isNotEmpty()) {
+                $idx = array_search($openLegVisits->first()['playerId'], $playerIds, true);
+
+                return $idx !== false ? (int) $idx : 0;
+            }
         }
 
         $firstGameVisit = $visitList->sortBy([
