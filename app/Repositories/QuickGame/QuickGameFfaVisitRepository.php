@@ -2,6 +2,7 @@
 
 namespace App\Repositories\QuickGame;
 
+use App\Domain\Activity\Definitions\PlayerFirst180Activity;
 use App\DTO\QuickGameFfa\RecordFfaVisitDTO;
 use App\Models\QuickGame\QuickGameFfaSession;
 use App\Models\QuickGame\QuickGameFfaVisit;
@@ -116,6 +117,18 @@ class QuickGameFfaVisitRepository
             'client_visit_id' => (string) \Illuminate\Support\Str::uuid(),
             'close_reason' => \App\Domain\GameScoring\DartLimitRules::CLOSE_BULL_OFF,
         ]);
+    }
+
+    public function earliestActive180At(int $playerId): ?string
+    {
+        $at = QuickGameFfaVisit::query()
+            ->where('player_id', $playerId)
+            ->where('score', PlayerFirst180Activity::SCORE)
+            ->where('bust', false)
+            ->where('is_voided', false)
+            ->min('created_at');
+
+        return $at !== null ? (string) $at : null;
     }
 
     /**

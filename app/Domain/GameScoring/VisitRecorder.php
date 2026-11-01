@@ -99,12 +99,19 @@ final class VisitRecorder
             throw new DomainException('Nieprawidłowy wynik po wizycie.');
         }
 
+        if ($remainingAfter === 1) {
+            throw new DomainException('Wynik nie może wynosić 1.');
+        }
+
         if ($closedLeg) {
             if ($score !== $remainingBefore) {
                 throw new DomainException('Checkout wymaga trafienia dokładnie pozostałego wyniku.');
             }
             if ($remainingAfter !== 0) {
                 throw new DomainException('Po zamknięciu lega wynik musi być 0.');
+            }
+            if ($score < 2) {
+                throw new DomainException('Nie można zamknąć lega wynikiem poniżej 2.');
             }
         }
     }

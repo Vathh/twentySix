@@ -119,6 +119,50 @@ class VisitRecorderTest extends TestCase
         );
     }
 
+    public function test_validate_rejects_remaining_of_one(): void
+    {
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Wynik nie może wynosić 1.');
+
+        VisitRecorder::validate(
+            remainingBefore: 40,
+            score: 39,
+            remainingAfter: 1,
+            dartsInVisit: 3,
+            closedLeg: false,
+            bust: false,
+        );
+    }
+
+    public function test_validate_rejects_checkout_of_one(): void
+    {
+        $this->expectException(DomainException::class);
+        $this->expectExceptionMessage('Nie można zamknąć lega wynikiem poniżej 2.');
+
+        VisitRecorder::validate(
+            remainingBefore: 1,
+            score: 1,
+            remainingAfter: 0,
+            dartsInVisit: 1,
+            closedLeg: true,
+            bust: false,
+        );
+    }
+
+    public function test_validate_accepts_leaving_two(): void
+    {
+        VisitRecorder::validate(
+            remainingBefore: 40,
+            score: 38,
+            remainingAfter: 2,
+            dartsInVisit: 3,
+            closedLeg: false,
+            bust: false,
+        );
+
+        $this->addToAssertionCount(1);
+    }
+
     public function test_validate_rejects_bust_with_score(): void
     {
         $this->expectException(DomainException::class);

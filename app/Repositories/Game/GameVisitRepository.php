@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Game;
 
+use App\Domain\Activity\Definitions\PlayerFirst180Activity;
 use App\Domain\Stats\ThreeDartAverageSet;
 use App\DTO\GameScoring\RecordVisitDTO;
 use App\Models\Game\GameVisit;
@@ -250,6 +251,18 @@ class GameVisitRepository
             ->selectRaw('SUM(CASE WHEN gv.bust = 0 THEN gv.score ELSE 0 END) as points')
             ->selectRaw('SUM(gv.darts_in_visit) as darts')
             ->get();
+    }
+
+    public function earliestActive180At(int $playerId): ?string
+    {
+        $at = GameVisit::query()
+            ->where('player_id', $playerId)
+            ->where('score', PlayerFirst180Activity::SCORE)
+            ->where('bust', false)
+            ->where('is_voided', false)
+            ->min('created_at');
+
+        return $at !== null ? (string) $at : null;
     }
 
     /**

@@ -36,6 +36,27 @@ class ActivityRepository
             return;
         }
 
+        $this->insert($draft);
+    }
+
+    /**
+     * Zapis albo przesunięcie daty istniejącej aktywności (np. kolejne 180 po cofnięciu).
+     */
+    public function saveOccurredAt(ActivityDraft $draft): void
+    {
+        $existing = $this->findBySubject($draft);
+        if ($existing === null) {
+            $this->save($draft);
+
+            return;
+        }
+
+        $existing->occurred_at = $draft->occurredAt;
+        $existing->save();
+    }
+
+    private function insert(ActivityDraft $draft): void
+    {
         try {
             Activity::query()->create([
                 'type' => $draft->type->value,

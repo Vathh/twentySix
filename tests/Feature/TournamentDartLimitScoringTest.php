@@ -6,6 +6,7 @@ use App\Enums\GameStatus;
 use App\Enums\TournamentStatus;
 use App\Models\Game\Game;
 use App\Models\Game\GameLeg;
+use App\Models\Game\GameVisit;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
@@ -139,6 +140,54 @@ class TournamentDartLimitScoringTest extends TestCase
 
         $this->assertFalse(GameLeg::find($legId)->isOpen());
         $this->assertSame('bull_off', GameLeg::find($legId)->close_reason);
+    }
+
+    public function test_undo_after_bull_off_keeps_scoring_visits(): void
+    {
+        $game = $this->createLimitedGame(lossThreshold: 50);
+        $legId = $this->startLeg($game->id);
+
+        $this->playAlternatingVisits($game->id, $legId, [
+            [$this->player1->id, 0],
+            [$this->player2->id, 0],
+            [$this->player1->id, 0],
+            [$this->player2->id, 0],
+            [$this->player1->id, 0],
+            [$this->player2->id, 0],
+            [$this->player1->id, 0],
+            [$this->player2->id, 0],
+            [$this->player1->id, 0],
+            [$this->player2->id, 0],
+        ], 501);
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/close", [
+            'winnerId' => $this->player1->id,
+            'reason' => 'bull_off',
+            'players' => [
+                ['playerId' => $this->player1->id, 'doubleTracked' => false],
+                ['playerId' => $this->player2->id, 'doubleTracked' => false],
+            ],
+        ])->assertOk();
+
+        $activeBefore = GameVisit::query()
+            ->where('game_leg_id', $legId)
+            ->where('is_voided', false)
+            ->count();
+        $this->assertGreaterThan(0, $activeBefore);
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits/undo")
+            ->assertOk()
+            ->assertJsonPath('currentLeg.open', true)
+            ->assertJsonPath('currentLeg.id', $legId)
+            ->assertJsonPath('game.player1LegsWon', 0)
+            ->assertJsonPath('meta.bullOffRequired', true);
+
+        $this->assertSame($activeBefore, GameVisit::query()
+            ->where('game_leg_id', $legId)
+            ->where('is_voided', false)
+            ->count());
+        $this->assertTrue(GameLeg::find($legId)->isOpen());
+        $this->assertNull(GameLeg::find($legId)->close_reason);
     }
 
     private function createLimitedGame(int $lossThreshold): Game

@@ -147,6 +147,11 @@ class GameLegRepository
         ]);
     }
 
+    public function deleteLeg(GameLeg $leg): void
+    {
+        $leg->delete();
+    }
+
     public function deleteForContext(GameScoringContext $context): void
     {
         $query = GameLeg::query();

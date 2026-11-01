@@ -507,6 +507,10 @@ class QuickGameFfaScoringService
                 throw new DomainException('Brak wizyty do cofnięcia.');
             }
 
+            if ((int) $voided->score === PlayerFirst180Activity::SCORE && ! $voided->bust) {
+                $this->activityRecorder->syncPlayerFirst180((int) $voided->player_id);
+            }
+
             if ($voided->closed_leg) {
                 $format = MatchFormat::fromRecord($session);
                 $playerIds = array_map('intval', $session->player_order ?? []);

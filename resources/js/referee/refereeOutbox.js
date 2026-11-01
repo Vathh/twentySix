@@ -176,11 +176,14 @@ export function isLegAlreadyOpenMessage(error) {
     return String(error?.message || '').toLowerCase().includes('otwarty');
 }
 
-export function commandAlreadyApplied(entry, snapshot, { legAlreadyOpen = false } = {}) {
+export function commandAlreadyApplied(entry, snapshot, { legAlreadyOpen = false, reopenedLegId = null } = {}) {
     if (!entry || !snapshot) {
         return false;
     }
     if (entry.op === 'startLeg' && legAlreadyOpen && snapshot.currentLeg?.id) {
+        if (reopenedLegId != null && Number(snapshot.currentLeg.id) === Number(reopenedLegId)) {
+            return false;
+        }
         return true;
     }
     if (entry.op === 'closeLeg') {

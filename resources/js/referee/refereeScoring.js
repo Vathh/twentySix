@@ -71,6 +71,8 @@ export function registerRefereeScoring(Alpine) {
         flushRetryMs: 3000,
         flushTimer: null,
         leaseLost: false,
+        pendingReopenLegId: null,
+        flushPromise: null,
         onOnline: null,
         checkoutOpen: false,
         checkoutDartsOpen: false,
@@ -549,6 +551,7 @@ export function registerRefereeScoring(Alpine) {
                 snapshot
                 && commandAlreadyApplied(entry, snapshot, {
                     legAlreadyOpen: isLegAlreadyOpenMessage(error),
+                    reopenedLegId: this.pendingReopenLegId,
                 })
             ) {
                 if (entry.op === 'startLeg' && snapshot.currentLeg?.id) {
@@ -654,28 +657,38 @@ export function registerRefereeScoring(Alpine) {
             if (this.inputLocked) {
                 return null;
             }
-            if (this.flushInFlight) {
+            if (this.flushPromise) {
                 this.flushQueued = true;
-                return null;
+                return this.flushPromise;
             }
             this.flushInFlight = true;
-            let last = null;
+            const run = (async () => {
+                let last = null;
+                try {
+                    do {
+                        this.flushQueued = false;
+                        const pass = await this.flushOutboxPass();
+                        last = pass.state ?? last;
+                        if (pass.retryable) {
+                            this.scheduleFlushRetry();
+                            break;
+                        }
+                    } while (this.flushQueued);
+                    return last;
+                } catch (e) {
+                    this.error = e.message || 'Nie udało się zapisać wizyty.';
+                    return last;
+                } finally {
+                    this.flushInFlight = false;
+                }
+            })();
+            this.flushPromise = run;
             try {
-                do {
-                    this.flushQueued = false;
-                    const pass = await this.flushOutboxPass();
-                    last = pass.state ?? last;
-                    if (pass.retryable) {
-                        this.scheduleFlushRetry();
-                        break;
-                    }
-                } while (this.flushQueued);
-                return last;
-            } catch (e) {
-                this.error = e.message || 'Nie udało się zapisać wizyty.';
-                return last;
+                return await run;
             } finally {
-                this.flushInFlight = false;
+                if (this.flushPromise === run) {
+                    this.flushPromise = null;
+                }
             }
         },
 
@@ -858,7 +871,9 @@ export function registerRefereeScoring(Alpine) {
             }
 
             const remainingBefore = this.remaining(player);
-            if (score === remainingBefore) {
+            const leavesOne = remainingBefore - score === 1;
+            const cannotCheckout = score === remainingBefore && remainingBefore < 2;
+            if (score === remainingBefore && !cannotCheckout) {
                 this.pendingCheckoutScore = score;
                 if (CHECKOUT_LEG_CONFIRMATION_ENABLED) {
                     this.checkoutOpen = true;
@@ -871,7 +886,7 @@ export function registerRefereeScoring(Alpine) {
             this.error = '';
             try {
                 const legId = this.openLegId();
-                const bust = score > remainingBefore;
+                const bust = score > remainingBefore || leavesOne || cannotCheckout;
                 const visitScore = bust ? 0 : score;
                 const remainingAfter = bust
                     ? remainingBefore
@@ -1057,12 +1072,27 @@ export function registerRefereeScoring(Alpine) {
                 return;
             }
             this.error = '';
+            if (closedLegUndo) {
+                this.busy = true;
+                this.pendingReopenLegId = legId;
+            }
             try {
-                await this.queueCommands([{ op: 'undoVisit', legId }]);
+                await this.queueCommands(
+                    [{ op: 'undoVisit', legId }],
+                    { optimistic: !closedLegUndo },
+                );
+                if (closedLegUndo) {
+                    await this.flushOutbox();
+                }
                 this.input = '';
             } catch (e) {
                 this.error = e.message || 'Nie udało się cofnąć wizyty.';
                 await this.loadState({ quiet: true });
+            } finally {
+                if (closedLegUndo) {
+                    this.busy = false;
+                    this.pendingReopenLegId = null;
+                }
             }
         },
 

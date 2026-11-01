@@ -256,7 +256,6 @@ class GameScoringService
     ): array {
         $this->assertScoringActive($game);
         $leg = $this->resolveLegForContext($context, $legId);
-        $this->assertIsLatestLeg($context, $leg);
 
         if (
             ! $leg->isOpen()
@@ -267,12 +266,21 @@ class GameScoringService
         }
 
         return DB::transaction(function () use ($context, $game, $leg) {
+            $this->releaseEmptyNewerLegs($context, $leg);
+            $this->assertIsLatestLeg($context, $leg);
+
+            $leg->refresh();
             $wasClosed = ! $leg->isOpen();
             $legWinnerId = $wasClosed ? (int) $leg->winner_id : null;
+            $undoBullDecision = $wasClosed
+                && $leg->close_reason === DartLimitRules::CLOSE_BULL_OFF;
 
-            $voided = $this->gameVisitRepository->voidLastForLeg($leg->id);
-            if ($voided === null) {
-                throw new DomainException('Brak wizyty do cofnięcia.');
+            $voided = null;
+            if (! $undoBullDecision) {
+                $voided = $this->gameVisitRepository->voidLastForLeg($leg->id);
+                if ($voided === null) {
+                    throw new DomainException('Brak wizyty do cofnięcia.');
+                }
             }
 
             if ($wasClosed) {
@@ -286,6 +294,14 @@ class GameScoringService
                     $game->winner_id = null;
                     $this->persistGame($game);
                 }
+            }
+
+            if (
+                $voided !== null
+                && (int) $voided->score === PlayerFirst180Activity::SCORE
+                && ! $voided->bust
+            ) {
+                $this->activityRecorder->syncPlayerFirst180((int) $voided->player_id);
             }
 
             $fresh = $game->fresh(['player1', 'player2']);
@@ -560,6 +576,29 @@ class GameScoringService
             dartsThrown: GameStatisticsCalculator::dartsThrown($playerLegVisits),
             checkoutDart: GameStatisticsCalculator::checkoutDart($playerLegVisits) ?? $dto->checkoutDart,
         );
+    }
+
+    /**
+     * Pusty nowszy leg (start bez aktywnej wizyty) nie blokuje cofnięcia poprzedniego.
+     */
+    private function releaseEmptyNewerLegs(GameScoringContext $context, GameLeg $target): void
+    {
+        $legs = $this->gameLegRepository->getForContext($context);
+        foreach ($legs as $leg) {
+            if ((int) $leg->leg_number <= (int) $target->leg_number) {
+                continue;
+            }
+            if (! $leg->isOpen()) {
+                continue;
+            }
+            if ($this->gameVisitRepository->getActiveForLeg($leg->id)->isNotEmpty()) {
+                continue;
+            }
+
+            $this->gameVisitRepository->deleteForLegIds([(int) $leg->id]);
+            $this->gameLegPlayerStatRepository->deleteForLegIds([(int) $leg->id]);
+            $this->gameLegRepository->deleteLeg($leg);
+        }
     }
 
     private function assertIsLatestLeg(GameScoringContext $context, GameLeg $leg): void

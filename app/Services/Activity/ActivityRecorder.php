@@ -4,7 +4,10 @@ namespace App\Services\Activity;
 
 use App\Domain\Activity\ActivityDraft;
 use App\Domain\Activity\ActivityType;
+use App\Domain\Activity\Definitions\PlayerFirst180Activity;
 use App\Repositories\Activity\ActivityRepository;
+use App\Repositories\Game\GameVisitRepository;
+use App\Repositories\QuickGame\QuickGameFfaVisitRepository;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -14,6 +17,8 @@ class ActivityRecorder
     public function __construct(
         private ActivityDraftFactory $drafts,
         private ActivityRepository $activities,
+        private GameVisitRepository $gameVisits,
+        private QuickGameFfaVisitRepository $ffaVisits,
     ) {}
 
     public function tournamentChampion(int $tournamentId, ?Carbon $occurredAt = null): void
@@ -100,6 +105,56 @@ class ActivityRecorder
 
             $this->activities->save($draft);
         });
+    }
+
+    /**
+     * Po wykreśleniu wizyty 180: zostaw najwcześniejszą pozostałą albo usuń wpis.
+     */
+    public function syncPlayerFirst180(int $playerId): void
+    {
+        $this->afterCommit(function () use ($playerId) {
+            $occurredAt = $this->earliestActive180At($playerId);
+            $definition = new PlayerFirst180Activity;
+            if ($occurredAt === null) {
+                $this->activities->deleteSubject(
+                    ActivityType::PlayerFirst180->value,
+                    $definition->subjectType(),
+                    $playerId,
+                    $playerId,
+                );
+
+                return;
+            }
+
+            $draft = $this->drafts->playerFirst180($playerId, Carbon::parse($occurredAt));
+            if ($draft === null) {
+                $this->activities->deleteSubject(
+                    ActivityType::PlayerFirst180->value,
+                    $definition->subjectType(),
+                    $playerId,
+                    $playerId,
+                );
+
+                return;
+            }
+
+            $this->activities->saveOccurredAt($draft);
+        });
+    }
+
+    private function earliestActive180At(int $playerId): ?string
+    {
+        $times = array_filter([
+            $this->gameVisits->earliestActive180At($playerId),
+            $this->ffaVisits->earliestActive180At($playerId),
+        ]);
+        if ($times === []) {
+            return null;
+        }
+
+        sort($times);
+
+        return $times[0];
     }
 
     private function storeOrForget(

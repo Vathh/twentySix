@@ -8,9 +8,11 @@ use App\Enums\GameType;
 use App\Enums\PlayoffSlot;
 use App\Enums\TournamentStatus;
 use App\Enums\WinnerDestinationSlot;
+use App\Models\Activity\Activity;
 use App\Models\Game\Game;
 use App\Models\Game\GameLeg;
 use App\Models\Game\GameLegPlayerStat;
+use App\Models\Game\GameVisit;
 use App\Models\GroupStanding\GroupStanding;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
@@ -264,6 +266,116 @@ class TournamentGameScoringFinalizeTest extends TestCase
             'bust' => false,
             'clientVisitId' => (string) Str::uuid(),
         ])->assertOk()->assertJsonPath('players.0.remaining', 461);
+    }
+
+    public function test_visit_that_would_leave_one_is_rejected(): void
+    {
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $start = $this->postJson("/api/group-games/{$game->id}/legs", [
+            'player1DoubleTracked' => false,
+            'player2DoubleTracked' => false,
+        ]);
+        $start->assertOk();
+        $legId = $start->json('currentLeg.id');
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits", [
+            'playerId' => $this->player1->id,
+            'score' => 500,
+            'remainingBefore' => 501,
+            'remainingAfter' => 1,
+            'dartsInVisit' => 3,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => (string) Str::uuid(),
+        ])->assertStatus(422);
+
+        $this->assertSame(0, GameVisit::query()->where('game_leg_id', $legId)->count());
+    }
+
+    public function test_undo_closed_leg_removes_empty_newer_leg(): void
+    {
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $this->closeScoringLeg(
+            'group-games',
+            $game->id,
+            $this->player1->id,
+            $this->player1->id,
+            $this->player2->id,
+        );
+
+        $leg1Id = (int) GameLeg::where('game_id', $game->id)->orderBy('leg_number')->value('id');
+        $leg2 = $this->postJson("/api/group-games/{$game->id}/legs", [
+            'player1DoubleTracked' => false,
+            'player2DoubleTracked' => false,
+        ]);
+        $leg2->assertOk();
+        $leg2Id = (int) $leg2->json('currentLeg.id');
+        $this->assertNotSame($leg1Id, $leg2Id);
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$leg1Id}/visits/undo")
+            ->assertOk()
+            ->assertJsonPath('currentLeg.id', $leg1Id)
+            ->assertJsonPath('currentLeg.open', true)
+            ->assertJsonPath('game.player1LegsWon', 0);
+
+        $this->assertNull(GameLeg::find($leg2Id));
+        $game->refresh();
+        $this->assertSame(0, (int) $game->player1_score);
+    }
+
+    public function test_undo_of_only_180_removes_first_180_activity(): void
+    {
+        $game = Game::create([
+            'tournament_id' => $this->tournament->id,
+            'player1_id' => $this->player1->id,
+            'player2_id' => $this->player2->id,
+            'group_number' => 1,
+            'status' => GameStatus::SCHEDULED,
+        ]);
+
+        $start = $this->postJson("/api/group-games/{$game->id}/legs", [
+            'player1DoubleTracked' => false,
+            'player2DoubleTracked' => false,
+        ]);
+        $start->assertOk();
+        $legId = $start->json('currentLeg.id');
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits", [
+            'playerId' => $this->player1->id,
+            'score' => 180,
+            'remainingBefore' => 501,
+            'remainingAfter' => 321,
+            'dartsInVisit' => 3,
+            'closedLeg' => false,
+            'bust' => false,
+            'clientVisitId' => (string) Str::uuid(),
+        ])->assertOk();
+
+        $this->assertTrue(Activity::query()
+            ->where('type', 'player.first_180')
+            ->where('subject_id', $this->player1->id)
+            ->exists());
+
+        $this->postJson("/api/group-games/{$game->id}/legs/{$legId}/visits/undo")->assertOk();
+
+        $this->assertFalse(Activity::query()
+            ->where('type', 'player.first_180')
+            ->where('subject_id', $this->player1->id)
+            ->exists());
     }
 
     public function test_playoff_scoring_close_second_leg_advances_winner(): void
