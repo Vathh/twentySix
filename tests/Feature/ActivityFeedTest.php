@@ -33,7 +33,7 @@ class ActivityFeedTest extends TestCase
         app(ActivityRecorder::class)->tournamentChampion($tournament->id);
         $this->assertDatabaseCount('activities', 1);
 
-        $sentence = 'Andrzej właśnie wygrał turniej Piątkowe Granie w Apagon.';
+        $sentence = 'Andrzej wygrał turniej Piątkowe Granie w Apagon.';
         $playerId = (int) Player::query()->where('user_id', $andrzej->id)->value('id');
 
         $this->actingAs($viewer, 'sanctum')
@@ -51,7 +51,7 @@ class ActivityFeedTest extends TestCase
         $this->actingAs($viewer)
             ->get('/?cursor=not-a-real-cursor')
             ->assertOk()
-            ->assertSee('właśnie wygrał turniej Piątkowe Granie w Apagon.', false)
+            ->assertSee('wygrał turniej Piątkowe Granie w Apagon.', false)
             ->assertSee(route('organizations.show', $organization), false)
             ->assertSee(route('players.show', $playerId), false)
             ->assertSee('data-feed-end', false)
@@ -110,14 +110,14 @@ class ActivityFeedTest extends TestCase
             ->assertJsonPath('items.0.header.playerId', null)
             ->assertJsonPath('items.0.actor.name', 'jjj')
             ->assertJsonPath('items.0.actor.userId', null)
-            ->assertJsonPath('items.0.sentence', 'jjj właśnie wygrał turniej Piątkowe Granie w Apagon.')
+            ->assertJsonPath('items.0.sentence', 'jjj wygrał turniej Piątkowe Granie w Apagon.')
             ->assertJsonPath('items.0.sentenceParts.0.playerId', null)
             ->assertJsonPath('items.0.sentenceParts.0.url', null);
 
         $this->actingAs($viewer)
             ->get('/')
             ->assertOk()
-            ->assertSee('jjj właśnie wygrał turniej Piątkowe Granie w Apagon.', false)
+            ->assertSee('jjj wygrał turniej Piątkowe Granie w Apagon.', false)
             ->assertDontSee(route('players.show', $guest), false)
             ->assertSee(route('organizations.show', $organization), false);
     }
@@ -165,7 +165,7 @@ class ActivityFeedTest extends TestCase
         $player = Player::query()->where('user_id', $andrzej->id)->firstOrFail();
         app(ActivityRecorder::class)->tournamentChampion($tournament->id);
 
-        $sentence = 'Andrzej właśnie wygrał turniej Piątkowe Granie w Apagon.';
+        $sentence = 'Andrzej wygrał turniej Piątkowe Granie w Apagon.';
 
         $this->getJson('/api/players/'.$player->id.'/feed')
             ->assertOk()
@@ -175,7 +175,7 @@ class ActivityFeedTest extends TestCase
             ->assertOk()
             ->assertSee('Podsumowanie')
             ->assertSee('Tablica')
-            ->assertSee('właśnie wygrał turniej Piątkowe Granie w Apagon.', false)
+            ->assertSee('wygrał turniej Piątkowe Granie w Apagon.', false)
             ->assertSee(route('players.show', $player), false);
 
         $this->get(route('players.feed', $player))

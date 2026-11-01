@@ -44,6 +44,6 @@ final class PlayerFirst180Activity implements ActivityDefinition
     {
         $actor = (string) ($payload['actorName'] ?? 'Gracz');
 
-        return "{$actor} właśnie zaliczył swoje pierwsze 180!";
+        return "{$actor} zaliczył swoje pierwsze 180!";
     }
 }

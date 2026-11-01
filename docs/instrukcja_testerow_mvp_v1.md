@@ -1,7 +1,7 @@
 # Instrukcja dla testerów — twentySix MVP v1
 
 Wersja: release candidate (`v1.0.0-mvp`).  
-Backend staging: `https://dartscore.studiokam.pl`
+Backend: `https://twentysix.pl`
 
 ---
 
@@ -9,7 +9,7 @@ Backend staging: `https://dartscore.studiokam.pl`
 
 **Staging nie ma gotowych kont** — każdy tester **rejestruje się sam**:
 
-1. Web: [https://dartscore.studiokam.pl/register](https://dartscore.studiokam.pl/register)  
+1. Web: [https://twentysix.pl/register](https://twentysix.pl/register)  
    albo mobile: ekran **Utwórz konto** (z logowania).
 2. Sprawdź email → kliknij link **Potwierdź email**.
 3. Zaloguj się w aplikacji lub na webie.

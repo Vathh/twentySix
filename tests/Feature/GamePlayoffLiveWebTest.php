@@ -51,6 +51,9 @@ class GamePlayoffLiveWebTest extends TestCase
             ->assertOk()
             ->assertSee('Alice')
             ->assertSee('Bob')
+            ->assertSee('match-player', false)
+            ->assertSee('player-avatar', false)
+            ->assertSee('live-visit-flash', false)
             ->assertSee('Drabinka wygranych — runda 1');
     }
 

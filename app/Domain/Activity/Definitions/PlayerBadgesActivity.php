@@ -55,9 +55,9 @@ final class PlayerBadgesActivity implements ActivityDefinition
         }
 
         if (count($labels) <= 1) {
-            return "{$actor} właśnie zdobył odznakę ".($labels[0] ?? 'nowy poziom').'.';
+            return "{$actor} zdobył odznakę ".($labels[0] ?? 'nowy poziom').'.';
         }
 
-        return "{$actor} właśnie zdobył odznaki: ".implode(', ', $labels).'.';
+        return "{$actor} zdobył odznaki: ".implode(', ', $labels).'.';
     }
 }

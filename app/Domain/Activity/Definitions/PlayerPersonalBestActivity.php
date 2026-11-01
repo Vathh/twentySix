@@ -54,7 +54,7 @@ final class PlayerPersonalBestActivity implements ActivityDefinition
         }
 
         if (count($records) === 1) {
-            return "{$actor} właśnie poprawił ".self::single($records[0]['kind'], $records[0]['value']).'.';
+            return "{$actor} poprawił ".self::single($records[0]['kind'], $records[0]['value']).'.';
         }
 
         if (count($records) > 1) {
@@ -63,10 +63,10 @@ final class PlayerPersonalBestActivity implements ActivityDefinition
                 $records,
             );
 
-            return "{$actor} właśnie poprawił życiowe rekordy: ".implode(', ', $parts).'.';
+            return "{$actor} poprawił życiowe rekordy: ".implode(', ', $parts).'.';
         }
 
-        return "{$actor} właśnie poprawił życiowy rekord.";
+        return "{$actor} poprawił życiowy rekord.";
     }
 
     private static function single(string $kind, mixed $value): string

@@ -17,7 +17,7 @@ Kanały czyta definicja typu, nie kolumna na wierszu.
 4. Akapit w tym pliku.
 5. Test: jeden wiersz, zdanie, kanały i widoczność profilu.
 
-Zdanie idzie jednym szablonem: imię, „właśnie”, co się stało. Karta nie składa tekstu osobno dla każdego typu.
+Zdanie idzie jednym szablonem: imię i co się stało. Karta nie składa tekstu osobno dla każdego typu.
 
 ## Karta
 
@@ -36,10 +36,10 @@ Wpis zawodnika podpisuje zawodnik. Link do profilu jest tylko wtedy, gdy ma kont
 
 | Kod | Kanały strony głównej | Rodzaj | Zdanie | Status |
 | --- | --- | --- | --- | --- |
-| `tournament.champion` | znajomi i organizacja | Wygrana | „Andrzej właśnie wygrał turniej Piątkowe Granie w Apagon.” | emiter: koniec turnieju i korekta podium |
-| `player.first_180` | znajomi | 180 | „Andrzej właśnie zaliczył swoje pierwsze 180!” | emiter: wizyta X01 (turniej, liga, quick FFA) |
-| `player.badges` | znajomi | Odznaka | „Andrzej właśnie zdobył odznaki: 180 — Brąz, QF 12 — Żelazo.” | emiter: koniec meczu grupowego, playoff i ligowego; odznaki kariery turnieju osobno |
-| `player.personal_best` | znajomi | Rekord | „Andrzej właśnie poprawił życiowy rekord średniej meczowej: 85,40.” | emiter: ten sam mecz. Średnia tylko gdy przebija poprzednią. Finish od 100 i lotka poniżej 20 także za pierwszym razem |
+| `tournament.champion` | znajomi i organizacja | Wygrana | „Andrzej wygrał turniej Piątkowe Granie w Apagon.” | emiter: koniec turnieju i korekta podium |
+| `player.first_180` | znajomi | 180 | „Andrzej zaliczył swoje pierwsze 180!” | emiter: wizyta X01 (turniej, liga, quick FFA) |
+| `player.badges` | znajomi | Odznaka | „Andrzej zdobył odznaki: 180 — Brąz, QF 12 — Żelazo.” | emiter: koniec meczu grupowego, playoff i ligowego; odznaki kariery turnieju osobno |
+| `player.personal_best` | znajomi | Rekord | „Andrzej poprawił życiowy rekord średniej meczowej: 85,40.” | emiter: ten sam mecz. Średnia tylko gdy przebija poprzednią. Finish od 100 i lotka poniżej 20 także za pierwszym razem |
 
 Jeden mecz i jeden zawodnik to jeden wpis odznak, nawet gdy poziomów wskoczyło kilka. Skok przez próg zostawia tylko osiągnięty stopień. Seria zwycięstw wchodzi do wpisu meczu. Podium, udział i tytuł turnieju są osobnym wpisem zawodnika, nie turnieju. Życiówki z tego samego meczu też są jednym wpisem. Podium 2–3 i wygrana quick game nie wchodzą na tablicę.
 

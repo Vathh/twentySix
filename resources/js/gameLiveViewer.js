@@ -63,6 +63,8 @@ export function registerGameLiveViewer(Alpine) {
         overlayFx: config.overlayFx === true,
         flashCallout: null,
         flashCalloutTimer: null,
+        visitFlash: null,
+        visitFlashTimer: null,
         announcedVisitSignature: '',
         remainingShown: [null, null],
         remainingTickCancel: [null, null],
@@ -90,6 +92,19 @@ export function registerGameLiveViewer(Alpine) {
                     this.onLastVisitChanged();
                 },
             );
+            if (!this.overlayFx) {
+                this.seenLiveVisitSignature = this.liveVisitSignature;
+                this.$watch(
+                    () => this.liveVisitSignature,
+                    (signature) => {
+                        if (!signature || signature === this.seenLiveVisitSignature) {
+                            return;
+                        }
+                        this.seenLiveVisitSignature = signature;
+                        this.showLiveVisitFlash(this.state?.lastEvent);
+                    },
+                );
+            }
             this.$watch(
                 () => [
                     this.state?.currentLeg?.id ?? '',
@@ -114,6 +129,10 @@ export function registerGameLiveViewer(Alpine) {
             if (this.flashCalloutTimer) {
                 clearTimeout(this.flashCalloutTimer);
                 this.flashCalloutTimer = null;
+            }
+            if (this.visitFlashTimer) {
+                clearTimeout(this.visitFlashTimer);
+                this.visitFlashTimer = null;
             }
             this.cancelRemainingTicks();
             if (this.pusher) {
@@ -396,6 +415,48 @@ export function registerGameLiveViewer(Alpine) {
 
         lastVisitIsCheckout(playerId) {
             return Boolean(this.lastVisitForPlayer(playerId)?.closedLeg);
+        },
+
+        get liveVisitSignature() {
+            const visit = this.state?.lastEvent;
+            if (!visit) {
+                return '';
+            }
+
+            return [
+                visit.id,
+                visit.score,
+                visit.bust ? 1 : 0,
+                visit.closedLeg ? 1 : 0,
+            ].join('-');
+        },
+
+        isVisitFlash(index) {
+            const flash = this.visitFlash;
+            const player = Number(index) === 0 ? this.player1 : this.player2;
+            if (!flash || !player) {
+                return false;
+            }
+
+            return Number(flash.playerId) === Number(player.playerId);
+        },
+
+        showLiveVisitFlash(visit) {
+            if (!visit) {
+                return;
+            }
+            this.visitFlash = {
+                playerId: Number(visit.playerId),
+                label: visit.bust ? 'BUST' : String(visit.score),
+                bust: Boolean(visit.bust),
+            };
+            if (this.visitFlashTimer) {
+                clearTimeout(this.visitFlashTimer);
+            }
+            this.visitFlashTimer = setTimeout(() => {
+                this.visitFlash = null;
+                this.visitFlashTimer = null;
+            }, 1000);
         },
 
         get latestVisit() {

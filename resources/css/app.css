@@ -2736,30 +2736,27 @@
     }
 
     .friends-rail {
-        position: sticky;
-        top: 0;
-        align-self: flex-start;
-        height: calc(100dvh - var(--site-header-h, 4.25rem) - var(--site-footer-h, 2.25rem));
-        max-height: calc(100dvh - var(--site-header-h, 4.25rem) - var(--site-footer-h, 2.25rem));
+        position: fixed;
+        top: var(--site-header-h, 4.25rem);
+        right: 0;
         z-index: 35;
         display: flex;
         flex-direction: column;
-        flex: 0 0 18rem;
         width: 18rem;
-        min-width: 0;
+        height: calc(100dvh - var(--site-header-h, 4.25rem) - var(--site-footer-h, 2.25rem));
         min-height: 0;
         overflow: visible;
         border-left: 1px solid var(--color-border);
-        background-color: color-mix(in srgb, var(--color-bg-deep) 96%, transparent);
-        transition: flex-basis 180ms ease, width 180ms ease;
+        background-color: var(--color-bg-deep);
+        box-shadow: -16px 0 36px rgba(0, 0, 0, 0.45);
+        transform: translateX(0);
+        transition: transform 180ms ease, box-shadow 180ms ease;
     }
 
     .friends-rail.is-collapsed,
     html.friends-rail-collapsed .friends-rail {
-        flex-basis: 0;
-        width: 0;
-        border-left-width: 0;
-        background-color: transparent;
+        transform: translateX(100%);
+        box-shadow: none;
     }
 
     .friends-rail-toggle {
@@ -2785,17 +2782,10 @@
         color: var(--color-accent);
     }
 
-    .friends-rail.is-collapsed .friends-rail-toggle,
-    html.friends-rail-collapsed .friends-rail-toggle {
-        left: auto;
-        right: 0;
-        transform: translateY(-50%);
-        border-right: 1px solid var(--color-border);
-    }
-
     .friends-rail-chevron {
         width: 1.1rem;
         height: 1.1rem;
+        transition: transform 180ms ease;
     }
 
     html:not(.friends-rail-collapsed) .friends-rail:not(.is-collapsed) .friends-rail-chevron {
@@ -2810,31 +2800,27 @@
         min-height: 0;
         width: 100%;
         overflow: hidden;
+        visibility: visible;
+        transition: visibility 0s linear 0s;
     }
 
     .friends-rail.is-collapsed .friends-rail-body,
     html.friends-rail-collapsed .friends-rail-body {
-        display: none;
+        visibility: hidden;
+        transition-delay: 180ms;
     }
 
     @media (max-width: 767px) {
-        .app-frame {
-            position: relative;
-        }
-
-        /* Poza układem także przy chowaniu — animacja szerokości nie ściska treści. */
         .friends-rail {
-            position: fixed;
-            top: var(--site-header-h, 4.25rem);
-            right: 0;
-            bottom: auto;
-            height: calc(100dvh - var(--site-header-h, 4.25rem) - var(--site-footer-h, 2.25rem));
-            max-height: none;
+            width: min(18rem, 85vw);
         }
+    }
 
-        html:not(.friends-rail-collapsed) .friends-rail:not(.is-collapsed) {
-            max-width: min(18rem, 85vw);
-            background-color: var(--color-bg-deep);
+    @media (prefers-reduced-motion: reduce) {
+        .friends-rail,
+        .friends-rail-chevron,
+        .friends-rail-body {
+            transition: none;
         }
     }
 
@@ -2963,6 +2949,35 @@
 
     .match-player.is-winner .match-player-name {
         color: var(--color-accent);
+    }
+
+    .live-player-tile {
+        position: relative;
+        width: 100%;
+        container-type: inline-size;
+    }
+
+    .live-visit-flash {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.9rem;
+        background: rgba(8, 8, 12, 0.78);
+        color: #fff;
+        font-size: clamp(2.2rem, 28cqi, 3.6rem);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        font-variant-numeric: tabular-nums;
+        pointer-events: none;
+    }
+
+    .live-visit-flash.is-bust {
+        font-size: clamp(1.45rem, 16cqi, 2.2rem);
+        letter-spacing: 0.14em;
     }
 
     .match-board-mid {

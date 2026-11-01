@@ -37,7 +37,7 @@ class PlayerAchievementRulesTest extends TestCase
             'badges' => $unlocks,
         ]);
 
-        $this->assertSame('Andrzej właśnie zdobył odznaki: 180 — Brąz, QF 12 — Żelazo.', $sentence);
+        $this->assertSame('Andrzej zdobył odznaki: 180 — Brąz, QF 12 — Żelazo.', $sentence);
     }
 
     public function test_personal_bests_skip_the_first_average_and_keep_the_first_finish(): void
@@ -57,6 +57,6 @@ class PlayerAchievementRulesTest extends TestCase
             'actorName' => 'Andrzej',
             'records' => [['kind' => 'hf', 'value' => 170]],
         ]);
-        $this->assertSame('Andrzej właśnie poprawił życiowy rekord najwyższego finishu: 170.', $sentence);
+        $this->assertSame('Andrzej poprawił życiowy rekord najwyższego finishu: 170.', $sentence);
     }
 }

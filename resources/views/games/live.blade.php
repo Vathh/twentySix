@@ -113,10 +113,23 @@
 
         {{-- Zakładka: Wynik (jak tablet, bez klawiatury) --}}
         <div x-show="tab === 'counter'">
-            {{-- Legi --}}
             <div class="grid grid-cols-3 items-center gap-4 mb-6 text-center">
-                <div>
-                    <p class="text-lg sm:text-xl font-semibold text-text-secondary mb-1" x-text="player1?.name">{{ $liveP1['name'] ?? $player1->name }}</p>
+                <div class="flex flex-col items-center gap-3 min-w-0">
+                    <div class="live-player-tile">
+                        @include('games.partials.live-player-tile', [
+                            'player' => $player1,
+                            'liveName' => $liveP1['name'] ?? $player1->name,
+                            'nameBinding' => 'player1?.name',
+                        ])
+                        <div
+                            class="live-visit-flash"
+                            x-show="isVisitFlash(0)"
+                            x-cloak
+                            x-transition.opacity.duration.200ms
+                            x-bind:class="{ 'is-bust': visitFlash?.bust }"
+                            x-text="visitFlash?.label"
+                        ></div>
+                    </div>
                     <p class="text-4xl font-bold text-text score-num" x-text="matchScore(player1)">{{ $liveP1['legsWon'] ?? $player1Score }}</p>
                 </div>
                 <div>
@@ -129,8 +142,22 @@
                         </div>
                     </template>
                 </div>
-                <div>
-                    <p class="text-lg sm:text-xl font-semibold text-text-secondary mb-1" x-text="player2?.name">{{ $liveP2['name'] ?? $player2->name }}</p>
+                <div class="flex flex-col items-center gap-3 min-w-0">
+                    <div class="live-player-tile">
+                        @include('games.partials.live-player-tile', [
+                            'player' => $player2,
+                            'liveName' => $liveP2['name'] ?? $player2->name,
+                            'nameBinding' => 'player2?.name',
+                        ])
+                        <div
+                            class="live-visit-flash"
+                            x-show="isVisitFlash(1)"
+                            x-cloak
+                            x-transition.opacity.duration.200ms
+                            x-bind:class="{ 'is-bust': visitFlash?.bust }"
+                            x-text="visitFlash?.label"
+                        ></div>
+                    </div>
                     <p class="text-4xl font-bold text-text score-num" x-text="matchScore(player2)">{{ $liveP2['legsWon'] ?? $player2Score }}</p>
                 </div>
             </div>

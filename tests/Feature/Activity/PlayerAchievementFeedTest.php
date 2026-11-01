@@ -35,7 +35,7 @@ class PlayerAchievementFeedTest extends TestCase
 
         app(PlayerAchievementPublisher::class)->syncMatch(GameKind::GROUP, $game->id);
 
-        $sentence = 'Andrzej właśnie zdobył odznaki: 180 — Żelazo, QF 12 — Żelazo.';
+        $sentence = 'Andrzej zdobył odznaki: 180 — Żelazo, QF 12 — Żelazo.';
         $this->assertSame(1, Activity::query()->where('type', 'player.badges')->count());
 
         $later = $this->finishedGame($andrzej, $opponent, '2026-06-02 12:00:00');
@@ -63,7 +63,7 @@ class PlayerAchievementFeedTest extends TestCase
 
         $this->get(route('players.show', $andrzej))
             ->assertOk()
-            ->assertSee($sentence, false);
+            ->assertSee('zdobył odznaki: 180 — Żelazo, QF 12 — Żelazo.', false);
     }
 
     public function test_a_match_can_raise_finish_and_fastest_leg_together_and_average_only_after_the_first(): void
@@ -97,7 +97,7 @@ class PlayerAchievementFeedTest extends TestCase
 
         $activity = Activity::query()->where('type', 'player.personal_best')->firstOrFail();
         $this->assertSame(
-            'Andrzej właśnie poprawił życiowe rekordy: średnia meczowa 62,50, najwyższy finish 141, najszybsza lotka 15.',
+            'Andrzej poprawił życiowe rekordy: średnia meczowa 62,50, najwyższy finish 141, najszybsza lotka 15.',
             app(\App\Domain\Activity\ActivityRegistry::class)->sentence($activity->type, $activity->payload),
         );
     }

@@ -45,9 +45,9 @@ final class TournamentChampionActivity implements ActivityDefinition
         $organization = trim((string) ($payload['organizationName'] ?? ''));
 
         if ($organization === '') {
-            return "{$actor} właśnie wygrał turniej {$tournament}.";
+            return "{$actor} wygrał turniej {$tournament}.";
         }
 
-        return "{$actor} właśnie wygrał turniej {$tournament} w {$organization}.";
+        return "{$actor} wygrał turniej {$tournament} w {$organization}.";
     }
 }
