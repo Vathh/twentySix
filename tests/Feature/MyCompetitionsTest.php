@@ -277,13 +277,13 @@ class MyCompetitionsTest extends TestCase
         $adminHub = $this->getJson('/api/me/competitions')
             ->assertOk()
             ->assertJsonCount(2, 'tournaments')
-            ->assertJsonPath('tournaments.0.name', 'Turniej na sali')
-            ->assertJsonPath('tournaments.0.role', 'admin')
-            ->assertJsonPath('tournaments.0.roleLabel', 'Admin')
-            ->assertJsonPath('tournaments.0.organizationName', 'Klub wieczoru')
-            ->assertJsonPath('tournaments.0.statusLabel', 'Grupy')
-            ->assertJsonPath('tournaments.1.name', 'Otwarte')
-            ->assertJsonPath('tournaments.1.seasonName', 'Sezon wieczoru')
+            ->assertJsonPath('tournaments.0.name', 'Otwarte')
+            ->assertJsonPath('tournaments.0.seasonName', 'Sezon wieczoru')
+            ->assertJsonPath('tournaments.1.name', 'Turniej na sali')
+            ->assertJsonPath('tournaments.1.role', 'admin')
+            ->assertJsonPath('tournaments.1.roleLabel', 'Admin')
+            ->assertJsonPath('tournaments.1.organizationName', 'Klub wieczoru')
+            ->assertJsonPath('tournaments.1.statusLabel', 'Grupy')
             ->assertJsonMissingPath('tournaments.0.url');
 
         $this->assertNotContains($done->id, collect($adminHub->json('tournaments'))->pluck('id'));
@@ -307,7 +307,78 @@ class MyCompetitionsTest extends TestCase
             ->assertOk()
             ->assertSee('Turniej na sali')
             ->assertSee(route('tournaments.show', $oneOff), false)
-            ->assertDontSee('Turniej archiwalny');
+            ->assertDontSee('Turniej archiwalny')
+            ->assertDontSee('Załaduj więcej');
+    }
+
+    public function test_hub_puts_the_match_in_progress_ahead_of_a_newer_idle_tournament(): void
+    {
+        $admin = $this->makeUser('Aktywny');
+        $org = Organization::create(['name' => 'Klub aktywności', 'description' => '']);
+        $org->admins()->attach($admin->id);
+        $format = \App\Domain\GameScoring\MatchFormat::default()->toDatabaseColumns();
+
+        $idle = Tournament::create([
+            'organization_id' => $org->id,
+            'name' => 'Turniej cichy',
+            'date' => now()->subDay()->toDateString(),
+            'status' => TournamentStatus::CREATED,
+        ]);
+        $idle->forceFill([
+            'created_at' => now()->subDays(2),
+            'updated_at' => now()->subDays(2),
+        ])->save();
+
+        $active = Tournament::create([
+            'organization_id' => $org->id,
+            'name' => 'Turniej grany',
+            'date' => now()->subDays(10)->toDateString(),
+            'status' => TournamentStatus::GROUP,
+        ]);
+        $active->forceFill([
+            'created_at' => now()->subDays(10),
+            'updated_at' => now()->subDays(10),
+        ])->save();
+
+        $home = Player::create(['name' => 'Ala z meczu']);
+        $away = Player::create(['name' => 'Bartek z meczu']);
+        \App\Models\Game\Game::create(array_merge([
+            'tournament_id' => $active->id,
+            'player1_id' => $home->id,
+            'player2_id' => $away->id,
+            'group_number' => 1,
+            'status' => \App\Enums\GameStatus::IN_PROGRESS,
+            'player1_score' => 1,
+            'player2_score' => 0,
+        ], $format));
+
+        foreach (['Turniej trzeci', 'Turniej czwarty'] as $offset => $name) {
+            $extra = Tournament::create([
+                'organization_id' => $org->id,
+                'name' => $name,
+                'date' => now()->subDays(20 + $offset)->toDateString(),
+                'status' => TournamentStatus::CREATED,
+            ]);
+            $extra->forceFill([
+                'created_at' => now()->subDays(20 + $offset),
+                'updated_at' => now()->subDays(20 + $offset),
+            ])->save();
+        }
+
+        Sanctum::actingAs($admin);
+        $this->getJson('/api/me/competitions')
+            ->assertOk()
+            ->assertJsonPath('tournaments.0.name', 'Turniej grany')
+            ->assertJsonPath('tournaments.1.name', 'Turniej cichy')
+            ->assertJsonCount(4, 'tournaments');
+
+        $this->withoutVite();
+        $this->actingAs($admin)
+            ->get(route('me.index'))
+            ->assertOk()
+            ->assertSeeInOrder(['Turniej grany', 'Turniej cichy', 'Turniej trzeci', 'Turniej czwarty'])
+            ->assertSee('Załaduj więcej')
+            ->assertSee('shown > 3', false);
     }
 
     private function seedForeignCompetition(): void

@@ -11,6 +11,7 @@ use App\Services\GameScoring\GameCancelService;
 use App\Services\GameScoring\GameDetailService;
 use App\Services\GameScoring\GameResultCorrectionService;
 use App\Services\GameScoring\GameScoringService;
+use App\Models\Tournament\Tournament;
 use App\Support\Broadcasting\ReverbClientConfig;
 use DomainException;
 use Illuminate\Http\JsonResponse;
@@ -144,16 +145,16 @@ class GameViewController extends Controller
         ]));
     }
 
-    public function overlayTicker(Request $request, string $type, int $id): Response
+    public function overlayTicker(Request $request, string $type, int $id): RedirectResponse
     {
-        $kind = GameDetailService::kindFromRoute($type);
+        $tournamentId = $this->gameOverlayTickerService->tournamentIdOf(
+            GameDetailService::kindFromRoute($type),
+            $id,
+        );
 
-        return response()->view('games.overlay-ticker', [
-            'items' => $this->gameOverlayTickerService->items($kind, $id),
-            'stateUrl' => route('games.overlay-ticker.state', ['type' => $type, 'id' => $id]),
-            'overlayBg' => $request->query('bg') === 'solid' ? 'solid' : 'transparent',
-            'overlayPreview' => $request->boolean('preview'),
-        ], 200, ['Cache-Control' => 'no-store, no-cache, must-revalidate']);
+        return redirect()->route('tournaments.overlay-ticker', $this->tickerQuery($request, [
+            'tournament' => $tournamentId,
+        ]));
     }
 
     public function overlayTickerState(string $type, int $id): JsonResponse
@@ -163,6 +164,39 @@ class GameViewController extends Controller
         return response()
             ->json(['items' => $this->gameOverlayTickerService->items($kind, $id)])
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
+    public function tournamentOverlayTicker(Request $request, Tournament $tournament): Response
+    {
+        return response()->view('games.overlay-ticker', [
+            'items' => $this->gameOverlayTickerService->itemsForTournament((int) $tournament->id),
+            'stateUrl' => route('tournaments.overlay-ticker.state', $tournament),
+            'overlayBg' => $request->query('bg') === 'solid' ? 'solid' : 'transparent',
+            'overlayPreview' => $request->boolean('preview'),
+        ], 200, ['Cache-Control' => 'no-store, no-cache, must-revalidate']);
+    }
+
+    public function tournamentOverlayTickerState(Tournament $tournament): JsonResponse
+    {
+        return response()
+            ->json(['items' => $this->gameOverlayTickerService->itemsForTournament((int) $tournament->id)])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     * @return array<string, mixed>
+     */
+    private function tickerQuery(Request $request, array $params): array
+    {
+        if ($request->query('bg') === 'solid') {
+            $params['bg'] = 'solid';
+        }
+        if ($request->boolean('preview')) {
+            $params['preview'] = 1;
+        }
+
+        return $params;
     }
 
     /**

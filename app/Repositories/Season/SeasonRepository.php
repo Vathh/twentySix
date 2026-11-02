@@ -100,6 +100,16 @@ class SeasonRepository
         });
     }
 
+    public function update(int $seasonId, string $name, string $startDate, string $endDate): void
+    {
+        $season = Season::query()->findOrFail($seasonId);
+        $season->update([
+            'name' => $name,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+        ]);
+    }
+
     /**
      * Użytkownicy powiązani z organizacją sezonu — pula, z której nadaje się administratorów sezonu.
      *

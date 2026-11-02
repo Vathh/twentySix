@@ -518,6 +518,18 @@ class MatchFormatScoringTest extends TestCase
 
     // --- legsWonForDisplay ---
 
+    public function test_broadcast_distance_uses_best_of_only_when_the_format_allows_it(): void
+    {
+        $firstTo = new MatchFormat(legsToWinSet: 1);
+        $bestOf = MatchFormat::forLeagueRules(501, \App\Enums\MatchWinMode::BEST_OF, 6);
+        $sets = new MatchFormat(legsToWinSet: 3, setsToWinMatch: 2);
+
+        $this->assertSame('FIRST TO 1', $firstTo->broadcastDistanceLabel());
+        $this->assertSame('BEST OF 6', $bestOf->broadcastDistanceLabel());
+        $this->assertTrue($bestOf->allowsDraw());
+        $this->assertSame('FIRST TO 2', $sets->broadcastDistanceLabel());
+    }
+
     public function test_legs_won_for_display_returns_legs_in_set_for_single_set_format(): void
     {
         $format = new MatchFormat(legsToWinSet: 2, setsToWinMatch: 1);

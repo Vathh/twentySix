@@ -6,11 +6,8 @@
     @php
         $liveP1 = $initialState['players'][0] ?? [];
         $liveP2 = $initialState['players'][1] ?? [];
-        $liveLeg = $initialState['currentLeg'] ?? null;
         $liveMatchFormat = $initialState['game']['matchFormat'] ?? [];
         $liveIsMultiSet = (int) ($liveMatchFormat['setsToWinMatch'] ?? 1) > 1;
-        $liveSetNumber = (int) ($initialState['game']['currentSetNumber'] ?? 1);
-        $liveLegNumber = $liveLeg['legNumber'] ?? null;
         $livePrimaryLeft = $liveIsMultiSet
             ? (int) ($liveP1['setsWon'] ?? 0)
             : (int) ($liveP1['legsWonInSet'] ?? $liveP1['legsWon'] ?? 0);
@@ -20,11 +17,7 @@
         $livePrimaryUnit = $liveIsMultiSet ? 'SETY' : 'LEGI';
         $liveLegsLeft = (int) ($liveP1['legsWonInSet'] ?? $liveP1['legsWon'] ?? 0);
         $liveLegsRight = (int) ($liveP2['legsWonInSet'] ?? $liveP2['legsWon'] ?? 0);
-        $liveLegLabel = $liveLeg
-            ? ($liveIsMultiSet
-                ? 'Set '.$liveSetNumber.' · Leg '.$liveLegNumber
-                : 'Leg '.$liveLegNumber)
-            : '—';
+        $liveDistanceLabel = \App\Domain\GameScoring\MatchFormat::fromArray($liveMatchFormat)->broadcastDistanceLabel();
         $liveAvg1 = \App\Support\AverageFormat::display($liveP1['gameAverage'] ?? null);
         $liveAvg2 = \App\Support\AverageFormat::display($liveP2['gameAverage'] ?? null);
         $liveFinished = ($initialState['game']['status'] ?? '') === 'finished';
@@ -72,8 +65,8 @@
                             </div>
                             <span
                                 class="game-overlay-visit"
-                                x-show="lastVisitLabel(player1?.playerId)"
                                 x-bind:class="{
+                                    'is-empty': !lastVisitLabel(player1?.playerId),
                                     'is-bust': lastVisitIsBust(player1?.playerId),
                                     'is-one-eighty': lastVisitIs180(player1?.playerId),
                                     'is-ton-plus': lastVisitTier(player1?.playerId) === '170',
@@ -81,7 +74,6 @@
                                     'is-checkout': lastVisitIsCheckout(player1?.playerId),
                                 }"
                                 x-text="lastVisitLabel(player1?.playerId)"
-                                x-cloak
                             ></span>
                         </div>
                     </div>
@@ -125,37 +117,10 @@
                         <span class="game-overlay-scoreline-unit">LEGI</span>
                         <span class="game-overlay-scoreline-num" x-text="overlayLegsRight">{{ $liveLegsRight }}</span>
                     </p>
-                    <p class="game-overlay-leg-label" x-show="!isFinished" x-text="overlayLegLabel">{{ $liveLegLabel }}</p>
-                    @php
-                        $distanceLegs = (int) ($liveMatchFormat['legsToWinSet'] ?? 1);
-                        $distanceSets = (int) ($liveMatchFormat['setsToWinMatch'] ?? 1);
-                        $distanceMode = $liveMatchFormat['winMode'] ?? 'first_to';
-                        $distanceLength = (int) ($liveMatchFormat['winLength'] ?? $distanceLegs);
-                        $polishCount = function (int $n, string $one, string $few, string $many): string {
-                            $mod10 = $n % 10;
-                            $mod100 = $n % 100;
-                            if ($n === 1) {
-                                return '1 '.$one;
-                            }
-                            if ($mod10 >= 2 && $mod10 <= 4 && ($mod100 < 12 || $mod100 > 14)) {
-                                return $n.' '.$few;
-                            }
-
-                            return $n.' '.$many;
-                        };
-                        if ($distanceSets <= 1) {
-                            $liveDistanceLabel = $distanceMode === 'best_of'
-                                ? 'best of '.$distanceLength
-                                : 'do '.$polishCount($distanceLegs, 'lega', 'legi', 'legów');
-                        } else {
-                            $liveDistanceLabel = 'do '.$polishCount($distanceSets, 'seta', 'sety', 'setów')
-                                .' · '.$polishCount($distanceLegs, 'leg', 'legi', 'legów').'/set';
-                        }
-                    @endphp
                     <p
                         class="game-overlay-distance{{ $liveFinished ? ' is-finished' : '' }}"
                         x-bind:class="{ 'is-finished': isFinished }"
-                        x-text='isFinished ? "Koniec" : @js($liveDistanceLabel)'
+                        x-text="overlayDistanceLabel"
                     >{{ $liveFinished ? 'Koniec' : $liveDistanceLabel }}</p>
                 </div>
 
@@ -184,8 +149,8 @@
                             </div>
                             <span
                                 class="game-overlay-visit"
-                                x-show="lastVisitLabel(player2?.playerId)"
                                 x-bind:class="{
+                                    'is-empty': !lastVisitLabel(player2?.playerId),
                                     'is-bust': lastVisitIsBust(player2?.playerId),
                                     'is-one-eighty': lastVisitIs180(player2?.playerId),
                                     'is-ton-plus': lastVisitTier(player2?.playerId) === '170',
@@ -193,7 +158,6 @@
                                     'is-checkout': lastVisitIsCheckout(player2?.playerId),
                                 }"
                                 x-text="lastVisitLabel(player2?.playerId)"
-                                x-cloak
                             ></span>
                         </div>
                     </div>

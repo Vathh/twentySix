@@ -8,11 +8,12 @@ function bootOverlayTicker() {
 
     const track = root.querySelector('.ticker-track');
     const group = root.querySelector('.ticker-group');
-    const bar = root.querySelector('.ticker-bar');
+    const live = root.querySelector('.ticker-live');
+    const mark = root.querySelector('.ticker-mark');
     const empty = root.querySelector('.ticker-empty');
     const template = document.getElementById('overlay-ticker-item');
     const stateUrl = root.dataset.stateUrl;
-    if (!track || !group || !bar || !template || !stateUrl) {
+    if (!track || !group || !template || !stateUrl) {
         return;
     }
 
@@ -24,7 +25,7 @@ function bootOverlayTicker() {
         track.classList.remove('is-marquee');
         track.style.removeProperty('--ticker-duration');
 
-        if (bar.hidden || group.childElementCount === 0) {
+        if (track.hidden || group.childElementCount === 0) {
             return;
         }
 
@@ -45,9 +46,15 @@ function bootOverlayTicker() {
     const paint = (items) => {
         const nextSignature = items.map((item) => item.key).join('|');
         const hasItems = items.length > 0;
-        bar.hidden = !hasItems;
+        track.hidden = !hasItems;
+        if (live) {
+            live.hidden = !hasItems;
+        }
+        if (mark) {
+            mark.hidden = hasItems;
+        }
         if (empty) {
-            empty.hidden = hasItems || root.dataset.preview !== '1';
+            empty.hidden = hasItems;
         }
         if (nextSignature !== signature) {
             signature = nextSignature;
@@ -115,6 +122,10 @@ function itemSignature(group) {
 function fillNode(node, item) {
     node.dataset.key = item.key;
     setField(node, 'label', item.label);
+    const result = node.querySelector('[data-field="result"]');
+    if (result) {
+        result.hidden = !item.finished;
+    }
     setField(node, 'player1', item.player1);
     setField(node, 'player2', item.player2);
     setField(node, 'score1', item.score1);

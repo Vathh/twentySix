@@ -45,11 +45,12 @@
 
     $seRoundOrder = ['SIXTYFOUR', 'THIRTYTWO', 'SIXTEEN', 'EIGHT', 'QUARTER', 'SEMI', 'THIRD', 'FINAL'];
     $playoffLiveEnabled = $tournament->isLiveOnWeb();
+    $playoffLiveHere = $playoffLiveEnabled && ($ownsPlayoffLive ?? true);
 @endphp
 
 <div
     class="mt-12 mb-16"
-    @if($playoffLiveEnabled)
+    @if($playoffLiveHere)
         x-data="tournamentPlayoffLive(@js([
             'channel' => 'tournament.'.$tournament->id,
             'snapshotUrl' => route('tournaments.playoff-live', $tournament->id),
@@ -65,7 +66,7 @@
         <h2 class="text-center page-title tracking-wide mb-0">
             {{ $bracketHeading ?? 'Playoff' }}
         </h2>
-        @if($playoffLiveEnabled)
+        @if($playoffLiveHere)
             <span
                 class="px-2 py-0.5 rounded text-xs font-semibold bg-accent/25 text-accent"
                 x-text="connectionLabel()"

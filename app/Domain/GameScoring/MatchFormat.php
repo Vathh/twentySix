@@ -334,6 +334,18 @@ readonly class MatchFormat
         return $this->isBestOf() && $this->isSingleSet() && $this->winLength % 2 === 0;
     }
 
+    /** Dystans meczu na banerze overlay: FIRST TO albo BEST OF. */
+    public function broadcastDistanceLabel(): string
+    {
+        if ($this->isBestOf()) {
+            return 'BEST OF '.$this->winLength;
+        }
+
+        $target = $this->isSingleSet() ? $this->legsToWinSet : $this->setsToWinMatch;
+
+        return 'FIRST TO '.$target;
+    }
+
     public function formatLabel(): string
     {
         if ($this->isCricket()) {

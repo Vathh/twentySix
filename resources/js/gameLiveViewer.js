@@ -51,7 +51,11 @@ function normalizePayload(payload) {
 
 /** Rejestruje komponent Alpine — musi być wywołane przed Alpine.start(). */
 export function registerGameLiveViewer(Alpine) {
-    Alpine.data('gameLiveViewer', (config) => ({
+    Alpine.data('gameLiveViewer', (config) => {
+        let calloutTimer = null;
+        let calloutToken = 0;
+
+        return {
         state: config.initialState ?? null,
         tab: 'counter',
         connection: 'connecting',
@@ -66,6 +70,7 @@ export function registerGameLiveViewer(Alpine) {
         visitFlash: null,
         visitFlashTimer: null,
         announcedVisitSignature: '',
+        announcedVisitId: 0,
         remainingShown: [null, null],
         remainingTickCancel: [null, null],
 
@@ -81,6 +86,7 @@ export function registerGameLiveViewer(Alpine) {
                     }
                 },
             );
+            this.announcedVisitId = Number(this.highlightVisit?.id ?? 0);
             this.announcedVisitSignature = this.lastVisitSignature;
             this.$watch(
                 () => this.lastVisitSignature,
@@ -126,10 +132,7 @@ export function registerGameLiveViewer(Alpine) {
                 clearInterval(this.pollTimer);
                 this.pollTimer = null;
             }
-            if (this.flashCalloutTimer) {
-                clearTimeout(this.flashCalloutTimer);
-                this.flashCalloutTimer = null;
-            }
+            this.clearCallout();
             if (this.visitFlashTimer) {
                 clearTimeout(this.visitFlashTimer);
                 this.visitFlashTimer = null;
@@ -493,7 +496,15 @@ export function registerGameLiveViewer(Alpine) {
                 return;
             }
             const visit = this.highlightVisit;
-            if (!visit || visit.bust) {
+            const visitId = Number(visit?.id ?? 0);
+            if (!visit || visitId <= this.announcedVisitId) {
+                if (visitId < this.announcedVisitId) {
+                    this.clearCallout();
+                }
+                return;
+            }
+            this.announcedVisitId = visitId;
+            if (visit.bust) {
                 return;
             }
             const playerName = this.playerName(visit.playerId);
@@ -506,18 +517,13 @@ export function registerGameLiveViewer(Alpine) {
                     playerName,
                     visitId: visit.id,
                     legId,
-                }, 30000);
+                }, 5000);
                 return;
             }
             const tier = visitHighlightTier(visit);
             if (!tier) {
                 return;
             }
-            const duration = {
-                140: 1600,
-                170: 2000,
-                180: 10000,
-            }[tier];
             this.showCallout({
                 type: 'high',
                 tier,
@@ -525,15 +531,17 @@ export function registerGameLiveViewer(Alpine) {
                 playerName,
                 visitId: visit.id,
                 legId,
-            }, duration);
+            }, 3000);
         },
 
         clearCallout() {
-            this.flashCallout = null;
-            if (this.flashCalloutTimer) {
-                clearTimeout(this.flashCalloutTimer);
-                this.flashCalloutTimer = null;
+            calloutToken += 1;
+            if (calloutTimer) {
+                clearTimeout(calloutTimer);
+                calloutTimer = null;
             }
+            this.flashCalloutTimer = null;
+            this.flashCallout = null;
         },
 
         dismissCalloutIfSuperseded() {
@@ -558,13 +566,22 @@ export function registerGameLiveViewer(Alpine) {
         },
 
         showCallout(callout, durationMs) {
-            this.flashCallout = callout;
-            if (this.flashCalloutTimer) {
-                clearTimeout(this.flashCalloutTimer);
+            calloutToken += 1;
+            const token = calloutToken;
+            if (calloutTimer) {
+                clearTimeout(calloutTimer);
+                calloutTimer = null;
             }
-            this.flashCalloutTimer = setTimeout(() => {
-                this.clearCallout();
+            this.flashCallout = callout;
+            calloutTimer = setTimeout(() => {
+                if (token !== calloutToken) {
+                    return;
+                }
+                calloutTimer = null;
+                this.flashCalloutTimer = null;
+                this.flashCallout = null;
             }, durationMs);
+            this.flashCalloutTimer = calloutTimer;
         },
 
         get calloutClass() {
@@ -683,19 +700,19 @@ export function registerGameLiveViewer(Alpine) {
             return this.legsInSet(this.player2);
         },
 
-        get overlayLegLabel() {
-            const leg = this.state?.currentLeg;
+        get overlayDistanceLabel() {
             if (this.isFinished) {
-                return 'Koniec meczu';
+                return 'Koniec';
             }
-            if (!leg) {
-                return '—';
+            const format = this.state?.game?.matchFormat ?? {};
+            const sets = Number(format.setsToWinMatch ?? 1);
+            if (format.winMode === 'best_of') {
+                const length = Number(format.winLength ?? format.legsToWinSet ?? 1);
+                return `BEST OF ${length}`;
             }
-            if (this.isSingleSetFormat()) {
-                return `Leg ${leg.legNumber}`;
-            }
-
-            return `Set ${this.currentSetNumber} · Leg ${leg.legNumber}`;
+            const target = sets <= 1 ? Number(format.legsToWinSet ?? 1) : sets;
+            return `FIRST TO ${target}`;
         },
-    }));
+        };
+    });
 }

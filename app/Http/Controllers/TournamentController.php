@@ -6,6 +6,7 @@ use App\Domain\Retention\ApplicationEntityKind;
 use App\Domain\Tournament\TournamentDomain;
 use App\Domain\Tournament\TournamentStartRules;
 use App\Enums\BracketSide;
+use App\Enums\TournamentStatus;
 use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Queries\GetTournamentData;
@@ -196,6 +197,41 @@ class TournamentController extends Controller
             'join' => $join,
             'participantCount' => $participantCount,
             'minPlayers' => $minPlayers,
+        ]);
+    }
+
+    public function board(Tournament $tournament): View
+    {
+        $viewModel = $this->getTournamentGroupResults->get($tournament->id);
+        $tournamentDomain = $viewModel->tournament();
+        $mode = $this->boardMode($tournamentDomain);
+        $statusUrl = $mode === 'bracket'
+            ? route('tournaments.playoff-live', $tournament->id)
+            : route('tournaments.groups-live', $tournament->id);
+
+        return view('tournaments.board', [
+            'tournament' => $tournamentDomain,
+            'mode' => $mode,
+            'statusUrl' => $statusUrl,
+            'groupStandings' => $viewModel->groupStandings(),
+            'players' => $viewModel->players(),
+            'games' => $viewModel->games(),
+            'playoffGames' => $this->playoffBracketOutline->fill(
+                $viewModel->tournament,
+                $viewModel->playoffGames(),
+                BracketSide::Main,
+            ),
+            'consolationPlayoffGames' => $this->playoffBracketOutline->fill(
+                $viewModel->tournament,
+                $viewModel->playoffGames(BracketSide::Consolation),
+                BracketSide::Consolation,
+            ),
+            'groupNumbers' => $viewModel->groupNumbers(),
+            'groupPlayoffHighlights' => $viewModel->groupPlayoffHighlights(),
+            'threeDartAverages' => $this->threeDartAverages->forTournamentMatches(
+                $viewModel->tournament->games->pluck('id')->map(fn ($id) => (int) $id)->all(),
+                $viewModel->tournament->playoffGames->pluck('id')->map(fn ($id) => (int) $id)->all(),
+            ),
         ]);
     }
 
@@ -684,6 +720,22 @@ class TournamentController extends Controller
         }
 
         return back()->with('success', $successMessage);
+    }
+
+    /**
+     * Tablica na telewizor: grupy w fazie grupowej, drabinka od playoffu do końca.
+     */
+    private function boardMode(TournamentDomain $tournament): string
+    {
+        if (! $tournament->isStarted()) {
+            return 'waiting';
+        }
+
+        if ($tournament->format->hasGroupStage() && $tournament->status === TournamentStatus::GROUP) {
+            return 'groups';
+        }
+
+        return 'bracket';
     }
 
     private function resolveShowTab(TournamentDomain $tournament): string

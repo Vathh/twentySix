@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Concerns\MapsIndexPageForApi;
 use App\Models\Organization\Organization;
 use App\Services\Competition\CompetitionShowSerializer;
 use App\Services\Organization\OrganizationService;
+use App\Support\Catalog\CatalogSort;
 use App\Support\Text\PolishFold;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,16 +22,18 @@ class OrganizationController
     ) {}
 
     /**
-     * GET /api/organizations?page=&q=
+     * GET /api/organizations?page=&q=&sort=
      */
     public function index(Request $request): JsonResponse
     {
         $page = max(1, (int) $request->query('page', 1));
         $search = PolishFold::term($request->query('q'));
+        $sort = CatalogSort::from($request->query('sort'));
 
-        return response()->json(
-            $this->indexPageWithoutUrls($this->organizationService->getIndexPage($page, $search)),
-        );
+        $payload = $this->indexPageWithoutUrls($this->organizationService->getIndexPage($page, $search, $sort));
+        $payload['canCreate'] = $request->user()?->can('create', Organization::class) ?? false;
+
+        return response()->json($payload);
     }
 
     /**

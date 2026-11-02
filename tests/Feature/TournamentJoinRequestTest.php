@@ -187,6 +187,70 @@ class TournamentJoinRequestTest extends TestCase
             ->assertDontSee('Dołącz przez QR');
     }
 
+    public function test_catalog_show_lets_player_apply_like_the_web_page(): void
+    {
+        $this->tournament->update([
+            'join_code' => null,
+            'join_code_generated_at' => null,
+        ]);
+
+        Sanctum::actingAs($this->player);
+
+        $this->getJson('/api/tournaments/'.$this->tournament->id)
+            ->assertOk()
+            ->assertJsonPath('canManage', false)
+            ->assertJsonPath('tournament.isStarted', false)
+            ->assertJsonPath('join.canApply', true)
+            ->assertJsonPath('roster.participantCount', 0)
+            ->assertJsonPath('roster.minPlayers', 4);
+
+        $this->tournament->refresh();
+        $this->assertNotEmpty($this->tournament->join_code);
+
+        $this->postJson('/api/tournaments/'.$this->tournament->id.'/join-request')
+            ->assertOk()
+            ->assertJsonPath('join.alreadyPending', true);
+
+        $this->getJson('/api/tournaments/'.$this->tournament->id)
+            ->assertOk()
+            ->assertJsonPath('join.canApply', false)
+            ->assertJsonPath('join.alreadyPending', true);
+    }
+
+    public function test_admin_can_toggle_join_code_and_send_bulk_invites(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $before = $this->tournament->join_code;
+        $this->postJson('/api/tournaments/'.$this->tournament->id.'/join-code')
+            ->assertOk()
+            ->assertJsonPath('joinCodeEnabled', true);
+        $this->tournament->refresh();
+        $this->assertNotSame($before, $this->tournament->join_code);
+
+        $this->postJson('/api/tournaments/'.$this->tournament->id.'/join-code/toggle', [
+            'enabled' => false,
+        ])->assertOk()->assertJsonPath('joinCodeEnabled', false);
+
+        Sanctum::actingAs($this->player);
+        $this->getJson('/api/tournaments/'.$this->tournament->id)
+            ->assertOk()
+            ->assertJsonPath('join.canApply', false)
+            ->assertJsonPath('join.reason', 'Przyjmowanie zgłoszeń jest wyłączone.');
+
+        Sanctum::actingAs($this->admin);
+        $this->postJson('/api/tournaments/'.$this->tournament->id.'/join-code/toggle', [
+            'enabled' => true,
+        ])->assertOk()->assertJsonPath('joinCodeEnabled', true);
+
+        $this->postJson('/api/tournaments/'.$this->tournament->id.'/invitations/bulk', [
+            'userIds' => [$this->player->id],
+        ])->assertOk()
+            ->assertJsonPath('invitationPipeline.0.userId', $this->player->id)
+            ->assertJsonPath('invitationPipeline.0.canReinvite', false)
+            ->assertJsonPath('invitationPipeline.0.isPending', true);
+    }
+
     public function test_player_can_apply_from_tournament_page_without_code(): void
     {
         $this->actingAs($this->player)

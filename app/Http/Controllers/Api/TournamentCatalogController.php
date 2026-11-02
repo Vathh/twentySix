@@ -13,6 +13,8 @@ use App\Services\Tournament\TournamentJoinRequestService;
 use App\Services\Tournament\TournamentPlayoffBracketLiveService;
 use App\Services\Tournament\TournamentService;
 use App\Services\Tournament\TournamentStartPageService;
+use App\Support\Catalog\CatalogSort;
+use App\Support\Catalog\TournamentCatalogStatus;
 use App\Support\Text\PolishFold;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,15 +35,17 @@ class TournamentCatalogController
     ) {}
 
     /**
-     * GET /api/tournaments?page=&q=
+     * GET /api/tournaments?page=&q=&sort=&status=
      */
     public function index(Request $request): JsonResponse
     {
         $page = max(1, (int) $request->query('page', 1));
         $search = PolishFold::term($request->query('q'));
+        $sort = CatalogSort::from($request->query('sort'));
+        $status = TournamentCatalogStatus::from($request->query('status'));
 
         return response()->json(
-            $this->indexPageWithoutUrls($this->tournamentService->getIndexPage($page, $search)),
+            $this->indexPageWithoutUrls($this->tournamentService->getIndexPage($page, $search, $sort, $status)),
         );
     }
 
@@ -55,6 +59,7 @@ class TournamentCatalogController
         $payload['roster'] = null;
         $payload['join'] = null;
         if ($tournament->status === TournamentStatus::CREATED) {
+            $tournament = $this->joinRequestService->ensureJoinCode($tournament);
             $payload['roster'] = $this->startPageService->publicRoster($tournament->id);
             $payload['join'] = $this->joinRequestService->statusForUser(
                 $tournament,

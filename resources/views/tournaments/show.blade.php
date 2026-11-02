@@ -52,6 +52,14 @@
                     <p class="text-center text-text-muted mt-10">
                         Turniej jeszcze się nie rozpoczął. Wyniki i tabele pojawią się po starcie.
                     </p>
+                    <p class="text-center mt-4 flex flex-wrap items-center justify-center gap-4">
+                        <a href="{{ route('tournaments.board', $tournament->id) }}" target="_blank" rel="noopener" class="text-sm font-semibold text-accent hover:underline">
+                            Tablica na ekran
+                        </a>
+                        <a href="{{ route('tournaments.overlay-ticker', $tournament->id) }}" target="_blank" rel="noopener" class="text-sm font-semibold text-accent hover:underline">
+                            Pasek na ekran
+                        </a>
+                    </p>
                 @else
                     <nav class="tournament-show-tabs" aria-label="Zakładki turnieju">
                         @php
@@ -77,6 +85,14 @@
                                 {{ $label }}
                             </a>
                         @endforeach
+                        <span class="tournament-screen-links">
+                            <a href="{{ route('tournaments.board', $tournament->id) }}" target="_blank" rel="noopener" class="board-open-link">
+                                Tablica na ekran
+                            </a>
+                            <a href="{{ route('tournaments.overlay-ticker', $tournament->id) }}" target="_blank" rel="noopener" class="board-open-link">
+                                Pasek na ekran
+                            </a>
+                        </span>
                     </nav>
 
                     @if($tab === 'playoff')

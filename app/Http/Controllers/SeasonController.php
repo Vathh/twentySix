@@ -104,7 +104,22 @@ class SeasonController extends Controller
     {
         $this->authorize('update', $season);
 
-        //
+        $validated = $request->validate([
+            'seasonName' => 'required|string|max:25|unique:seasons,name,'.$season->id,
+            'startDate' => 'required|date',
+            'endDate' => 'required|date|after_or_equal:startDate',
+        ]);
+
+        $this->seasonService->update(
+            $season->id,
+            $validated['seasonName'],
+            $validated['startDate'],
+            $validated['endDate'],
+        );
+
+        return redirect()
+            ->route('seasons.show', $season->id)
+            ->with('success', 'Pomyślnie zaktualizowano sezon');
     }
 
     public function destroy(Request $request, Season $season): RedirectResponse

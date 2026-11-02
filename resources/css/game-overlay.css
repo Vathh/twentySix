@@ -110,36 +110,38 @@ body.game-overlay-preview {
 
 .game-overlay-player {
     display: grid;
-    grid-template-columns: 8px minmax(0, 1fr) max-content;
+    grid-template-columns: minmax(0, 1fr) max-content;
     align-items: center;
     gap: 8px;
     min-width: 0;
-    padding: 12px 12px 14px 0;
+    padding: 12px 12px 14px 16px;
     position: relative;
     z-index: 1;
     clip-path: polygon(22px 0, 100% 0, 100% 100%, 22px 100%, 0 calc(100% - 14px), 0 22px);
 }
 
 .game-overlay-player.is-right {
-    grid-template-columns: max-content minmax(0, 1fr) 8px;
-    padding: 12px 0 14px 12px;
+    grid-template-columns: max-content minmax(0, 1fr);
+    padding: 12px 16px 14px 12px;
     text-align: right;
     clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% calc(100% - 14px), calc(100% - 22px) 100%, 0 100%);
 }
 
 .game-overlay-rail {
-    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
     width: 8px;
-    align-self: stretch;
     background: rgba(245, 158, 11, 0.22);
+    pointer-events: none;
 }
 
 .game-overlay-player.is-left .game-overlay-rail {
-    clip-path: polygon(0 22px, 100% 0, 100% 100%, 0 100%);
+    left: 0;
 }
 
 .game-overlay-player.is-right .game-overlay-rail {
-    clip-path: polygon(0 0, 100% 22px, 100% 100%, 0 100%);
+    right: 0;
 }
 
 .game-overlay-player.is-throwing .game-overlay-rail {
@@ -163,13 +165,16 @@ body.game-overlay-preview {
 }
 
 .game-overlay-name-row {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 8px;
+    width: max-content;
+    max-width: 100%;
     min-width: 0;
 }
 
 .game-overlay-player.is-right .game-overlay-name-row {
+    margin-left: auto;
     justify-content: flex-end;
 }
 
@@ -235,16 +240,24 @@ body.game-overlay-preview {
 }
 
 .game-overlay-opener {
-    flex: 0 0 auto;
-    display: inline-flex;
+    position: absolute;
+    top: 50%;
+    z-index: 1;
     width: 1.35em;
     height: 0.78em;
     color: var(--color-accent);
+    pointer-events: none;
     filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.45));
 }
 
+.game-overlay-player.is-left .game-overlay-opener {
+    left: calc(100% + 6px);
+    transform: translateY(-50%);
+}
+
 .game-overlay-player.is-right .game-overlay-opener {
-    transform: scaleX(-1);
+    right: calc(100% + 6px);
+    transform: translateY(-50%) scaleX(-1);
 }
 
 .game-overlay-opener svg {
@@ -257,15 +270,22 @@ body.game-overlay-preview {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
     min-width: 3.4rem;
+    min-height: calc(1.35rem + 5px);
     padding: 3px 9px 2px;
     border-radius: 2px;
     background: rgba(255, 255, 255, 0.08);
     color: var(--color-text);
     font-size: 1.35rem;
+    line-height: 1;
     font-variant-numeric: tabular-nums;
     font-weight: 700;
     letter-spacing: 0.04em;
+}
+
+.game-overlay-visit.is-empty {
+    visibility: hidden;
 }
 
 .game-overlay-visit.is-bust {
@@ -426,15 +446,6 @@ body.game-overlay-preview {
     color: var(--color-text-muted);
 }
 
-.game-overlay-leg-label {
-    margin: 4px 0 0;
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-}
-
 .game-overlay-distance {
     margin: 2px 0 0;
     font-size: 0.95rem;
@@ -589,8 +600,28 @@ body.game-overlay-preview {
 }
 
 .game-overlay-callout.is-shot {
+    gap: 1px;
+    padding-block: 8px;
     color: var(--color-accent);
     text-shadow: 0 0 36px rgba(245, 158, 11, 0.5);
+}
+
+.game-overlay-callout.is-shot .game-overlay-callout-name {
+    font-size: 1.27rem;
+    line-height: 1;
+    letter-spacing: 0.08em;
+}
+
+.game-overlay-callout.is-shot .game-overlay-callout-kicker {
+    font-size: 0.79rem;
+    line-height: 1;
+    letter-spacing: 0.28em;
+}
+
+.game-overlay-callout.is-shot .game-overlay-callout-sub {
+    font-size: 1.05rem;
+    line-height: 1;
+    letter-spacing: 0.14em;
 }
 
 .game-overlay-callout-name {
@@ -635,8 +666,9 @@ body.game-overlay-preview {
 }
 
 .game-overlay-callout.is-shot .game-overlay-callout-main {
-    font-size: 4.8rem;
-    letter-spacing: 0.06em;
+    font-size: 3.47rem;
+    line-height: 0.82;
+    letter-spacing: 0.04em;
 }
 
 .game-overlay-callout-sub {
@@ -666,11 +698,11 @@ body.game-overlay-preview {
 
     .game-overlay-player {
         gap: 10px;
-        padding: 12px 12px 12px 0;
+        padding: 12px 12px 12px 18px;
     }
 
     .game-overlay-player.is-right {
-        padding: 12px 0 12px 12px;
+        padding: 12px 18px 12px 12px;
     }
 
     .game-overlay-name {
@@ -722,11 +754,20 @@ body.game-overlay-preview {
     }
 
     .game-overlay-callout.is-shot .game-overlay-callout-main {
-        font-size: 3.2rem;
+        font-size: 2.81rem;
     }
 
+    .game-overlay-callout.is-shot .game-overlay-callout-name {
+        font-size: 1.1rem;
+    }
+
+    .game-overlay-callout.is-shot .game-overlay-callout-kicker,
     .game-overlay-callout-kicker {
-        font-size: 0.82rem;
+        font-size: 0.75rem;
+    }
+
+    .game-overlay-callout.is-shot .game-overlay-callout-sub {
+        font-size: 0.88rem;
     }
 }
 
@@ -752,9 +793,12 @@ body.game-overlay-preview {
     line-height: 1;
 }
 
-.ticker-bar[hidden],
+.ticker-live[hidden],
+.ticker-mark[hidden],
+.ticker-track[hidden],
 .ticker-empty[hidden],
-.ticker-legs[hidden] {
+.ticker-legs[hidden],
+.ticker-result[hidden] {
     display: none !important;
 }
 
@@ -779,6 +823,21 @@ body.game-overlay-preview {
     border-radius: 50%;
     background: var(--color-accent);
     box-shadow: 0 0 8px rgba(245, 158, 11, 0.9);
+}
+
+.ticker-mark {
+    display: flex;
+    flex: none;
+    align-items: center;
+    padding: 0 16px 0 18px;
+    background: rgba(245, 158, 11, 0.08);
+    box-shadow: inset -1px 0 0 rgba(245, 158, 11, 0.35);
+}
+
+.ticker-mark-img {
+    display: block;
+    height: 1.7em;
+    width: auto;
 }
 
 .ticker-viewport {
@@ -824,6 +883,17 @@ body.game-overlay-preview {
     text-transform: uppercase;
 }
 
+.ticker-result {
+    padding: 0.18em 0.5em;
+    border-radius: 999px;
+    background: var(--color-accent);
+    color: #101014;
+    font-size: 0.58em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 .ticker-name {
     font-weight: 600;
 }
@@ -850,12 +920,12 @@ body.game-overlay-preview {
 
 .ticker-empty {
     margin: 0;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-text-muted);
-    font-size: 18px;
+    width: 100%;
+    color: var(--color-text-secondary);
+    font-size: 0.82em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-align: center;
 }
 
 @keyframes ticker-scroll {

@@ -7,6 +7,7 @@ use App\DTO\GameResultDTO;
 use App\Enums\GameStatus;
 use App\Models\Game\Game;
 use App\Support\GameScoring\ScoringLock;
+use DateTimeInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -246,16 +247,22 @@ class GameRepository
     }
 
     /**
-     * Mecze grupowe w trakcie — pasek overlay.
+     * Mecze grupowe na pasek overlay: w trakcie oraz świeżo zakończone.
      *
      * @return Collection<int, Game>
      */
-    public function listInProgressForTournament(int $tournamentId): Collection
+    public function listForOverlayTicker(int $tournamentId, DateTimeInterface $finishedSince): Collection
     {
         return Game::query()
             ->with(['player1:id,name,is_bye', 'player2:id,name,is_bye'])
             ->where('tournament_id', $tournamentId)
-            ->where('status', GameStatus::IN_PROGRESS)
+            ->where(function ($query) use ($finishedSince): void {
+                $query->where('status', GameStatus::IN_PROGRESS)
+                    ->orWhere(function ($finished) use ($finishedSince): void {
+                        $finished->where('status', GameStatus::FINISHED)
+                            ->where('finished_at', '>=', $finishedSince);
+                    });
+            })
             ->whereNotNull('player1_id')
             ->whereNotNull('player2_id')
             ->whereHas('player1', fn ($query) => $query->where('is_bye', false))

@@ -12,8 +12,10 @@ use App\Domain\Stats\ThreeDartAverageSet;
 use App\Domain\Tournament\TournamentDomain;
 use App\Enums\BracketSide;
 use App\Enums\GameStage;
+use App\Enums\TournamentStatus;
 use App\Models\League\League;
 use App\Models\Organization\Organization;
+use App\Models\Player\Player;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Queries\GetTournamentData;
@@ -21,7 +23,9 @@ use App\Repositories\Tournament\TournamentRepository;
 use App\Services\Season\SeasonStatsService;
 use App\Services\Stats\CompetitionThreeDartAverageService;
 use App\Services\Tournament\PlayoffBracketOutline;
+use App\Support\Text\PolishFold;
 use App\Support\Tournament\GroupRosterOrder;
+use App\Support\Tournament\PlayoffRoundLabel;
 use App\ViewModels\TournamentDataViewModel;
 use Illuminate\Support\Collection;
 
@@ -40,7 +44,14 @@ class CompetitionShowSerializer
      */
     public function organization(Organization $organization): array
     {
-        $organization->loadMissing(['seasons', 'leagues']);
+        $organization->load([
+            'seasons' => fn ($query) => $query->withCount('tournaments'),
+            'leagues.divisions',
+            'admins.player',
+            'relatedUsers.player',
+            'guests',
+        ]);
+        $organization->loadCount(['relatedUsers', 'guests', 'tournaments', 'oneOffTournaments', 'seasons']);
         $domain = OrganizationDomain::fromEloquent($organization, ['seasons']);
         $seasons = collect($domain->seasons)
             ->sortByDesc(fn (SeasonDomain $season) => $season->updatedAt?->getTimestamp() ?? 0)
@@ -48,15 +59,25 @@ class CompetitionShowSerializer
             ->map(fn (SeasonDomain $season) => [
                 'id' => $season->id,
                 'name' => $season->name,
+                'startDate' => $season->getStartDate(),
+                'endDate' => $season->getEndDate(),
+                'dateLabel' => $season->getPlayDatesFormatted(),
+                'tournamentCountLabel' => $season->tournamentCountLabel(),
             ])
             ->all();
         $leagues = $organization->leagues
             ->sortBy('name')
             ->values()
-            ->map(fn (League $league) => [
-                'id' => $league->id,
-                'name' => $league->name,
-            ])
+            ->map(function (League $league) {
+                $divisionCount = $league->divisions->count();
+
+                return [
+                    'id' => $league->id,
+                    'name' => $league->name,
+                    'divisionCount' => $divisionCount,
+                    'divisionLabel' => $divisionCount.' '.PolishFold::word($divisionCount, 'szczebel', 'szczeble', 'szczebli'),
+                ];
+            })
             ->all();
         $oneOffTournaments = $this->tournaments
             ->oneOffForOrganization($organization->id)
@@ -76,10 +97,26 @@ class CompetitionShowSerializer
                 'description' => $domain->description,
                 'createdAt' => $domain->createdAtDate(),
                 'updatedAt' => $domain->updatedAtDate(),
+                'logoUrl' => $domain->logoUrl(),
+                'initials' => Player::initialsFromName($domain->name),
+                'relatedUserCount' => $domain->relatedUserCount,
+                'guestCount' => $domain->guestCount,
+                'seasonCount' => $domain->seasonCount,
+                'tournamentCount' => $domain->tournamentCount,
             ],
             'seasons' => $seasons,
             'leagues' => $leagues,
             'oneOffTournaments' => $oneOffTournaments,
+            'admins' => $this->userNames($organization->admins),
+            'relatedUsers' => $this->userNames($organization->relatedUsers),
+            'guests' => $organization->guests
+                ->map(fn ($guest) => [
+                    'id' => (int) $guest->id,
+                    'name' => (string) $guest->name,
+                ])
+                ->sortBy(fn (array $row) => mb_strtolower($row['name']))
+                ->values()
+                ->all(),
         ];
     }
 
@@ -88,11 +125,23 @@ class CompetitionShowSerializer
      */
     public function season(Season $season): array
     {
-        $season->loadMissing(['organization', 'tournaments']);
+        $season->loadMissing(['organization', 'tournaments', 'admins.player']);
+        if ($season->organization !== null) {
+            $season->organization->loadCount(['relatedUsers', 'guests']);
+        }
         $domain = SeasonDomain::fromEloquent($season, ['organization', 'tournaments']);
 
         $tournaments = $domain->tournaments
-            ->sortByDesc(fn (TournamentDomain $t) => $t->date?->getTimestamp() ?? PHP_INT_MIN)
+            ->sortBy(function (TournamentDomain $tournament) {
+                $rank = match ($tournament->status) {
+                    TournamentStatus::GROUP, TournamentStatus::PLAYOFF => 0,
+                    TournamentStatus::CREATED => 1,
+                    TournamentStatus::FINISHED => 2,
+                };
+                $dateKey = PHP_INT_MAX - ($tournament->date?->getTimestamp() ?? 0);
+
+                return sprintf('%d-%010d', $rank, $dateKey);
+            })
             ->values()
             ->map(fn (TournamentDomain $t) => [
                 'id' => $t->id,
@@ -116,6 +165,13 @@ class CompetitionShowSerializer
             'organization' => $domain->organization
                 ? ['id' => $domain->organization->id, 'name' => $domain->organization->name]
                 : null,
+            'community' => $domain->organization
+                ? [
+                    'relatedUserCount' => $domain->organization->relatedUserCount,
+                    'guestCount' => $domain->organization->guestCount,
+                ]
+                : null,
+            'admins' => $this->userNames($season->admins),
             'tournaments' => $tournaments,
             'standings' => $this->mapStandingsRows($standingsPage['items']),
             'standingsHasMore' => $standingsPage['has_more'],
@@ -159,8 +215,11 @@ class CompetitionShowSerializer
     public function tournament(Tournament $tournament): array
     {
         $viewModel = $this->getTournamentData->get($tournament->id);
+        $payload = $this->tournamentFromViewModel($viewModel);
+        $tournament->loadMissing('admins.player');
+        $payload['admins'] = $this->userNames($tournament->admins);
 
-        return $this->tournamentFromViewModel($viewModel);
+        return $payload;
     }
 
     /**
@@ -200,9 +259,10 @@ class CompetitionShowSerializer
             'results' => $this->mapResults($viewModel->results(), $showStageInResults, $averages),
             'groups' => $this->mapGroups($viewModel, $averages),
             'playoff' => $this->mapPlayoff(
-                $this->playoffBracketOutline->fill($viewModel->tournament, $viewModel->playoffGames(), BracketSide::Main),
+                $mainPlayoff = $this->playoffBracketOutline->fill($viewModel->tournament, $viewModel->playoffGames(), BracketSide::Main),
                 $averages,
             ),
+            'playoffBrackets' => $this->doubleEliminationBrackets($mainPlayoff, $averages),
             'consolationPlayoff' => $this->mapPlayoff(
                 $this->playoffBracketOutline->fill(
                     $viewModel->tournament,
@@ -269,6 +329,7 @@ class CompetitionShowSerializer
     {
         $standingsByGroup = $viewModel->groupStandings();
         $gamesByGroup = $viewModel->games();
+        $highlights = $viewModel->groupPlayoffHighlights();
         $groups = [];
 
         foreach ($viewModel->groupNumbers() as $groupNumber) {
@@ -309,6 +370,11 @@ class CompetitionShowSerializer
                 'groupNumber' => $groupNumber,
                 'standings' => $standingRows,
                 'games' => $gameRows,
+                'playoffHighlight' => $highlights[$groupNumber] ?? [
+                    'complete' => false,
+                    'advanceCount' => 0,
+                    'advancingPlayerIds' => [],
+                ],
             ];
         }
 
@@ -317,11 +383,12 @@ class CompetitionShowSerializer
 
     /**
      * @param  array<string, list<PlayoffGameDomain>>  $playoffGames
+     * @param  list<string>|null  $order
      * @return list<array{round: string, roundLabel: string, games: list<array>}>
      */
-    private function mapPlayoff(array $playoffGames, ThreeDartAverageSet $averages): array
+    private function mapPlayoff(array $playoffGames, ThreeDartAverageSet $averages, ?array $order = null): array
     {
-        $order = [
+        $order ??= [
             GameStage::SIXTYFOUR->value,
             GameStage::THIRTYTWO->value,
             GameStage::SIXTEEN->value,
@@ -346,14 +413,14 @@ class CompetitionShowSerializer
             if (! isset($playoffGames[$roundValue]) || $playoffGames[$roundValue] === []) {
                 continue;
             }
-            $stage = GameStage::from($roundValue);
+            $stage = GameStage::tryFrom($roundValue);
             $sorted = collect($playoffGames[$roundValue])
                 ->sortBy(fn (PlayoffGameDomain $game) => $this->slotSortKey($game->slot))
                 ->values()
                 ->all();
             $rounds[] = [
                 'round' => $roundValue,
-                'roundLabel' => $stage->label(),
+                'roundLabel' => $stage?->label() ?? PlayoffRoundLabel::label($roundValue),
                 'games' => array_map(
                     fn (PlayoffGameDomain $game) => $this->mapPlayoffGame($game, $bySlot, $averages),
                     $sorted,
@@ -362,6 +429,69 @@ class CompetitionShowSerializer
         }
 
         return $rounds;
+    }
+
+    /**
+     * Osobny podział drabinki DE. Dla single elimination zwraca null, a `playoff` zostaje jak dotychczas.
+     *
+     * @param  array<string, list<PlayoffGameDomain>>  $playoffGames
+     * @return list<array{key: string, label: string, rounds: list<array{round: string, roundLabel: string, games: list<array>}>}>|null
+     */
+    private function doubleEliminationBrackets(array $playoffGames, ThreeDartAverageSet $averages): ?array
+    {
+        $keys = array_map(strval(...), array_keys($playoffGames));
+        $isDouble = false;
+        foreach ($keys as $key) {
+            if (preg_match('/^[WL]\d+$/', $key) === 1 || in_array($key, ['GF', 'GF1', 'GF2'], true)) {
+                $isDouble = true;
+                break;
+            }
+        }
+        if (! $isDouble) {
+            return null;
+        }
+
+        $sections = array_values(array_filter([
+            $this->bracketSection('winners', 'Wygrani', $playoffGames, $this->roundKeysMatching($keys, '/^W\d+$/'), $averages),
+            $this->bracketSection('losers', 'Przegrani', $playoffGames, $this->roundKeysMatching($keys, '/^L\d+$/'), $averages),
+            $this->bracketSection('final', 'Finał', $playoffGames, array_values(array_filter(
+                ['GF', 'GF1', 'GF2'],
+                fn (string $key) => isset($playoffGames[$key]) && $playoffGames[$key] !== [],
+            )), $averages),
+        ], fn (array $section) => $section['rounds'] !== []));
+
+        return $sections === [] ? null : $sections;
+    }
+
+    /**
+     * @param  list<string>  $keys
+     * @return list<string>
+     */
+    private function roundKeysMatching(array $keys, string $pattern): array
+    {
+        $matched = array_values(array_filter($keys, fn (string $key) => preg_match($pattern, $key) === 1));
+        usort($matched, fn (string $a, string $b) => ((int) substr($a, 1)) <=> ((int) substr($b, 1)));
+
+        return $matched;
+    }
+
+    /**
+     * @param  array<string, list<PlayoffGameDomain>>  $playoffGames
+     * @param  list<string>  $roundKeys
+     * @return array{key: string, label: string, rounds: list<array{round: string, roundLabel: string, games: list<array>}>}
+     */
+    private function bracketSection(
+        string $key,
+        string $label,
+        array $playoffGames,
+        array $roundKeys,
+        ThreeDartAverageSet $averages,
+    ): array {
+        return [
+            'key' => $key,
+            'label' => $label,
+            'rounds' => $this->mapPlayoff($playoffGames, $averages, $roundKeys),
+        ];
     }
 
     /**
@@ -471,5 +601,21 @@ class CompetitionShowSerializer
                 ]
                 : null,
         ];
+    }
+
+    /**
+     * @param  Collection<int, \App\Models\Users\User>  $users
+     * @return list<array{id: int, name: string}>
+     */
+    private function userNames(Collection $users): array
+    {
+        return $users
+            ->map(fn ($user) => [
+                'id' => (int) $user->id,
+                'name' => $user->player?->name ?? '—',
+            ])
+            ->sortBy(fn (array $row) => mb_strtolower($row['name']))
+            ->values()
+            ->all();
     }
 }

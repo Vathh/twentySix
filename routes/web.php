@@ -288,6 +288,9 @@ Route::delete('/tournaments/{tournament}', [TournamentController::class, 'destro
     ->middleware('auth')
     ->name('tournaments.destroy');
 Route::prefix('tournaments/{tournament}')->group(function () {
+    Route::get('/board', [TournamentController::class, 'board'])->name('tournaments.board');
+    Route::get('/overlay-ticker', [GameViewController::class, 'tournamentOverlayTicker'])->name('tournaments.overlay-ticker');
+    Route::get('/overlay-ticker/state', [GameViewController::class, 'tournamentOverlayTickerState'])->name('tournaments.overlay-ticker.state');
     Route::get('/groups-live', [TournamentController::class, 'groupsLive'])->name('tournaments.groups-live');
     Route::get('/playoff-live', [TournamentController::class, 'playoffLive'])->name('tournaments.playoff-live');
     Route::get('/join-requests-live', [TournamentController::class, 'joinRequestsLive'])->name('tournaments.join-requests-live');

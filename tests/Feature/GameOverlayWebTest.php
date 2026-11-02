@@ -135,7 +135,9 @@ class GameOverlayWebTest extends TestCase
         $this->get(route('games.overlay', ['type' => 'playoff', 'id' => $game->id]))
             ->assertOk()
             ->assertSee('SETY')
-            ->assertSee('LEGI');
+            ->assertSee('LEGI')
+            ->assertSee('FIRST TO 3')
+            ->assertDontSee('game-overlay-leg-label', false);
     }
 
     public function test_live_state_skips_full_detail_and_returns_410_when_finished(): void
@@ -258,7 +260,7 @@ class GameOverlayWebTest extends TestCase
             ->assertJsonPath('lastEvent.score', 32);
     }
 
-    public function test_overlay_queries_game_visits_once(): void
+    public function test_overlay_loads_visits_for_the_open_leg_and_the_state_version(): void
     {
         $game = $this->playoffGame(GameStatus::IN_PROGRESS, 'Visit Alice', 'Visit Bob');
         $leg = GameLeg::create([
@@ -291,7 +293,7 @@ class GameOverlayWebTest extends TestCase
             ->assertOk()
             ->assertSee('Visit Alice');
 
-        $this->assertSame(1, $visitSelects);
+        $this->assertSame(3, $visitSelects);
     }
 
     public function test_show_page_keeps_persisted_leg_average_on_closed_leg(): void

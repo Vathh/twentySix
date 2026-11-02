@@ -77,7 +77,7 @@ class MobileAppTokenService
     }
 
     /**
-     * @return array{id: int, email: string, name: string|null, playerId: int|null, avatarUrl: string|null}
+     * @return array{id: int, email: string, name: string|null, playerId: int|null, avatarUrl: string|null, canCreateOrganizations: bool}
      */
     public function userPayload(User $user): array
     {
@@ -87,6 +87,7 @@ class MobileAppTokenService
             'name' => $user->player->name ?? null,
             'playerId' => $user->player?->id,
             'avatarUrl' => $user->player?->avatarUrl(),
+            'canCreateOrganizations' => (bool) $user->can_create_organizations,
         ];
     }
 }

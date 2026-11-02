@@ -19,6 +19,7 @@
             @if(count($tournaments) === 0)
                 <p class="text-text-muted text-sm">Nie masz teraz turnieju do rozegrania ani do prowadzenia.</p>
             @else
+                <div x-data="{ shown: 3 }">
                 <div class="index-grid">
                     @foreach($tournaments as $index => $item)
                         @php
@@ -31,6 +32,7 @@
                                 $item['statusLabel'] ?? null,
                             ])->filter()->implode(' · ');
                         @endphp
+                        <div @if($index >= 3) x-show="shown > {{ $index }}" x-cloak @endif>
                         <x-place-card
                             kind="tournament"
                             :href="$item['url']"
@@ -40,7 +42,14 @@
                             :role-accent="$item['role'] === 'admin'"
                             style="--stagger: {{ $index }}"
                         />
+                        </div>
                     @endforeach
+                </div>
+                @if(count($tournaments) > 3)
+                    <button type="button" class="mt-4 text-sm font-semibold text-accent" x-show="shown < {{ count($tournaments) }}" x-cloak @click="shown = Math.min(shown + 3, {{ count($tournaments) }})">
+                        Załaduj więcej
+                    </button>
+                @endif
                 </div>
             @endif
         </section>
@@ -61,6 +70,7 @@
                             ->translatedFormat('j F Y');
                     };
                 @endphp
+                <div x-data="{ shown: 3 }">
                 <div class="index-grid">
                     @foreach($seasons as $index => $item)
                         @php
@@ -71,6 +81,7 @@
                                 $seasonMeta .= ' · '.$start.' – '.$end;
                             }
                         @endphp
+                        <div @if($index >= 3) x-show="shown > {{ $index }}" x-cloak @endif>
                         <x-place-card
                             kind="season"
                             :href="$item['url']"
@@ -80,7 +91,14 @@
                             :role-accent="$item['role'] === 'admin'"
                             style="--stagger: {{ $index }}"
                         />
+                        </div>
                     @endforeach
+                </div>
+                @if(count($seasons) > 3)
+                    <button type="button" class="mt-4 text-sm font-semibold text-accent" x-show="shown < {{ count($seasons) }}" x-cloak @click="shown = Math.min(shown + 3, {{ count($seasons) }})">
+                        Załaduj więcej
+                    </button>
+                @endif
                 </div>
             @endif
         </section>
@@ -90,6 +108,7 @@
             @if(count($leagues) === 0)
                 <p class="text-text-muted text-sm">Nie jesteś w żadnej lidze piramidowej.</p>
             @else
+                <div x-data="{ shown: 3 }">
                 <div class="index-grid">
                     @foreach($leagues as $index => $item)
                         @php
@@ -98,6 +117,7 @@
                                 $leagueMeta .= ' · '.$item['divisionName'];
                             }
                         @endphp
+                        <div @if($index >= 3) x-show="shown > {{ $index }}" x-cloak @endif>
                         <x-place-card
                             kind="league"
                             :href="$item['url']"
@@ -107,7 +127,14 @@
                             :role-accent="$item['role'] === 'admin'"
                             style="--stagger: {{ $index }}"
                         />
+                        </div>
                     @endforeach
+                </div>
+                @if(count($leagues) > 3)
+                    <button type="button" class="mt-4 text-sm font-semibold text-accent" x-show="shown < {{ count($leagues) }}" x-cloak @click="shown = Math.min(shown + 3, {{ count($leagues) }})">
+                        Załaduj więcej
+                    </button>
+                @endif
                 </div>
             @endif
         </section>
@@ -117,9 +144,10 @@
             @if(count($organizations) === 0)
                 <p class="text-text-muted text-sm">Nie jesteś powiązany z żadną organizacją.</p>
             @else
+                <div x-data="{ shown: 3 }">
                 <div class="index-grid">
                     @foreach($organizations as $index => $item)
-                        <div>
+                        <div @if($index >= 3) x-show="shown > {{ $index }}" x-cloak @endif>
                             <x-place-card
                                 kind="organization"
                                 :href="$item['url']"
@@ -143,6 +171,12 @@
                             @endif
                         </div>
                     @endforeach
+                </div>
+                @if(count($organizations) > 3)
+                    <button type="button" class="mt-4 text-sm font-semibold text-accent" x-show="shown < {{ count($organizations) }}" x-cloak @click="shown = Math.min(shown + 3, {{ count($organizations) }})">
+                        Załaduj więcej
+                    </button>
+                @endif
                 </div>
             @endif
         </section>

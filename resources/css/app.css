@@ -3164,3 +3164,272 @@
 *::-webkit-scrollbar-corner {
     background: transparent;
 }
+
+/* Tablica turnieju — pełny ekran, poza warstwami Tailwind (musi wygrać z mt-* i tabami). */
+.board-body {
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.board-shell,
+.board-fill {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+}
+
+.board-shell {
+    height: 100dvh;
+    padding: 0.55rem 0.75rem 0.65rem;
+    gap: 0.35rem;
+    position: relative;
+}
+
+.board-fill {
+    flex: 1;
+    height: 100%;
+}
+
+.board-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex: none;
+    min-width: 0;
+}
+
+.board-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.board-brand {
+    flex: none;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+}
+
+.board-title {
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.board-phase,
+.board-live {
+    flex: none;
+    border-radius: 999px;
+    padding: 0.12rem 0.55rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.board-phase {
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--color-accent) 18%, var(--color-bg-elevated));
+    border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
+}
+
+.board-live {
+    color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+.board-stage {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.board-scale.is-groups,
+.board-scale.is-bracket,
+.board-scale.is-waiting {
+    width: max-content;
+    max-width: none;
+}
+
+.board-scale.is-waiting {
+    max-width: 36rem;
+}
+
+.board-waiting {
+    margin: 0;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 1.15rem;
+    line-height: 1.45;
+}
+
+.board-groups {
+    display: grid;
+    grid-template-columns: repeat(var(--board-cols, 2), max-content);
+    gap: 0.7rem 0.85rem;
+    align-items: start;
+    justify-content: center;
+}
+
+.board-group {
+    width: max-content;
+    max-width: 34rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.45rem;
+    background: var(--color-bg-deep);
+    padding: 0.4rem 0.5rem 0.45rem;
+}
+
+.board-group-title {
+    margin: 0;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+}
+
+.board-advance {
+    margin: 0.1rem 0 0.15rem;
+    text-align: center;
+    font-size: 0.62rem;
+    color: var(--color-text-muted);
+}
+
+.board-table {
+    width: max-content;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    line-height: 1.25;
+}
+
+.board-table th,
+.board-table td {
+    padding: 0.16rem 0.38rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+}
+
+.board-table thead th {
+    border-top: 0;
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.board-table .is-name {
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    font-weight: 600;
+}
+
+.board-table .is-diagonal {
+    color: var(--color-text-muted);
+}
+
+.board-table .is-place {
+    font-weight: 700;
+    color: var(--color-accent);
+}
+
+.board-table tr.bg-success-muted {
+    background: color-mix(in srgb, var(--color-success) 24%, var(--color-bg-deep));
+    box-shadow: inset 3px 0 0 var(--color-success);
+}
+
+.board-table a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.board-shell .sequence-badge {
+    min-width: 1.15rem;
+    height: 1.15rem;
+    padding: 0 0.2rem;
+    border-radius: 0.25rem;
+    font-size: 0.68rem;
+}
+
+.board-shell .group-live-dot {
+    width: 0.38rem;
+    height: 0.38rem;
+    margin-right: 0.15rem;
+    box-shadow: none;
+}
+
+.board-shell .three-dart-average,
+.board-shell [data-playoff-badge] {
+    display: none !important;
+}
+
+.board-scale.is-bracket > div {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.board-scale.is-bracket .page-title {
+    display: none;
+}
+
+.board-scale.is-bracket > div > .flex {
+    display: none;
+}
+
+.board-shell .bracket-tree {
+    overflow: visible;
+    width: max-content;
+    padding-bottom: 0;
+    --bracket-gutter: 0.65rem;
+}
+
+.board-scale.is-bracket .space-y-12 > * + * {
+    margin-top: 0.55rem !important;
+}
+
+.board-scale.is-bracket h3 {
+    margin-bottom: 0.2rem !important;
+    font-size: 0.8rem;
+}
+
+.tournament-show-tabs .tournament-screen-links {
+    margin-left: auto;
+    margin-bottom: 0.4rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tournament-show-tabs a.board-open-link {
+    border: 1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    color: var(--color-accent);
+}
+
+.tournament-show-tabs a.board-open-link:hover {
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}

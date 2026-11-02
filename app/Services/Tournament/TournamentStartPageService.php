@@ -289,6 +289,7 @@ class TournamentStartPageService
                         'playerId' => $player->id,
                         'name' => $player->name,
                         'invitationStatus' => $invitation?->status?->value,
+                        'invitationStatusLabel' => $invitation?->status?->label(),
                         'canInvite' => $invitation === null || $invitation->status->canReinvite(),
                     ];
                 })
@@ -377,6 +378,7 @@ class TournamentStartPageService
             'joinUrl' => $tournamentModel->join_code
                 ? $this->joinRequestService->joinUrl($tournamentModel)
                 : null,
+            'hasSeason' => $seasonId !== null,
             'groupCountOptions' => array_values($groupCountOptions),
             'bracketOptionsByGroupCount' => $bracketOptionsJson,
             'startConfigPreview' => $preview,

@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Domain\Retention\ApplicationEntityKind;
 use App\Models\Organization\Organization;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
+use App\Services\Retention\ApplicationEntityDeletionService;
 use App\Services\Tournament\LoginCodeService;
+use App\Services\Tournament\TournamentCancelService;
 use App\Services\Tournament\TournamentGuestParticipantService;
 use App\Services\Tournament\TournamentInvitationService;
 use App\Services\Tournament\TournamentJoinRequestService;
 use App\Services\Tournament\TournamentService;
 use App\Services\Tournament\TournamentStartPageService;
 use App\Services\User\UserService;
+use App\Support\Retention\ConfirmedEntityDeletion;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -28,6 +33,8 @@ class TournamentManageController
         private TournamentJoinRequestService $joinRequestService,
         private LoginCodeService $loginCodeService,
         private UserService $userService,
+        private TournamentCancelService $cancelService,
+        private ApplicationEntityDeletionService $deletionService,
     ) {}
 
     public function storeForOrganization(Request $request, Organization $organization): JsonResponse
@@ -113,6 +120,63 @@ class TournamentManageController
             fn () => $this->invitationService->send($tournament, (int) $validated['userId'], (int) $request->user()->id),
             $tournament,
         );
+    }
+
+    public function inviteBulk(Request $request, int $tournament): JsonResponse
+    {
+        $this->tournamentService->loadAndAuthorize($tournament);
+        $validated = $request->validate([
+            'userIds' => 'required|array|min:1|max:100',
+            'userIds.*' => 'integer|exists:users,id',
+        ]);
+
+        $result = $this->invitationService->sendBulk(
+            $tournament,
+            $validated['userIds'],
+            (int) $request->user()->id,
+        );
+
+        return response()->json([
+            ...$this->startPageService->apiSetup($tournament),
+            'message' => sprintf(
+                'Wysłano %d zaproszeń%s',
+                $result['sent'],
+                $result['skipped'] > 0 ? sprintf(' (%d pominięto)', $result['skipped']) : '',
+            ),
+        ]);
+    }
+
+    public function regenerateJoinCode(int $tournament): JsonResponse
+    {
+        $this->tournamentService->loadAndAuthorize($tournament);
+        $model = $this->tournamentService->getModel($tournament);
+
+        try {
+            $this->joinRequestService->regenerateJoinCode($model);
+        } catch (RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json($this->startPageService->apiSetup($tournament));
+    }
+
+    public function toggleJoinCode(Request $request, int $tournament): JsonResponse
+    {
+        $this->tournamentService->loadAndAuthorize($tournament);
+        $validated = $request->validate([
+            'enabled' => 'required|boolean',
+        ]);
+
+        try {
+            $this->joinRequestService->toggleJoinCode(
+                $this->tournamentService->getModel($tournament),
+                (bool) $validated['enabled'],
+            );
+        } catch (RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json($this->startPageService->apiSetup($tournament));
     }
 
     public function joinSelf(Request $request, int $tournament): JsonResponse
@@ -281,6 +345,127 @@ class TournamentManageController
             'code' => $code,
             'url' => $this->loginCodeService->loginUrl($code),
         ]);
+    }
+
+    public function admins(int $tournament): JsonResponse
+    {
+        $this->tournamentService->loadAndAuthorize($tournament);
+
+        return response()->json($this->adminPayload($tournament));
+    }
+
+    public function searchAdmins(Request $request, int $tournament): JsonResponse
+    {
+        $this->tournamentService->loadAndAuthorize($tournament);
+        $search = trim((string) $request->query('q', ''));
+
+        try {
+            $users = $this->userService->searchForTournamentInvitations(
+                $search,
+                $this->tournamentService->getAdmins($tournament)->pluck('id'),
+            );
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => collect($e->errors())->flatten()->first(),
+                'users' => [],
+            ], 422);
+        }
+
+        return response()->json([
+            'users' => $users->map(fn ($user) => [
+                'id' => (int) $user->id,
+                'name' => $user->player?->name ?? '—',
+            ])->values()->all(),
+        ]);
+    }
+
+    public function addAdmin(Request $request, int $tournament): JsonResponse
+    {
+        $this->tournamentService->loadAndAuthorize($tournament);
+        $validated = $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+        ]);
+        $this->tournamentService->addAdmin($tournament, (int) $validated['userId']);
+
+        return response()->json(array_merge(
+            ['message' => 'Uprawnienie administratora nadano pomyślnie'],
+            $this->adminPayload($tournament),
+        ));
+    }
+
+    public function removeAdmin(Request $request, int $tournament): JsonResponse
+    {
+        $this->tournamentService->loadAndAuthorize($tournament);
+        $validated = $request->validate([
+            'userId' => 'required|integer|exists:users,id',
+        ]);
+
+        try {
+            $this->tournamentService->removeAdmin($tournament, (int) $validated['userId']);
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(array_merge(
+            ['message' => 'Uprawnienie administratora usunięto pomyślnie'],
+            $this->adminPayload($tournament),
+        ));
+    }
+
+    public function cancel(Request $request, Tournament $tournament): JsonResponse
+    {
+        $this->tournamentService->loadAndAuthorize($tournament->id);
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+        ], [
+            'current_password.current_password' => 'Hasło jest nieprawidłowe.',
+        ]);
+        $this->cancelService->cancel($tournament->id);
+
+        return response()->json([
+            'message' => 'Rozgrywki anulowane. Możesz ułożyć skład i wystartować turniej od nowa.',
+        ]);
+    }
+
+    public function destroy(Request $request, Tournament $tournament): JsonResponse
+    {
+        $tournament->loadMissing(['admins', 'season.admins']);
+        $this->tournamentService->loadAndAuthorize($tournament->id);
+        ConfirmedEntityDeletion::validate($request, $tournament->name);
+        $seasonId = $tournament->season_id;
+        $organizationId = $tournament->organization_id;
+        $this->deletionService->hide(
+            ApplicationEntityKind::Tournament,
+            $tournament->id,
+            (int) $request->user()->id,
+        );
+
+        return response()->json([
+            'message' => 'Turniej został usunięty. Przez 90 dni może go przywrócić operator platformy.',
+            'seasonId' => $seasonId !== null ? (int) $seasonId : null,
+            'organizationId' => $organizationId !== null ? (int) $organizationId : null,
+        ]);
+    }
+
+    /**
+     * @return array{admins: list<array{id: int, name: string}>, canRemoveAdmin: bool, name: string}
+     */
+    private function adminPayload(int $tournamentId): array
+    {
+        $admins = $this->tournamentService->getAdmins($tournamentId)
+            ->map(fn (array $admin) => [
+                'id' => (int) $admin['id'],
+                'name' => (string) $admin['name'],
+            ])
+            ->values()
+            ->all();
+        $tournament = Tournament::query()->findOrFail($tournamentId);
+
+        return [
+            'name' => $tournament->name,
+            'admins' => $admins,
+            'canRemoveAdmin' => count($admins) > 1,
+        ];
     }
 
     private function rosterAction(callable $action, int $tournamentId): JsonResponse

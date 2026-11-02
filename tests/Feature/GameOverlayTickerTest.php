@@ -23,7 +23,7 @@ class GameOverlayTickerTest extends TestCase
         $this->withoutVite();
     }
 
-    public function test_ticker_lists_other_live_games_and_skips_the_streamed_one(): void
+    public function test_ticker_lists_every_live_game_in_the_tournament(): void
     {
         $tournament = $this->tournament('Ticker Cup');
         $other = $this->tournament('Inny turniej');
@@ -74,41 +74,46 @@ class GameOverlayTickerTest extends TestCase
             'player2_score' => 1,
         ], $format);
 
-        $page = $this->get(route('games.overlay-ticker', ['type' => 'playoff', 'id' => $streamed->id]))
+        $page = $this->get(route('tournaments.overlay-ticker', $tournament))
             ->assertOk();
         $this->assertStringContainsString('no-store', (string) $page->headers->get('Cache-Control'));
         $page
             ->assertSee('Early Ola')
             ->assertSee('Group Iza')
             ->assertSee('Side Carla')
+            ->assertSee('Stream Anna')
             ->assertSee('Gr. 1', false)
             ->assertSee('Gr. 2', false)
             ->assertSee('Wygrani · runda 1', false)
             ->assertSee('(2–1)', false)
             ->assertSee('ticker-bar', false)
-            ->assertDontSee('Stream Anna')
             ->assertDontSee('Done Ewa')
             ->assertDontSee('Soon Gabi')
             ->assertDontSee('Foreign Kasia');
 
-        $this->getJson(route('games.overlay-ticker.state', ['type' => 'playoff', 'id' => $streamed->id]))
+        $this->get(route('games.overlay-ticker', ['type' => 'playoff', 'id' => $streamed->id]))
+            ->assertRedirect(route('tournaments.overlay-ticker', $tournament));
+
+        $this->getJson(route('tournaments.overlay-ticker.state', $tournament))
             ->assertOk()
-            ->assertJsonCount(3, 'items')
+            ->assertJsonCount(4, 'items')
             ->assertJsonPath('items.0.key', 'group:'.$early->id)
             ->assertJsonPath('items.0.label', 'Gr. 1')
             ->assertJsonPath('items.0.score1', 2)
             ->assertJsonPath('items.0.score2', 0)
             ->assertJsonPath('items.0.setLegs1', null)
+            ->assertJsonPath('items.0.finished', false)
             ->assertJsonPath('items.1.key', 'group:'.$later->id)
             ->assertJsonPath('items.1.player1', 'Group Iza')
             ->assertJsonPath('items.1.score1', 1)
             ->assertJsonPath('items.1.score2', 1)
-            ->assertJsonPath('items.2.key', 'playoff:'.$side->id)
-            ->assertJsonPath('items.2.player2', 'Side Darek')
-            ->assertJsonPath('items.2.score1', 1)
-            ->assertJsonPath('items.2.setLegs1', 2)
-            ->assertJsonPath('items.2.setLegs2', 1)
-            ->assertJsonMissing(['player1' => 'Stream Anna']);
+            ->assertJsonPath('items.2.key', 'playoff:'.$streamed->id)
+            ->assertJsonPath('items.2.player1', 'Stream Anna')
+            ->assertJsonPath('items.3.key', 'playoff:'.$side->id)
+            ->assertJsonPath('items.3.player2', 'Side Darek')
+            ->assertJsonPath('items.3.score1', 1)
+            ->assertJsonPath('items.3.setLegs1', 2)
+            ->assertJsonPath('items.3.setLegs2', 1);
     }
 
     public function test_same_numeric_id_in_the_other_table_stays_on_the_ticker(): void
@@ -128,53 +133,92 @@ class GameOverlayTickerTest extends TestCase
             'player2_score' => 0,
         ], $format);
 
-        $this->getJson(route('games.overlay-ticker.state', ['type' => 'playoff', 'id' => $playoff->id]))
+        $this->getJson(route('tournaments.overlay-ticker.state', $tournament))
             ->assertOk()
-            ->assertJsonCount(1, 'items')
+            ->assertJsonCount(2, 'items')
             ->assertJsonPath('items.0.key', 'group:'.$group->id)
-            ->assertJsonPath('items.0.player1', 'Same Id Ala');
-
-        $this->getJson(route('games.overlay-ticker.state', ['type' => 'group', 'id' => $group->id]))
-            ->assertOk()
-            ->assertJsonCount(1, 'items')
-            ->assertJsonPath('items.0.key', 'playoff:'.$playoff->id)
-            ->assertJsonPath('items.0.player1', 'On Air Anna')
-            ->assertJsonPath('items.0.label', 'QF');
+            ->assertJsonPath('items.0.player1', 'Same Id Ala')
+            ->assertJsonPath('items.1.key', 'playoff:'.$playoff->id)
+            ->assertJsonPath('items.1.player1', 'On Air Anna')
+            ->assertJsonPath('items.1.label', 'QF');
     }
 
-    public function test_ticker_is_empty_when_no_other_game_is_live(): void
+    public function test_recently_finished_game_stays_then_drops_off(): void
+    {
+        $tournament = $this->tournament('Wynik końcowy');
+        $format = MatchFormat::default()->toDatabaseColumns();
+        $sets = (new MatchFormat(setsToWinMatch: 3))->toDatabaseColumns();
+        $streamed = $this->playoff($tournament, 'Stream Anna', 'Stream Bob', GameStatus::IN_PROGRESS, [
+            'round' => 'W0',
+            'slot' => 'W0-0',
+        ], $format);
+        $fresh = $this->group($tournament, 'Fresh Ewa', 'Fresh Filip', GameStatus::FINISHED, [
+            'group_number' => 1,
+            'player1_score' => 2,
+            'player2_score' => 0,
+            'finished_at' => now()->subMinutes(3),
+        ], $format);
+        $this->playoff($tournament, 'Stale Gabi', 'Stale Henio', GameStatus::FINISHED, [
+            'round' => 'W0',
+            'slot' => 'W0-1',
+            'player1_score' => 2,
+            'player2_score' => 1,
+            'player1_legs_in_set' => 0,
+            'player2_legs_in_set' => 0,
+            'finished_at' => now()->subMinutes(3)->subSecond(),
+        ], $sets);
+
+        $page = $this->get(route('tournaments.overlay-ticker', $tournament))
+            ->assertOk()
+            ->assertSeeInOrder(['group:'.$fresh->id, 'koniec', 'Fresh Ewa'], false)
+            ->assertSee('Stream Anna')
+            ->assertDontSee('Stale Gabi')
+            ->assertDontSee('(0–0)', false);
+
+        $this->getJson(route('tournaments.overlay-ticker.state', $tournament))
+            ->assertOk()
+            ->assertJsonCount(2, 'items')
+            ->assertJsonPath('items.0.key', 'group:'.$fresh->id)
+            ->assertJsonPath('items.0.score1', 2)
+            ->assertJsonPath('items.0.score2', 0)
+            ->assertJsonPath('items.0.finished', true)
+            ->assertJsonPath('items.0.setLegs1', null)
+            ->assertJsonPath('items.1.key', 'playoff:'.$streamed->id)
+            ->assertJsonPath('items.1.finished', false);
+    }
+
+    public function test_ticker_is_empty_when_no_game_is_live(): void
     {
         $tournament = $this->tournament('Pusty pasek');
         $format = MatchFormat::default()->toDatabaseColumns();
-        $streamed = $this->playoff($tournament, 'Solo Anna', 'Solo Bob', GameStatus::IN_PROGRESS, [
+        $this->playoff($tournament, 'Solo Anna', 'Solo Bob', GameStatus::SCHEDULED, [
             'round' => 'FINAL',
             'slot' => 'F-0',
         ], $format);
 
-        $this->get(route('games.overlay-ticker', ['type' => 'playoff', 'id' => $streamed->id]))
+        $this->get(route('tournaments.overlay-ticker', $tournament))
             ->assertOk()
             ->assertDontSee('Solo Anna')
             ->assertSee('ticker-bar', false)
+            ->assertSee('Brak meczów na żywo')
             ->assertSee('hidden', false);
 
-        $this->get(route('games.overlay-ticker', [
-            'type' => 'playoff',
-            'id' => $streamed->id,
+        $this->get(route('tournaments.overlay-ticker', [
+            'tournament' => $tournament,
             'preview' => 1,
         ]))
             ->assertOk()
-            ->assertSee('Brak innych meczów na żywo')
+            ->assertSee('Brak meczów na żywo')
             ->assertSee('game-overlay-preview', false);
 
-        $this->get(route('games.overlay-ticker', [
-            'type' => 'playoff',
-            'id' => $streamed->id,
+        $this->get(route('tournaments.overlay-ticker', [
+            'tournament' => $tournament,
             'bg' => 'solid',
         ]))
             ->assertOk()
             ->assertSee('game-overlay-bg-solid', false);
 
-        $this->getJson(route('games.overlay-ticker.state', ['type' => 'playoff', 'id' => $streamed->id]))
+        $this->getJson(route('tournaments.overlay-ticker.state', $tournament))
             ->assertOk()
             ->assertJsonPath('items', []);
     }
@@ -186,19 +230,23 @@ class GameOverlayTickerTest extends TestCase
         $game = $this->group($tournament, 'Link Ala', 'Link Bartek', GameStatus::IN_PROGRESS, [
             'group_number' => 1,
         ], $format);
-        $tickerUrl = route('games.overlay-ticker', ['type' => 'group', 'id' => $game->id]);
+        $tickerUrl = route('tournaments.overlay-ticker', $tournament);
+
+        $this->get(route('tournaments.show', $tournament))
+            ->assertOk()
+            ->assertSee('Pasek na ekran')
+            ->assertSee('Tablica na ekran')
+            ->assertSee($tickerUrl, false);
 
         $this->get(route('games.show', ['type' => 'group', 'id' => $game->id]))
             ->assertOk()
-            ->assertSee('Kopiuj link paska')
-            ->assertSee('Podgląd paska')
-            ->assertSee($tickerUrl, false)
-            ->assertSee('1920×56', false);
+            ->assertSee('Kopiuj link overlay')
+            ->assertDontSee('Kopiuj link paska')
+            ->assertDontSee('Pasek na ekran');
 
         $this->get(route('games.live', ['type' => 'group', 'id' => $game->id]))
             ->assertOk()
-            ->assertSee('Kopiuj link paska')
-            ->assertSee($tickerUrl, false);
+            ->assertDontSee('Kopiuj link paska');
 
         $home = Player::create(['name' => 'Quick Ala']);
         $away = Player::create(['name' => 'Quick Bartek']);

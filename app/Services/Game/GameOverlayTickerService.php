@@ -5,6 +5,7 @@ namespace App\Services\Game;
 use App\Enums\BracketSide;
 use App\Enums\GameKind;
 use App\Enums\GameStage;
+use App\Enums\GameStatus;
 use App\Models\Game\Game;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Repositories\Game\GameRepository;
@@ -14,13 +15,17 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class GameOverlayTickerService
 {
+    /** Ile wynik końcowy zostaje na pasku, zanim wpis zniknie. */
+    private const FINISHED_HOLD_MINUTES = 3;
+
     public function __construct(
         private GameRepository $games,
         private PlayoffGameRepository $playoffGames,
     ) {}
 
     /**
-     * Mecze turnieju w trakcie, bez meczu wskazywanego przez link paska.
+     * Mecze turnieju w trakcie i świeżo zakończone. Pasek jest jeden na turniej,
+     * więc mecz ze streamu też na nim jest.
      *
      * @return list<array{
      *     key: string,
@@ -30,28 +35,23 @@ class GameOverlayTickerService
      *     score1: int,
      *     score2: int,
      *     setLegs1: ?int,
-     *     setLegs2: ?int
+     *     setLegs2: ?int,
+     *     finished: bool
      * }>
      */
-    public function items(GameKind $kind, int $gameId): array
+    public function itemsForTournament(int $tournamentId): array
     {
-        $tournamentId = $this->tournamentId($kind, $gameId);
+        $finishedSince = now()->subMinutes(self::FINISHED_HOLD_MINUTES);
         $items = [];
 
-        foreach ($this->games->listInProgressForTournament($tournamentId) as $game) {
-            if ($kind === GameKind::GROUP && (int) $game->id === $gameId) {
-                continue;
-            }
+        foreach ($this->games->listForOverlayTicker($tournamentId, $finishedSince) as $game) {
             $item = $this->itemFrom($game, 'group', 'Gr. '.(int) $game->group_number);
             if ($item !== null) {
                 $items[] = $item;
             }
         }
 
-        foreach ($this->playoffGames->listInProgressForTournament($tournamentId) as $game) {
-            if ($kind === GameKind::PLAYOFF && (int) $game->id === $gameId) {
-                continue;
-            }
+        foreach ($this->playoffGames->listForOverlayTicker($tournamentId, $finishedSince) as $game) {
             $item = $this->itemFrom($game, 'playoff', $this->playoffLabel($game));
             if ($item !== null) {
                 $items[] = $item;
@@ -59,6 +59,29 @@ class GameOverlayTickerService
         }
 
         return $items;
+    }
+
+    /**
+     * @return list<array{
+     *     key: string,
+     *     label: string,
+     *     player1: string,
+     *     player2: string,
+     *     score1: int,
+     *     score2: int,
+     *     setLegs1: ?int,
+     *     setLegs2: ?int,
+     *     finished: bool
+     * }>
+     */
+    public function items(GameKind $kind, int $gameId): array
+    {
+        return $this->itemsForTournament($this->tournamentId($kind, $gameId));
+    }
+
+    public function tournamentIdOf(GameKind $kind, int $gameId): int
+    {
+        return $this->tournamentId($kind, $gameId);
     }
 
     private function tournamentId(GameKind $kind, int $gameId): int
@@ -86,7 +109,8 @@ class GameOverlayTickerService
      *     score1: int,
      *     score2: int,
      *     setLegs1: ?int,
-     *     setLegs2: ?int
+     *     setLegs2: ?int,
+     *     finished: bool
      * }|null
      */
     private function itemFrom(Game|PlayoffGame $game, string $kind, string $label): ?array
@@ -97,7 +121,8 @@ class GameOverlayTickerService
             return null;
         }
 
-        $multiSet = (int) $game->sets_to_win_match > 1;
+        $finished = $game->status === GameStatus::FINISHED;
+        $multiSet = ! $finished && (int) $game->sets_to_win_match > 1;
 
         return [
             'key' => $kind.':'.$game->id,
@@ -108,6 +133,7 @@ class GameOverlayTickerService
             'score2' => (int) $game->player2_score,
             'setLegs1' => $multiSet ? (int) $game->player1_legs_in_set : null,
             'setLegs2' => $multiSet ? (int) $game->player2_legs_in_set : null,
+            'finished' => $finished,
         ];
     }
 

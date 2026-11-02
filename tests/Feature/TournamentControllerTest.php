@@ -628,6 +628,72 @@ class TournamentControllerTest extends TestCase
         $this->assertShowTabActive($html, 'results');
     }
 
+    public function test_show_page_links_to_the_venue_board(): void
+    {
+        $tournament = $this->startedTournament(TournamentStatus::GROUP);
+
+        $this->get(route('tournaments.show', $tournament))
+            ->assertOk()
+            ->assertSee('Tablica na ekran')
+            ->assertSee('Pasek na ekran')
+            ->assertSee(route('tournaments.board', $tournament), false)
+            ->assertSee(route('tournaments.overlay-ticker', $tournament), false);
+    }
+
+    public function test_group_stage_board_shows_groups_without_site_chrome(): void
+    {
+        $tournament = $this->startedTournament(TournamentStatus::GROUP);
+
+        $html = $this->get(route('tournaments.board', $tournament))->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-board-mode="groups"', $html);
+        $this->assertStringContainsString('tournamentBoard', $html);
+        $this->assertStringContainsString('tournamentGroupsLive', $html);
+        $this->assertStringContainsString('Faza grupowa', $html);
+        $this->assertStringNotContainsString('site-header', $html);
+    }
+
+    public function test_playoff_board_shows_bracket(): void
+    {
+        $tournament = $this->startedTournament(TournamentStatus::PLAYOFF);
+
+        $html = $this->get(route('tournaments.board', $tournament))->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-board-mode="bracket"', $html);
+        $this->assertStringContainsString('tournamentPlayoffLive', $html);
+        $this->assertStringContainsString('Playoff', $html);
+        $this->assertStringNotContainsString('tournamentGroupsLive', $html);
+        $this->assertStringNotContainsString('site-header', $html);
+    }
+
+    public function test_finished_board_keeps_the_bracket(): void
+    {
+        $tournament = $this->startedTournament(TournamentStatus::FINISHED);
+
+        $html = $this->get(route('tournaments.board', $tournament))->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-board-mode="bracket"', $html);
+        $this->assertStringContainsString('Zakończony', $html);
+        $this->assertStringNotContainsString('tournamentGroupsLive', $html);
+    }
+
+    public function test_planned_board_waits_for_the_start(): void
+    {
+        $tournament = Tournament::create([
+            'name' => 'Tab tournament',
+            'season_id' => $this->season->id,
+            'date' => '2024-06-01',
+            'status' => TournamentStatus::CREATED,
+            'format' => \App\Enums\TournamentFormat::GroupsPlayoff,
+        ]);
+
+        $html = $this->get(route('tournaments.board', $tournament))->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-board-mode="waiting"', $html);
+        $this->assertStringContainsString('Tablica włączy się sama po starcie', $html);
+        $this->assertStringContainsString('tournamentBoard', $html);
+    }
+
     private function startedTournament(TournamentStatus $status): Tournament
     {
         return Tournament::create([

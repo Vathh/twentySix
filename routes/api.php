@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\LeagueSeasonCatalogController;
 use App\Http\Controllers\Api\MyCompetitionsController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\OrganizationInvitationController;
+use App\Http\Controllers\Api\OrganizationManageController;
+use App\Http\Controllers\Api\SeasonManageController;
 use App\Http\Controllers\Api\PlayerCareerController;
 use App\Http\Controllers\Api\PlayerProfileController;
 use App\Http\Controllers\Api\PushTokenController;
@@ -154,6 +156,20 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     });
 
     Route::get('/organizations', [OrganizationController::class, 'index']);
+    Route::post('/organizations', [OrganizationManageController::class, 'store']);
+    Route::get('/organizations/{organization}/manage', [OrganizationManageController::class, 'manage'])->whereNumber('organization');
+    Route::put('/organizations/{organization}', [OrganizationManageController::class, 'update'])->whereNumber('organization');
+    Route::post('/organizations/{organization}/logo', [OrganizationManageController::class, 'storeLogo'])->whereNumber('organization');
+    Route::delete('/organizations/{organization}', [OrganizationManageController::class, 'destroy'])->whereNumber('organization');
+    Route::get('/organizations/{organization}/users', [OrganizationManageController::class, 'searchUsers'])->whereNumber('organization');
+    Route::post('/organizations/{organization}/related-users', [OrganizationManageController::class, 'invite'])->whereNumber('organization');
+    Route::post('/organizations/{organization}/related-users/invitations/{invitation}/cancel', [OrganizationManageController::class, 'cancelInvitation'])->whereNumber(['organization', 'invitation']);
+    Route::post('/organizations/{organization}/related-users/remove', [OrganizationManageController::class, 'removeMember'])->whereNumber('organization');
+    Route::post('/organizations/{organization}/guests', [OrganizationManageController::class, 'addGuest'])->whereNumber('organization');
+    Route::post('/organizations/{organization}/guests/remove', [OrganizationManageController::class, 'removeGuest'])->whereNumber('organization');
+    Route::post('/organizations/{organization}/admins', [OrganizationManageController::class, 'addAdmin'])->whereNumber('organization');
+    Route::post('/organizations/{organization}/admins/remove', [OrganizationManageController::class, 'removeAdmin'])->whereNumber('organization');
+    Route::post('/organizations/{organization}/seasons', [SeasonManageController::class, 'store'])->whereNumber('organization');
     Route::get('/organizations/{organization}', [OrganizationController::class, 'show'])->whereNumber('organization');
     Route::get('/leagues/{league}', [LeagueCatalogController::class, 'show'])->whereNumber('league');
     Route::get('/leagues/{league}/divisions/{division}', [LeagueCatalogController::class, 'showDivision'])
@@ -161,6 +177,11 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         ->whereNumber('division');
     Route::get('/league-seasons/{leagueSeason}', [LeagueSeasonCatalogController::class, 'show'])->whereNumber('leagueSeason');
     Route::get('/seasons', [SeasonController::class, 'index']);
+    Route::get('/seasons/{season}/manage', [SeasonManageController::class, 'manage'])->whereNumber('season');
+    Route::put('/seasons/{season}', [SeasonManageController::class, 'update'])->whereNumber('season');
+    Route::delete('/seasons/{season}', [SeasonManageController::class, 'destroy'])->whereNumber('season');
+    Route::post('/seasons/{season}/admins', [SeasonManageController::class, 'addAdmin'])->whereNumber('season');
+    Route::post('/seasons/{season}/admins/remove', [SeasonManageController::class, 'removeAdmin'])->whereNumber('season');
     Route::get('/seasons/{season}', [SeasonController::class, 'show'])->whereNumber('season');
     Route::get('/seasons/{season}/standings', [SeasonController::class, 'standings'])->whereNumber('season');
     Route::get('/tournaments', [TournamentCatalogController::class, 'index']);
@@ -170,6 +191,9 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::get('/tournaments/{tournament}/setup', [TournamentManageController::class, 'setup'])->whereNumber('tournament');
     Route::get('/tournaments/{tournament}/users', [TournamentManageController::class, 'searchUsers'])->whereNumber('tournament');
     Route::post('/tournaments/{tournament}/invitations', [TournamentManageController::class, 'invite'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/invitations/bulk', [TournamentManageController::class, 'inviteBulk'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/join-code', [TournamentManageController::class, 'regenerateJoinCode'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/join-code/toggle', [TournamentManageController::class, 'toggleJoinCode'])->whereNumber('tournament');
     Route::post('/tournaments/{tournament}/join-self', [TournamentManageController::class, 'joinSelf'])->whereNumber('tournament');
     Route::post('/tournaments/{tournament}/join-request', [TournamentManageController::class, 'applyJoin'])->whereNumber('tournament');
     Route::post('/tournaments/{tournament}/invitations/{invitation}/cancel', [TournamentManageController::class, 'cancelInvitation'])->whereNumber(['tournament', 'invitation']);
@@ -181,6 +205,12 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::post('/tournaments/{tournament}/join-requests/{joinRequest}/reject', [TournamentManageController::class, 'rejectJoinRequest'])->whereNumber(['tournament', 'joinRequest']);
     Route::post('/tournaments/{tournament}/start', [TournamentManageController::class, 'start'])->whereNumber('tournament');
     Route::post('/tournaments/{tournament}/tablet-code', [TournamentManageController::class, 'regenerateTabletCode'])->whereNumber('tournament');
+    Route::get('/tournaments/{tournament}/admins', [TournamentManageController::class, 'admins'])->whereNumber('tournament');
+    Route::get('/tournaments/{tournament}/admin-users', [TournamentManageController::class, 'searchAdmins'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/admins', [TournamentManageController::class, 'addAdmin'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/admins/remove', [TournamentManageController::class, 'removeAdmin'])->whereNumber('tournament');
+    Route::post('/tournaments/{tournament}/cancel', [TournamentManageController::class, 'cancel'])->whereNumber('tournament');
+    Route::delete('/tournaments/{tournament}', [TournamentManageController::class, 'destroy'])->whereNumber('tournament');
     Route::post('/organizations/{organization}/tournaments', [TournamentManageController::class, 'storeForOrganization'])->whereNumber('organization');
     Route::post('/seasons/{season}/tournaments', [TournamentManageController::class, 'storeForSeason'])->whereNumber('season');
 

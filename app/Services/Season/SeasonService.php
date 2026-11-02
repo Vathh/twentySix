@@ -64,6 +64,7 @@ class SeasonService
                     'meta' => implode(' · ', $meta),
                     'subtitle' => $dates ? 'Data rozgrywek: '.$dates : null,
                     'subtitle_missing' => $dates === null,
+                    'tournamentCountLabel' => $season->tournamentCountLabel(),
                     'status_label' => SeasonCatalogStatus::label($phase),
                     'status_variant' => $phase,
                 ];
@@ -123,5 +124,10 @@ class SeasonService
     public function removeAdmin(int $seasonId, int $userId): void
     {
         $this->seasonRepository->removeAdmin($seasonId, $userId);
+    }
+
+    public function update(int $seasonId, string $name, string $startDate, string $endDate): void
+    {
+        $this->seasonRepository->update($seasonId, $name, $startDate, $endDate);
     }
 }
