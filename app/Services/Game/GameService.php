@@ -688,7 +688,8 @@ class GameService
     }
 
     /**
-     * Losuje playoff dopiero gdy wszystkie mecze grupowe są finished.
+     * Uzupełnia znane pary obu drabinek, a pełny playoff losuje dopiero
+     * gdy wszystkie mecze grupowe są finished.
      * Wywoływać PO commicie wyniku meczu — błąd drabinki nie cofa checkoutu / walkowera.
      */
     public function tryStartPlayoff(int $tournamentId): void
@@ -702,6 +703,7 @@ class GameService
                 $this->tournamentRepository->lockForUpdate($tournamentId);
 
                 $this->playoffService->syncEarlyMainSlots($tournamentId);
+                $this->playoffService->syncEarlyConsolationSlots($tournamentId);
 
                 if (! $this->gameRepository->checkIfPlayoffShouldBeStarted($tournamentId)) {
                     return;

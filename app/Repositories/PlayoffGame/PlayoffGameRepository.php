@@ -39,9 +39,17 @@ class PlayoffGameRepository
      */
     public function mainRoundGames(int $tournamentId, string $round): Collection
     {
+        return $this->roundGames($tournamentId, $round, BracketSide::Main);
+    }
+
+    /**
+     * @return Collection<int, PlayoffGame>
+     */
+    public function roundGames(int $tournamentId, string $round, BracketSide $side): Collection
+    {
         return PlayoffGame::query()
             ->where('tournament_id', $tournamentId)
-            ->where('bracket_side', BracketSide::Main)
+            ->where('bracket_side', $side)
             ->where('round', $round)
             ->get()
             ->sortBy(function (PlayoffGame $game): int {
@@ -74,6 +82,7 @@ class PlayoffGameRepository
         $game->save();
     }
 
+    /** Mecz główny albo pocieszenia, który już wystartował albo się skończył. */
     public function groupPlayerInStartedMainGame(int $tournamentId, array $playerIds): bool
     {
         if ($playerIds === []) {
@@ -82,7 +91,6 @@ class PlayoffGameRepository
 
         return PlayoffGame::query()
             ->where('tournament_id', $tournamentId)
-            ->where('bracket_side', BracketSide::Main)
             ->where('status', '!=', GameStatus::SCHEDULED)
             ->where(function ($query) use ($playerIds) {
                 $query->whereIn('player1_id', $playerIds)

@@ -189,6 +189,51 @@ class GroupStandingRepository
     }
 
     /**
+     * @return array<int, int> group_number => liczba zawodników
+     */
+    public function rosterSizesByGroup(int $tournamentId): array
+    {
+        $sizes = [];
+
+        $rows = GroupStanding::query()
+            ->where('tournament_id', $tournamentId)
+            ->selectRaw('group_number, COUNT(*) as roster_size')
+            ->groupBy('group_number')
+            ->get();
+
+        foreach ($rows as $row) {
+            $sizes[(int) $row->group_number] = (int) $row->roster_size;
+        }
+
+        return $sizes;
+    }
+
+    /**
+     * @param  list<int>  $groupNumbers
+     * @return array<string, int> "grupa:miejsce" => player_id
+     */
+    public function playerIdsByGroupPlace(int $tournamentId, array $groupNumbers): array
+    {
+        if ($groupNumbers === []) {
+            return [];
+        }
+
+        $map = [];
+
+        $rows = GroupStanding::query()
+            ->where('tournament_id', $tournamentId)
+            ->whereIn('group_number', $groupNumbers)
+            ->where('place', '>', 0)
+            ->get(['group_number', 'place', 'player_id']);
+
+        foreach ($rows as $row) {
+            $map[(int) $row->group_number.':'.(int) $row->place] = (int) $row->player_id;
+        }
+
+        return $map;
+    }
+
+    /**
      * @param  array<int, int>  $advancesByGroupNumber  group_number => liczba awansujących
      * @return Collection<GroupStandingDomain>
      */

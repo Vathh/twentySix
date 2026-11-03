@@ -137,6 +137,7 @@ class GameResultCorrectionService
                 false,
             );
             $this->playoffService->syncEarlyMainSlots((int) $gameModel->tournament_id);
+            $this->playoffService->syncEarlyConsolationSlots((int) $gameModel->tournament_id);
 
             return;
         }

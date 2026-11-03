@@ -156,6 +156,126 @@ class PlayoffService
         }
     }
 
+    /**
+     * Pary pocieszenia są slotami miejsc, znanymi od startu. Nazwisko wchodzi,
+     * gdy grupa tego miejsca jest skończona; wolny los jest znany od razu.
+     */
+    public function syncEarlyConsolationSlots(int $tournamentId): void
+    {
+        $tournament = $this->tournamentRepository->findModel($tournamentId);
+        if ($tournament->format !== TournamentFormat::GroupsPlayoff || ! $tournament->has_consolation_bracket) {
+            return;
+        }
+
+        $consolationSize = (int) ($tournament->consolation_bracket_size ?? 0);
+        if ($consolationSize < 2) {
+            return;
+        }
+
+        $pairs = $this->knownConsolationPairs($tournamentId, $consolationSize);
+        if ($pairs === null) {
+            return;
+        }
+
+        $includeThird = (bool) $tournament->has_consolation_third_place && $consolationSize >= 4;
+
+        if (! $this->gameRepository->existsForTournament($tournamentId, BracketSide::Consolation)) {
+            $playoffGames = $this->bracketFactory->create(
+                $tournamentId,
+                $consolationSize,
+                $pairs,
+                BracketSide::Consolation,
+                PlayoffSlotIds::CONSOLATION_PREFIX,
+                $includeThird,
+            );
+            $this->gameRepository->createMany(
+                $playoffGames,
+                $this->formatsByStage($tournamentId, BracketSide::Consolation),
+            );
+            $this->resolveScheduledByes($tournamentId);
+
+            return;
+        }
+
+        $round = PlayoffSlotIds::stageForFirstRoundMatchCount(intdiv($consolationSize, 2))->value;
+        $games = $this->gameRepository->roundGames($tournamentId, $round, BracketSide::Consolation);
+        foreach ($pairs as $index => $pair) {
+            $game = $games->get($index);
+            if ($game === null || $pair[0] === null || $pair[1] === null) {
+                continue;
+            }
+            $this->gameRepository->replaceScheduledPlayers($game, $pair[0], $pair[1]);
+        }
+
+        $this->resolveScheduledByes($tournamentId);
+    }
+
+    /**
+     * @return list<array{0: int|null, 1: int|null}>|null null, gdy żadna para nie jest jeszcze kompletna
+     */
+    private function knownConsolationPairs(int $tournamentId, int $consolationSize): ?array
+    {
+        $advancesByGroup = $this->tournamentRepository->getGroupAdvancesByGroupNumber($tournamentId);
+        $slots = [];
+
+        foreach ($this->groupStandingRepository->rosterSizesByGroup($tournamentId) as $groupNumber => $rosterSize) {
+            $advance = (int) ($advancesByGroup[$groupNumber] ?? 0);
+            for ($place = $advance + 1; $place <= $rosterSize; $place++) {
+                $slots[] = [
+                    'player_id' => -($groupNumber * 1000 + $place),
+                    'group_number' => $groupNumber,
+                    'place' => $place,
+                ];
+            }
+        }
+
+        if (count($slots) < 2 || count($slots) > $consolationSize) {
+            return null;
+        }
+
+        $byeId = $this->playerRepository->byePlayerId();
+        $rawPairs = PlayoffConsolationSeeding::pair($slots, $consolationSize, $byeId);
+        $finished = array_flip($this->groupGameRepository->finishedGroupNumbers($tournamentId));
+        $playersBySlot = $this->groupStandingRepository->playerIdsByGroupPlace(
+            $tournamentId,
+            array_map('intval', array_keys($finished)),
+        );
+
+        $pairs = [];
+        $hasKnownPair = false;
+        foreach ($rawPairs as [$left, $right]) {
+            $resolved = [
+                $this->resolveConsolationSide($left, $byeId, $playersBySlot),
+                $this->resolveConsolationSide($right, $byeId, $playersBySlot),
+            ];
+            if ($resolved[0] !== null && $resolved[1] !== null) {
+                $hasKnownPair = true;
+            }
+            $pairs[] = $resolved;
+        }
+
+        return $hasKnownPair ? $pairs : null;
+    }
+
+    /**
+     * @param  array<string, int>  $playersBySlot
+     */
+    private function resolveConsolationSide(int $side, int $byeId, array $playersBySlot): ?int
+    {
+        if ($side === $byeId) {
+            return $byeId;
+        }
+
+        if ($side >= 0) {
+            return null;
+        }
+
+        $value = -$side;
+        $key = intdiv($value, 1000).':'.($value % 1000);
+
+        return $playersBySlot[$key] ?? null;
+    }
+
     public function generateConsolationBracket(int $tournamentId): void
     {
         $tournament = $this->tournamentRepository->findModel($tournamentId);

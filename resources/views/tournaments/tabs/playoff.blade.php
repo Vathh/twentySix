@@ -99,29 +99,35 @@
             </div>
         </div>
     @elseif($hasConsolation)
-        <div class="space-y-12">
+        <div class="space-y-12 board-bracket-pair">
             <div>
                 <h3 class="text-center text-lg font-semibold text-accent mb-4">Drabinka główna</h3>
-                @include('tournaments.partials.se-bracket', [
-                    'gamesByRound' => $playoffGames,
-                    'buildRounds' => $buildRounds,
-                    'seRoundOrder' => $seRoundOrder,
-                ])
+                <div class="bracket-scroll">
+                    @include('tournaments.partials.se-bracket', [
+                        'gamesByRound' => $playoffGames,
+                        'buildRounds' => $buildRounds,
+                        'seRoundOrder' => $seRoundOrder,
+                    ])
+                </div>
             </div>
             <div>
                 <h3 class="text-center text-lg font-semibold text-accent mb-4">Drabinka pocieszenia</h3>
+                <div class="bracket-scroll">
                 @include('tournaments.partials.se-bracket', [
                     'gamesByRound' => $consolationPlayoffGames,
                     'buildRounds' => $buildRounds,
                     'seRoundOrder' => $seRoundOrder,
                 ])
+                </div>
             </div>
         </div>
     @else
-        @include('tournaments.partials.se-bracket', [
-            'gamesByRound' => $playoffGames,
-            'buildRounds' => $buildRounds,
-            'seRoundOrder' => $seRoundOrder,
-        ])
+        <div class="bracket-scroll">
+            @include('tournaments.partials.se-bracket', [
+                'gamesByRound' => $playoffGames,
+                'buildRounds' => $buildRounds,
+                'seRoundOrder' => $seRoundOrder,
+            ])
+        </div>
     @endif
 </div>

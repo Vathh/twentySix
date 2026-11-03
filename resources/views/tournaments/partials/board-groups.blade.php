@@ -11,19 +11,15 @@
     };
     $columnLabel = static function (string $name): string {
         $parts = preg_split('/\s+/u', trim($name)) ?: [];
-        $label = $parts === [] ? '' : (count($parts) > 1 ? $parts[array_key_last($parts)] : $parts[0]);
-        if (mb_strlen($label) > 9) {
-            return mb_substr($label, 0, 8).'…';
-        }
-
-        return $label;
+        return $parts === [] ? '' : (count($parts) > 1 ? $parts[array_key_last($parts)] : $parts[0]);
     };
+    $maxRoster = (int) $groupNumbers->max(fn ($number) => count($players[$number] ?? []));
 @endphp
 
 @if($groupCount === 0)
     <p class="board-waiting">Grupy pojawią się po starcie turnieju.</p>
 @else
-    <div class="board-groups" style="--board-cols: {{ $boardCols }}">
+    <div class="board-groups" style="--board-cols: {{ $boardCols }}; --board-players: {{ $maxRoster }}">
         @foreach($groupNumbers as $number)
             @php
                 $highlight = $groupPlayoffHighlights[$number] ?? null;
@@ -53,7 +49,7 @@
                         {{ $advanceCount === 1 ? 'pozycja' : 'pozycje' }}
                     </span>
                 </p>
-                <table class="board-table">
+                <table class="board-table" style="--group-players: {{ count($roster) }}">
                     <thead>
                     <tr>
                         <th class="is-name">Zawodnik</th>
@@ -76,7 +72,7 @@
                             class="{{ $advances ? 'bg-success-muted border-l-2 border-l-success' : '' }}"
                         >
                             <td class="is-name" title="{{ $rowPlayer->name }}">
-                                {{ $rowPlayer->name }}
+                                <span class="board-player-name">{{ $rowPlayer->name }}</span>
                                 <span data-playoff-badge aria-hidden="true" @if(! $advances) hidden @endif>Playoff</span>
                             </td>
                             @foreach($roster as $columnPlayer)

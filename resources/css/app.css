@@ -3283,16 +3283,23 @@
 }
 
 .board-groups {
-    display: grid;
-    grid-template-columns: repeat(var(--board-cols, 2), max-content);
-    gap: 0.7rem 0.85rem;
-    align-items: start;
+    --board-name: calc(9rem - 50px);
+    --board-col: 3.15rem;
+    --board-gap-x: 0.85rem;
+    --board-gap-y: 0.7rem;
+    --board-group-width: calc(var(--board-name) + (var(--board-players, 4) + 2) * var(--board-col) + 1rem + 2px);
+    display: flex;
+    flex-wrap: wrap;
     justify-content: center;
+    align-items: stretch;
+    gap: var(--board-gap-y) var(--board-gap-x);
+    width: calc(var(--board-cols, 2) * var(--board-group-width) + (var(--board-cols, 2) - 1) * var(--board-gap-x) + 1px);
 }
 
 .board-group {
-    width: max-content;
-    max-width: 34rem;
+    box-sizing: border-box;
+    flex: 0 0 var(--board-group-width);
+    width: var(--board-group-width);
     border: 1px solid var(--color-border);
     border-radius: 0.45rem;
     background: var(--color-bg-deep);
@@ -3317,7 +3324,10 @@
 }
 
 .board-table {
-    width: max-content;
+    width: calc(var(--board-name) + (var(--group-players, var(--board-players, 4)) + 2) * var(--board-col));
+    max-width: 100%;
+    margin-inline: auto;
+    table-layout: fixed;
     border-collapse: collapse;
     font-size: 0.78rem;
     line-height: 1.25;
@@ -3329,6 +3339,8 @@
     text-align: center;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
     border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
 }
 
@@ -3339,12 +3351,21 @@
     color: var(--color-text-muted);
 }
 
+.board-table thead th:not(.is-name) {
+    width: var(--board-col);
+}
+
 .board-table .is-name {
-    max-width: 12rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    width: var(--board-name);
     text-align: left;
     font-weight: 600;
+}
+
+.board-player-name {
+    display: block;
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: nowrap;
 }
 
 .board-table .is-diagonal {
@@ -3406,8 +3427,78 @@
     --bracket-gutter: 0.65rem;
 }
 
+main .bracket-scroll {
+    overflow-x: auto;
+}
+
+main .bracket-scroll > .se-bracket {
+    margin-inline: auto;
+}
+
+/* Mecz o 3. miejsce siedzi pod finałem, w wysokości drabinki. */
+.se-bracket {
+    position: relative;
+    width: max-content;
+    --bracket-gutter: 1.25rem;
+}
+
+.board-shell .se-bracket {
+    --bracket-gutter: 0.65rem;
+}
+
+.se-bracket .bracket-tree {
+    overflow: visible;
+    width: max-content;
+    padding-bottom: 0;
+}
+
+.se-bracket .bracket-third {
+    position: absolute;
+    z-index: 1;
+    top: calc(50% + 3.45rem);
+    right: 0;
+    width: calc(10.75rem - var(--bracket-gutter));
+    max-width: calc(10.75rem - var(--bracket-gutter));
+    margin-top: 0;
+    align-items: stretch;
+}
+
+.se-bracket .bracket-third .bracket-third-label {
+    width: 100%;
+    text-align: center;
+}
+
+.se-bracket .bracket-third .bracket-slot-body {
+    width: 100%;
+    max-width: none;
+}
+
+.se-bracket[data-rounds="2"] {
+    padding-bottom: 4rem;
+}
+
+.se-bracket[data-rounds="3"] {
+    padding-bottom: 1.55rem;
+}
+
 .board-scale.is-bracket .space-y-12 > * + * {
     margin-top: 0.55rem !important;
+}
+
+.board-scale.is-bracket .board-bracket-pair {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.board-scale.is-bracket .board-bracket-pair > * {
+    flex: 0 0 auto;
+}
+
+.board-scale.is-bracket .board-bracket-pair > * + * {
+    margin-top: 0 !important;
 }
 
 .board-scale.is-bracket h3 {
