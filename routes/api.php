@@ -17,7 +17,6 @@ use App\Http\Controllers\Api\MyCompetitionsController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\OrganizationInvitationController;
 use App\Http\Controllers\Api\OrganizationManageController;
-use App\Http\Controllers\Api\SeasonManageController;
 use App\Http\Controllers\Api\PlayerCareerController;
 use App\Http\Controllers\Api\PlayerProfileController;
 use App\Http\Controllers\Api\PushTokenController;
@@ -25,6 +24,7 @@ use App\Http\Controllers\Api\QuickGameController;
 use App\Http\Controllers\Api\QuickGameFfaController;
 use App\Http\Controllers\Api\QuickGameLobbyController;
 use App\Http\Controllers\Api\SeasonController;
+use App\Http\Controllers\Api\SeasonManageController;
 use App\Http\Controllers\Api\TournamentCatalogController;
 use App\Http\Controllers\Api\TournamentInvitationController;
 use App\Http\Controllers\Api\TournamentJoinController;
@@ -90,6 +90,9 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     });
 
     Route::get('/games/{type}/{id}', [GameDetailController::class, 'show'])
+        ->whereNumber('id')
+        ->where('type', 'quick|group|playoff|league');
+    Route::get('/games/{type}/{id}/head-to-head', [GameDetailController::class, 'headToHead'])
         ->whereNumber('id')
         ->where('type', 'quick|group|playoff|league');
 

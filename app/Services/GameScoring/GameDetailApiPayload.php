@@ -76,6 +76,7 @@ final class GameDetailApiPayload
             'winnerId' => $detail['winnerId'] !== null ? (int) $detail['winnerId'] : null,
             'players' => array_values($detail['players'] ?? []),
             'sets' => $sets,
+            'headToHead' => $detail['headToHead'] ?? null,
         ];
     }
 

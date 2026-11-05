@@ -8,8 +8,6 @@ use App\Models\Game\Game;
 use App\Models\League\LeagueGame;
 use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\QuickGame\QuickGame;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
 use App\Repositories\Game\GameLegPlayerStatRepository;
 use App\Repositories\Game\GameLegRepository;
 use App\Repositories\Game\GameRepository;
@@ -19,6 +17,7 @@ use App\Repositories\PlayoffGame\PlayoffGameRepository;
 use App\Repositories\QuickGame\QuickGameFfaSessionRepository;
 use App\Repositories\QuickGame\QuickGameFfaVisitRepository;
 use App\Repositories\QuickGame\QuickGameRepository;
+use App\Services\Game\HeadToHeadService;
 use App\Support\GameScoring\GameLegsSetGrouper;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\GameStatisticsCalculator;
@@ -27,6 +26,8 @@ use App\Support\Tournament\PlayoffRoundLabel;
 use DomainException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class GameDetailService
 {
@@ -41,6 +42,7 @@ class GameDetailService
         private GameAuthorizationService $gameAuthorizationService,
         private QuickGameFfaSessionRepository $ffaSessionRepository,
         private QuickGameFfaVisitRepository $ffaVisitRepository,
+        private HeadToHeadService $headToHeadService,
     ) {}
 
     /**
@@ -68,6 +70,25 @@ class GameDetailService
         }
 
         return $this->mergeQuickFfaDetail($id, $payload);
+    }
+
+    /**
+     * Kolejna porcja listy spotkań H2H (po 5), bez bieżącego meczu.
+     *
+     * @return array{recent: list<array<string, mixed>>, hasMore: bool}
+     */
+    public function headToHeadRecent(GameKind $kind, int $id, int $offset): array
+    {
+        [$context] = $this->resolveDisplay($kind, $id);
+        $page = $this->headToHeadService->recent(
+            (int) $context->player1Id,
+            (int) $context->player2Id,
+            $context->kind->value,
+            (int) $context->gameId,
+            $offset,
+        );
+
+        return $page ?? ['recent' => [], 'hasMore' => false];
     }
 
     /**
@@ -282,6 +303,12 @@ class GameDetailService
             ...$leagueFields,
             'broadcastChannel' => $context->broadcastChannelName(),
             'isLive' => $status === GameStatus::IN_PROGRESS->value,
+            'headToHead' => $this->headToHeadService->between(
+                (int) $context->player1Id,
+                (int) $context->player2Id,
+                $context->kind->value,
+                (int) $context->gameId,
+            ),
         ];
     }
 

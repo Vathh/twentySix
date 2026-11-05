@@ -290,6 +290,8 @@
                 </div>
             </template>
         </div>
+
+        @include('games.partials.head-to-head')
     </div>
 
     <style>[x-cloak] { display: none !important; }</style>

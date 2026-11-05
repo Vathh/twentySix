@@ -261,5 +261,7 @@
                 @endforeach
             </div>
         @endif
+
+        @include('games.partials.head-to-head')
     </div>
 @endsection

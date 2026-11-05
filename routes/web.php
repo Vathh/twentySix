@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityEngagementController;
 use App\Http\Controllers\ActivityFeedWebController;
+use App\Http\Controllers\Api\GameDetailController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\FriendInvitationController;
@@ -43,6 +44,10 @@ Route::prefix('referee')->name('referee.')->group(function () {
     Route::get('/score', [TournamentRefereeController::class, 'score'])->name('score');
 });
 
+Route::get('/games/{type}/{id}/head-to-head', [GameDetailController::class, 'headToHead'])
+    ->where('type', 'group|playoff|quick|league')
+    ->whereNumber('id')
+    ->name('games.head-to-head');
 Route::get('/games/{type}/{id}', [GameViewController::class, 'show'])
     ->where('type', 'group|playoff|quick|league')
     ->whereNumber('id')
