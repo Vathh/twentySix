@@ -76,12 +76,23 @@ class OrganizationManageController
             ],
             'description' => 'nullable|string|max:500',
             'matchFormats' => 'nullable|array',
+            'consolationMatchFormats' => 'nullable|array',
             'removeLogo' => 'sometimes|boolean',
         ]);
 
         $presets = null;
-        if (is_array($validated['matchFormats'] ?? null)) {
-            $presets = OrganizationMatchFormatPresets::fromFormInput($validated['matchFormats']);
+        if (is_array($validated['matchFormats'] ?? null) || is_array($validated['consolationMatchFormats'] ?? null)) {
+            $stored = is_array($organization->match_format_presets) ? $organization->match_format_presets : null;
+            $main = is_array($validated['matchFormats'] ?? null)
+                ? OrganizationMatchFormatPresets::fromFormInput($validated['matchFormats'])
+                : OrganizationMatchFormatPresets::forEditForm($stored);
+            $presets = OrganizationMatchFormatPresets::mergeConsolation(
+                $stored,
+                $main,
+                is_array($validated['consolationMatchFormats'] ?? null)
+                    ? OrganizationMatchFormatPresets::consolationFromFormInput($validated['consolationMatchFormats'])
+                    : null,
+            );
         }
 
         $this->organizationService->update(
@@ -321,6 +332,8 @@ class OrganizationManageController
             ],
             'matchFormatStages' => OrganizationMatchFormatPresets::stageOptions(),
             'matchFormats' => OrganizationMatchFormatPresets::forEditForm($presets),
+            'consolationMatchFormatStages' => OrganizationMatchFormatPresets::consolationStageOptions(),
+            'consolationMatchFormats' => OrganizationMatchFormatPresets::defaultsForConsolation($presets),
             'startingScoreOptions' => MatchFormat::ALLOWED_STARTING_SCORES,
             'admins' => $admins,
             'canRemoveAdmin' => count($admins) > 1,
@@ -353,6 +366,7 @@ class OrganizationManageController
         return $users
             ->map(fn ($user) => [
                 'id' => (int) $user->id,
+                'playerId' => $user->player?->id !== null ? (int) $user->player->id : null,
                 'name' => $user->player?->name ?? '—',
             ])
             ->sortBy(fn (array $row) => mb_strtolower($row['name']))

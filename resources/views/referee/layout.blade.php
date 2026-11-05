@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="app-shell min-h-screen text-text">
+<body class="referee-shell app-shell min-h-screen text-text">
     @include('components.notifications')
 
     <header class="border-b border-border bg-bg-deep/90 backdrop-blur-md sticky top-0 z-40">

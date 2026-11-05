@@ -32,6 +32,11 @@
                 </p>
             </div>
         @elseif($tournament->canCancelPlay())
+            @if($tournament->format !== \App\Enums\TournamentFormat::DoubleElimination)
+                <a href="{{ route('tournaments.playoff-formats', $tournament->id) }}" class="admin-sidebar-link">
+                    Format rund
+                </a>
+            @endif
             <button type="button" data-cancel-play class="admin-sidebar-link w-full text-left text-danger" @click="cancelOpen = true">
                 Anuluj rozgrywki
             </button>

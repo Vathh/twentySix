@@ -3,8 +3,10 @@
     'removeAction',
     'guests' => [],
     'empty' => 'W tej puli nie ma jeszcze gości.',
+    'manage' => true,
 ])
 
+@if($manage)
 <form action="{{ $addAction }}" method="POST" class="people-add">
     @csrf
     <input
@@ -21,6 +23,7 @@
 </form>
 
 <x-errors/>
+@endif
 
 @php
     $guestItems = collect($guests)->map(fn ($guest) => [
@@ -66,6 +69,7 @@
                     @foreach($group['people'] as $guest)
                         <div class="people-row">
                             <span class="people-row-name">{{ $guest['name'] }}</span>
+                            @if($manage)
                             <form action="{{ $removeAction }}" method="POST">
                                 @csrf
                                 @method('DELETE')
@@ -76,6 +80,7 @@
                                     </svg>
                                 </button>
                             </form>
+                            @endif
                         </div>
                     @endforeach
                 </div>

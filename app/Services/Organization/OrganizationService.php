@@ -83,9 +83,25 @@ class OrganizationService
      */
     public function loadAndAuthorize(int $organizationId, array $additionalRelations = []): OrganizationDomain
     {
+        return $this->loadWithAbility($organizationId, 'update', $additionalRelations);
+    }
+
+    /**
+     * @param  list<string>  $additionalRelations
+     */
+    public function loadForView(int $organizationId, array $additionalRelations = []): OrganizationDomain
+    {
+        return $this->loadWithAbility($organizationId, 'view', $additionalRelations);
+    }
+
+    /**
+     * @param  list<string>  $additionalRelations
+     */
+    private function loadWithAbility(int $organizationId, string $ability, array $additionalRelations): OrganizationDomain
+    {
         $allRelations = array_merge($additionalRelations, ['admins']);
         $organization = $this->organizationRepository->findModel($organizationId, array_values(array_unique($allRelations)));
-        Gate::authorize('update', $organization);
+        Gate::authorize($ability, $organization);
 
         return OrganizationDomain::fromEloquent($organization, $allRelations);
     }

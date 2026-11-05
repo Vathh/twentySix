@@ -1,6 +1,9 @@
 <header class="board-header">
     <div class="board-heading">
         <p class="board-brand">twentySix</p>
+        @if($tournament->hostOrganizationName())
+            <p class="board-org">{{ $tournament->hostOrganizationName() }}</p>
+        @endif
         <h1 class="board-title">{{ $tournament->name }}</h1>
         <span class="board-phase">{{ $phaseLabel }}</span>
     </div>

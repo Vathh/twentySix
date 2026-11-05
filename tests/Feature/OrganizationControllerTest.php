@@ -203,6 +203,72 @@ class OrganizationControllerTest extends TestCase
         );
     }
 
+    public function test_saving_main_presets_keeps_consolation_block(): void
+    {
+        $this->actingAs($this->adminUser);
+        $organization = Organization::create([
+            'name' => 'Test Organization',
+            'description' => 'Desc',
+            'match_format_presets' => [
+                'consolation' => [
+                    \App\Enums\GameStage::FINAL->value => [
+                        'startingScore' => 501,
+                        'legsToWinSet' => 3,
+                        'setsToWinMatch' => 1,
+                    ],
+                ],
+            ],
+        ]);
+        $organization->admins()->attach($this->adminUser->id);
+
+        $formats = [];
+        foreach (\App\Enums\GameStage::cases() as $stage) {
+            $formats[$stage->value] = [
+                'startingScore' => 501,
+                'legsToWinSet' => 2,
+                'setsToWinMatch' => 1,
+            ];
+        }
+
+        $this->put("/organizations/{$organization->id}", [
+            'organizationName' => 'Test Organization',
+            'description' => 'Desc',
+            'matchFormats' => $formats,
+        ])->assertRedirect();
+
+        $organization->refresh();
+        $this->assertSame(3, $organization->match_format_presets['consolation'][\App\Enums\GameStage::FINAL->value]['legsToWinSet']);
+    }
+
+    public function test_visitor_can_open_community_lists_without_manage_controls(): void
+    {
+        $organization = Organization::create(['name' => 'Klub', 'description' => '']);
+        $organization->admins()->attach($this->adminUser->id);
+        $organization->relatedUsers()->attach($this->regularUser->id);
+        Player::create(['name' => 'Gosc Klubu', 'organization_id' => $organization->id]);
+
+        $this->get("/organizations/{$organization->id}")
+            ->assertOk()
+            ->assertSee("/organizations/{$organization->id}/relatedUsers", false)
+            ->assertSee("/organizations/{$organization->id}/guests", false);
+
+        $this->get("/organizations/{$organization->id}/relatedUsers")
+            ->assertOk()
+            ->assertSee('User')
+            ->assertDontSee('>Zaproś<', false);
+
+        $this->get("/organizations/{$organization->id}/guests")
+            ->assertOk()
+            ->assertSee('Gosc Klubu')
+            ->assertDontSee('>Dodaj<', false);
+
+        $this->actingAs($this->regularUser)
+            ->post("/organizations/{$organization->id}/relatedUsers/add", [
+                'user_id' => $this->otherUser->id,
+            ])
+            ->assertForbidden();
+    }
+
     public function test_non_admin_cannot_update_organization(): void
     {
         $this->actingAs($this->regularUser);

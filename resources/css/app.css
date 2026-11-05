@@ -2845,6 +2845,15 @@
         animation-delay: calc(var(--stagger, 0) * 50ms);
     }
 
+    /* Sędziowanie nie ma wewnętrznego .app-frame, więc blokada wysokości ucina dół strony. */
+    .referee-shell.app-shell {
+        height: auto;
+        max-height: none;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
     .app-shell {
         height: 100dvh;
         max-height: 100dvh;
@@ -3219,7 +3228,22 @@
     color: var(--color-accent);
 }
 
+.board-org {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: max-content;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--color-text-muted);
+}
+
 .board-title {
+    flex: 0 1 auto;
     margin: 0;
     min-width: 0;
     overflow: hidden;
@@ -3284,7 +3308,7 @@
 
 .board-groups {
     --board-name: calc(9rem - 50px);
-    --board-col: 3.15rem;
+    --board-col: 3.6rem;
     --board-gap-x: 0.85rem;
     --board-gap-y: 0.7rem;
     --board-group-width: calc(var(--board-name) + (var(--board-players, 4) + 2) * var(--board-col) + 1rem + 2px);
@@ -3402,7 +3426,20 @@
     box-shadow: none;
 }
 
-.board-shell .three-dart-average,
+.board-scale > .board-header {
+    width: 100%;
+    margin-bottom: 0.45rem;
+}
+
+.board-shell .three-dart-average {
+    display: block;
+    margin-top: 0.05rem;
+    font-size: 0.62rem;
+    line-height: 1.1;
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
 .board-shell [data-playoff-badge] {
     display: none !important;
 }

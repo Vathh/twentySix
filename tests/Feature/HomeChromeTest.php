@@ -39,4 +39,16 @@ class HomeChromeTest extends TestCase
         $this->assertLessThan($heroAt, $downloadAt);
         $this->assertStringNotContainsString('friends-rail', $html);
     }
+
+    public function test_hosted_apk_download_stays_on_the_current_site(): void
+    {
+        config([
+            'mobile.apk_download_url' => 'https://dartscore.studiokam.pl/downloads/twentysix-1.0.23.apk',
+        ]);
+
+        $html = $this->get(route('pages.home'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('href="/downloads/twentysix-1.0.23.apk"', $html);
+        $this->assertStringNotContainsString('dartscore.studiokam.pl', $html);
+    }
 }

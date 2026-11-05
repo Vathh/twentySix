@@ -16,6 +16,7 @@ use App\Models\Tournament\Tournament;
 use App\Models\Tournament\TournamentInvitation;
 use App\Models\Users\User;
 use App\Services\Friends\FriendshipService;
+use Laravel\Sanctum\Sanctum;
 use App\Services\League\LeagueSeasonService;
 use App\Services\League\LeagueService;
 use App\Services\Player\PlayerService;
@@ -100,6 +101,41 @@ class InvitationsWebTest extends TestCase
             ->assertOk()
             ->assertSee('Brak zaproszeń')
             ->assertDontSee('Brak zaproszeń do gry');
+    }
+
+    public function test_invitation_to_a_started_tournament_is_hidden_until_it_returns_to_created(): void
+    {
+        $pending = $this->createTournamentInvitation(TournamentInvitationStatus::PENDING, 'Stary puchar');
+        $tournament = $pending->tournament;
+        $tournament->update(['status' => TournamentStatus::GROUP]);
+
+        $this->actingAs($this->invitee)
+            ->get(route('invitations.index'))
+            ->assertOk()
+            ->assertDontSee('Stary puchar');
+
+        Sanctum::actingAs($this->invitee);
+        $this->getJson('/api/tournaments/invitations/received')
+            ->assertOk()
+            ->assertJsonCount(0, 'invitations');
+
+        Sanctum::actingAs($this->invitee);
+        $this->postJson('/api/tournaments/invitations/'.$pending->id.'/accept')
+            ->assertStatus(400);
+
+        $this->assertSame(TournamentInvitationStatus::PENDING, $pending->fresh()->status);
+
+        $tournament->update(['status' => TournamentStatus::CREATED]);
+
+        $this->actingAs($this->invitee)
+            ->get(route('invitations.index'))
+            ->assertOk()
+            ->assertSee('Stary puchar');
+
+        Sanctum::actingAs($this->invitee);
+        $this->getJson('/api/tournaments/invitations/received')
+            ->assertOk()
+            ->assertJsonPath('invitations.0.tournamentName', 'Stary puchar');
     }
 
     public function test_invitee_can_accept_and_reject_tournament_invitation(): void

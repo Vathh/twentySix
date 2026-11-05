@@ -79,8 +79,11 @@ final class TournamentMatchFormatRequestParser
         int $bracketSize,
         ?array $organizationPresets = null,
         bool $includeThird = true,
+        bool $consolation = false,
     ): array {
-        $byStage = \App\Support\Organization\OrganizationMatchFormatPresets::defaultsByStage($organizationPresets);
+        $byStage = $consolation
+            ? \App\Support\Organization\OrganizationMatchFormatPresets::defaultsForConsolation($organizationPresets)
+            : \App\Support\Organization\OrganizationMatchFormatPresets::defaultsByStage($organizationPresets);
         $formatsByStage = [];
 
         foreach (GameStage::forEliminationBracketSize($bracketSize, $includeThird) as $stage) {

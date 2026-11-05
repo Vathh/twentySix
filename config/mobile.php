@@ -22,7 +22,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | Strona buildu EAS albo bezpośredni artifact (.apk).
-    | Po nowym buildzie zaktualizuj MOBILE_APK_DOWNLOAD_URL w .env.
+    | Ścieżka /downloads/... jest serwowana z bieżącej domeny (np. twentysix.pl),
+    | nawet gdy w .env został stary host. Po nowym buildzie zaktualizuj
+    | MOBILE_APK_DOWNLOAD_URL w .env.
     |
     */
 

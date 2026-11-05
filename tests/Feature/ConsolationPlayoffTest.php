@@ -104,6 +104,75 @@ class ConsolationPlayoffTest extends TestCase
             ->count());
     }
 
+    public function test_admin_can_shorten_an_unstarted_playoff_round(): void
+    {
+        $tournament = $this->startedConsolationTournament(12, 4, 4);
+        $this->finishGroup($tournament->id, 1);
+        $this->finishGroup($tournament->id, 2);
+
+        $this->post("/tournaments/{$tournament->id}/playoff-formats", [
+                'bracketSide' => BracketSide::Main->value,
+                'stages' => [
+                    GameStage::SEMI->value => ['legsToWinSet' => 3, 'setsToWinMatch' => 1],
+                ],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame(3, PlayoffGame::where('tournament_id', $tournament->id)
+            ->where('bracket_side', BracketSide::Main)
+            ->where('round', GameStage::SEMI->value)
+            ->where('status', GameStatus::SCHEDULED)
+            ->value('legs_to_win_set'));
+
+        PlayoffGame::where('tournament_id', $tournament->id)
+            ->where('bracket_side', BracketSide::Main)
+            ->where('round', GameStage::SEMI->value)
+            ->whereNotNull('player1_id')
+            ->update(['status' => GameStatus::IN_PROGRESS]);
+
+        $this->post("/tournaments/{$tournament->id}/playoff-formats", [
+                'bracketSide' => BracketSide::Main->value,
+                'stages' => [
+                    GameStage::SEMI->value => ['legsToWinSet' => 4, 'setsToWinMatch' => 1],
+                    GameStage::FINAL->value => ['legsToWinSet' => 4, 'setsToWinMatch' => 1],
+                ],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame(3, PlayoffGame::where('tournament_id', $tournament->id)
+            ->where('bracket_side', BracketSide::Main)
+            ->where('round', GameStage::SEMI->value)
+            ->value('legs_to_win_set'));
+        $this->assertSame(4, PlayoffGame::where('tournament_id', $tournament->id)
+            ->where('bracket_side', BracketSide::Main)
+            ->where('round', GameStage::FINAL->value)
+            ->value('legs_to_win_set'));
+    }
+
+    public function test_main_bracket_fills_early_without_consolation(): void
+    {
+        $ctx = $this->makeSeasonTournament(12);
+        $this->actingAs($ctx['admin']);
+        $this->post("/tournaments/{$ctx['tournament']->id}/run", [
+            'tournamentFormat' => 'groups_playoff',
+            'groupsCount' => 4,
+            'playoffBracketSize' => 4,
+        ])->assertSessionHas('success');
+
+        $this->finishGroup($ctx['tournament']->id, 1);
+        $this->finishGroup($ctx['tournament']->id, 2);
+
+        $ctx['tournament']->refresh();
+        $this->assertSame(TournamentStatus::GROUP, $ctx['tournament']->status);
+        $this->assertSame(1, $this->filledMainFirstRound($ctx['tournament']->id)->count());
+        $this->assertSame(1, $this->openMainFirstRound($ctx['tournament']->id)->count());
+        $this->assertSame(0, PlayoffGame::where('tournament_id', $ctx['tournament']->id)
+            ->where('bracket_side', BracketSide::Consolation)
+            ->count());
+    }
+
     public function test_consolation_pair_is_created_when_its_groups_finish(): void
     {
         $tournament = $this->startedConsolationTournament(12, 4, 4);
@@ -113,6 +182,18 @@ class ConsolationPlayoffTest extends TestCase
 
         $tournament->refresh();
         $this->assertSame(TournamentStatus::GROUP, $tournament->status);
+        $this->assertSame(1, $this->filledMainFirstRound($tournament->id)->count());
+        $this->assertSame(1, $this->openMainFirstRound($tournament->id)->count());
+        $filledMain = $this->filledMainFirstRound($tournament->id)->first();
+        $groupWinners = GroupStanding::query()
+            ->where('tournament_id', $tournament->id)
+            ->where('place', 1)
+            ->whereIn('group_number', [1, 2])
+            ->pluck('player_id')
+            ->sort()
+            ->values()
+            ->all();
+        $this->assertEquals($groupWinners, collect([$filledMain->player1_id, $filledMain->player2_id])->sort()->values()->all());
         $this->assertSame(2, $this->filledConsolationFirstRound($tournament->id)->count());
         $this->assertSame(2, $this->openConsolationFirstRound($tournament->id)->count());
         $this->assertSame(7, PlayoffGame::where('tournament_id', $tournament->id)
@@ -128,6 +209,8 @@ class ConsolationPlayoffTest extends TestCase
         $this->finishGroup($tournament->id, 4);
         $tournament->refresh();
         $this->assertSame(TournamentStatus::PLAYOFF, $tournament->status);
+        $this->assertSame(2, $this->filledMainFirstRound($tournament->id)->count());
+        $this->assertSame(0, $this->openMainFirstRound($tournament->id)->count());
         $this->assertSame(0, $this->openConsolationFirstRound($tournament->id)->count());
         $this->assertSame(
             $this->consolationPairsFromStandings($tournament),
@@ -350,6 +433,35 @@ class ConsolationPlayoffTest extends TestCase
     /**
      * @return list<array{0: int, 1: int}>
      */
+    /**
+     * @return \Illuminate\Support\Collection<int, PlayoffGame>
+     */
+    private function filledMainFirstRound(int $tournamentId)
+    {
+        return PlayoffGame::query()
+            ->where('tournament_id', $tournamentId)
+            ->where('bracket_side', BracketSide::Main)
+            ->where('round', GameStage::SEMI->value)
+            ->whereNotNull('player1_id')
+            ->whereNotNull('player2_id')
+            ->get();
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, PlayoffGame>
+     */
+    private function openMainFirstRound(int $tournamentId)
+    {
+        return PlayoffGame::query()
+            ->where('tournament_id', $tournamentId)
+            ->where('bracket_side', BracketSide::Main)
+            ->where('round', GameStage::SEMI->value)
+            ->where(function ($query) {
+                $query->whereNull('player1_id')->orWhereNull('player2_id');
+            })
+            ->get();
+    }
+
     /**
      * @return \Illuminate\Support\Collection<int, PlayoffGame>
      */

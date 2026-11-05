@@ -650,6 +650,8 @@ class TournamentControllerTest extends TestCase
         $this->assertStringContainsString('tournamentBoard', $html);
         $this->assertStringContainsString('tournamentGroupsLive', $html);
         $this->assertStringContainsString('Faza grupowa', $html);
+        $this->assertStringContainsString('Test Organization', $html);
+        $this->assertStringContainsString('board-org', $html);
         $this->assertStringNotContainsString('site-header', $html);
     }
 

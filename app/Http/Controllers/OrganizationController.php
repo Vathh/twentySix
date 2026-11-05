@@ -30,6 +30,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class OrganizationController extends Controller
@@ -131,6 +132,11 @@ class OrganizationController extends Controller
                 'matchFormats',
                 OrganizationMatchFormatPresets::forEditForm($organizationDomain->matchFormatPresets),
             ),
+            'consolationFormatStages' => OrganizationMatchFormatPresets::consolationStageOptions(),
+            'consolationMatchFormats' => old(
+                'consolationMatchFormats',
+                OrganizationMatchFormatPresets::defaultsForConsolation($organizationDomain->matchFormatPresets),
+            ),
         ]);
     }
 
@@ -140,6 +146,7 @@ class OrganizationController extends Controller
             'organizationName' => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
             'matchFormats' => 'nullable|array',
+            'consolationMatchFormats' => 'nullable|array',
         ]);
 
         $logo = $request->file('logo');
@@ -147,8 +154,14 @@ class OrganizationController extends Controller
             SquareJpeg::assertImage($logo, 'logo');
         }
 
-        $presets = OrganizationMatchFormatPresets::fromFormInput(
-            is_array($validated['matchFormats'] ?? null) ? $validated['matchFormats'] : [],
+        $presets = OrganizationMatchFormatPresets::mergeConsolation(
+            is_array($organization->match_format_presets) ? $organization->match_format_presets : null,
+            OrganizationMatchFormatPresets::fromFormInput(
+                is_array($validated['matchFormats'] ?? null) ? $validated['matchFormats'] : [],
+            ),
+            is_array($validated['consolationMatchFormats'] ?? null)
+                ? OrganizationMatchFormatPresets::consolationFromFormInput($validated['consolationMatchFormats'])
+                : null,
         );
 
         $this->organizationService->update(
@@ -186,9 +199,18 @@ class OrganizationController extends Controller
 
     public function relatedUsers(Request $request, int $organizationId): Factory|View|JsonResponse
     {
-        $organization = $this->loadAndAuthorize($organizationId, ['relatedUsers']);
+        $canManage = $request->user() !== null && Gate::allows('update', Organization::query()->findOrFail($organizationId));
+        if ($request->wantsJson() && ! $canManage) {
+            abort(403);
+        }
 
-        $pendingInvitations = $this->organizationInvitationService->getPendingForOrganization($organizationId);
+        $organization = $canManage && $request->wantsJson()
+            ? $this->loadAndAuthorize($organizationId, ['relatedUsers'])
+            : $this->organizationService->loadForView($organizationId, ['relatedUsers']);
+
+        $pendingInvitations = $canManage
+            ? $this->organizationInvitationService->getPendingForOrganization($organizationId)
+            : collect();
         $excludeFromSearch = collect($organization->relatedUsers)
             ->concat($pendingInvitations->map(fn ($invitation) => ['id' => $invitation->userId]));
 
@@ -222,6 +244,7 @@ class OrganizationController extends Controller
             'organization' => $organization,
             'relatedUsers' => $relatedUsers,
             'pendingInvitations' => $pendingInvitations,
+            'canManage' => $canManage,
         ]);
     }
 
@@ -386,13 +409,16 @@ class OrganizationController extends Controller
 
     public function guests(int $organizationId): Factory|View
     {
-        $organization = $this->loadAndAuthorize($organizationId, ['guests']);
+        $canManage = Auth::user() !== null
+            && Gate::allows('update', Organization::query()->findOrFail($organizationId));
+        $organization = $this->organizationService->loadForView($organizationId, ['guests']);
 
         $guests = $this->userService->sortByName($organization->guests);
 
         return view('organizations.guests', [
             'organization' => $organization,
             'guests' => $guests,
+            'canManage' => $canManage,
         ]);
     }
 

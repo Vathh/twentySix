@@ -8,6 +8,7 @@
     'addLabel' => 'Zaproś',
     'minChars' => 5,
     'emptyRelated' => 'Brak użytkowników powiązanych z tą pulą.',
+    'manage' => true,
 ])
 
 <div
@@ -23,6 +24,7 @@
         'csrfToken' => csrf_token(),
     ]))"
 >
+    @if($manage)
     <form @submit.prevent="search()" class="people-add">
         <input
             type="text"
@@ -53,6 +55,7 @@
             </template>
         </div>
     </div>
+    @endif
 
     <div x-show="related.length === 0 && pending.length === 0" x-cloak>
         <x-empty-state
@@ -70,6 +73,7 @@
                     <template x-for="person in group.people" :key="person.key">
                         <div class="people-row">
                             <span class="people-row-name" x-text="person.name"></span>
+                            @if($manage)
                             <span class="people-row-aside">
                                 <span class="people-row-status" x-show="person.pending">Oczekuje</span>
                                 <button
@@ -84,6 +88,7 @@
                                     </svg>
                                 </button>
                             </span>
+                            @endif
                         </div>
                     </template>
                 </div>

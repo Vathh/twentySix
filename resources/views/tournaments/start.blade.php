@@ -42,6 +42,9 @@
                     'startingScoreOptions' => $startingScoreOptions,
                     'defaultMatchFormat' => $defaultMatchFormat,
                     'defaultMatchFormatsByStage' => $defaultMatchFormatsByStage,
+                    'defaultConsolationMatchFormatsByStage' => $defaultConsolationMatchFormatsByStage,
+                    'tournamentId' => $tournament->id,
+                    'hasOldInput' => session()->hasOldInput(),
                     'hasOrganizationFormatPresets' => $hasOrganizationFormatPresets,
                     'oldMatchFormats' => $oldMatchFormats,
                     'oldConsolationMatchFormats' => old('consolationMatchFormats', []),
@@ -81,6 +84,8 @@
                     class="flex flex-col items-center gap-4"
                     x-show="participantCount >= minPlayers"
                     x-cloak
+                    @change="persistStartDraft()"
+                    @input="persistStartDraft()"
                     @submit="commitDartLimits($event)"
                 >
                         @csrf
@@ -599,6 +604,9 @@
                 startingScoreOptions: config.startingScoreOptions ?? [],
                 defaultMatchFormat: config.defaultMatchFormat ?? {},
                 defaultMatchFormatsByStage: config.defaultMatchFormatsByStage ?? {},
+                defaultConsolationMatchFormatsByStage: config.defaultConsolationMatchFormatsByStage ?? {},
+                tournamentId: config.tournamentId ?? null,
+                hasOldInput: !!config.hasOldInput,
                 hasOrganizationFormatPresets: !!config.hasOrganizationFormatPresets,
                 oldMatchFormats: config.oldMatchFormats ?? {},
                 oldConsolationMatchFormats: config.oldConsolationMatchFormats ?? {},
@@ -631,7 +639,85 @@
                     this.$nextTick(() => {
                         this.syncMatchFormats({ preserveUserEdits: false });
                         this.syncConsolationMatchFormats({ preserveUserEdits: false });
+                        if (!this.hasOldInput) {
+                            this.applyStartDraft();
+                        }
                     });
+                },
+                draftKey() {
+                    return this.tournamentId ? `twentysix.tournamentStart.${this.tournamentId}` : null;
+                },
+                readStartDraft() {
+                    const key = this.draftKey();
+                    if (!key) {
+                        return null;
+                    }
+                    try {
+                        const raw = sessionStorage.getItem(key);
+                        return raw ? JSON.parse(raw) : null;
+                    } catch {
+                        return null;
+                    }
+                },
+                persistStartDraft() {
+                    const key = this.draftKey();
+                    if (!key) {
+                        return;
+                    }
+                    const payload = {
+                        tournamentFormat: this.tournamentFormat,
+                        groupsCount: this.groupsCount,
+                        playoffBracketSize: this.playoffBracketSize,
+                        grandFinalMode: this.grandFinalMode,
+                        hasConsolationBracket: this.hasConsolationBracket,
+                        hasConsolationThirdPlace: this.hasConsolationThirdPlace,
+                        matchFormats: this.matchFormats,
+                        consolationMatchFormats: this.consolationMatchFormats,
+                    };
+                    try {
+                        sessionStorage.setItem(key, JSON.stringify(payload));
+                    } catch {
+                    }
+                },
+                clearStartDraft() {
+                    const key = this.draftKey();
+                    if (!key) {
+                        return;
+                    }
+                    try {
+                        sessionStorage.removeItem(key);
+                    } catch {
+                    }
+                },
+                applyStartDraft() {
+                    const draft = this.readStartDraft();
+                    if (!draft || typeof draft !== 'object') {
+                        return;
+                    }
+                    if (draft.tournamentFormat) {
+                        this.tournamentFormat = draft.tournamentFormat;
+                    }
+                    if (draft.grandFinalMode) {
+                        this.grandFinalMode = draft.grandFinalMode;
+                    }
+                    this.hasConsolationBracket = !!draft.hasConsolationBracket;
+                    this.hasConsolationThirdPlace = !!draft.hasConsolationThirdPlace;
+                    if (draft.groupsCount != null) {
+                        this.groupsCount = Number(draft.groupsCount);
+                    }
+                    if (draft.playoffBracketSize != null) {
+                        this.playoffBracketSize = Number(draft.playoffBracketSize);
+                    }
+                    if (draft.matchFormats && typeof draft.matchFormats === 'object') {
+                        this.matchFormats = draft.matchFormats;
+                    }
+                    if (draft.consolationMatchFormats && typeof draft.consolationMatchFormats === 'object') {
+                        this.consolationMatchFormats = draft.consolationMatchFormats;
+                    }
+                    this.syncGroupsCount();
+                    this.syncBracketSelect();
+                    this.syncMatchFormats({ preserveUserEdits: true });
+                    this.syncConsolationMatchFormats({ preserveUserEdits: true });
                 },
                 onParticipantCountChange(next, { preserveUserEdits = true } = {}) {
                     this.participantCount = next;
@@ -940,6 +1026,7 @@
                     this.writeGlobalInto(kind);
                 },
                 commitDartLimits(event) {
+                    this.clearStartDraft();
                     this.flushGlobalDart('main');
                     this.flushGlobalDart('consolation');
                     const form = event.target;
@@ -1051,6 +1138,7 @@
                             next[stage.value] = {
                                 ...this.defaultMatchFormat,
                                 ...(this.defaultMatchFormatsByStage[stage.value] ?? {}),
+                                ...(this.defaultConsolationMatchFormatsByStage[stage.value] ?? {}),
                                 ...(this.oldConsolationMatchFormats[stage.value] ?? {}),
                                 ...(this.consolationMatchFormats[stage.value] ?? {}),
                             };
@@ -1068,6 +1156,7 @@
                         next[stage.value] = {
                             ...this.defaultMatchFormat,
                             ...(this.defaultMatchFormatsByStage[stage.value] ?? {}),
+                            ...(this.defaultConsolationMatchFormatsByStage[stage.value] ?? {}),
                             ...(this.oldConsolationMatchFormats[stage.value] ?? {}),
                             ...(preserveUserEdits ? (this.consolationMatchFormats[stage.value] ?? {}) : {}),
                         };

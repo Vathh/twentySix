@@ -299,6 +299,8 @@ Route::prefix('tournaments/{tournament}')->group(function () {
     Route::delete('/admins/remove', [TournamentController::class, 'removeAdmin'])->name('tournaments.admins.remove');
     Route::get('/start', [TournamentController::class, 'start'])->name('tournaments.start');
     Route::post('/run', [TournamentController::class, 'runTournament'])->name('tournaments.run');
+    Route::get('/playoff-formats', [\App\Http\Controllers\PlayoffRoundFormatController::class, 'edit'])->name('tournaments.playoff-formats');
+    Route::post('/playoff-formats', [\App\Http\Controllers\PlayoffRoundFormatController::class, 'update'])->name('tournaments.playoff-formats.update');
     Route::post('/cancel', [TournamentController::class, 'cancel'])->name('tournaments.cancel');
     Route::get('/invitations/search', [TournamentController::class, 'searchInvitationUsers'])->name('tournaments.invitations.search');
     Route::post('/invitations/send', [TournamentController::class, 'sendInvitation'])->name('tournaments.invitations.send');

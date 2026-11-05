@@ -612,6 +612,7 @@ class CompetitionShowSerializer
         return $users
             ->map(fn ($user) => [
                 'id' => (int) $user->id,
+                'playerId' => $user->player?->id !== null ? (int) $user->player->id : null,
                 'name' => $user->player?->name ?? '—',
             ])
             ->sortBy(fn (array $row) => mb_strtolower($row['name']))

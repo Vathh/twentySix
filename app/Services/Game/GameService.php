@@ -698,50 +698,70 @@ class GameService
             return;
         }
 
+        $this->runPlayoffStep($tournamentId, function () use ($tournamentId) {
+            $this->tournamentRepository->lockForUpdate($tournamentId);
+            $this->playoffService->syncEarlyMainSlots($tournamentId);
+        }, 'Main bracket sync failed');
+
+        $this->runPlayoffStep($tournamentId, function () use ($tournamentId) {
+            $this->tournamentRepository->lockForUpdate($tournamentId);
+            $this->playoffService->syncEarlyConsolationSlots($tournamentId);
+        }, 'Consolation bracket sync failed');
+
+        $this->runPlayoffStep($tournamentId, function () use ($tournamentId) {
+            $this->tournamentRepository->lockForUpdate($tournamentId);
+
+            if (! $this->gameRepository->checkIfPlayoffShouldBeStarted($tournamentId)) {
+                return;
+            }
+
+            $tournament = $this->tournamentRepository->findModel($tournamentId);
+
+            if (! $this->playoffGameRepository->existsForTournament($tournamentId, BracketSide::Main)) {
+                $this->tournamentResultService->ensureGroupLoserResults($tournamentId);
+                $this->playoffService->generateBracket($tournamentId);
+            } else {
+                $this->tournamentResultService->ensureGroupLoserResults($tournamentId);
+            }
+
+            $this->ensurePlayoffStatus($tournamentId);
+        }, 'Playoff start failed');
+
+        $this->runPlayoffStep($tournamentId, function () use ($tournamentId) {
+            $this->tournamentRepository->lockForUpdate($tournamentId);
+
+            if (! $this->gameRepository->checkIfPlayoffShouldBeStarted($tournamentId)) {
+                return;
+            }
+
+            $tournament = $this->tournamentRepository->findModel($tournamentId);
+            if (
+                $tournament->has_consolation_bracket
+                && ! $this->playoffGameRepository->existsForTournament($tournamentId, BracketSide::Consolation)
+            ) {
+                $this->playoffService->generateConsolationBracket($tournamentId);
+            }
+        }, 'Consolation bracket generate failed');
+
+        $this->playoffBracketLiveService->pushTournament($tournamentId);
+    }
+
+    private function runPlayoffStep(int $tournamentId, \Closure $callback, string $message): void
+    {
         try {
-            DB::transaction(function () use ($tournamentId) {
-                $this->tournamentRepository->lockForUpdate($tournamentId);
-
-                $this->playoffService->syncEarlyMainSlots($tournamentId);
-                $this->playoffService->syncEarlyConsolationSlots($tournamentId);
-
-                if (! $this->gameRepository->checkIfPlayoffShouldBeStarted($tournamentId)) {
-                    return;
-                }
-
-                $tournament = $this->tournamentRepository->findModel($tournamentId);
-
-                if (! $this->playoffGameRepository->existsForTournament($tournamentId, BracketSide::Main)) {
-                    $this->tournamentResultService->ensureGroupLoserResults($tournamentId);
-                    $this->playoffService->generateBracket($tournamentId);
-                } else {
-                    $this->tournamentResultService->ensureGroupLoserResults($tournamentId);
-                }
-
-                if (
-                    $tournament->has_consolation_bracket
-                    && ! $this->playoffGameRepository->existsForTournament($tournamentId, BracketSide::Consolation)
-                ) {
-                    $this->playoffService->generateConsolationBracket($tournamentId);
-                }
-
-                $this->ensurePlayoffStatus($tournamentId);
-            });
+            DB::transaction($callback);
         } catch (UniqueConstraintViolationException $e) {
             \Log::info('Playoff bracket already exists', [
                 'tournamentId' => $tournamentId,
                 'error' => $e->getMessage(),
             ]);
-            $this->ensurePlayoffStatus($tournamentId);
         } catch (Throwable $e) {
-            \Log::error('Playoff start failed', [
+            \Log::error($message, [
                 'tournamentId' => $tournamentId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
         }
-
-        $this->playoffBracketLiveService->pushTournament($tournamentId);
     }
 
     private function ensurePlayoffStatus(int $tournamentId): void

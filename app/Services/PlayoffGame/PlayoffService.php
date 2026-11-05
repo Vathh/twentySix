@@ -26,6 +26,9 @@ use App\Repositories\Tournament\TournamentRepository;
 use App\Support\Tournament\PlayoffByePairing;
 use App\Support\Tournament\PlayoffSlotIds;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
 
 class PlayoffService
 {
@@ -172,42 +175,49 @@ class PlayoffService
             return;
         }
 
-        $pairs = $this->knownConsolationPairs($tournamentId, $consolationSize);
-        if ($pairs === null) {
-            return;
-        }
-
-        $includeThird = (bool) $tournament->has_consolation_third_place && $consolationSize >= 4;
-
-        if (! $this->gameRepository->existsForTournament($tournamentId, BracketSide::Consolation)) {
-            $playoffGames = $this->bracketFactory->create(
-                $tournamentId,
-                $consolationSize,
-                $pairs,
-                BracketSide::Consolation,
-                PlayoffSlotIds::CONSOLATION_PREFIX,
-                $includeThird,
-            );
-            $this->gameRepository->createMany(
-                $playoffGames,
-                $this->formatsByStage($tournamentId, BracketSide::Consolation),
-            );
-            $this->resolveScheduledByes($tournamentId);
-
-            return;
-        }
-
-        $round = PlayoffSlotIds::stageForFirstRoundMatchCount(intdiv($consolationSize, 2))->value;
-        $games = $this->gameRepository->roundGames($tournamentId, $round, BracketSide::Consolation);
-        foreach ($pairs as $index => $pair) {
-            $game = $games->get($index);
-            if ($game === null || $pair[0] === null || $pair[1] === null) {
-                continue;
+        try {
+            $pairs = $this->knownConsolationPairs($tournamentId, $consolationSize);
+            if ($pairs === null) {
+                return;
             }
-            $this->gameRepository->replaceScheduledPlayers($game, $pair[0], $pair[1]);
-        }
 
-        $this->resolveScheduledByes($tournamentId);
+            $includeThird = (bool) $tournament->has_consolation_third_place && $consolationSize >= 4;
+
+            if (! $this->gameRepository->existsForTournament($tournamentId, BracketSide::Consolation)) {
+                $playoffGames = $this->bracketFactory->create(
+                    $tournamentId,
+                    $consolationSize,
+                    $pairs,
+                    BracketSide::Consolation,
+                    PlayoffSlotIds::CONSOLATION_PREFIX,
+                    $includeThird,
+                );
+                $this->gameRepository->createMany(
+                    $playoffGames,
+                    $this->formatsByStage($tournamentId, BracketSide::Consolation),
+                );
+                $this->resolveScheduledByes($tournamentId);
+
+                return;
+            }
+
+            $round = PlayoffSlotIds::stageForFirstRoundMatchCount(intdiv($consolationSize, 2))->value;
+            $games = $this->gameRepository->roundGames($tournamentId, $round, BracketSide::Consolation);
+            foreach ($pairs as $index => $pair) {
+                $game = $games->get($index);
+                if ($game === null || $pair[0] === null || $pair[1] === null) {
+                    continue;
+                }
+                $this->gameRepository->replaceScheduledPlayers($game, $pair[0], $pair[1]);
+            }
+
+            $this->resolveScheduledByes($tournamentId);
+        } catch (Throwable $e) {
+            \Log::error('Consolation bracket sync failed', [
+                'tournamentId' => $tournamentId,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -234,7 +244,16 @@ class PlayoffService
         }
 
         $byeId = $this->playerRepository->byePlayerId();
-        $rawPairs = PlayoffConsolationSeeding::pair($slots, $consolationSize, $byeId);
+        try {
+            $rawPairs = PlayoffConsolationSeeding::pair($slots, $consolationSize, $byeId);
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            \Log::info('Consolation pairs skipped', [
+                'tournamentId' => $tournamentId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
         $finished = array_flip($this->groupGameRepository->finishedGroupNumbers($tournamentId));
         $playersBySlot = $this->groupStandingRepository->playerIdsByGroupPlace(
             $tournamentId,

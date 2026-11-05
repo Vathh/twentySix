@@ -72,7 +72,15 @@
                             class="{{ $advances ? 'bg-success-muted border-l-2 border-l-success' : '' }}"
                         >
                             <td class="is-name" title="{{ $rowPlayer->name }}">
+                                @php
+                                    $playerAverage = $threeDartAverages->groupPlayerAverage((int) $rowPlayer->id);
+                                @endphp
                                 <span class="board-player-name">{{ $rowPlayer->name }}</span>
+                                <span
+                                    class="three-dart-average"
+                                    data-group-player-average="{{ $rowPlayer->id }}"
+                                    @if($playerAverage === null) hidden @endif
+                                >{{ $playerAverage !== null ? \App\Support\AverageFormat::display($playerAverage) : '' }}</span>
                                 <span data-playoff-badge aria-hidden="true" @if(! $advances) hidden @endif>Playoff</span>
                             </td>
                             @foreach($roster as $columnPlayer)
@@ -94,6 +102,9 @@
                                                     ? $cellGame->player1Score.' - '.$cellGame->player2Score
                                                     : $cellGame->player2Score.' - '.$cellGame->player1Score)
                                                 : '—';
+                                            $matchAverage = ($isFinished || $isLive)
+                                                ? $threeDartAverages->groupMatchAverage((int) $cellGame->id, (int) $rowPlayer->id)
+                                                : null;
                                             $href = $isLive
                                                 ? route('games.live', ['type' => 'group', 'id' => $cellGame->id])
                                                 : route('games.show', ['type' => 'group', 'id' => $cellGame->id]);
@@ -119,7 +130,7 @@
                                                     class="text-text-muted hover:text-accent hover:underline"
                                                     title="Ustaw wynik / walkower"
                                                 @endif
-                                            >@if($cellGame->sequence && ! $isFinished && ! $isLive)<span class="sequence-badge">{{ $cellGame->sequence }}</span>@else<span class="inline-flex items-center justify-center gap-1">@if($isLive)<span class="group-live-dot" aria-hidden="true"></span>@endif<span>{{ $scoreText }}</span></span>@endif</a>
+                                            >@if($cellGame->sequence && ! $isFinished && ! $isLive)<span class="sequence-badge">{{ $cellGame->sequence }}</span>@else<span class="inline-flex items-center justify-center gap-1">@if($isLive)<span class="group-live-dot" aria-hidden="true"></span>@endif<span>{{ $scoreText }}</span></span>@if($matchAverage !== null)<span class="three-dart-average">{{ \App\Support\AverageFormat::display($matchAverage) }}</span>@endif @endif</a>
                                         </td>
                                     @endif
                                 @endif

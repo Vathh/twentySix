@@ -201,6 +201,15 @@
                     @endforeach
                 </div>
 
+                @include('organizations.partials.format-presets', [
+                    'field' => 'consolationMatchFormats',
+                    'title' => 'Presety — drabinka pocieszenia',
+                    'lead' => 'Domyślne wartości szczebli drabinki pocieszenia. Pusty preset bierze wartość z drabinki głównej.',
+                    'stages' => $consolationFormatStages,
+                    'formats' => $consolationMatchFormats,
+                    'startingScoreOptions' => $startingScoreOptions,
+                ])
+
                 <button class="btn btn-primary" type="submit" :disabled="saving">Zapisz zmiany</button>
                 <a href="{{ route('organizations.show', $organization->id) }}" class="btn btn-secondary mt-4 text-center">Powrót</a>
 

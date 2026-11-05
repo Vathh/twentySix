@@ -12,6 +12,7 @@
         lead="Gracze bez konta, przypisani do tej organizacji."
     >
         <x-guest-roster
+            :manage="$canManage"
             :add-action="route('organizations.guests.add', $organization->id)"
             :remove-action="route('organizations.guests.remove', $organization->id)"
             :guests="$guests"

@@ -123,6 +123,18 @@
         x-cloak
     >Kliknij nazwę drugiego zawodnika, aby zmienić rozpoczynającego.</p>
 
+    <div class="mb-4" x-show="!isFinished" x-cloak>
+        <button
+            type="button"
+            class="btn btn-secondary w-full !py-3"
+            @click="undo()"
+            :disabled="busy || openerOpen || !openerChosen"
+        >
+            Undo
+        </button>
+        <p class="text-center text-xs text-text-muted mt-1.5">Ctrl+Z cofa ostatnią wizytę.</p>
+    </div>
+
     <p class="text-center text-sm text-text-secondary mb-3">
         Tura:
         <span class="text-accent font-semibold" x-text="currentPlayer?.name ?? '—'"></span>
@@ -203,18 +215,10 @@
         </template>
     </div>
 
-    <div class="flex gap-2" x-show="!isFinished" x-cloak>
+    <div x-show="!isFinished" x-cloak>
         <button
             type="button"
-            class="btn btn-secondary flex-1 !py-3"
-            @click="undo()"
-            :disabled="busy || openerOpen || !openerChosen"
-        >
-            Undo
-        </button>
-        <button
-            type="button"
-            class="btn btn-secondary flex-1 !py-3"
+            class="btn btn-secondary w-full !py-3"
             @click="backspace()"
             :disabled="busy || openerOpen || !openerChosen || input === ''"
         >

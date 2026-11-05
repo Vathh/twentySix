@@ -134,9 +134,9 @@ class TournamentStartPageService
         if (! is_array($organizationPresets)) {
             $organizationPresets = [];
         }
-        $defaultMatchFormatsByStage = OrganizationMatchFormatPresets::defaultsByStage(
-            $organizationPresets !== [] ? $organizationPresets : null,
-        );
+        $presetSource = $organizationPresets !== [] ? $organizationPresets : null;
+        $defaultMatchFormatsByStage = OrganizationMatchFormatPresets::defaultsByStage($presetSource);
+        $defaultConsolationMatchFormatsByStage = OrganizationMatchFormatPresets::defaultsForConsolation($presetSource);
         $hasOrganizationFormatPresets = is_array($organizationPresets) && $organizationPresets !== [];
 
         $pendingJoinRequests = $tournament->status === TournamentStatus::CREATED
@@ -178,6 +178,7 @@ class TournamentStartPageService
             'startingScoreOptions' => MatchFormat::ALLOWED_STARTING_SCORES,
             'defaultMatchFormat' => MatchFormat::default()->toArray(),
             'defaultMatchFormatsByStage' => $defaultMatchFormatsByStage,
+            'defaultConsolationMatchFormatsByStage' => $defaultConsolationMatchFormatsByStage,
             'hasOrganizationFormatPresets' => $hasOrganizationFormatPresets,
             'matchFormatStagesByBracket' => $matchFormatStagesByBracket,
             'matchFormatStagesByBracketSe' => $matchFormatStagesByBracketSe,
@@ -253,7 +254,9 @@ class TournamentStartPageService
         $bracketOptions = TournamentStartRules::bracketOptionsByGroupCountForPlayers($participantCount);
         $host = $tournamentModel->organization ?? $tournamentModel->season?->organization;
         $presets = is_array($host?->match_format_presets) ? $host->match_format_presets : [];
-        $defaultFormats = OrganizationMatchFormatPresets::defaultsByStage($presets !== [] ? $presets : null);
+        $presetSource = $presets !== [] ? $presets : null;
+        $defaultFormats = OrganizationMatchFormatPresets::defaultsByStage($presetSource);
+        $defaultConsolationFormats = OrganizationMatchFormatPresets::defaultsForConsolation($presetSource);
         $seBracketSize = $participantCount >= TournamentStartRules::MIN_PLAYERS
             ? \App\Support\Tournament\PlayoffByePairing::nextPowerOfTwo($participantCount)
             : 4;
@@ -385,6 +388,7 @@ class TournamentStartPageService
             'seBracketSize' => $seBracketSize,
             'seByeCount' => max(0, $seBracketSize - $participantCount),
             'defaultMatchFormatsByStage' => $defaultFormats,
+            'defaultConsolationMatchFormatsByStage' => $defaultConsolationFormats,
             'matchFormatStagesByBracket' => $byBracket,
             'matchFormatStagesByBracketSe' => $byBracketSe,
             'matchFormatStagesByBracketDe' => $byBracketDe,

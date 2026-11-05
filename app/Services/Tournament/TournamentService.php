@@ -541,6 +541,7 @@ class TournamentService
             $hasConsolationThirdPlace = $consolationBracketSize >= 4
                 && $this->wantsFlag($validated, $requestAll, 'hasConsolationThirdPlace');
             $rawConsolation = $requestAll['consolationMatchFormats'] ?? [];
+            $organizationPresets = $this->organizationPresetsForTournament($tournamentId);
             $consolationFormatsByStage = is_array($rawConsolation) && $rawConsolation !== []
                 ? TournamentMatchFormatRequestParser::fromRunInput(
                     ['matchFormats' => $rawConsolation],
@@ -550,7 +551,9 @@ class TournamentService
                 )
                 : TournamentMatchFormatRequestParser::defaultsForEliminationBracketSize(
                     $consolationBracketSize,
-                    includeThird: $hasConsolationThirdPlace,
+                    $organizationPresets,
+                    $hasConsolationThirdPlace,
+                    true,
                 );
         }
 
@@ -571,6 +574,18 @@ class TournamentService
      * @param  array<string, mixed>  $validated
      * @param  array<string, mixed>  $requestAll
      */
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function organizationPresetsForTournament(int $tournamentId): ?array
+    {
+        $tournament = $this->tournamentRepository->findModel($tournamentId, ['organization', 'season.organization']);
+        $host = $tournament->organization ?? $tournament->season?->organization;
+        $presets = $host?->match_format_presets;
+
+        return is_array($presets) && $presets !== [] ? $presets : null;
+    }
+
     private function wantsConsolationBracket(array $validated, array $requestAll): bool
     {
         return $this->wantsFlag($validated, $requestAll, 'hasConsolationBracket');

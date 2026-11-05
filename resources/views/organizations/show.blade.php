@@ -54,15 +54,9 @@
                     $leagueCount = $leagues->count();
                     $tournamentCount = $seasons->sum(fn ($season) => (int) ($season->tournamentCount ?? 0))
                         + count($oneOffTournaments);
-                    $relatedUsersUrl = null;
-                    $guestsUrl = null;
+                    $relatedUsersUrl = route('organizations.relatedUsers', $organization->id);
+                    $guestsUrl = route('organizations.guests', $organization->id);
                 @endphp
-                @organizationAdmin($organization)
-                    @php
-                        $relatedUsersUrl = route('organizations.relatedUsers', $organization->id);
-                        $guestsUrl = route('organizations.guests', $organization->id);
-                    @endphp
-                @endorganizationAdmin
                 <div class="place-facts">
                     <section class="place-fact-group">
                         <p class="place-fact-group-label">Daty</p>

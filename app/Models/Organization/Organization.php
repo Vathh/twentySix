@@ -89,6 +89,6 @@ class Organization extends Model
     /** @return HasMany<Player, $this> */
     public function guests(): HasMany
     {
-        return $this->hasMany(Player::class);
+        return $this->hasMany(Player::class)->whereNull('user_id');
     }
 }

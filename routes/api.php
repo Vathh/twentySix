@@ -204,6 +204,8 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::post('/tournaments/{tournament}/join-requests/{joinRequest}/approve', [TournamentManageController::class, 'approveJoinRequest'])->whereNumber(['tournament', 'joinRequest']);
     Route::post('/tournaments/{tournament}/join-requests/{joinRequest}/reject', [TournamentManageController::class, 'rejectJoinRequest'])->whereNumber(['tournament', 'joinRequest']);
     Route::post('/tournaments/{tournament}/start', [TournamentManageController::class, 'start'])->whereNumber('tournament');
+    Route::get('/tournaments/{tournament}/playoff-formats', [\App\Http\Controllers\PlayoffRoundFormatController::class, 'showApi'])->whereNumber('tournament');
+    Route::patch('/tournaments/{tournament}/playoff-formats', [\App\Http\Controllers\PlayoffRoundFormatController::class, 'updateApi'])->whereNumber('tournament');
     Route::post('/tournaments/{tournament}/tablet-code', [TournamentManageController::class, 'regenerateTabletCode'])->whereNumber('tournament');
     Route::get('/tournaments/{tournament}/admins', [TournamentManageController::class, 'admins'])->whereNumber('tournament');
     Route::get('/tournaments/{tournament}/admin-users', [TournamentManageController::class, 'searchAdmins'])->whereNumber('tournament');

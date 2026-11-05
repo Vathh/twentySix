@@ -5,6 +5,7 @@ namespace App\Repositories\Tournament;
 use App\Domain\PlayerDomain;
 use App\Domain\Tournament\TournamentInvitationDomain;
 use App\Enums\TournamentInvitationStatus;
+use App\Enums\TournamentStatus;
 use App\Models\Tournament\TournamentInvitation;
 use Illuminate\Support\Collection;
 
@@ -50,6 +51,9 @@ class TournamentInvitationRepository
                 TournamentInvitationStatus::PENDING,
                 TournamentInvitationStatus::ACCEPTED,
             ])
+            ->whereHas('tournament', function ($query) {
+                $query->where('status', TournamentStatus::CREATED);
+            })
             ->orderByDesc('created_at')
             ->get()
             ->map(fn (TournamentInvitation $invitation) => TournamentInvitationDomain::fromEloquent($invitation));

@@ -30,6 +30,37 @@ class PlayerAvatarTest extends TestCase
         $this->player = $this->owner->fresh()->player;
     }
 
+    public function test_owner_can_rename_on_the_web_and_the_api(): void
+    {
+        $this->actingAs($this->owner)
+            ->put(route('players.update', $this->player), [
+                'name' => 'Ala Nowa',
+                'description' => 'Lubię 501.',
+            ])
+            ->assertRedirect(route('players.show', $this->player))
+            ->assertSessionHas('success');
+
+        $this->assertSame('Ala Nowa', $this->player->fresh()->name);
+
+        Sanctum::actingAs($this->owner);
+        $this->putJson('/api/players/'.$this->player->id, [
+            'name' => 'Ala Api',
+            'description' => 'Nadal 501.',
+        ])
+            ->assertOk()
+            ->assertJsonPath('player.name', 'Ala Api');
+
+        $this->assertSame('Ala Api', $this->player->fresh()->name);
+
+        $other = User::factory()->create();
+        app(PlayerService::class)->create('Ala Api', $other->id);
+
+        $this->putJson('/api/players/'.$this->player->id, [
+            'name' => 'Ala Api',
+            'description' => 'Nadal 501.',
+        ])->assertStatus(422);
+    }
+
     public function test_owner_can_upload_a_square_jpeg_avatar(): void
     {
         Sanctum::actingAs($this->owner);

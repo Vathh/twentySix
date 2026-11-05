@@ -136,8 +136,16 @@ class GameResultCorrectionService
                 (int) $game->player2->id,
                 false,
             );
-            $this->playoffService->syncEarlyMainSlots((int) $gameModel->tournament_id);
-            $this->playoffService->syncEarlyConsolationSlots((int) $gameModel->tournament_id);
+            $tournamentId = (int) $gameModel->tournament_id;
+            $this->playoffService->syncEarlyMainSlots($tournamentId);
+            try {
+                $this->playoffService->syncEarlyConsolationSlots($tournamentId);
+            } catch (Throwable $e) {
+                \Log::error('Consolation bracket sync failed', [
+                    'tournamentId' => $tournamentId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             return;
         }

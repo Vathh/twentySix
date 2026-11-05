@@ -36,9 +36,9 @@
     >
         @if($mode === 'groups')
             <div class="board-fill" x-data="tournamentGroupsLive(@js($liveConfig))">
-                @include('tournaments.partials.board-header', ['showConnection' => true])
                 <div class="board-stage" data-board-stage>
                     <div class="board-scale is-groups" data-board-scale>
+                        @include('tournaments.partials.board-header', ['showConnection' => true])
                         @include('tournaments.partials.board-groups')
                     </div>
                 </div>
@@ -58,9 +58,9 @@
                     ]))"
                 @endif
             >
-                @include('tournaments.partials.board-header', ['showConnection' => $tournament->isLiveOnWeb()])
                 <div class="board-stage" data-board-stage>
                     <div class="board-scale is-bracket" data-board-scale>
+                        @include('tournaments.partials.board-header', ['showConnection' => $tournament->isLiveOnWeb()])
                         @include('tournaments.tabs.playoff', [
                             'playoffGames' => $playoffGames,
                             'consolationPlayoffGames' => $consolationPlayoffGames,
@@ -72,9 +72,9 @@
             </div>
         @else
             <div class="board-fill">
-                @include('tournaments.partials.board-header', ['showConnection' => false])
                 <div class="board-stage" data-board-stage>
                     <div class="board-scale is-waiting" data-board-scale>
+                        @include('tournaments.partials.board-header', ['showConnection' => false])
                         <p class="board-waiting">
                             Turniej jeszcze się nie rozpoczął.<br>
                             Tablica włączy się sama po starcie.

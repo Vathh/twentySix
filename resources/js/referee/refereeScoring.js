@@ -816,6 +816,12 @@ export function registerRefereeScoring(Alpine) {
                 event.preventDefault();
                 this.backspace();
             }
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z' && !event.shiftKey && !event.altKey) {
+                event.preventDefault();
+                if (!event.repeat) {
+                    this.undo();
+                }
+            }
             if (event.key === 'Enter') {
                 event.preventDefault();
                 this.submitVisit();

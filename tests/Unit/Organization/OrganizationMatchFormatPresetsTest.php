@@ -54,4 +54,42 @@ class OrganizationMatchFormatPresetsTest extends TestCase
 
         OrganizationMatchFormatPresets::fromFormInput($input);
     }
+
+    public function test_consolation_preset_falls_back_to_the_main_stage(): void
+    {
+        $defaults = OrganizationMatchFormatPresets::defaultsForConsolation([
+            GameStage::FINAL->value => [
+                'startingScore' => 501,
+                'legsToWinSet' => 5,
+                'setsToWinMatch' => 1,
+            ],
+            'consolation' => [
+                GameStage::FINAL->value => [
+                    'startingScore' => 501,
+                    'legsToWinSet' => 3,
+                    'setsToWinMatch' => 1,
+                ],
+            ],
+        ]);
+
+        $this->assertSame(3, $defaults[GameStage::FINAL->value]['legsToWinSet']);
+        $this->assertSame(5, OrganizationMatchFormatPresets::defaultsByStage([
+            GameStage::FINAL->value => [
+                'startingScore' => 501,
+                'legsToWinSet' => 5,
+                'setsToWinMatch' => 1,
+            ],
+            'consolation' => [
+                GameStage::FINAL->value => [
+                    'startingScore' => 501,
+                    'legsToWinSet' => 3,
+                    'setsToWinMatch' => 1,
+                ],
+            ],
+        ])[GameStage::FINAL->value]['legsToWinSet']);
+        $this->assertSame(
+            MatchFormat::DEFAULT_LEGS_TO_WIN_SET,
+            OrganizationMatchFormatPresets::defaultsForConsolation(null)[GameStage::SEMI->value]['legsToWinSet'],
+        );
+    }
 }
