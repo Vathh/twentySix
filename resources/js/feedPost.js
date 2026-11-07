@@ -15,6 +15,8 @@ export function registerFeedPost(Alpine) {
 		replyTo: null,
 		pendingDelete: null,
 		error: '',
+		termsAccepted: Boolean(window.feedEngagement?.termsAccepted),
+		termsChecked: false,
 
 		get likeCount() {
 			return Number(this.reactions?.counts?.like ?? 0);
@@ -83,6 +85,15 @@ export function registerFeedPost(Alpine) {
 			this.sending = true;
 			this.error = '';
 			try {
+				if (!this.termsAccepted) {
+					if (!this.termsChecked) {
+						this.error = 'Zaakceptuj regulamin i politykę prywatności.';
+						return;
+					}
+					await request(window.feedEngagement.termsUrl, 'POST', {});
+					this.termsAccepted = true;
+					window.feedEngagement.termsAccepted = true;
+				}
 				const data = await request(`/feed/activities/${this.id}/comments`, 'POST', {
 					body,
 					parentId: this.replyTo?.id ?? null,
@@ -95,6 +106,9 @@ export function registerFeedPost(Alpine) {
 				this.loaded = true;
 			} catch (error) {
 				this.error = error.message;
+				if (error.code === 'terms_required') {
+					this.termsAccepted = false;
+				}
 			} finally {
 				this.sending = false;
 			}
@@ -193,7 +207,9 @@ async function request(url, method, body) {
 	});
 	const data = await response.json().catch(() => ({}));
 	if (!response.ok) {
-		throw new Error(data.message || 'Nie udało się zapisać.');
+		const failure = new Error(data.message || 'Nie udało się zapisać.');
+		failure.code = data.code || null;
+		throw failure;
 	}
 	return data;
 }

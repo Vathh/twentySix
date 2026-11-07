@@ -91,6 +91,8 @@ Route::get('/quick-game/lobby/{lobbyId}/live/state', [QuickGameFfaLiveController
     ->name('quick-game.ffa.live.state');
 
 Route::get('/register', [PagesController::class, 'showRegisterPage'])->name('pages.registerPanel');
+Route::get('/polityka-prywatnosci', [PagesController::class, 'showPrivacyPage'])->name('pages.privacy');
+Route::get('/regulamin', [PagesController::class, 'showTermsPage'])->name('pages.terms');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::get('/email/verify/sent', [PagesController::class, 'showVerifyEmailNoticePage'])->name('verification.notice');
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
@@ -113,6 +115,9 @@ Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:account-login')
     ->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/account/terms', [AuthController::class, 'acceptTerms'])
+    ->middleware('auth')
+    ->name('account.terms.accept');
 
 Route::middleware(['auth', 'platform.admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [\App\Http\Controllers\PlatformAdminController::class, 'dashboard'])->name('dashboard');

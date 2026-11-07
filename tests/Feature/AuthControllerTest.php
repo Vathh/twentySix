@@ -24,6 +24,7 @@ class AuthControllerTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'acceptedTerms' => '1',
         ]);
 
         $response->assertRedirect(route('verification.notice'));
@@ -43,6 +44,7 @@ class AuthControllerTest extends TestCase
 
         $this->assertFalse(Auth::check());
         Notification::assertSentTo($user, VerifyEmailNotification::class);
+        $this->assertNotNull($user->terms_accepted_at);
 
         $this->post('/login', [
             'email' => 'test@example.com',
@@ -94,6 +96,7 @@ class AuthControllerTest extends TestCase
             'email' => 'existing@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'acceptedTerms' => '1',
         ]);
 
         $response->assertSessionHasErrors('email');
@@ -106,6 +109,7 @@ class AuthControllerTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'short',
             'password_confirmation' => 'short',
+            'acceptedTerms' => '1',
         ]);
 
         $response->assertSessionHasErrors('password');
@@ -118,9 +122,43 @@ class AuthControllerTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'password123',
             'password_confirmation' => 'different',
+            'acceptedTerms' => '1',
         ]);
 
         $response->assertSessionHasErrors('password');
+    }
+
+    public function test_user_cannot_register_without_accepting_terms(): void
+    {
+        $this->post('/register', [
+            'name' => 'Test User',
+            'email' => 'terms@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertSessionHasErrors('acceptedTerms');
+
+        $this->assertDatabaseMissing('users', ['email' => 'terms@example.com']);
+    }
+
+    public function test_legal_pages_are_public(): void
+    {
+        $this->get(route('pages.privacy'))
+            ->assertOk()
+            ->assertSee('Polityka prywatności')
+            ->assertSee(route('pages.terms'), false);
+
+        $this->get(route('pages.terms'))
+            ->assertOk()
+            ->assertSee('Nie wolno publikować', false);
+
+        $this->get(route('pages.registerPanel'))
+            ->assertOk()
+            ->assertSee('name="acceptedTerms"', false);
+
+        $this->get(route('pages.home'))
+            ->assertOk()
+            ->assertSee(route('pages.privacy'), false)
+            ->assertSee(route('pages.terms'), false);
     }
 
     public function test_user_can_login_with_valid_credentials(): void

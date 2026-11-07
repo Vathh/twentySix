@@ -44,6 +44,22 @@
                            id="password_confirmation"
                            required>
 
+                    <label class="flex items-start gap-2 mb-3 text-sm text-text-muted text-left">
+                        <input class="mt-1"
+                               type="checkbox"
+                               name="acceptedTerms"
+                               id="acceptedTerms"
+                               value="1"
+                               @checked(old('acceptedTerms'))
+                               required>
+                        <span>
+                            Akceptuję
+                            <a href="{{ route('pages.terms') }}" class="text-accent hover:underline" target="_blank" rel="noopener" @click.stop>regulamin</a>
+                            i
+                            <a href="{{ route('pages.privacy') }}" class="text-accent hover:underline" target="_blank" rel="noopener" @click.stop>politykę prywatności</a>.
+                        </span>
+                    </label>
+
                     <button class="btn btn-primary mt-3" type="submit" name="loginBtn">Stwórz konto</button>
 
                     <x-errors/>

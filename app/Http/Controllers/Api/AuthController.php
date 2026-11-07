@@ -8,6 +8,7 @@ use App\Services\Auth\PasswordResetService;
 use App\Services\Auth\AccountAuthService;
 use App\Services\Auth\MobileAppTokenService;
 use App\Services\Auth\PasswordChangeService;
+use App\Services\Auth\TermsAcceptanceService;
 use App\Services\Auth\UserRegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ class AuthController
         private MobileAppTokenService $mobileAppTokenService,
         private PasswordChangeService $passwordChangeService,
         private PasswordResetService $passwordResetService,
+        private TermsAcceptanceService $termsAcceptanceService,
     ) {}
 
     public function tournamentLogin(Request $request): JsonResponse
@@ -48,6 +50,9 @@ class AuthController
             'name' => 'required|string|max:20',
             'email' => 'required|email|max:255|unique:users',
             'password' => 'required|string|min:8',
+            'acceptedTerms' => ['accepted'],
+        ], [
+            'acceptedTerms.accepted' => 'Zaakceptuj regulamin i politykę prywatności.',
         ]);
 
         $user = $this->registrationService->register($validated);
@@ -183,6 +188,15 @@ class AuthController
 
         return response()->json([
             'message' => 'Hasło zostało zmienione.',
+        ]);
+    }
+
+    public function acceptTerms(Request $request): JsonResponse
+    {
+        $this->termsAcceptanceService->accept($request->user());
+
+        return response()->json([
+            'termsAccepted' => true,
         ]);
     }
 }

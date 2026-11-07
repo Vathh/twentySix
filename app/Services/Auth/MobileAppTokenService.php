@@ -77,7 +77,7 @@ class MobileAppTokenService
     }
 
     /**
-     * @return array{id: int, email: string, name: string|null, playerId: int|null, avatarUrl: string|null, canCreateOrganizations: bool}
+     * @return array{id: int, email: string, name: string|null, playerId: int|null, avatarUrl: string|null, canCreateOrganizations: bool, termsAccepted: bool}
      */
     public function userPayload(User $user): array
     {
@@ -88,6 +88,7 @@ class MobileAppTokenService
             'playerId' => $user->player?->id,
             'avatarUrl' => $user->player?->avatarUrl(),
             'canCreateOrganizations' => (bool) $user->can_create_organizations,
+            'termsAccepted' => $user->hasAcceptedTerms(),
         ];
     }
 }

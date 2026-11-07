@@ -17,7 +17,7 @@ class UserRegistrationService
     ) {}
 
     /**
-     * @param  array{name: string, email: string, password: string, password_confirmation?: string}  $data
+     * @param  array{name: string, email: string, password: string, password_confirmation?: string, acceptedTerms?: mixed}  $data
      */
     public function register(array $data, bool $requirePasswordConfirmation = false): User
     {
@@ -25,11 +25,14 @@ class UserRegistrationService
             'name' => ['required', 'string', 'max:20', new UniquePlayerNameForRegistered],
             'email' => 'required|email|max:255|unique:users',
             'password' => PasswordPolicyDomain::rules($requirePasswordConfirmation),
+            'acceptedTerms' => ['accepted'],
         ];
 
-        $validated = Validator::make($data, $rules)->validate();
+        $validated = Validator::make($data, $rules, [
+            'acceptedTerms.accepted' => 'Zaakceptuj regulamin i politykę prywatności.',
+        ])->validate();
 
-        $user = $this->userRepository->create($validated['email'], $validated['password']);
+        $user = $this->userRepository->create($validated['email'], $validated['password'], now());
 
         $this->playerService->create($validated['name'], $user->id);
         $user->sendEmailVerificationNotification();

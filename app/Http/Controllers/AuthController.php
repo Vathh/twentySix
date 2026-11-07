@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Auth\AccountAuthService;
+use App\Services\Auth\TermsAcceptanceService;
 use App\Services\Auth\UserRegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,7 @@ class AuthController extends Controller
     public function __construct(
         private UserRegistrationService $registrationService,
         private AccountAuthService $accountAuthService,
+        private TermsAcceptanceService $termsAcceptanceService,
     ) {}
 
     public function register(Request $request)
@@ -54,5 +56,18 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('pages.loginPanel');
+    }
+
+    public function acceptTerms(Request $request)
+    {
+        $this->termsAcceptanceService->accept($request->user());
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'termsAccepted' => true,
+            ]);
+        }
+
+        return back()->with('success', 'Zaakceptowano regulamin i politykę prywatności.');
     }
 }

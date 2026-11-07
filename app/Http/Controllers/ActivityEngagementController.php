@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Activity\ActivityReactionKind;
+use App\Domain\Auth\TermsAcceptanceRequired;
 use App\Models\Activity\Activity;
 use App\Models\Activity\ActivityComment;
 use App\Services\Activity\ActivityEngagementService;
@@ -83,6 +84,11 @@ class ActivityEngagementController extends Controller
             return response()->json($action());
         } catch (ActivityHiddenException) {
             return response()->json(['message' => 'Nie ma takiej historii.'], 404);
+        } catch (TermsAcceptanceRequired $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'code' => TermsAcceptanceRequired::CODE,
+            ], 403);
         } catch (AuthorizationException $exception) {
             return response()->json(['message' => $exception->getMessage()], 403);
         } catch (DomainException $exception) {

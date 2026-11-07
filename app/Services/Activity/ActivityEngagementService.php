@@ -3,6 +3,7 @@
 namespace App\Services\Activity;
 
 use App\Domain\Activity\ActivityCommentRules;
+use App\Domain\Auth\TermsAcceptanceRequired;
 use App\Domain\Activity\ActivityReactionKind;
 use App\Domain\Activity\ActivityReactionSubject;
 use App\Domain\Activity\ActivityReactionToggle;
@@ -73,6 +74,7 @@ class ActivityEngagementService
      */
     public function addComment(User $viewer, Activity $activity, string $body, ?int $parentId): array
     {
+        $this->requireTerms($viewer);
         $activity = $this->visible($viewer, $activity);
         $body = $this->commentRules->normalizedBody($body);
         if ($body === '') {
@@ -243,6 +245,13 @@ class ActivityEngagementService
             ),
             $roots,
         );
+    }
+
+    private function requireTerms(User $viewer): void
+    {
+        if (! $viewer->hasAcceptedTerms()) {
+            throw new TermsAcceptanceRequired;
+        }
     }
 
     /**

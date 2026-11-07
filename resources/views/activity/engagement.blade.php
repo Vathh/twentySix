@@ -56,7 +56,16 @@
             <span>Odpowiedź dla </span><span x-text="replyTo ? replyTo.name : ''"></span>
             <button type="button" class="feed-post-action" @click="replyTo = null">Anuluj</button>
         </p>
+        <label class="flex items-start gap-2 mb-2 text-sm text-text-muted text-left" x-show="!termsAccepted" x-cloak>
+            <input type="checkbox" class="mt-1" x-model="termsChecked">
+            <span>
+                Akceptuję
+                <a href="{{ route('pages.terms') }}" class="text-accent hover:underline" target="_blank" rel="noopener" @click.stop>regulamin</a>
+                i
+                <a href="{{ route('pages.privacy') }}" class="text-accent hover:underline" target="_blank" rel="noopener" @click.stop>politykę prywatności</a>.
+            </span>
+        </label>
         <textarea class="feed-composer-input" rows="2" maxlength="500" placeholder="Napisz komentarz…" x-model="body"></textarea>
-        <button type="submit" class="btn btn-secondary" :disabled="sending || body.trim() === ''">Wyślij</button>
+        <button type="submit" class="btn btn-secondary" :disabled="sending || body.trim() === '' || (!termsAccepted && !termsChecked)">Wyślij</button>
     </form>
 </div>

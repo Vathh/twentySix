@@ -130,6 +130,7 @@ return [
         'current_password' => 'aktualne hasło',
         'description' => 'opis',
         'name' => 'Nazwa użytkownika',
+        'acceptedTerms' => 'akceptacja regulaminu',
         'organizationName' => 'Nazwa organizacji',
         'seasonName' => 'Nazwa sezonu',
     ],

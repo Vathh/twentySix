@@ -67,6 +67,8 @@
         window.feedEngagement = {
             signedIn: @json(auth()->check()),
             loginUrl: @json(route('pages.loginPanel')),
+            termsAccepted: @json(auth()->check() && auth()->user()->hasAcceptedTerms()),
+            termsUrl: @json(route('account.terms.accept')),
         };
     </script>
 

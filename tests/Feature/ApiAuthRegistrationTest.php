@@ -22,6 +22,7 @@ class ApiAuthRegistrationTest extends TestCase
             'name' => 'Mobile User',
             'email' => 'mobile@example.com',
             'password' => 'password123',
+            'acceptedTerms' => true,
         ]);
 
         $response->assertCreated()
@@ -31,11 +32,24 @@ class ApiAuthRegistrationTest extends TestCase
         $user = User::where('email', 'mobile@example.com')->first();
         $this->assertNotNull($user);
         $this->assertNull($user->email_verified_at);
+        $this->assertNotNull($user->terms_accepted_at);
         $this->assertDatabaseHas('players', [
             'name' => 'Mobile User',
             'user_id' => $user->id,
         ]);
         Notification::assertSentTo($user, VerifyEmailNotification::class);
+    }
+
+    public function test_api_register_requires_accepted_terms(): void
+    {
+        $this->postJson('/api/register', [
+            'name' => 'Mobile User',
+            'email' => 'mobile-terms@example.com',
+            'password' => 'password123',
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['acceptedTerms']);
+
+        $this->assertDatabaseMissing('users', ['email' => 'mobile-terms@example.com']);
     }
 
     public function test_api_login_rejects_unverified_user(): void

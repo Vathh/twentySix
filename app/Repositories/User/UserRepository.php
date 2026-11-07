@@ -4,6 +4,7 @@ namespace App\Repositories\User;
 
 use App\Domain\PlayerDomain;
 use App\Models\Users\User;
+use DateTimeInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -19,12 +20,24 @@ class UserRepository
         return User::findOrFail($id);
     }
 
-    public function create(string $email, string $password): User
+    public function create(string $email, string $password, DateTimeInterface $termsAcceptedAt): User
     {
         return User::create([
             'email' => $email,
             'password' => $password,
+            'terms_accepted_at' => $termsAcceptedAt,
         ]);
+    }
+
+    public function markTermsAccepted(User $user): void
+    {
+        if ($user->hasAcceptedTerms()) {
+            return;
+        }
+
+        $user->forceFill([
+            'terms_accepted_at' => now(),
+        ])->save();
     }
 
     public function updatePassword(User $user, string $password): void

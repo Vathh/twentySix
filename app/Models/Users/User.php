@@ -36,6 +36,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'profile_feed_visibility',
+        'terms_accepted_at',
     ];
 
     /**
@@ -60,6 +61,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'can_create_organizations' => 'boolean',
             'banned_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
             'profile_feed_visibility' => ProfileFeedVisibility::class,
         ];
     }
@@ -72,6 +74,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isBanned(): bool
     {
         return $this->banned_at !== null;
+    }
+
+    public function hasAcceptedTerms(): bool
+    {
+        return $this->terms_accepted_at !== null;
     }
 
     /** @return HasOne<Player, $this> */

@@ -156,6 +156,28 @@ class ActivityEngagementTest extends TestCase
             ->assertJsonPath('comment.body', 'Z sieci');
     }
 
+    public function test_a_comment_requires_accepted_terms(): void
+    {
+        [$viewer, $andrzej] = $this->pair(friends: true);
+        $viewer->forceFill(['terms_accepted_at' => null])->save();
+        $activity = $this->story($andrzej);
+
+        $this->actingAs($viewer, 'sanctum')
+            ->postJson('/api/feed/activities/'.$activity->id.'/comments', ['body' => 'Cześć'])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'terms_required');
+
+        $this->actingAs($viewer, 'sanctum')
+            ->postJson('/api/account/terms')
+            ->assertOk()
+            ->assertJsonPath('termsAccepted', true);
+
+        $this->actingAs($viewer, 'sanctum')
+            ->postJson('/api/feed/activities/'.$activity->id.'/comments', ['body' => 'Cześć'])
+            ->assertOk()
+            ->assertJsonPath('comment.body', 'Cześć');
+    }
+
     /**
      * @return array{0: User, 1: User, 2: Organization}
      */

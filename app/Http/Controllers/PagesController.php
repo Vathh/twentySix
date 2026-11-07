@@ -38,6 +38,18 @@ class PagesController extends Controller
         return $this->noCacheView('pages.register');
     }
 
+    public function showPrivacyPage(): View
+    {
+        return view('pages.privacy', [
+            'contactEmail' => config('legal.contact_email'),
+        ]);
+    }
+
+    public function showTermsPage(): View
+    {
+        return view('pages.terms');
+    }
+
     public function showVerifyEmailNoticePage(): Response
     {
         return $this->noCacheView('pages.verify-email-sent');
