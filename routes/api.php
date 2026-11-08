@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\TournamentInvitationController;
 use App\Http\Controllers\Api\TournamentJoinController;
 use App\Http\Controllers\Api\TournamentManageController;
 use App\Http\Controllers\Api\TrainingGameController;
+use App\Http\Controllers\FeedModerationController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'tournamentLogin'])
@@ -52,6 +53,8 @@ Route::middleware(['auth:sanctum', 'not.banned'])->prefix('account')->group(func
     Route::post('/session/refresh', [AuthController::class, 'refreshSession']);
     Route::put('/password', [AuthController::class, 'changePassword']);
     Route::post('/terms', [AuthController::class, 'acceptTerms']);
+    Route::delete('/', [AuthController::class, 'destroyAccount'])
+        ->middleware('throttle:account-login');
 });
 
 // Wynik quick game online finalizuje silnik FFA; ten endpoint tylko dla achievementów po meczu.
@@ -63,12 +66,17 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
 
     Route::get('/me/competitions', [MyCompetitionsController::class, 'index']);
 
+    Route::get('/blocks', [FeedModerationController::class, 'blocked']);
+    Route::post('/blocks', [FeedModerationController::class, 'block']);
+    Route::delete('/blocks', [FeedModerationController::class, 'unblock']);
+    Route::post('/reports', [FeedModerationController::class, 'report']);
+
     Route::get('/feed', [ActivityFeedController::class, 'home']);
     Route::get('/feed/preferences', [ActivityFeedController::class, 'preferences']);
     Route::put('/feed/preferences', [ActivityFeedController::class, 'updatePreferences']);
-    Route::get('/feed/mutes', [ActivityFeedController::class, 'muteState']);
-    Route::post('/feed/mutes', [ActivityFeedController::class, 'mute']);
-    Route::delete('/feed/mutes', [ActivityFeedController::class, 'unmute']);
+    Route::get('/feed/follows', [ActivityFeedController::class, 'followState']);
+    Route::post('/feed/follows', [ActivityFeedController::class, 'follow']);
+    Route::delete('/feed/follows', [ActivityFeedController::class, 'unfollow']);
     Route::get('/feed/activities/{activity}/comments', [ActivityEngagementController::class, 'comments'])
         ->whereNumber('activity');
     Route::post('/feed/activities/{activity}/comments', [ActivityEngagementController::class, 'storeComment'])
@@ -216,6 +224,7 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::post('/tournaments/{tournament}/admins', [TournamentManageController::class, 'addAdmin'])->whereNumber('tournament');
     Route::post('/tournaments/{tournament}/admins/remove', [TournamentManageController::class, 'removeAdmin'])->whereNumber('tournament');
     Route::post('/tournaments/{tournament}/cancel', [TournamentManageController::class, 'cancel'])->whereNumber('tournament');
+    Route::put('/tournaments/{tournament}', [TournamentManageController::class, 'update'])->whereNumber('tournament');
     Route::delete('/tournaments/{tournament}', [TournamentManageController::class, 'destroy'])->whereNumber('tournament');
     Route::post('/organizations/{organization}/tournaments', [TournamentManageController::class, 'storeForOrganization'])->whereNumber('organization');
     Route::post('/seasons/{season}/tournaments', [TournamentManageController::class, 'storeForSeason'])->whereNumber('season');

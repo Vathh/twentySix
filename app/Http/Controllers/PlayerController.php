@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Domain\Activity\FeedMuteSubject;
+use App\Domain\Activity\FollowSubject;
 use App\Models\Player\Player;
 use App\Services\Activity\FeedService;
 use App\Services\Friends\FriendshipService;
@@ -65,8 +65,8 @@ class PlayerController extends Controller
             Auth::user(),
         );
         $viewer = Auth::user();
-        $data['feedMute'] = $viewer && $player->user_id
-            ? $this->feed->muteState($viewer, FeedMuteSubject::User, (string) $player->user_id)
+        $data['follow'] = $viewer && $player->user_id
+            ? $this->feed->followState($viewer, FollowSubject::User, (string) $player->user_id)
             : null;
         $data['profileFeed'] = $this->feed->profile($viewer, $player, null);
 
@@ -169,5 +169,20 @@ class PlayerController extends Controller
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    public function removeFriend(Player $player): RedirectResponse
+    {
+        if (! $player->user_id) {
+            return back()->with('error', 'Tego gracza nie można usunąć ze znajomych.');
+        }
+
+        if ((int) Auth::id() === (int) $player->user_id) {
+            return back()->with('error', 'Nie możesz usunąć siebie ze znajomych.');
+        }
+
+        $this->friendshipService->removeFriend((int) Auth::id(), (int) $player->user_id);
+
+        return back()->with('success', 'Znajomy został usunięty.');
     }
 }

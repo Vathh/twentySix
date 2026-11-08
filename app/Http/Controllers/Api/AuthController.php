@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Domain\Auth\PasswordResetDomain;
+use App\Domain\Auth\SoleOrganizationAdmin;
 use App\Services\Auth\AccountAuthException;
-use App\Services\Auth\PasswordResetService;
 use App\Services\Auth\AccountAuthService;
+use App\Services\Auth\AccountDeletionService;
 use App\Services\Auth\MobileAppTokenService;
 use App\Services\Auth\PasswordChangeService;
+use App\Services\Auth\PasswordResetService;
 use App\Services\Auth\TermsAcceptanceService;
 use App\Services\Auth\UserRegistrationService;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +24,7 @@ class AuthController
         private PasswordChangeService $passwordChangeService,
         private PasswordResetService $passwordResetService,
         private TermsAcceptanceService $termsAcceptanceService,
+        private AccountDeletionService $accountDeletionService,
     ) {}
 
     public function tournamentLogin(Request $request): JsonResponse
@@ -197,6 +200,25 @@ class AuthController
 
         return response()->json([
             'termsAccepted' => true,
+        ]);
+    }
+
+    public function destroyAccount(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        try {
+            $this->accountDeletionService->deleteAuthenticated($request->user(), $data['password']);
+        } catch (SoleOrganizationAdmin $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Konto zostało usunięte.',
         ]);
     }
 }

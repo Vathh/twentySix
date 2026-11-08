@@ -3,16 +3,17 @@
 namespace App\Services\Activity;
 
 use App\Domain\Activity\ActivityCommentRules;
-use App\Domain\Auth\TermsAcceptanceRequired;
 use App\Domain\Activity\ActivityReactionKind;
 use App\Domain\Activity\ActivityReactionSubject;
 use App\Domain\Activity\ActivityReactionToggle;
+use App\Domain\Auth\TermsAcceptanceRequired;
 use App\Models\Activity\Activity;
 use App\Models\Activity\ActivityComment;
 use App\Models\Player\Player;
 use App\Models\Users\User;
 use App\Repositories\Activity\ActivityCommentRepository;
 use App\Repositories\Activity\ActivityReactionRepository;
+use App\Repositories\Moderation\UserBlockRepository;
 use DomainException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
@@ -25,6 +26,7 @@ class ActivityEngagementService
         private ProfileBoardGate $board,
         private ActivityCommentRules $commentRules,
         private ActivityReactionToggle $toggle,
+        private UserBlockRepository $blocks,
     ) {}
 
     /**
@@ -34,7 +36,7 @@ class ActivityEngagementService
     public function overlay(Collection $activities, ?User $viewer): array
     {
         $ids = $activities->map(fn (Activity $activity) => (int) $activity->id)->all();
-        $commentCounts = $this->comments->countsFor($ids);
+        $commentCounts = $this->comments->countsFor($ids, $viewer === null ? [] : $this->blocks->blockedIds((int) $viewer->id));
         $reactionSummary = $this->reactions->summary(ActivityReactionSubject::Activity, $ids, $viewer?->id);
         $allowed = $this->allowedActors($activities, $viewer);
 
@@ -59,7 +61,10 @@ class ActivityEngagementService
     public function comments(User $viewer, Activity $activity): array
     {
         $activity = $this->visible($viewer, $activity);
-        $rows = $this->comments->forActivity($activity->id);
+        $rows = $this->withoutBlocked(
+            $this->comments->forActivity($activity->id),
+            $this->blocks->blockedIds((int) $viewer->id),
+        );
         $summary = $this->reactions->summary(
             ActivityReactionSubject::Comment,
             $rows->map(fn (ActivityComment $comment) => (int) $comment->id)->all(),
@@ -92,7 +97,7 @@ class ActivityEngagementService
 
         return [
             'comment' => $this->presentComment($comment, $viewer->id, [], []),
-            'commentCount' => $this->comments->countFor((int) $activity->id),
+            'commentCount' => $this->visibleCommentCount((int) $activity->id, (int) $viewer->id),
         ];
     }
 
@@ -116,7 +121,7 @@ class ActivityEngagementService
         $activityId = (int) $comment->activity_id;
         $this->comments->deleteWithReplies($comment);
 
-        return ['commentCount' => $this->comments->countFor($activityId)];
+        return ['commentCount' => $this->visibleCommentCount($activityId, (int) $viewer->id)];
     }
 
     /**
@@ -187,6 +192,11 @@ class ActivityEngagementService
             throw new ActivityHiddenException;
         }
 
+        if ($activity->actor_user_id !== null
+            && $this->blocks->isBlocked((int) $viewer->id, (int) $activity->actor_user_id)) {
+            throw new ActivityHiddenException;
+        }
+
         return $activity;
     }
 
@@ -224,6 +234,40 @@ class ActivityEngagementService
      * @param  array<int, array{counts: array<string, int>, mine: ?string}>  $summary
      * @return list<array<string, mixed>>
      */
+    /**
+     * @param  Collection<int, ActivityComment>  $rows
+     * @param  list<int>  $blockedIds
+     * @return Collection<int, ActivityComment>
+     */
+    private function withoutBlocked(Collection $rows, array $blockedIds): Collection
+    {
+        if ($blockedIds === []) {
+            return $rows;
+        }
+
+        $hidden = [];
+        foreach ($rows as $comment) {
+            if (in_array((int) $comment->user_id, $blockedIds, true)) {
+                $hidden[(int) $comment->id] = true;
+            }
+        }
+
+        return $rows->reject(function (ActivityComment $comment) use ($blockedIds, $hidden) {
+            if (in_array((int) $comment->user_id, $blockedIds, true)) {
+                return true;
+            }
+
+            return $comment->parent_id !== null && isset($hidden[(int) $comment->parent_id]);
+        })->values();
+    }
+
+    private function visibleCommentCount(int $activityId, int $viewerId): int
+    {
+        $counts = $this->comments->countsFor([$activityId], $this->blocks->blockedIds($viewerId));
+
+        return $counts[$activityId] ?? 0;
+    }
+
     private function thread(Collection $rows, array $summary, int $viewerId): array
     {
         $replies = [];

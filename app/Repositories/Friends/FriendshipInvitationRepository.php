@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class FriendshipInvitationRepository
 {
+    public function __construct(private FriendshipRepository $friendships) {}
     /**
      * Tworzy zaproszenie do znajomych
      *
@@ -73,13 +74,7 @@ class FriendshipInvitationRepository
                 'responded_at' => now(),
             ]);
 
-            // Utwórz relację znajomości
-            DB::table('friendships')->insert([
-                'user_id' => $invitation->sender_id,
-                'friend_id' => $invitation->receiver_id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $this->friendships->addFriendship((int) $invitation->sender_id, (int) $invitation->receiver_id);
         });
     }
 

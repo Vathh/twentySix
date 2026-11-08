@@ -40,9 +40,7 @@ class PagesController extends Controller
 
     public function showPrivacyPage(): View
     {
-        return view('pages.privacy', [
-            'contactEmail' => config('legal.contact_email'),
-        ]);
+        return view('pages.privacy');
     }
 
     public function showTermsPage(): View

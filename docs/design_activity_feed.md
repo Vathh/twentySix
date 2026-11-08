@@ -45,11 +45,11 @@ Jeden mecz i jeden zawodnik to jeden wpis odznak, nawet gdy poziomów wskoczyło
 
 ## Widoczność strony głównej
 
-Kanał znajomych jest otwarty, gdy oglądający jest aktorem albo znajomym aktora, kanał jest włączony (własne historie zostają przy wyłączonym kanale) i aktor nie jest wyciszony. Siebie wyciszyć się nie da.
+Kanał graczy jest otwarty, gdy oglądający jest aktorem albo obserwuje aktora, kanał jest włączony (własne historie zostają przy wyłączonym kanale) i wolno mu widzieć tablicę profilu aktora. Znajomi obserwują się od razu. Koniec znajomości zdejmuje obie strony. Nieznajomego można obserwować, ale jego ustawienie tablicy zostaje: publiczna wpuszcza wpisy na stronę główną, a „tylko znajomi” albo krąg już nie. Siebie obserwować się nie da. Brak obserwowania chowa wpisy tej osoby ze strony głównej. Komentarze zostają. Profil tej osoby otwiera się według jej ustawienia.
 
-Kanał organizacji jest otwarty, gdy oglądający jest w składzie, kanał organizacji jest włączony i ta organizacja nie jest wyciszona.
+Kanał organizacji jest otwarty, gdy oglądający obserwuje organizację i kanał jest włączony. Powiązany użytkownik obserwuje ją od razu i może przestać. Ktoś spoza składu włącza to przyciskiem Obserwuj. Wyjście ze składu nie zdejmuje obserwowania.
 
-Wyciszony Andrzej i niewyciszony Dart Suwałki: wygrana turnieju zostaje, bo dochodzi przez organizację. Zamknięte oba kanały: historii nie ma.
+Nieobserwowany Andrzej i obserwowany Dart Suwałki: wygrana turnieju zostaje, bo wpis pochodzi od organizacji. Zamknięte oba kanały: historii nie ma.
 
 ## Profil
 
@@ -62,7 +62,7 @@ Zakładka **Tablica** na profilu gracza (web i mobile), obok **Podsumowania**. `
 ## Personalizacja
 
 - `feed_channel_settings` — wyłącznik kanału. Brak wiersza oznacza kanał włączony.
-- `feed_mutes` — `(user_id, subject_type, subject_key)`. Na start `organization` i `user`. Kolejny filtr to nowy `subject_type`, bez nowej tabeli.
+- `follows` — `(user_id, subject_type, subject_key)`. Na start `organization` i `user`. Obserwowanie jest listą tego, co ma wejść na stronę główną.
 
 ## Później
 

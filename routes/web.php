@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\AccountDeletionController;
 use App\Http\Controllers\ActivityEngagementController;
 use App\Http\Controllers\ActivityFeedWebController;
 use App\Http\Controllers\Api\GameDetailController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\FeedModerationController;
 use App\Http\Controllers\FriendInvitationController;
 use App\Http\Controllers\FriendsController;
 use App\Http\Controllers\GameViewController;
@@ -93,6 +95,10 @@ Route::get('/quick-game/lobby/{lobbyId}/live/state', [QuickGameFfaLiveController
 Route::get('/register', [PagesController::class, 'showRegisterPage'])->name('pages.registerPanel');
 Route::get('/polityka-prywatnosci', [PagesController::class, 'showPrivacyPage'])->name('pages.privacy');
 Route::get('/regulamin', [PagesController::class, 'showTermsPage'])->name('pages.terms');
+Route::get('/usun-konto', [AccountDeletionController::class, 'create'])->name('pages.account.delete');
+Route::post('/usun-konto', [AccountDeletionController::class, 'destroy'])
+    ->middleware('throttle:account-login')
+    ->name('account.delete');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::get('/email/verify/sent', [PagesController::class, 'showVerifyEmailNoticePage'])->name('verification.notice');
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
@@ -131,6 +137,19 @@ Route::middleware(['auth', 'platform.admin'])->prefix('admin')->name('admin.')->
     Route::post('/users/{user}/ban', [\App\Http\Controllers\PlatformAdminController::class, 'updateBanned'])
         ->whereNumber('user')
         ->name('users.ban');
+    Route::get('/reports', [\App\Http\Controllers\PlatformAdminController::class, 'reports'])->name('reports');
+    Route::post('/reports/{report}/dismiss', [\App\Http\Controllers\PlatformAdminController::class, 'dismissReport'])
+        ->whereNumber('report')
+        ->name('reports.dismiss');
+    Route::post('/reports/{report}/delete-post', [\App\Http\Controllers\PlatformAdminController::class, 'deleteReportedPost'])
+        ->whereNumber('report')
+        ->name('reports.delete-post');
+    Route::post('/reports/{report}/delete-comment', [\App\Http\Controllers\PlatformAdminController::class, 'deleteReportedComment'])
+        ->whereNumber('report')
+        ->name('reports.delete-comment');
+    Route::post('/reports/{report}/ban', [\App\Http\Controllers\PlatformAdminController::class, 'banReportedUser'])
+        ->whereNumber('report')
+        ->name('reports.ban');
     Route::get('/deleted', [\App\Http\Controllers\PlatformAdminController::class, 'deleted'])->name('deleted');
     Route::post('/deleted/{kind}/{id}/restore', [\App\Http\Controllers\PlatformAdminController::class, 'restore'])
         ->whereNumber('id')
@@ -153,12 +172,18 @@ Route::middleware('auth')->group(function () {
     Route::put('/feed/comments/{comment}/reaction', [ActivityEngagementController::class, 'reactToComment'])
         ->whereNumber('comment')
         ->name('feed.reactions.comment');
+    Route::post('/blocks', [FeedModerationController::class, 'block'])->name('blocks.store');
+    Route::delete('/blocks/{user}', [FeedModerationController::class, 'unblock'])
+        ->whereNumber('user')
+        ->name('blocks.destroy');
+    Route::post('/reports', [FeedModerationController::class, 'report'])->name('reports.store');
 });
 
 Route::middleware('auth')->prefix('settings')->name('settings.')->group(function () {
     Route::get('/', [SettingsController::class, 'index'])->name('index');
     Route::get('/feed', [ActivityFeedWebController::class, 'edit'])->name('feed.edit');
     Route::put('/feed', [ActivityFeedWebController::class, 'update'])->name('feed.update');
+    Route::get('/blocks', [FeedModerationController::class, 'blocked'])->name('blocks.index');
     Route::get('/password', [SettingsController::class, 'editPassword'])->name('password.edit');
     Route::put('/password', [SettingsController::class, 'updatePassword'])->name('password.update');
 });
@@ -212,8 +237,9 @@ Route::get('/players/{player}/games', [PlayerController::class, 'gameHistory'])-
 Route::get('/players/{player}/feed', [PlayerController::class, 'profileFeed'])->name('players.feed');
 Route::get('/players/{player}/career', [PlayerController::class, 'career'])->name('players.career');
 Route::post('/players/{player}/add-friend', [PlayerController::class, 'addFriend'])->name('players.add-friend')->middleware('auth');
-Route::post('/players/{player}/feed-mute', [ActivityFeedWebController::class, 'mutePlayer'])->name('players.feed-mute')->middleware('auth');
-Route::delete('/players/{player}/feed-mute', [ActivityFeedWebController::class, 'unmutePlayer'])->name('players.feed-unmute')->middleware('auth');
+Route::delete('/players/{player}/friend', [PlayerController::class, 'removeFriend'])->name('players.remove-friend')->middleware('auth');
+Route::post('/players/{player}/follow', [ActivityFeedWebController::class, 'followPlayer'])->name('players.follow')->middleware('auth');
+Route::delete('/players/{player}/follow', [ActivityFeedWebController::class, 'unfollowPlayer'])->name('players.unfollow')->middleware('auth');
 Route::get('/friends/panel', [FriendsController::class, 'panel'])->name('friends.panel')->middleware('auth');
 Route::post('/friends/invitations/{invitation}/accept', [FriendInvitationController::class, 'accept'])->name('friends.invitations.accept')->middleware('auth');
 Route::post('/friends/invitations/{invitation}/reject', [FriendInvitationController::class, 'reject'])->name('friends.invitations.reject')->middleware('auth');
@@ -222,12 +248,12 @@ Route::resource('organizations', OrganizationController::class)->except(['destro
 Route::delete('/organizations/{organization}', [OrganizationController::class, 'destroy'])
     ->middleware('auth')
     ->name('organizations.destroy');
-Route::post('/organizations/{organization}/feed-mute', [ActivityFeedWebController::class, 'muteOrganization'])
+Route::post('/organizations/{organization}/follow', [ActivityFeedWebController::class, 'followOrganization'])
     ->middleware('auth')
-    ->name('organizations.feed-mute');
-Route::delete('/organizations/{organization}/feed-mute', [ActivityFeedWebController::class, 'unmuteOrganization'])
+    ->name('organizations.follow');
+Route::delete('/organizations/{organization}/follow', [ActivityFeedWebController::class, 'unfollowOrganization'])
     ->middleware('auth')
-    ->name('organizations.feed-unmute');
+    ->name('organizations.unfollow');
 Route::prefix('organizations/{organization}')->group(function () {
     Route::get('/relatedUsers', [OrganizationController::class, 'relatedUsers'])->name('organizations.relatedUsers');
     Route::post('/relatedUsers/add', [OrganizationController::class, 'addRelatedUser'])->name('organizations.relatedUsers.add');

@@ -52,7 +52,7 @@ class PlayerAchievementFeedTest extends TestCase
             ->assertJsonPath('items.0.kind.label', 'Odznaka')
             ->assertJsonPath('items.0.actor.name', 'Andrzej');
 
-        $this->actingAs($viewer, 'sanctum')->postJson('/api/feed/mutes', [
+        $this->actingAs($viewer, 'sanctum')->deleteJson('/api/feed/follows', [
             'subjectType' => 'user',
             'subjectKey' => (string) $andrzej->user_id,
         ])->assertOk();

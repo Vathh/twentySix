@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Domain\Activity\FeedMuteSubject;
+use App\Domain\Activity\FollowSubject;
 use App\Domain\GameScoring\MatchFormat;
 use App\Domain\OrganizationDomain;
 use App\Domain\RelatedRosterInvite;
@@ -111,8 +111,8 @@ class OrganizationController extends Controller
             'seasons' => $seasons,
             'leagues' => $this->leagueService->listForOrganization($organization->id),
             'oneOffTournaments' => $this->tournamentService->oneOffCards($organization->id),
-            'feedMute' => Auth::check()
-                ? $this->feed->muteState(Auth::user(), FeedMuteSubject::Organization, (string) $organization->id)
+            'follow' => Auth::check()
+                ? $this->feed->followState(Auth::user(), FollowSubject::Organization, (string) $organization->id)
                 : null,
         ]);
     }

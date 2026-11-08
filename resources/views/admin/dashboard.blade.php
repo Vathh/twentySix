@@ -10,6 +10,7 @@
             <h1 class="text-xl sm:text-2xl font-semibold text-accent">Panel platformy</h1>
         </div>
         <div class="flex flex-wrap gap-2">
+            <a href="{{ route('admin.reports') }}" class="btn btn-secondary">Zgłoszenia</a>
             <a href="{{ route('admin.deleted') }}" class="btn btn-secondary">Usunięte byty</a>
             <a href="{{ route('admin.users') }}" class="btn btn-primary">Użytkownicy</a>
         </div>

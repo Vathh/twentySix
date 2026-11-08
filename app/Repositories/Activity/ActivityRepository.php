@@ -89,60 +89,60 @@ class ActivityRepository
      * Reguły kanałów: App\Domain\Activity\HomeFeedPolicy.
      * Suma warunków zwraca każdy wiersz raz.
      *
-     * @param  list<int>  $friendIds
-     * @param  list<int>  $organizationIds
-     * @param  list<int>  $mutedUserIds
-     * @param  list<int>  $mutedOrganizationIds
+     * @param  list<int>  $followedUserIds
+     * @param  list<int>  $followedOrganizationIds
+     * @param  list<int>  $blockedUserIds
      * @return array{items: Collection<int, Activity>, hasMore: bool}
      */
     public function homePage(
         int $viewerId,
         bool $friendsChannelEnabled,
-        bool $organizationChannelEnabled,
-        array $friendIds,
-        array $organizationIds,
-        array $mutedUserIds,
-        array $mutedOrganizationIds,
+        array $followedUserIds,
+        array $followedOrganizationIds,
+        array $blockedUserIds,
         ?CarbonInterface $cursorAt,
         ?int $cursorId,
         int $limit,
     ): array {
         $friendTypes = $this->registry->typesFor(ActivityChannel::Friends);
         $organizationTypes = $this->registry->typesFor(ActivityChannel::Organization);
-        $visibleFriends = array_values(array_diff($friendIds, $mutedUserIds));
-        $visibleOrganizations = $organizationChannelEnabled
-            ? array_values(array_diff($organizationIds, $mutedOrganizationIds))
-            : [];
+        $visibleUsers = $friendsChannelEnabled ? $followedUserIds : [];
 
         $query = Activity::query()->where(function ($outer) use (
             $viewerId,
-            $friendsChannelEnabled,
             $friendTypes,
             $organizationTypes,
-            $visibleFriends,
-            $visibleOrganizations,
+            $visibleUsers,
+            $followedOrganizationIds,
         ) {
             if ($friendTypes !== []) {
-                $outer->where(function ($friends) use ($viewerId, $friendsChannelEnabled, $friendTypes, $visibleFriends) {
+                $outer->where(function ($friends) use ($viewerId, $friendTypes, $visibleUsers) {
                     $friends->whereIn('type', $friendTypes)
                         ->whereNotNull('actor_user_id')
-                        ->where(function ($who) use ($viewerId, $friendsChannelEnabled, $visibleFriends) {
+                        ->where(function ($who) use ($viewerId, $visibleUsers) {
                             $who->where('actor_user_id', $viewerId);
-                            if ($friendsChannelEnabled && $visibleFriends !== []) {
-                                $who->orWhereIn('actor_user_id', $visibleFriends);
+                            if ($visibleUsers !== []) {
+                                $who->orWhereIn('actor_user_id', $visibleUsers);
                             }
                         });
                 });
             }
 
-            if ($organizationTypes !== [] && $visibleOrganizations !== []) {
+            if ($organizationTypes !== [] && $followedOrganizationIds !== []) {
                 $method = $friendTypes === [] ? 'where' : 'orWhere';
-                $outer->{$method}(function ($organizations) use ($organizationTypes, $visibleOrganizations) {
+                $outer->{$method}(function ($organizations) use ($organizationTypes, $followedOrganizationIds) {
                     $organizations->whereIn('type', $organizationTypes)
-                        ->whereIn('organization_id', $visibleOrganizations);
+                        ->whereIn('organization_id', $followedOrganizationIds);
                 });
             }
         });
+
+        if ($blockedUserIds !== []) {
+            $query->where(function ($hidden) use ($blockedUserIds) {
+                $hidden->whereNull('actor_user_id')
+                    ->orWhereNotIn('actor_user_id', $blockedUserIds);
+            });
+        }
 
         if ($cursorAt !== null && $cursorId !== null) {
             $query->where(function ($cursor) use ($cursorAt, $cursorId) {
@@ -201,6 +201,40 @@ class ActivityRepository
             'items' => $rows->take($limit)->values(),
             'hasMore' => $rows->count() > $limit,
         ];
+    }
+
+    public function find(int $id): ?Activity
+    {
+        return Activity::query()->find($id);
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return array<int, string>
+     */
+    public function sentencesFor(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $sentences = [];
+        foreach (Activity::query()->whereIn('id', $ids)->get() as $activity) {
+            $payload = is_array($activity->payload) ? $activity->payload : [];
+            $sentences[(int) $activity->id] = $this->registry->sentence((string) $activity->type, $payload);
+        }
+
+        return $sentences;
+    }
+
+    public function deleteById(int $id): void
+    {
+        if (! Activity::query()->whereKey($id)->exists()) {
+            return;
+        }
+
+        $this->reactions->forgetActivities([$id]);
+        Activity::query()->whereKey($id)->delete();
     }
 
     public function deleteSubject(string $type, string $subjectType, int $subjectId, ?int $actorPlayerId = null): void

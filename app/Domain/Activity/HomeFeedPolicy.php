@@ -4,16 +4,14 @@ namespace App\Domain\Activity;
 
 /**
  * Historia jest widoczna, gdy otwarty jest choć jeden jej kanał.
- * Wyciszenie zamyka tylko kanał, którego dotyczy.
+ * Brak obserwowania zamyka tylko kanał, którego dotyczy.
  */
 final class HomeFeedPolicy
 {
     /**
      * @param  list<ActivityChannel>  $channels
-     * @param  array<int, true>  $friendIds
-     * @param  array<int, true>  $organizationIds
-     * @param  array<int, true>  $mutedUserIds
-     * @param  array<int, true>  $mutedOrganizationIds
+     * @param  array<int, true>  $followedUserIds
+     * @param  array<int, true>  $followedOrganizationIds
      */
     public function visible(
         int $viewerId,
@@ -22,10 +20,8 @@ final class HomeFeedPolicy
         array $channels,
         bool $friendsChannelEnabled,
         bool $organizationChannelEnabled,
-        array $friendIds,
-        array $organizationIds,
-        array $mutedUserIds,
-        array $mutedOrganizationIds,
+        array $followedUserIds,
+        array $followedOrganizationIds,
     ): bool {
         foreach ($channels as $channel) {
             $open = match ($channel) {
@@ -33,14 +29,12 @@ final class HomeFeedPolicy
                     $viewerId,
                     $actorUserId,
                     $friendsChannelEnabled,
-                    $friendIds,
-                    $mutedUserIds,
+                    $followedUserIds,
                 ),
                 ActivityChannel::Organization => $this->organizationOpen(
                     $organizationId,
                     $organizationChannelEnabled,
-                    $organizationIds,
-                    $mutedOrganizationIds,
+                    $followedOrganizationIds,
                 ),
             };
 
@@ -53,15 +47,13 @@ final class HomeFeedPolicy
     }
 
     /**
-     * @param  array<int, true>  $friendIds
-     * @param  array<int, true>  $mutedUserIds
+     * @param  array<int, true>  $followedUserIds
      */
     private function friendsOpen(
         int $viewerId,
         ?int $actorUserId,
         bool $channelEnabled,
-        array $friendIds,
-        array $mutedUserIds,
+        array $followedUserIds,
     ): bool {
         if ($actorUserId === null) {
             return false;
@@ -71,31 +63,25 @@ final class HomeFeedPolicy
             return true;
         }
 
-        if (! $channelEnabled || isset($mutedUserIds[$actorUserId])) {
+        if (! $channelEnabled) {
             return false;
         }
 
-        return isset($friendIds[$actorUserId]);
+        return isset($followedUserIds[$actorUserId]);
     }
 
     /**
-     * @param  array<int, true>  $organizationIds
-     * @param  array<int, true>  $mutedOrganizationIds
+     * @param  array<int, true>  $followedOrganizationIds
      */
     private function organizationOpen(
         ?int $organizationId,
         bool $channelEnabled,
-        array $organizationIds,
-        array $mutedOrganizationIds,
+        array $followedOrganizationIds,
     ): bool {
         if ($organizationId === null || ! $channelEnabled) {
             return false;
         }
 
-        if (isset($mutedOrganizationIds[$organizationId])) {
-            return false;
-        }
-
-        return isset($organizationIds[$organizationId]);
+        return isset($followedOrganizationIds[$organizationId]);
     }
 }

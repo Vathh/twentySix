@@ -33,6 +33,8 @@
                 </button>
                 <button type="button" class="feed-post-action" @click="startReply(comment)">Odpowiedz</button>
                 <button type="button" class="feed-post-action" x-show="comment.canDelete" @click="remove(comment)" x-text="pendingDelete === comment.id ? 'Usuń na pewno' : 'Usuń'"></button>
+                <button type="button" class="feed-post-action is-block" x-show="otherPerson(comment.author.userId)" @click="blockUser(comment.author.userId)"><x-moderation-icon name="block" />Zablokuj</button>
+                <button type="button" class="feed-post-action is-report" x-show="otherPerson(comment.author.userId)" @click="startReport('comment', comment.id, 'Zgłoś komentarz')"><x-moderation-icon name="flag" />Zgłoś</button>
             </div>
             <template x-for="reply in comment.replies" :key="reply.id">
                 <div class="feed-comment is-reply">
@@ -46,6 +48,8 @@
                             <span x-text="likesOf(reply)"></span>
                         </button>
                         <button type="button" class="feed-post-action" x-show="reply.canDelete" @click="remove(reply)" x-text="pendingDelete === reply.id ? 'Usuń na pewno' : 'Usuń'"></button>
+                        <button type="button" class="feed-post-action is-block" x-show="otherPerson(reply.author.userId)" @click="blockUser(reply.author.userId)"><x-moderation-icon name="block" />Zablokuj</button>
+                        <button type="button" class="feed-post-action is-report" x-show="otherPerson(reply.author.userId)" @click="startReport('comment', reply.id, 'Zgłoś komentarz')"><x-moderation-icon name="flag" />Zgłoś</button>
                     </div>
                 </div>
             </template>

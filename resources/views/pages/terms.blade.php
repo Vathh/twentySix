@@ -36,6 +36,7 @@
 
         <h2>Moderacja</h2>
         <p>
+            Komentarz i gracza możesz zgłosić na tablicy. Gracza możesz też zablokować — wtedy nie widzisz jego wpisów i komentarzy.
             Komentarz niezgodny z regulaminem możemy usunąć.
             Konto, które łamie regulamin, możemy zablokować.
         </p>

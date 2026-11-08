@@ -68,7 +68,7 @@ class ActivityFeedTest extends TestCase
             ->assertSee('Kto widzi moją tablicę profilu');
 
         $this->actingAs($viewer, 'sanctum')
-            ->postJson('/api/feed/mutes', [
+            ->deleteJson('/api/feed/follows', [
                 'subjectType' => 'user',
                 'subjectKey' => (string) $andrzej->id,
             ])
@@ -80,7 +80,7 @@ class ActivityFeedTest extends TestCase
             ->assertJsonPath('items.0.sentence', $sentence);
 
         $this->actingAs($viewer, 'sanctum')
-            ->postJson('/api/feed/mutes', [
+            ->deleteJson('/api/feed/follows', [
                 'subjectType' => 'organization',
                 'subjectKey' => (string) $organization->id,
             ])
@@ -129,7 +129,7 @@ class ActivityFeedTest extends TestCase
         app(OrganizationRepository::class)->addRelatedUser($organization->id, $viewer->id);
         app(ActivityRecorder::class)->tournamentChampion($tournament->id);
 
-        $this->actingAs($viewer, 'sanctum')->postJson('/api/feed/mutes', [
+        $this->actingAs($viewer, 'sanctum')->deleteJson('/api/feed/follows', [
             'subjectType' => 'organization',
             'subjectKey' => (string) $organization->id,
         ])->assertOk();
@@ -149,7 +149,7 @@ class ActivityFeedTest extends TestCase
         app(ActivityRecorder::class)->playerFirst180($player->id);
         $this->assertDatabaseCount('activities', 1);
 
-        $this->actingAs($viewer, 'sanctum')->postJson('/api/feed/mutes', [
+        $this->actingAs($viewer, 'sanctum')->deleteJson('/api/feed/follows', [
             'subjectType' => 'user',
             'subjectKey' => (string) $andrzej->id,
         ])->assertOk();
@@ -211,10 +211,65 @@ class ActivityFeedTest extends TestCase
             ->getJson('/api/players/'.$player->id.'/feed')
             ->assertJsonCount(1, 'items');
 
-        $this->actingAs($andrzej, 'sanctum')->postJson('/api/feed/mutes', [
+        $this->actingAs($andrzej, 'sanctum')->postJson('/api/feed/follows', [
             'subjectType' => 'user',
             'subjectKey' => (string) $andrzej->id,
         ])->assertStatus(422);
+    }
+
+    public function test_following_a_stranger_respects_their_board_and_ends_with_the_friendship(): void
+    {
+        [$viewer, $andrzej] = $this->club();
+        $player = Player::query()->where('user_id', $andrzej->id)->firstOrFail();
+        app(ActivityRecorder::class)->playerFirst180($player->id);
+
+        $this->actingAs($viewer, 'sanctum')->getJson('/api/feed')->assertJsonCount(0, 'items');
+
+        $this->actingAs($viewer, 'sanctum')->postJson('/api/feed/follows', [
+            'subjectType' => 'user',
+            'subjectKey' => (string) $andrzej->id,
+        ])->assertOk()->assertJsonPath('following', true);
+
+        $this->actingAs($viewer, 'sanctum')->getJson('/api/feed')->assertJsonCount(1, 'items');
+
+        $this->actingAs($andrzej, 'sanctum')->putJson('/api/feed/preferences', [
+            'profileFeedVisibility' => 'friends',
+            'channels' => ['friends' => true, 'organization' => true],
+        ])->assertOk();
+
+        $this->actingAs($viewer, 'sanctum')->getJson('/api/feed')->assertJsonCount(0, 'items');
+        $this->actingAs($viewer, 'sanctum')
+            ->getJson('/api/players/'.$player->id.'/feed')
+            ->assertJsonCount(0, 'items');
+
+        app(FriendshipRepository::class)->addFriendship($viewer->id, $andrzej->id);
+        $this->actingAs($viewer, 'sanctum')->getJson('/api/feed')->assertJsonCount(1, 'items');
+
+        $this->actingAs($andrzej, 'sanctum')->putJson('/api/feed/preferences', [
+            'profileFeedVisibility' => 'public',
+            'channels' => ['friends' => true, 'organization' => true],
+        ])->assertOk();
+
+        app(FriendshipRepository::class)->removeFriendship($viewer->id, $andrzej->id);
+        $this->actingAs($viewer, 'sanctum')->getJson('/api/feed')->assertJsonCount(0, 'items');
+    }
+
+    public function test_a_stranger_can_follow_an_organization(): void
+    {
+        [$viewer, , $organization, $tournament] = $this->club();
+        app(ActivityRecorder::class)->tournamentChampion($tournament->id);
+
+        $this->actingAs($viewer, 'sanctum')->getJson('/api/feed')->assertJsonCount(0, 'items');
+
+        $this->actingAs($viewer, 'sanctum')->postJson('/api/feed/follows', [
+            'subjectType' => 'organization',
+            'subjectKey' => (string) $organization->id,
+        ])->assertOk();
+
+        $this->actingAs($viewer, 'sanctum')
+            ->getJson('/api/feed')
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('items.0.header.name', 'Apagon');
     }
 
     /**

@@ -42,6 +42,35 @@ class ActivityCommentRepository
         return $comment->load('user.player');
     }
 
+    public function deleteOwnedAndKeepOthersReplies(int $userId): void
+    {
+        $ids = ActivityComment::query()
+            ->where('user_id', $userId)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($ids === []) {
+            return;
+        }
+
+        ActivityComment::query()
+            ->whereIn('parent_id', $ids)
+            ->where('user_id', '!=', $userId)
+            ->update(['parent_id' => null]);
+
+        $this->reactions->forget(ActivityReactionSubject::Comment, $ids);
+
+        ActivityComment::query()
+            ->where('user_id', $userId)
+            ->whereNotNull('parent_id')
+            ->delete();
+
+        ActivityComment::query()
+            ->where('user_id', $userId)
+            ->delete();
+    }
+
     public function deleteWithReplies(ActivityComment $comment): void
     {
         $ids = ActivityComment::query()
@@ -56,18 +85,54 @@ class ActivityCommentRepository
     }
 
     /**
+     * @param  list<int>  $ids
+     * @return array<int, string>
+     */
+    public function bodiesFor(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $bodies = [];
+        foreach (ActivityComment::query()->whereIn('id', $ids)->pluck('body', 'id') as $id => $body) {
+            $bodies[(int) $id] = (string) $body;
+        }
+
+        return $bodies;
+    }
+
+    /**
+     * Komentarze autorów z $excludedUserIds oraz odpowiedzi pod ich komentarzami nie wchodzą do liczby.
+     *
      * @param  list<int>  $activityIds
+     * @param  list<int>  $excludedUserIds
      * @return array<int, int>
      */
-    public function countsFor(array $activityIds): array
+    public function countsFor(array $activityIds, array $excludedUserIds = []): array
     {
         if ($activityIds === []) {
             return [];
         }
 
-        return ActivityComment::query()
+        $query = ActivityComment::query()
             ->selectRaw('activity_id, COUNT(*) as total')
-            ->whereIn('activity_id', $activityIds)
+            ->whereIn('activity_id', $activityIds);
+
+        if ($excludedUserIds !== []) {
+            $query->whereNotIn('user_id', $excludedUserIds)
+                ->where(function ($visible) use ($excludedUserIds) {
+                    $visible->whereNull('parent_id')
+                        ->orWhereNotExists(function ($parent) use ($excludedUserIds) {
+                            $parent->selectRaw('1')
+                                ->from('activity_comments as parents')
+                                ->whereColumn('parents.id', 'activity_comments.parent_id')
+                                ->whereIn('parents.user_id', $excludedUserIds);
+                        });
+                });
+        }
+
+        return $query
             ->groupBy('activity_id')
             ->pluck('total', 'activity_id')
             ->map(fn ($total) => (int) $total)

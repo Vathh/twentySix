@@ -2,8 +2,10 @@
 
 namespace App\Repositories\Season;
 
+use App\Domain\Activity\FollowSubject;
 use App\Domain\AdminRoster;
 use App\Domain\SeasonDomain;
+use App\Repositories\Activity\FollowRepository;
 use App\Models\Organization\Organization;
 use App\Models\Season\Season;
 use App\Models\Users\User;
@@ -17,6 +19,8 @@ use Throwable;
 class SeasonRepository
 {
     public const INDEX_PER_PAGE = 9;
+
+    public function __construct(private FollowRepository $follows) {}
 
     /**
      * @return Collection<int, SeasonDomain>
@@ -95,6 +99,9 @@ class SeasonRepository
                         ->findOrFail($organizationId)
                         ->relatedUsers()
                         ->syncWithoutDetaching($adminsIds);
+                    foreach ($adminsIds as $adminId) {
+                        $this->follows->follow((int) $adminId, FollowSubject::Organization, $organizationId);
+                    }
                 }
             }
         });

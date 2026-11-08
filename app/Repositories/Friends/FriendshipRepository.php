@@ -4,11 +4,14 @@ namespace App\Repositories\Friends;
 
 use App\Domain\FriendshipDomain;
 use App\Models\Users\User;
+use App\Repositories\Activity\FollowRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class FriendshipRepository
 {
+    public function __construct(private FollowRepository $follows) {}
+
     /**
      * Dodaje znajomość między dwoma użytkownikami (symetryczna relacja)
      */
@@ -40,6 +43,8 @@ class FriendshipRepository
                 'updated_at' => now(),
             ]);
         }
+
+        $this->follows->followEachOther($userId, $friendId);
     }
 
     /**
@@ -57,6 +62,8 @@ class FriendshipRepository
                     ->where('friend_id', $userId);
             })
             ->delete();
+
+        $this->follows->unfollowEachOther($userId, $friendId);
     }
 
     /**

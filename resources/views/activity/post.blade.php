@@ -35,6 +35,10 @@
             @endif
             <p class="feed-post-meta">{{ $when }} · {{ $kind }}</p>
         </div>
+        <div class="ml-auto flex shrink-0 gap-2" x-show="canModerateAuthor" x-cloak>
+            <button type="button" class="feed-post-action is-block" @click="blockUser(authorUserId)"><x-moderation-icon name="block" />Zablokuj</button>
+            <button type="button" class="feed-post-action is-report" @click="startReport('post', id, 'Zgłoś wpis')"><x-moderation-icon name="flag" />Zgłoś</button>
+        </div>
     </div>
     <p class="feed-post-body">
         @foreach($item['sentenceParts'] ?? [['text' => $item['sentence'], 'url' => null]] as $part)

@@ -18,6 +18,7 @@ use App\Services\Badge\HighVisitBadgeAssembler;
 use App\Services\Badge\QfBadgeAssembler;
 use App\Services\Career\PlayerCareerStatsService;
 use App\Services\Friends\FriendshipService;
+use App\Services\Moderation\UserBlockService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -37,6 +38,7 @@ class PlayerProfileService
         private FinishBadgeAssembler $finishBadgeAssembler,
         private CareerBadgeAssembler $careerBadgeAssembler,
         private PlayerStatRepository $playerStatRepository,
+        private UserBlockService $userBlocks,
     ) {}
 
     /**
@@ -59,6 +61,7 @@ class PlayerProfileService
                 'avatarUrl' => $assembled['player']->avatarUrl(),
             ],
             'friendship' => $this->mapFriendshipForApi($assembled['friendship']),
+            'blocked' => $this->viewerBlocked($player, $viewer),
             'quickStats' => $assembled['quickStats'],
             'tournamentStats' => $assembled['tournamentStats'],
             'gameHistory' => [
@@ -191,6 +194,7 @@ class PlayerProfileService
             'canInviteFriend' => $friendship['canInvite'],
             'pendingSentInvitation' => $friendship['pendingSent'],
             'pendingReceivedInvitation' => $friendship['pendingReceived'],
+            'viewerBlocked' => $this->viewerBlocked($player, $viewer),
             'gameHistoryItems' => $assembled['historyItems'],
             'gameHistoryHasMore' => $assembled['historyHasMore'],
             'liveGames' => $assembled['liveGames'],
@@ -394,5 +398,14 @@ class PlayerProfileService
             'pendingSent' => $pendingSent,
             'pendingReceived' => $pendingReceived,
         ];
+    }
+
+    private function viewerBlocked(Player $player, ?User $viewer): bool
+    {
+        if ($viewer === null || ! $player->user_id || (int) $player->user_id === (int) $viewer->id) {
+            return false;
+        }
+
+        return $this->userBlocks->isBlocked((int) $viewer->id, (int) $player->user_id);
     }
 }

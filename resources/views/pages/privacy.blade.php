@@ -44,14 +44,11 @@
 
         <h2>Usunięcie konta</h2>
         <p>
-            Prośbę o usunięcie konta wyślij z adresu e-mail przypisanego do konta
-            @if($contactEmail)
-                na <a href="mailto:{{ $contactEmail }}">{{ $contactEmail }}</a>.
-            @else
-                w odpowiedzi na wiadomość aktywacyjną, którą twentySix wysyła przy rejestracji.
-            @endif
-            Po przyjęciu prośby usuwamy e-mail, hasło, awatar, token powiadomień, komentarze i znajomości.
+            Konto usuwasz samodzielnie w aplikacji (Konto → Usuń konto) albo na stronie
+            <a href="{{ route('pages.account.delete') }}">Usuń konto</a>.
+            Trzeba podać hasło. Znika e-mail, hasło, awatar, token powiadomień, komentarze i znajomości.
             Wyniki meczów w turniejach i ligach zostają, a profil w tych wynikach nazywa się „Gracz usunięty”.
+            Jedyny administrator organizacji musi najpierw wskazać innego administratora.
         </p>
 
         <h2>Regulamin</h2>

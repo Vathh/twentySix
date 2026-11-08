@@ -6,7 +6,7 @@ use App\Models\Users\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class FeedMute extends Model
+class Follow extends Model
 {
     protected $fillable = [
         'user_id',

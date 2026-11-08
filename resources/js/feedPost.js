@@ -6,6 +6,8 @@ export function registerFeedPost(Alpine) {
 		reactions: item.reactions ?? { counts: {}, mine: null },
 		canEngage: Boolean(item.canEngage),
 		signedIn: Boolean(window.feedEngagement?.signedIn),
+		viewerId: window.feedEngagement?.userId ?? null,
+		authorUserId: item.actor?.userId ?? item.header?.userId ?? null,
 		open: false,
 		loaded: false,
 		loading: false,
@@ -24,6 +26,14 @@ export function registerFeedPost(Alpine) {
 
 		get liked() {
 			return this.reactions?.mine === 'like';
+		},
+
+		get canModerateAuthor() {
+			return this.signedIn && this.authorUserId && this.authorUserId !== this.viewerId;
+		},
+
+		otherPerson(userId) {
+			return this.signedIn && userId && userId !== this.viewerId;
 		},
 
 		guard() {
@@ -175,6 +185,41 @@ export function registerFeedPost(Alpine) {
 
 		likesOf(comment) {
 			return Number(comment?.reactions?.counts?.like ?? 0);
+		},
+
+		async blockUser(userId) {
+			if (!this.otherPerson(userId) || this.sending) return;
+			this.sending = true;
+			this.error = '';
+			try {
+				await request('/blocks', 'POST', { userId });
+				if (userId === this.authorUserId) {
+					this.$root.remove();
+					return;
+				}
+				this.dropAuthor(userId);
+			} catch (error) {
+				this.error = error.message;
+			} finally {
+				this.sending = false;
+			}
+		},
+
+		dropAuthor(userId) {
+			this.comments = this.comments
+				.filter((comment) => comment.author?.userId !== userId)
+				.map((comment) => ({
+					...comment,
+					replies: (comment.replies ?? []).filter((reply) => reply.author?.userId !== userId),
+				}));
+		},
+
+		startReport(type, id, title) {
+			this.$dispatch('open-report', {
+				subjectType: type,
+				subjectId: id,
+				title,
+			});
 		},
 
 		ago(iso) {

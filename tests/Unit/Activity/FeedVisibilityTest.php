@@ -21,7 +21,7 @@ class FeedVisibilityTest extends TestCase
         $this->profile = new ProfileFeedAccess;
     }
 
-    public function test_muted_actor_still_arrives_through_the_organization(): void
+    public function test_unfollowed_actor_still_arrives_through_the_organization(): void
     {
         $this->assertTrue($this->home->visible(
             viewerId: 1,
@@ -30,14 +30,12 @@ class FeedVisibilityTest extends TestCase
             channels: [ActivityChannel::Friends, ActivityChannel::Organization],
             friendsChannelEnabled: true,
             organizationChannelEnabled: true,
-            friendIds: [2 => true],
-            organizationIds: [9 => true],
-            mutedUserIds: [2 => true],
-            mutedOrganizationIds: [],
+            followedUserIds: [],
+            followedOrganizationIds: [9 => true],
         ));
     }
 
-    public function test_muted_organization_still_arrives_through_friendship(): void
+    public function test_unfollowed_organization_still_arrives_through_the_player(): void
     {
         $this->assertTrue($this->home->visible(
             viewerId: 1,
@@ -46,10 +44,8 @@ class FeedVisibilityTest extends TestCase
             channels: [ActivityChannel::Friends, ActivityChannel::Organization],
             friendsChannelEnabled: true,
             organizationChannelEnabled: true,
-            friendIds: [2 => true],
-            organizationIds: [9 => true],
-            mutedUserIds: [],
-            mutedOrganizationIds: [9 => true],
+            followedUserIds: [2 => true],
+            followedOrganizationIds: [],
         ));
     }
 
@@ -62,14 +58,12 @@ class FeedVisibilityTest extends TestCase
             channels: [ActivityChannel::Friends, ActivityChannel::Organization],
             friendsChannelEnabled: true,
             organizationChannelEnabled: true,
-            friendIds: [2 => true],
-            organizationIds: [9 => true],
-            mutedUserIds: [2 => true],
-            mutedOrganizationIds: [9 => true],
+            followedUserIds: [],
+            followedOrganizationIds: [],
         ));
     }
 
-    public function test_friends_only_story_disappears_when_the_actor_is_muted(): void
+    public function test_player_story_disappears_when_the_actor_is_not_followed(): void
     {
         $this->assertFalse($this->home->visible(
             viewerId: 1,
@@ -78,10 +72,8 @@ class FeedVisibilityTest extends TestCase
             channels: [ActivityChannel::Friends],
             friendsChannelEnabled: true,
             organizationChannelEnabled: true,
-            friendIds: [2 => true],
-            organizationIds: [],
-            mutedUserIds: [2 => true],
-            mutedOrganizationIds: [],
+            followedUserIds: [],
+            followedOrganizationIds: [],
         ));
     }
 

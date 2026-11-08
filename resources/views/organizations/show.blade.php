@@ -87,16 +87,16 @@
                 </div>
 
                 @auth
-                    @if(!empty($feedMute['allowed']))
-                        <form method="POST" action="{{ $feedMute['muted']
-                            ? route('organizations.feed-unmute', $organization->id)
-                            : route('organizations.feed-mute', $organization->id) }}" class="mt-4">
+                    @if(!empty($follow['allowed']))
+                        <form method="POST" action="{{ $follow['following']
+                            ? route('organizations.unfollow', $organization->id)
+                            : route('organizations.follow', $organization->id) }}" class="mt-4">
                             @csrf
-                            @if($feedMute['muted'])
+                            @if($follow['following'])
                                 @method('DELETE')
                             @endif
-                            <button type="submit" class="btn btn-mini">
-                                {{ $feedMute['muted'] ? 'Przywróć organizację na stronie głównej' : 'Wycisz organizację na stronie głównej' }}
+                            <button type="submit" class="btn-outline {{ $follow['following'] ? 'btn-outline-neutral' : 'btn-outline-accent' }}">
+                                <x-moderation-icon :name="$follow['following'] ? 'unfollow' : 'follow'" />{{ $follow['following'] ? 'Przestań obserwować' : 'Obserwuj' }}
                             </button>
                         </form>
                     @endif

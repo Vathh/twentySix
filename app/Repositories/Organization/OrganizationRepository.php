@@ -2,9 +2,11 @@
 
 namespace App\Repositories\Organization;
 
+use App\Domain\Activity\FollowSubject;
 use App\Domain\AdminRoster;
 use App\Domain\OrganizationDomain;
 use App\Models\Organization\Organization;
+use App\Repositories\Activity\FollowRepository;
 use App\Support\Catalog\CatalogSort;
 use App\Support\Text\PolishFold;
 use Illuminate\Support\Collection;
@@ -13,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 class OrganizationRepository
 {
     public const INDEX_PER_PAGE = 9;
+
+    public function __construct(private FollowRepository $follows) {}
 
     /**
      * @return Collection<int, OrganizationDomain>
@@ -64,6 +68,7 @@ class OrganizationRepository
         if (! empty($userId)) {
             $organization->admins()->syncWithoutDetaching([$userId]);
             $organization->relatedUsers()->syncWithoutDetaching([$userId]);
+            $this->follows->follow($userId, FollowSubject::Organization, (int) $organization->id);
         }
 
         return OrganizationDomain::fromEloquent($organization);
@@ -78,6 +83,7 @@ class OrganizationRepository
     {
         $organization = Organization::findOrFail($organizationId);
         $organization->relatedUsers()->syncWithoutDetaching([$userId]);
+        $this->follows->follow($userId, FollowSubject::Organization, $organizationId);
     }
 
     public function removeRelatedUser(int $organizationId, int $userId): void
@@ -91,6 +97,24 @@ class OrganizationRepository
         $organization = Organization::findOrFail($organizationId);
         $organization->admins()->syncWithoutDetaching([$userId]);
         $organization->relatedUsers()->syncWithoutDetaching([$userId]);
+        $this->follows->follow($userId, FollowSubject::Organization, $organizationId);
+    }
+
+    /**
+     * Organizacje, w których ta osoba jest jedynym administratorem.
+     *
+     * @return list<string>
+     */
+    public function soleAdminOrganizationNames(int $userId): array
+    {
+        return Organization::query()
+            ->whereHas('admins', fn ($query) => $query->where('users.id', $userId))
+            ->withCount('admins')
+            ->having('admins_count', '=', 1)
+            ->orderBy('name')
+            ->pluck('name')
+            ->map(fn ($name) => (string) $name)
+            ->all();
     }
 
     /**

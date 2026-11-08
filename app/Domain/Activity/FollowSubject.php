@@ -2,7 +2,7 @@
 
 namespace App\Domain\Activity;
 
-enum FeedMuteSubject: string
+enum FollowSubject: string
 {
     case Organization = 'organization';
     case User = 'user';

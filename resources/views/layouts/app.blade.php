@@ -62,10 +62,12 @@
     </div>
 
     @include('layouts.footer')
+    @include('components.report-dialog')
 
     <script>
         window.feedEngagement = {
             signedIn: @json(auth()->check()),
+            userId: @json(auth()->id()),
             loginUrl: @json(route('pages.loginPanel')),
             termsAccepted: @json(auth()->check() && auth()->user()->hasAcceptedTerms()),
             termsUrl: @json(route('account.terms.accept')),

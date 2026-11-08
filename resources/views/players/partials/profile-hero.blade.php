@@ -64,34 +64,60 @@
                 @auth
                     <div class="profile-hero-actions">
                         @if($isOwnProfile)
-                            <a href="{{ route('players.edit', $player) }}" class="btn btn-mini">Edytuj profil</a>
+                            <a href="{{ route('players.edit', $player) }}" class="btn-outline btn-outline-accent">Edytuj profil</a>
+                        @elseif($isFriend)
+                            <form method="POST" action="{{ route('players.remove-friend', $player) }}" onsubmit="return confirm(@js('Usunąć '.$player->name.' ze znajomych?'));">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-outline btn-outline-danger"><x-moderation-icon name="unfriend" />Usuń znajomego</button>
+                            </form>
                         @elseif($canInviteFriend)
                             <form action="{{ route('players.add-friend', $player) }}" method="POST">
                                 @csrf
-                                <button type="submit" class="btn btn-mini">Dodaj do znajomych</button>
+                                <button type="submit" class="btn-outline btn-outline-success"><x-moderation-icon name="friend" />Dodaj do znajomych</button>
                             </form>
                         @elseif($pendingReceivedInvitation)
                             <form action="{{ route('friends.invitations.accept', $pendingReceivedInvitation->id) }}" method="POST">
                                 @csrf
-                                <button type="submit" class="btn btn-mini">Akceptuj</button>
+                                <button type="submit" class="btn-outline btn-outline-accent">Akceptuj</button>
                             </form>
                             <form action="{{ route('friends.invitations.reject', $pendingReceivedInvitation->id) }}" method="POST">
                                 @csrf
-                                <button type="submit" class="btn btn-mini border border-accent text-accent bg-transparent hover:bg-accent/10">Odrzuć</button>
+                                <button type="submit" class="btn-outline btn-outline-neutral">Odrzuć</button>
                             </form>
                         @endif
-                        @if(!empty($feedMute['allowed']))
-                            <form method="POST" action="{{ $feedMute['muted']
-                                ? route('players.feed-unmute', $player)
-                                : route('players.feed-mute', $player) }}">
+                        @if(!empty($follow['allowed']))
+                            <form method="POST" action="{{ $follow['following']
+                                ? route('players.unfollow', $player)
+                                : route('players.follow', $player) }}">
                                 @csrf
-                                @if($feedMute['muted'])
+                                @if($follow['following'])
                                     @method('DELETE')
                                 @endif
-                                <button type="submit" class="btn btn-mini">
-                                    {{ $feedMute['muted'] ? 'Przywróć na stronie głównej' : 'Wycisz na stronie głównej' }}
+                                <button type="submit" class="btn-outline {{ $follow['following'] ? 'btn-outline-neutral' : 'btn-outline-accent' }}">
+                                    <x-moderation-icon :name="$follow['following'] ? 'unfollow' : 'follow'" />{{ $follow['following'] ? 'Przestań obserwować' : 'Obserwuj' }}
                                 </button>
                             </form>
+                        @endif
+                        @if($isRegistered && ! $isOwnProfile)
+                            <button
+                                type="button"
+                                class="btn-outline btn-outline-accent"
+                                @click="$dispatch('open-report', { subjectType: 'user', subjectId: {{ (int) $player->user_id }}, title: 'Zgłoś gracza' })"
+                            ><x-moderation-icon name="flag" />Zgłoś gracza</button>
+                            @if(!empty($viewerBlocked))
+                                <form method="POST" action="{{ route('blocks.destroy', $player->user_id) }}" onsubmit="return confirm(@js('Odblokować '.$player->name.'?'));">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn-outline btn-outline-danger"><x-moderation-icon name="block" />Odblokuj</button>
+                                </form>
+                            @else
+                                <form method="POST" action="{{ route('blocks.store') }}" onsubmit="return confirm(@js('Zablokować '.$player->name.'? Nie zobaczysz jego wpisów ani komentarzy. On nadal widzi Twoje.'));">
+                                    @csrf
+                                    <input type="hidden" name="userId" value="{{ (int) $player->user_id }}">
+                                    <button type="submit" class="btn-outline btn-outline-danger"><x-moderation-icon name="block" />Zablokuj</button>
+                                </form>
+                            @endif
                         @endif
                     </div>
                 @endauth

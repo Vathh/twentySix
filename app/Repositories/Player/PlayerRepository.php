@@ -73,6 +73,16 @@ class PlayerRepository
         return $player->fresh();
     }
 
+    public function releaseAccount(Player $player, string $anonymousName): void
+    {
+        $player->forceFill([
+            'user_id' => null,
+            'name' => $anonymousName,
+            'description' => null,
+            'avatar_path' => null,
+        ])->save();
+    }
+
     public function updateAvatarPath(Player $player, ?string $path): Player
     {
         $player->forceFill([

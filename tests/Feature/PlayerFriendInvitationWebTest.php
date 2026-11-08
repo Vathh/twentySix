@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Friends\FriendshipInvitation;
 use App\Models\Users\User;
+use App\Repositories\Friends\FriendshipRepository;
 use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -83,5 +84,68 @@ class PlayerFriendInvitationWebTest extends TestCase
                 ->where('friend_id', $this->receiver->id)
                 ->exists()
         );
+    }
+
+    public function test_a_friend_can_be_removed_from_the_profile(): void
+    {
+        $receiverPlayer = $this->receiver->player;
+        app(FriendshipRepository::class)->addFriendship($this->sender->id, $this->receiver->id);
+
+        $this->actingAs($this->sender)
+            ->get(route('players.show', $receiverPlayer))
+            ->assertOk()
+            ->assertSee('Usuń znajomego');
+
+        $this->actingAs($this->sender)
+            ->delete(route('players.remove-friend', $receiverPlayer))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Znajomy został usunięty.');
+
+        $this->assertDatabaseMissing('friendships', [
+            'user_id' => $this->sender->id,
+            'friend_id' => $this->receiver->id,
+        ]);
+        $this->assertDatabaseMissing('follows', [
+            'user_id' => $this->sender->id,
+            'subject_type' => 'user',
+            'subject_key' => (string) $this->receiver->id,
+        ]);
+        $this->assertDatabaseMissing('follows', [
+            'user_id' => $this->receiver->id,
+            'subject_type' => 'user',
+            'subject_key' => (string) $this->sender->id,
+        ]);
+
+        $this->actingAs($this->sender)
+            ->get(route('players.show', $receiverPlayer))
+            ->assertOk()
+            ->assertSee('Dodaj do znajomych')
+            ->assertDontSee('Usuń znajomego');
+    }
+
+    public function test_a_player_can_be_blocked_from_the_profile(): void
+    {
+        $receiverPlayer = $this->receiver->player;
+
+        $this->actingAs($this->sender)
+            ->get(route('players.show', $receiverPlayer))
+            ->assertOk()
+            ->assertSee('Zablokuj')
+            ->assertDontSee('Odblokuj');
+
+        $this->actingAs($this->sender)
+            ->post(route('blocks.store'), ['userId' => $this->receiver->id])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Gracz został zablokowany.');
+
+        $this->assertDatabaseHas('user_blocks', [
+            'blocker_id' => $this->sender->id,
+            'blocked_id' => $this->receiver->id,
+        ]);
+
+        $this->actingAs($this->sender)
+            ->get(route('players.show', $receiverPlayer))
+            ->assertOk()
+            ->assertSee('Odblokuj');
     }
 }

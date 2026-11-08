@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Retention\ApplicationEntityKind;
+use App\Services\Moderation\ContentReportService;
 use App\Services\Platform\PlatformAdminService;
 use App\Services\Retention\ApplicationEntityDeletionService;
 use Illuminate\Http\RedirectResponse;
@@ -14,6 +15,7 @@ class PlatformAdminController extends Controller
     public function __construct(
         private PlatformAdminService $platformAdminService,
         private ApplicationEntityDeletionService $applicationEntityDeletionService,
+        private ContentReportService $contentReports,
     ) {}
 
     public function dashboard(): View
@@ -82,6 +84,49 @@ class PlatformAdminController extends Controller
         return back()->with('success', "Konto {$label}: {$state}");
     }
 
+    public function reports(): View
+    {
+        return view('admin.reports', [
+            'reports' => $this->contentReports->openReports(),
+        ]);
+    }
+
+    public function dismissReport(int $report): RedirectResponse
+    {
+        return $this->reportAction($report, function (int $reportId) {
+            $this->contentReports->dismiss($reportId);
+
+            return 'Zgłoszenie odrzucone.';
+        });
+    }
+
+    public function deleteReportedComment(int $report): RedirectResponse
+    {
+        return $this->reportAction($report, function (int $reportId) {
+            $this->contentReports->deleteComment($reportId);
+
+            return 'Komentarz został usunięty.';
+        });
+    }
+
+    public function deleteReportedPost(int $report): RedirectResponse
+    {
+        return $this->reportAction($report, function (int $reportId) {
+            $this->contentReports->deletePost($reportId);
+
+            return 'Wpis został usunięty.';
+        });
+    }
+
+    public function banReportedUser(int $report): RedirectResponse
+    {
+        return $this->reportAction($report, function (int $reportId) {
+            $this->contentReports->ban($reportId);
+
+            return 'Konto zostało zbanowane.';
+        });
+    }
+
     public function deleted(): View
     {
         return view('admin.deleted', [
@@ -104,5 +149,19 @@ class PlatformAdminController extends Controller
         }
 
         return back()->with('success', "Przywrócono: {$name}");
+    }
+
+    /**
+     * @param  callable(int): string  $action
+     */
+    private function reportAction(int $reportId, callable $action): RedirectResponse
+    {
+        try {
+            $message = $action($reportId);
+        } catch (\DomainException|\InvalidArgumentException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return back()->with('success', $message);
     }
 }

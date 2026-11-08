@@ -83,7 +83,7 @@ class ActivityCardPresenter
 
     /**
      * @param  array<string, mixed>  $payload
-     * @return array{name: string, initials: string, avatarUrl: ?string, url: ?string, playerId: ?int, organizationId: ?int}
+     * @return array{name: string, initials: string, avatarUrl: ?string, url: ?string, playerId: ?int, organizationId: ?int, userId: ?int}
      */
     private function header(Activity $activity, array $payload, ?Player $player): array
     {
@@ -106,6 +106,7 @@ class ActivityCardPresenter
                 'url' => $organizationId === null ? null : route('organizations.show', $organizationId),
                 'playerId' => null,
                 'organizationId' => $organizationId,
+                'userId' => null,
             ];
         }
 
@@ -120,6 +121,7 @@ class ActivityCardPresenter
             'url' => $playerId === null ? null : route('players.show', $playerId),
             'playerId' => $playerId,
             'organizationId' => null,
+            'userId' => $activity->actor_user_id === null ? null : (int) $activity->actor_user_id,
         ];
     }
 

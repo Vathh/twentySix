@@ -6,6 +6,7 @@ use App\Domain\PlayerDomain;
 use App\Models\Users\User;
 use DateTimeInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class UserRepository
@@ -27,6 +28,14 @@ class UserRepository
             'password' => $password,
             'terms_accepted_at' => $termsAcceptedAt,
         ]);
+    }
+
+    public function delete(User $user): void
+    {
+        $user->tokens()->delete();
+        DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+        DB::table('sessions')->where('user_id', $user->id)->delete();
+        $user->delete();
     }
 
     public function markTermsAccepted(User $user): void

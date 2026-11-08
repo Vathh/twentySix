@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Domain\Activity\FeedMuteSubject;
+use App\Domain\Activity\FollowSubject;
 use App\Domain\Activity\ProfileFeedVisibility;
 use App\Http\Controllers\Controller;
 use App\Models\Player\Player;
@@ -55,49 +55,49 @@ class ActivityFeedController extends Controller
         return response()->json($this->feed->preferences($request->user()));
     }
 
-    public function muteState(Request $request): JsonResponse
+    public function followState(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'subjectType' => ['required', Rule::enum(FeedMuteSubject::class)],
+            'subjectType' => ['required', Rule::enum(FollowSubject::class)],
             'subjectKey' => ['required', 'string', 'max:32'],
         ]);
 
-        return response()->json($this->feed->muteState(
+        return response()->json($this->feed->followState(
             $request->user(),
-            FeedMuteSubject::from($data['subjectType']),
+            FollowSubject::from($data['subjectType']),
             $data['subjectKey'],
         ));
     }
 
-    public function mute(Request $request): JsonResponse
+    public function follow(Request $request): JsonResponse
     {
-        return $this->changeMute($request, mute: true);
+        return $this->changeFollow($request, follow: true);
     }
 
-    public function unmute(Request $request): JsonResponse
+    public function unfollow(Request $request): JsonResponse
     {
-        return $this->changeMute($request, mute: false);
+        return $this->changeFollow($request, follow: false);
     }
 
-    private function changeMute(Request $request, bool $mute): JsonResponse
+    private function changeFollow(Request $request, bool $follow): JsonResponse
     {
         $data = $request->validate([
-            'subjectType' => ['required', Rule::enum(FeedMuteSubject::class)],
+            'subjectType' => ['required', Rule::enum(FollowSubject::class)],
             'subjectKey' => ['required', 'string', 'max:32'],
         ]);
 
-        $subject = FeedMuteSubject::from($data['subjectType']);
+        $subject = FollowSubject::from($data['subjectType']);
 
         try {
-            if ($mute) {
-                $this->feed->mute($request->user(), $subject, $data['subjectKey']);
+            if ($follow) {
+                $this->feed->follow($request->user(), $subject, $data['subjectKey']);
             } else {
-                $this->feed->unmute($request->user(), $subject, $data['subjectKey']);
+                $this->feed->unfollow($request->user(), $subject, $data['subjectKey']);
             }
         } catch (DomainException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
         }
 
-        return response()->json($this->feed->muteState($request->user(), $subject, $data['subjectKey']));
+        return response()->json($this->feed->followState($request->user(), $subject, $data['subjectKey']));
     }
 }

@@ -3,15 +3,18 @@
 namespace App\Services\Activity;
 
 use App\Domain\Activity\ActivityChannel;
-use App\Domain\Activity\FeedMuteSubject;
+use App\Domain\Activity\FollowSubject;
+use App\Domain\Activity\ProfileFeedAccess;
 use App\Domain\Activity\ProfileFeedVisibility;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Models\Users\User;
 use App\Repositories\Activity\ActivityRepository;
 use App\Repositories\Activity\FeedPreferenceRepository;
+use App\Repositories\Activity\FollowRepository;
+use App\Repositories\Activity\ProfileCircleRepository;
 use App\Repositories\Friends\FriendshipRepository;
-use App\Repositories\Organization\OrganizationRepository;
+use App\Repositories\Moderation\UserBlockRepository;
 use DomainException;
 
 class FeedService
@@ -21,11 +24,14 @@ class FeedService
     public function __construct(
         private ActivityRepository $activities,
         private FeedPreferenceRepository $preferences,
+        private FollowRepository $follows,
         private FriendshipRepository $friendships,
-        private OrganizationRepository $organizations,
+        private ProfileCircleRepository $circle,
+        private ProfileFeedAccess $profileAccess,
         private ActivityCardPresenter $cards,
         private ProfileBoardGate $board,
         private ActivityEngagementService $engagement,
+        private UserBlockRepository $blocks,
     ) {}
 
     /**
@@ -34,14 +40,15 @@ class FeedService
     public function home(User $viewer, ?string $cursor): array
     {
         $decoded = $this->cards->decodeCursor($cursor);
+        $organizationsOpen = $this->preferences->channelEnabled($viewer->id, ActivityChannel::Organization);
         $page = $this->activities->homePage(
             viewerId: $viewer->id,
             friendsChannelEnabled: $this->preferences->channelEnabled($viewer->id, ActivityChannel::Friends),
-            organizationChannelEnabled: $this->preferences->channelEnabled($viewer->id, ActivityChannel::Organization),
-            friendIds: $this->friendships->friendIds($viewer->id),
-            organizationIds: $this->organizations->relatedOrganizationIds($viewer->id),
-            mutedUserIds: $this->preferences->mutedIds($viewer->id, FeedMuteSubject::User),
-            mutedOrganizationIds: $this->preferences->mutedIds($viewer->id, FeedMuteSubject::Organization),
+            followedUserIds: $this->visibleFollowedUserIds($viewer),
+            followedOrganizationIds: $organizationsOpen
+                ? $this->follows->ids($viewer->id, FollowSubject::Organization)
+                : [],
+            blockedUserIds: $this->blocks->blockedIds($viewer->id),
             cursorAt: $decoded['at'] ?? null,
             cursorId: $decoded['id'] ?? null,
             limit: self::PAGE_SIZE,
@@ -59,6 +66,11 @@ class FeedService
             return ['items' => [], 'nextCursor' => null];
         }
 
+        $ownerId = $player->user_id === null ? null : (int) $player->user_id;
+        if ($viewer !== null && $ownerId !== null && $this->blocks->isBlocked((int) $viewer->id, $ownerId)) {
+            return ['items' => [], 'nextCursor' => null];
+        }
+
         $decoded = $this->cards->decodeCursor($cursor);
         $page = $this->activities->profilePage(
             playerId: $player->id,
@@ -73,8 +85,7 @@ class FeedService
     /**
      * @return array{
      *     profileFeedVisibility: string,
-     *     channels: array{friends: bool, organization: bool},
-     *     mutes: list<array{subjectType: string, subjectKey: string, label: string}>
+     *     channels: array{friends: bool, organization: bool}
      * }
      */
     public function preferences(User $user): array
@@ -85,7 +96,6 @@ class FeedService
                 'friends' => $this->preferences->channelEnabled($user->id, ActivityChannel::Friends),
                 'organization' => $this->preferences->channelEnabled($user->id, ActivityChannel::Organization),
             ],
-            'mutes' => $this->preferences->mutedList($user->id),
         ];
     }
 
@@ -101,31 +111,69 @@ class FeedService
     }
 
     /**
-     * @return array{allowed: bool, muted: bool}
+     * @return array{allowed: bool, following: bool}
      */
-    public function muteState(User $viewer, FeedMuteSubject $subject, string $key): array
+    public function followState(User $viewer, FollowSubject $subject, string $key): array
     {
+        $allowed = $this->canFollow($viewer, $subject, $key);
+
         return [
-            'allowed' => $this->canMute($viewer, $subject, $key),
-            'muted' => $this->preferences->isMuted($viewer->id, $subject, $key),
+            'allowed' => $allowed,
+            'following' => $allowed && $this->follows->isFollowing($viewer->id, $subject, (int) $key),
         ];
     }
 
-    public function mute(User $viewer, FeedMuteSubject $subject, string $key): void
+    public function follow(User $viewer, FollowSubject $subject, string $key): void
     {
-        if (! $this->canMute($viewer, $subject, $key)) {
-            throw new DomainException($this->muteDeniedMessage($viewer, $subject, $key));
+        if (! $this->canFollow($viewer, $subject, $key)) {
+            throw new DomainException($this->followDeniedMessage($viewer, $subject, $key));
         }
 
-        $this->preferences->mute($viewer->id, $subject, $key);
+        $this->follows->follow($viewer->id, $subject, (int) $key);
     }
 
-    public function unmute(User $viewer, FeedMuteSubject $subject, string $key): void
+    public function unfollow(User $viewer, FollowSubject $subject, string $key): void
     {
-        $this->preferences->unmute($viewer->id, $subject, $key);
+        if (! ctype_digit($key)) {
+            return;
+        }
+
+        $this->follows->unfollow($viewer->id, $subject, (int) $key);
     }
 
-    private function canMute(User $viewer, FeedMuteSubject $subject, string $key): bool
+    /**
+     * Obserwowani, których tablicę profilu wolno oglądać.
+     *
+     * @return list<int>
+     */
+    private function visibleFollowedUserIds(User $viewer): array
+    {
+        $ids = $this->follows->ids($viewer->id, FollowSubject::User);
+        if ($ids === []) {
+            return [];
+        }
+
+        $friends = array_fill_keys($this->friendships->friendIds($viewer->id), true);
+        $visible = [];
+
+        foreach (User::query()->whereIn('id', $ids)->get() as $user) {
+            $visibility = $user->profile_feed_visibility instanceof ProfileFeedVisibility
+                ? $user->profile_feed_visibility
+                : (ProfileFeedVisibility::tryFrom((string) $user->profile_feed_visibility) ?? ProfileFeedVisibility::Public);
+            $areFriends = isset($friends[$user->id]);
+            $sharesCircle = $visibility === ProfileFeedVisibility::FriendsAndCircle
+                && ! $areFriends
+                && $this->circle->shares($viewer->id, $user->id);
+
+            if ($this->profileAccess->canView($viewer->id, $user->id, $visibility, $areFriends, $sharesCircle)) {
+                $visible[] = (int) $user->id;
+            }
+        }
+
+        return $visible;
+    }
+
+    private function canFollow(User $viewer, FollowSubject $subject, string $key): bool
     {
         if (! ctype_digit($key)) {
             return false;
@@ -134,23 +182,20 @@ class FeedService
         $id = (int) $key;
 
         return match ($subject) {
-            FeedMuteSubject::User => $id !== $viewer->id && User::query()->whereKey($id)->exists(),
-            FeedMuteSubject::Organization => Organization::query()->whereKey($id)->exists()
-                && $this->organizations->isRelated($id, $viewer->id),
+            FollowSubject::User => $id !== $viewer->id && User::query()->whereKey($id)->exists(),
+            FollowSubject::Organization => Organization::query()->whereKey($id)->exists(),
         };
     }
 
-    private function muteDeniedMessage(User $viewer, FeedMuteSubject $subject, string $key): string
+    private function followDeniedMessage(User $viewer, FollowSubject $subject, string $key): string
     {
-        if ($subject === FeedMuteSubject::User && ctype_digit($key) && (int) $key === $viewer->id) {
-            return 'Nie możesz wyciszyć siebie.';
+        if ($subject === FollowSubject::User && ctype_digit($key) && (int) $key === $viewer->id) {
+            return 'Nie możesz obserwować siebie.';
         }
 
-        if ($subject === FeedMuteSubject::Organization) {
-            return 'Wyciszenie organizacji jest dostępne dla składu.';
-        }
-
-        return 'Nie można wyciszyć tego użytkownika.';
+        return $subject === FollowSubject::Organization
+            ? 'Nie ma takiej organizacji.'
+            : 'Nie ma takiego gracza.';
     }
 
     /**

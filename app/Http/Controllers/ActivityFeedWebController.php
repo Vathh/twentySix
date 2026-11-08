@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Domain\Activity\FeedMuteSubject;
+use App\Domain\Activity\FollowSubject;
 use App\Domain\Activity\ProfileFeedVisibility;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
@@ -44,46 +44,46 @@ class ActivityFeedWebController extends Controller
             ->with('success', 'Ustawienia tablicy zostały zapisane.');
     }
 
-    public function muteOrganization(Organization $organization): RedirectResponse
+    public function followOrganization(Organization $organization): RedirectResponse
     {
-        return $this->change(FeedMuteSubject::Organization, (string) $organization->id, mute: true);
+        return $this->change(FollowSubject::Organization, (string) $organization->id, true, 'Obserwujesz tę organizację.');
     }
 
-    public function unmuteOrganization(Organization $organization): RedirectResponse
+    public function unfollowOrganization(Organization $organization): RedirectResponse
     {
-        return $this->change(FeedMuteSubject::Organization, (string) $organization->id, mute: false);
+        return $this->change(FollowSubject::Organization, (string) $organization->id, false, 'Przestałeś obserwować tę organizację.');
     }
 
-    public function mutePlayer(Player $player): RedirectResponse
-    {
-        if ($player->user_id === null) {
-            return back()->with('error', 'Ten gracz nie ma konta.');
-        }
-
-        return $this->change(FeedMuteSubject::User, (string) $player->user_id, mute: true);
-    }
-
-    public function unmutePlayer(Player $player): RedirectResponse
+    public function followPlayer(Player $player): RedirectResponse
     {
         if ($player->user_id === null) {
             return back()->with('error', 'Ten gracz nie ma konta.');
         }
 
-        return $this->change(FeedMuteSubject::User, (string) $player->user_id, mute: false);
+        return $this->change(FollowSubject::User, (string) $player->user_id, true, 'Obserwujesz tego gracza.');
     }
 
-    private function change(FeedMuteSubject $subject, string $key, bool $mute): RedirectResponse
+    public function unfollowPlayer(Player $player): RedirectResponse
+    {
+        if ($player->user_id === null) {
+            return back()->with('error', 'Ten gracz nie ma konta.');
+        }
+
+        return $this->change(FollowSubject::User, (string) $player->user_id, false, 'Przestałeś obserwować tego gracza.');
+    }
+
+    private function change(FollowSubject $subject, string $key, bool $follow, string $success): RedirectResponse
     {
         try {
-            if ($mute) {
-                $this->feed->mute(Auth::user(), $subject, $key);
+            if ($follow) {
+                $this->feed->follow(Auth::user(), $subject, $key);
             } else {
-                $this->feed->unmute(Auth::user(), $subject, $key);
+                $this->feed->unfollow(Auth::user(), $subject, $key);
             }
         } catch (DomainException $exception) {
             return back()->with('error', $exception->getMessage());
         }
 
-        return back()->with('success', $mute ? 'Wyciszono na stronie głównej.' : 'Wyciszenie zdjęte.');
+        return back()->with('success', $success);
     }
 }
