@@ -276,14 +276,40 @@ class TournamentController extends Controller
         ));
     }
 
-    public function edit(Tournament $tournament)
+    public function edit(Tournament $tournament): View
     {
-        //
+        $tournament = $this->tournamentService->loadAndAuthorize($tournament->id);
+        if (! $tournament->canEditDetails()) {
+            abort(403, 'Zakończonego turnieju nie można edytować.');
+        }
+
+        return view('tournaments.edit', ['tournament' => $tournament]);
     }
 
-    public function update(Request $request, Tournament $tournament)
+    public function update(Request $request, Tournament $tournament): RedirectResponse
     {
-        //
+        $tournamentDomain = $this->tournamentService->loadAndAuthorize($tournament->id);
+        if (! $tournamentDomain->canEditDetails()) {
+            abort(403, 'Zakończonego turnieju nie można edytować.');
+        }
+
+        $rules = ['tournamentName' => 'required|string|max:25'];
+        if ($tournamentDomain->canEditDate()) {
+            $rules['date'] = 'required|date';
+        }
+        $validated = $request->validate($rules);
+
+        $this->tournamentService->updateDetails(
+            $tournament->id,
+            $validated['tournamentName'],
+            $tournamentDomain->canEditDate() ? $validated['date'] : null,
+        );
+
+        return redirect()
+            ->route('tournaments.show', $tournament)
+            ->with('success', $tournamentDomain->canEditDate()
+                ? 'Zapisano nazwę i datę turnieju.'
+                : 'Zapisano nazwę turnieju.');
     }
 
     public function destroy(Request $request, Tournament $tournament): RedirectResponse

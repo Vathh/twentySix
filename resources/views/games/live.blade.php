@@ -91,24 +91,33 @@
             <span class="shrink-0 text-xs" x-text="connectionLabel()">Łączenie…</span>
         </div>
 
-        {{-- Zakładki --}}
-        <div class="flex gap-1 mb-4 border-b border-border">
+        <div class="match-tabs" role="tablist" aria-label="Podgląd meczu">
             <button
                 type="button"
+                role="tab"
+                class="match-tab"
                 x-on:click="tab = 'counter'"
-                x-bind:class="tab === 'counter' ? 'text-accent border-accent' : 'text-text-muted border-transparent'"
-                class="px-4 py-2 text-sm font-semibold border-b-2 transition"
-            >
-                Wynik
-            </button>
+                x-bind:class="tab === 'counter' ? 'is-on' : ''"
+                x-bind:aria-selected="tab === 'counter'"
+            >Wynik</button>
             <button
                 type="button"
+                role="tab"
+                class="match-tab"
                 x-on:click="tab = 'stats'"
-                x-bind:class="tab === 'stats' ? 'text-accent border-accent' : 'text-text-muted border-transparent'"
-                class="px-4 py-2 text-sm font-semibold border-b-2 transition"
-            >
-                Statystyki
-            </button>
+                x-bind:class="tab === 'stats' ? 'is-on' : ''"
+                x-bind:aria-selected="tab === 'stats'"
+            >Statystyki</button>
+            @if(!empty($headToHead))
+                <button
+                    type="button"
+                    role="tab"
+                    class="match-tab"
+                    x-on:click="tab = 'h2h'"
+                    x-bind:class="tab === 'h2h' ? 'is-on' : ''"
+                    x-bind:aria-selected="tab === 'h2h'"
+                >H2H</button>
+            @endif
         </div>
 
         {{-- Zakładka: Wynik (jak tablet, bez klawiatury) --}}
@@ -291,7 +300,11 @@
             </template>
         </div>
 
-        @include('games.partials.head-to-head')
+        @if(!empty($headToHead))
+            <div role="tabpanel" x-show="tab === 'h2h'" x-cloak>
+                @include('games.partials.head-to-head')
+            </div>
+        @endif
     </div>
 
     <style>[x-cloak] { display: none !important; }</style>

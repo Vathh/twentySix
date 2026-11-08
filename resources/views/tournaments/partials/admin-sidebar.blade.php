@@ -41,6 +41,11 @@
                 Anuluj rozgrywki
             </button>
         @endif
+        @if($tournament->canEditDetails())
+            <a href="{{ route('tournaments.edit', $tournament->id) }}" class="admin-sidebar-link">
+                ✏️ Edytuj turniej
+            </a>
+        @endif
         <a href="{{ route('tournaments.admins', $tournament->id) }}" class="admin-sidebar-link">
             👥 Administratorzy
         </a>

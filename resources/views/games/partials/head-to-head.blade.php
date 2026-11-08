@@ -3,9 +3,7 @@
         $fmtAvg = static fn ($value) => \App\Support\AverageFormat::display($value);
         $streakName = ($headToHead['streak']['side'] ?? null) === 'player1' ? $player1->name : $player2->name;
     @endphp
-    <section class="h2h mb-8" aria-label="H2H">
-        <h2 class="section-title">H2H</h2>
-
+    <section class="h2h" aria-label="H2H">
         @if($headToHead['meetings'] === 0)
             <p class="text-text-muted">Pierwsze spotkanie tych zawodników.</p>
         @else

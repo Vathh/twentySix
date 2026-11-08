@@ -8,8 +8,8 @@ use App\Domain\Game\GroupGameDomain;
 use App\Domain\GroupStandingDomain;
 use App\Domain\SeasonDomain;
 use App\Enums\TournamentFormat;
-use App\Models\Organization\Organization;
 use App\Enums\TournamentStatus;
+use App\Models\Organization\Organization;
 use App\Models\Tournament\Tournament;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -223,6 +223,18 @@ class TournamentDomain
     public function isStarted(): bool
     {
         return $this->status !== TournamentStatus::CREATED;
+    }
+
+    /** Nazwę można zmienić, dopóki turniej nie jest zakończony. */
+    public function canEditDetails(): bool
+    {
+        return $this->status !== TournamentStatus::FINISHED;
+    }
+
+    /** Data rusza tylko przed startem. Anulowanie wraca do tego stanu. */
+    public function canEditDate(): bool
+    {
+        return $this->status === TournamentStatus::CREATED;
     }
 
     /** Czy admin może wyzerować rozgrywki i wrócić do ekranu startu. */

@@ -113,6 +113,16 @@ class TournamentRepository
         return (int) $tournament->id;
     }
 
+    public function updateDetails(int $tournamentId, string $name, ?string $date): void
+    {
+        $tournament = $this->findModel($tournamentId);
+        $tournament->name = $name;
+        if ($date !== null) {
+            $tournament->date = $date;
+        }
+        $tournament->save();
+    }
+
     /**
      * Turnieje jednorazowe organizacji (bez sezonu), od najnowszej daty.
      *

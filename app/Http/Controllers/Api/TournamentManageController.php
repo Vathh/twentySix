@@ -77,6 +77,39 @@ class TournamentManageController
         return response()->json(['id' => $id], 201);
     }
 
+    public function update(Request $request, Tournament $tournament): JsonResponse
+    {
+        $domain = $this->tournamentService->loadAndAuthorize($tournament->id);
+        if (! $domain->canEditDetails()) {
+            abort(403, 'Zakończonego turnieju nie można edytować.');
+        }
+
+        $rules = ['name' => 'required|string|max:25'];
+        if ($domain->canEditDate()) {
+            $rules['date'] = 'required|date';
+        }
+        $validated = $request->validate($rules);
+
+        $this->tournamentService->updateDetails(
+            $tournament->id,
+            $validated['name'],
+            $domain->canEditDate() ? $validated['date'] : null,
+        );
+
+        $tournament->refresh();
+
+        return response()->json([
+            'message' => $domain->canEditDate()
+                ? 'Zapisano nazwę i datę turnieju.'
+                : 'Zapisano nazwę turnieju.',
+            'tournament' => [
+                'id' => $tournament->id,
+                'name' => $tournament->name,
+                'date' => $tournament->date?->format('Y-m-d'),
+            ],
+        ]);
+    }
+
     public function setup(int $tournament): JsonResponse
     {
         $this->tournamentService->loadAndAuthorize($tournament);

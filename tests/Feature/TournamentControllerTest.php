@@ -12,6 +12,7 @@ use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Services\Player\PlayerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\Concerns\InsertsPointSchemeRules;
 use Tests\Support\SeedsTournamentParticipants;
 use Tests\TestCase;
@@ -694,6 +695,135 @@ class TournamentControllerTest extends TestCase
         $this->assertStringContainsString('data-board-mode="waiting"', $html);
         $this->assertStringContainsString('Tablica włączy się sama po starcie', $html);
         $this->assertStringContainsString('tournamentBoard', $html);
+    }
+
+    public function test_only_an_admin_can_edit_the_tournament_name_and_date(): void
+    {
+        $tournament = Tournament::create([
+            'name' => 'Stary puchar',
+            'season_id' => $this->season->id,
+            'date' => '2024-06-01',
+        ]);
+
+        $this->actingAs($this->adminUser)
+            ->get(route('tournaments.show', $tournament))
+            ->assertOk()
+            ->assertSee('Edytuj turniej');
+
+        $this->actingAs($this->regularUser)
+            ->get(route('tournaments.show', $tournament))
+            ->assertOk()
+            ->assertDontSee('Edytuj turniej');
+
+        $this->actingAs($this->adminUser)
+            ->get(route('tournaments.edit', $tournament))
+            ->assertOk()
+            ->assertSee('Edycja turnieju')
+            ->assertSee('Stary puchar');
+
+        $this->actingAs($this->regularUser)
+            ->put(route('tournaments.update', $tournament), [
+                'tournamentName' => 'Cudzy puchar',
+                'date' => '2024-07-01',
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($this->adminUser)
+            ->put(route('tournaments.update', $tournament), [
+                'tournamentName' => 'Nowy puchar',
+                'date' => '2024-08-15',
+            ])
+            ->assertRedirect(route('tournaments.show', $tournament))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('tournaments', [
+            'id' => $tournament->id,
+            'name' => 'Nowy puchar',
+            'date' => '2024-08-15 00:00:00',
+        ]);
+
+        Sanctum::actingAs($this->adminUser);
+        $this->putJson('/api/tournaments/'.$tournament->id, [
+            'name' => 'Puchar z aplikacji',
+            'date' => '2024-09-01',
+        ])
+            ->assertOk()
+            ->assertJsonPath('tournament.name', 'Puchar z aplikacji');
+
+        $this->assertDatabaseHas('tournaments', [
+            'id' => $tournament->id,
+            'name' => 'Puchar z aplikacji',
+            'date' => '2024-09-01 00:00:00',
+        ]);
+    }
+
+    public function test_a_finished_tournament_cannot_be_edited_and_a_started_one_keeps_its_date(): void
+    {
+        $finished = $this->startedTournament(TournamentStatus::FINISHED);
+        $finished->update(['name' => 'Koniec']);
+
+        $this->actingAs($this->adminUser)
+            ->get(route('tournaments.show', $finished))
+            ->assertOk()
+            ->assertDontSee('Edytuj turniej');
+
+        $this->actingAs($this->adminUser)
+            ->get(route('tournaments.edit', $finished))
+            ->assertForbidden();
+
+        $this->actingAs($this->adminUser)
+            ->put(route('tournaments.update', $finished), [
+                'tournamentName' => 'Po czasie',
+                'date' => '2024-12-01',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tournaments', [
+            'id' => $finished->id,
+            'name' => 'Koniec',
+            'date' => '2024-06-01 00:00:00',
+        ]);
+
+        $live = $this->startedTournament(TournamentStatus::GROUP);
+
+        $this->actingAs($this->adminUser)
+            ->get(route('tournaments.show', $live))
+            ->assertOk()
+            ->assertSee('Edytuj turniej');
+
+        $this->actingAs($this->adminUser)
+            ->get(route('tournaments.edit', $live))
+            ->assertOk()
+            ->assertSee('tylko nazwę')
+            ->assertDontSee('name="date"', false);
+
+        $this->actingAs($this->adminUser)
+            ->put(route('tournaments.update', $live), [
+                'tournamentName' => 'Nowa nazwa',
+                'date' => '2025-01-01',
+            ])
+            ->assertRedirect(route('tournaments.show', $live))
+            ->assertSessionHas('success', 'Zapisano nazwę turnieju.');
+
+        $this->assertDatabaseHas('tournaments', [
+            'id' => $live->id,
+            'name' => 'Nowa nazwa',
+            'date' => '2024-06-01 00:00:00',
+        ]);
+
+        Sanctum::actingAs($this->adminUser);
+        $this->putJson('/api/tournaments/'.$finished->id, [
+            'name' => 'Z aplikacji',
+            'date' => '2025-02-01',
+        ])->assertForbidden();
+
+        $this->putJson('/api/tournaments/'.$live->id, [
+            'name' => 'Nazwa z aplikacji',
+            'date' => '2025-03-01',
+        ])
+            ->assertOk()
+            ->assertJsonPath('tournament.name', 'Nazwa z aplikacji')
+            ->assertJsonPath('tournament.date', '2024-06-01');
     }
 
     private function startedTournament(TournamentStatus $status): Tournament

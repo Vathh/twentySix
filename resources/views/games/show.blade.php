@@ -152,7 +152,37 @@
             ];
         @endphp
 
-        <h2 class="section-title mb-4">Statystyki meczu</h2>
+        <div x-data="{ tab: 'stats' }">
+            <div class="match-tabs" role="tablist" aria-label="Szczegóły meczu">
+                <button
+                    type="button"
+                    role="tab"
+                    class="match-tab"
+                    x-on:click="tab = 'stats'"
+                    x-bind:class="tab === 'stats' ? 'is-on' : ''"
+                    x-bind:aria-selected="tab === 'stats'"
+                >Statystyki</button>
+                <button
+                    type="button"
+                    role="tab"
+                    class="match-tab"
+                    x-on:click="tab = 'legs'"
+                    x-bind:class="tab === 'legs' ? 'is-on' : ''"
+                    x-bind:aria-selected="tab === 'legs'"
+                >Legi</button>
+                @if(!empty($headToHead))
+                    <button
+                        type="button"
+                        role="tab"
+                        class="match-tab"
+                        x-on:click="tab = 'h2h'"
+                        x-bind:class="tab === 'h2h' ? 'is-on' : ''"
+                        x-bind:aria-selected="tab === 'h2h'"
+                    >H2H</button>
+                @endif
+            </div>
+
+            <div role="tabpanel" x-show="tab === 'stats'">
         <div class="match-stats mb-8">
             <div class="match-stats-row match-stats-head">
                 <span>{{ $p1['name'] }}</span>
@@ -170,9 +200,9 @@
                 @endforeach
             @endforeach
         </div>
+            </div>
 
-        <h2 class="section-title mb-4">Legi i wizyty</h2>
-
+            <div role="tabpanel" x-show="tab === 'legs'" x-cloak>
         @if($legsDetail->isEmpty())
             <p class="text-text-muted">
                 @if($status === 'finished')
@@ -261,7 +291,13 @@
                 @endforeach
             </div>
         @endif
+            </div>
 
-        @include('games.partials.head-to-head')
+            @if(!empty($headToHead))
+                <div role="tabpanel" x-show="tab === 'h2h'" x-cloak>
+                    @include('games.partials.head-to-head')
+                </div>
+            @endif
+        </div>
     </div>
 @endsection

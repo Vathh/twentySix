@@ -147,6 +147,23 @@ class TournamentService
         return $this->tournamentRepository->create($seasonId, $name, $date, $createdByUserId, $organizationId);
     }
 
+    public function updateDetails(int $tournamentId, string $name, ?string $date): void
+    {
+        $tournament = $this->tournamentRepository->findModel($tournamentId, ['admins', 'season.admins']);
+        $this->gameAuthorizationService->authorizeManageTournament($tournament);
+        $domain = TournamentDomain::fromEloquent($tournament);
+
+        if (! $domain->canEditDetails()) {
+            abort(403, 'Zakończonego turnieju nie można edytować.');
+        }
+
+        $this->tournamentRepository->updateDetails(
+            $tournamentId,
+            $name,
+            $domain->canEditDate() ? $date : null,
+        );
+    }
+
     public function organizationName(int $organizationId): string
     {
         return $this->organizationRepository->findModel($organizationId)->name;

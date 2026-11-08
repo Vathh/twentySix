@@ -20,7 +20,9 @@
             @foreach($achievements as $playerAchievements)
                 <tr>
                     <td class="font-medium text-text whitespace-nowrap sticky-player">
-                        {{ $playerAchievements['player']->name }}
+                        <a href="{{ route('players.show', $playerAchievements['player']->id) }}" class="text-text hover:text-accent hover:underline transition-colors">
+                            {{ $playerAchievements['player']->name }}
+                        </a>
                     </td>
                     <td>
                         <span @class(['score-num', 'text-text-muted' => ($playerAchievements['max'] ?? 0) === 0])>{{ $playerAchievements['max'] ?? 0 }}</span>
