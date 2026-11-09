@@ -36,6 +36,7 @@
 | **Tryby gry** (kolejne) | Zakres do ustalenia. Cricket, Bob's 27, Around the Clock, Catch 40 i Cricket 60 są w treningu i quick; w turnieju ich nie ma |
 | **Aktualizacja APK w apce (self-update)** | Później — przy starcie komunikat „nowa wersja” → pobranie APK → instalator Androida (systemowy dialog Zainstaluj). Nie OTA (`expo-updates` — tylko JS). Na czas testów: endpoint `latestVersion` + URL APK + to samo podpisywanie keystore. Po wejściu do Play: In-App Updates. iOS: tylko TestFlight / App Store. **Nie implementować teraz.** |
 | **Mecz kamerkowy 1v1 (web)** | Później — osobny mecz na stronie, dwie kamerki (twarz + tarcza), obraz WebRTC bezpośrednio między przeglądarkami, sygnalizacja po Reverbie, TURN gdy sieci nie puszczą ruchu. Quick game, turniej i mobile bez kamer. **Nie implementować teraz.** Design: [`design_webcam_match_1v1.md`](design_webcam_match_1v1.md) |
+| **Play Console — Android, następne wydanie** | Wersja sklepowa **21 (1.0.20)**, target SDK 36. Dwie rzeczy do zrobienia przy najbliższym AAB, nie wcześniej: (1) wyciąć `BOOT_COMPLETED` z odbiornika `expo-notifications` — Play ostrzega o crashu na Androidzie 15+, bo w manifeście jest też usługa `mediaPlayback` z `expo-audio`; pushe zaproszeń zostają; (2) włączyć R8 w release (`enableMinifyInReleaseBuilds`, bez shrink zasobów) — DEX 32,8 MB, zaciemnienie 1%, próg Google 25% od lutego 2027. Nową wersję puścić najpierw na wąski rollout. Pamięci nie ruszamy: Android Vitals nie ma pomiarów, lista testerów tego nie wypełni. |
 
 ---
 
