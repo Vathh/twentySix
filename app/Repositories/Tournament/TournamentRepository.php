@@ -238,6 +238,20 @@ class TournamentRepository
         Tournament::where('id', $tournamentId)->update(['point_scheme_id' => $pointSchemeId]);
     }
 
+    /**
+     * @param  list<int>  $pointSchemeIds
+     */
+    public function anyUsePointSchemes(array $pointSchemeIds): bool
+    {
+        if ($pointSchemeIds === []) {
+            return false;
+        }
+
+        return Tournament::withTrashed()
+            ->whereIn('point_scheme_id', $pointSchemeIds)
+            ->exists();
+    }
+
     public function saveStartConfiguration(
         int $tournamentId,
         int $playoffBracketSize,

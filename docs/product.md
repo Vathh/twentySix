@@ -332,8 +332,9 @@ Działają poprawnie w MVP w meczu turniejowym (180, 170+, QF, HF itd.).
 ## Organizacja i punktacja (MVP)
 
 - Organizacja = seria turniejów + tabela sezonu + tabele per turniej.
-- **Point scheme** narzucany przez system według **liczby graczy w turnieju (N)** — pasma na granicach potęg dwójki: **4–8 / 9–16 / 17–32 / 33–64 / 65–128**. Nie od liczby meczów do tytułu (w `groups_playoff` admin sterowałby wtedy tabelą sezonu formatem).
-- **SE i DE:** ta sama skala (1. miejsce przy tym samym N = tyle samo pkt). DE ma ciaśniejsze kubełki miejsc (5–6, 7–8, 9–12… zamiast 5–8, 9–16).
+- **Point scheme** według **liczby graczy w turnieju (N)** — pasma na granicach potęg dwójki: **4–8 / 9–16 / 17–32 / 33–64 / 65–128**. Nie od liczby meczów do tytułu (w `groups_playoff` admin sterowałby wtedy tabelą sezonu formatem).
+- Domyślne liczby są systemowe. Administrator organizacji może je zastąpić własnymi zakresami miejsc i punktami (osobno SE / grupy+playoff i DE, w każdym paśmie). Zapis dotyczy turniejów, które wystartują później; już wystartowany turniej zostaje przy schemacie przypiętym na starcie.
+- **SE i DE w tabeli domyślnej:** ta sama skala (1. miejsce przy tym samym N = tyle samo pkt). DE ma ciaśniejsze kubełki miejsc (5–6, 7–8, 9–12… zamiast 5–8, 9–16). Własna tabela organizacji może te liczby rozdzielić.
 - Odpadnięcie w grupie: punkty z **miejsca overall** w kolumnie SE, nie z rozmiaru grupy.
 - Tabele i uzasadnienie: [`design_point_schemes.md`](design_point_schemes.md). Lookup: pasmo N + miejsce overall + format (`se` / `de`). Limit stawki **N ≤ 128** (jak drabinka); przyszłe pasmo **129–256** gdy limit wzrośnie.
 - Organizacja może mieć **wiele lig** (piramid) — osobny byt, patrz niżej.

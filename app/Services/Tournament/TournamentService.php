@@ -630,7 +630,8 @@ class TournamentService
 
     private function updatePointSchemeId(int $tournamentId, int $playersAmount): void
     {
-        $pointScheme = $this->pointSchemeService->findByPlayersAmount($playersAmount);
+        $organizationId = $this->tournamentRepository->getOrganizationIdForTournament($tournamentId);
+        $pointScheme = $this->pointSchemeService->findByPlayersAmount($playersAmount, $organizationId);
 
         $this->tournamentRepository->updatePointSchemeId($tournamentId, $pointScheme->id);
     }

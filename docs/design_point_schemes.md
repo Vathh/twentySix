@@ -237,3 +237,13 @@ Lookup: **pasmo N + miejsce overall + format** (`se` dla SE i `groups_playoff`, 
 `elimination_stage` na `tournament_results` zostaje do UI (w tym DE `resultStageForRound`) i **nie** steruje punktami.
 
 Pasmo 129–256: poza zakresem do podniesienia limitu stawki.
+
+---
+
+## 8. Punktacja organizacji
+
+Tabele z sekcji 5 zostają **domyślne** (`point_schemes.organization_id` null).
+
+Administrator organizacji w panelu WWW (`/organizations/{id}/point-scheme`) może zapisać własną kopię: te same pięć pasm N, a wewnątrz każdego pasma własne zakresy miejsc i punkty, osobno dla SE (także `groups_playoff`) i DE. Granic pasm (4–8, 9–16, …) nie przesuwa. Zapis wymaga pełnego pokrycia `1…max` bez przerw i nakładek oraz nierosnących punktów.
+
+Przy starcie turnieju bierzemy aktywny schemat organizacji dla N. Gdy organizacja nic nie zapisała — schemat systemowy. `point_scheme_id` zostaje na turnieju do końca: późniejsza edycja organizacji tworzy nową wersję (`is_active`), a już przypięty schemat nie zmienia punktów.

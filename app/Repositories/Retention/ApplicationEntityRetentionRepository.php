@@ -270,6 +270,12 @@ class ApplicationEntityRetentionRepository
         $this->idsStamped(ApplicationEntityKind::League, ApplicationEntityKind::Organization, $id)
             ->each(fn (int $leagueId) => League::withTrashed()->whereKey($leagueId)->first()?->forceDelete());
 
+        $schemeIds = DB::table('point_schemes')->where('organization_id', $id)->pluck('id');
+        if ($schemeIds->isNotEmpty()) {
+            DB::table('point_scheme_rules')->whereIn('point_scheme_id', $schemeIds)->delete();
+            DB::table('point_schemes')->whereIn('id', $schemeIds)->delete();
+        }
+
         Organization::withTrashed()->whereKey($id)->first()?->forceDelete();
     }
 

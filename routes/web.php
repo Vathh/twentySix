@@ -15,6 +15,7 @@ use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\LeagueSeasonController;
 use App\Http\Controllers\MyCompetitionsController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\OrganizationPointSchemeController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PlayerController;
@@ -261,6 +262,10 @@ Route::prefix('organizations/{organization}')->group(function () {
         ->whereNumber('invitation')
         ->name('organizations.relatedUsers.invitations.cancel');
     Route::delete('/relatedUsers/remove', [OrganizationController::class, 'removeRelatedUser'])->name('organizations.relatedUsers.remove');
+
+    Route::get('/point-scheme', [OrganizationPointSchemeController::class, 'edit'])->name('organizations.point-scheme.edit');
+    Route::put('/point-scheme', [OrganizationPointSchemeController::class, 'update'])->name('organizations.point-scheme.update');
+    Route::post('/point-scheme/reset', [OrganizationPointSchemeController::class, 'reset'])->name('organizations.point-scheme.reset');
 
     Route::get('/admins', [OrganizationController::class, 'admins'])->name('organizations.admins');
     Route::post('/admins/add', [OrganizationController::class, 'addAdmin'])->name('organizations.admins.add');

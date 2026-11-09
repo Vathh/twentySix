@@ -17,6 +17,9 @@
                     <a href="{{ route('organizations.edit', ['organization' => $organization->id]) }}" class="admin-sidebar-link">
                         ✏️ Edytuj organizację
                     </a>
+                    <a href="{{ route('organizations.point-scheme.edit', $organization->id) }}" class="admin-sidebar-link">
+                        🏆 Punktacja turniejowa
+                    </a>
                     <a href="{{ route('organizations.relatedUsers', $organization->id) }}" class="admin-sidebar-link">
                         👥 Powiązani użytkownicy
                     </a>

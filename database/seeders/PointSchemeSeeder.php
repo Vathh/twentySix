@@ -15,11 +15,16 @@ class PointSchemeSeeder extends Seeder
 {
     public function run(): void
     {
-        if (PointScheme::query()->exists()) {
+        if (! Schema::hasColumn('point_scheme_rules', 'place_from')) {
             return;
         }
 
-        if (! Schema::hasColumn('point_scheme_rules', 'place_from')) {
+        $existing = PointScheme::query();
+        if (Schema::hasColumn('point_schemes', 'organization_id')) {
+            $existing->whereNull('organization_id');
+        }
+
+        if ($existing->exists()) {
             return;
         }
 
@@ -28,8 +33,15 @@ class PointSchemeSeeder extends Seeder
 
     public function replaceAll(): void
     {
-        PointSchemeRule::query()->delete();
-        PointScheme::query()->delete();
+        if (Schema::hasColumn('point_schemes', 'organization_id')) {
+            $systemIds = PointScheme::query()->whereNull('organization_id')->pluck('id');
+            PointSchemeRule::query()->whereIn('point_scheme_id', $systemIds)->delete();
+            PointScheme::query()->whereIn('id', $systemIds)->delete();
+        } else {
+            PointSchemeRule::query()->delete();
+            PointScheme::query()->delete();
+        }
+
         $this->seedBands();
     }
 
@@ -38,11 +50,17 @@ class PointSchemeSeeder extends Seeder
         $now = now();
 
         foreach (SeasonPointTable::definitions() as $band) {
-            $scheme = PointScheme::create([
+            $attributes = [
                 'name' => $band['name'],
                 'min_players' => $band['min_players'],
                 'max_players' => $band['max_players'],
-            ]);
+            ];
+            if (Schema::hasColumn('point_schemes', 'organization_id')) {
+                $attributes['organization_id'] = null;
+                $attributes['is_active'] = true;
+            }
+
+            $scheme = PointScheme::create($attributes);
 
             $rows = [];
             foreach ($band['rules'] as $rule) {
