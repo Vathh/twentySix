@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Domain\Activity\FollowSubject;
 use App\Models\Player\Player;
 use App\Services\Activity\FeedService;
+use App\Services\Badge\BadgeComparisonService;
 use App\Services\Friends\FriendshipService;
 use App\Services\Player\PlayerAvatarService;
 use App\Services\Player\PlayerGameHistoryService;
@@ -26,6 +27,7 @@ class PlayerController extends Controller
         private PlayerService $playerService,
         private PlayerAvatarService $playerAvatarService,
         private FeedService $feed,
+        private BadgeComparisonService $badgeComparisonService,
     ) {}
 
     public function search(Request $request): View|JsonResponse
@@ -69,8 +71,28 @@ class PlayerController extends Controller
             ? $this->feed->followState($viewer, FollowSubject::User, (string) $player->user_id)
             : null;
         $data['profileFeed'] = $this->feed->profile($viewer, $player, null);
+        $viewerPlayer = $viewer?->player;
+        $data['canCompareBadges'] = $viewerPlayer !== null
+            && (int) $viewerPlayer->id !== (int) $player->id;
 
         return view('players.show', $data);
+    }
+
+    public function compareBadges(Player $player): View
+    {
+        return view(
+            'players.compare-badges',
+            $this->badgeComparisonService->compare($player, Auth::user()),
+        );
+    }
+
+    public function headToHead(Request $request, Player $player): JsonResponse
+    {
+        $offset = max(0, min(500, (int) $request->query('offset', 0)));
+
+        return response()->json(
+            $this->playerProfileService->headToHeadRecent($player, Auth::user(), $offset),
+        );
     }
 
     public function profileFeed(Request $request, Player $player): JsonResponse

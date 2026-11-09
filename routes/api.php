@@ -158,6 +158,8 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::post('/{player}/avatar', [PlayerProfileController::class, 'storeAvatar'])->whereNumber('player');
         Route::delete('/{player}/avatar', [PlayerProfileController::class, 'destroyAvatar'])->whereNumber('player');
         Route::get('/{player}/games', [PlayerProfileController::class, 'games'])->whereNumber('player');
+        Route::get('/{player}/head-to-head', [PlayerProfileController::class, 'headToHead'])->whereNumber('player');
+        Route::get('/{player}/badges/compare', [PlayerProfileController::class, 'compareBadges'])->whereNumber('player');
         Route::get('/{player}/career', [PlayerCareerController::class, 'show'])->whereNumber('player');
     });
 

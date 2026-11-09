@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Player\Player;
+use App\Services\Badge\BadgeComparisonService;
 use App\Services\Player\PlayerAvatarService;
 use App\Services\Player\PlayerProfileService;
 use Illuminate\Http\JsonResponse;
@@ -13,6 +14,7 @@ class PlayerProfileController
     public function __construct(
         private PlayerProfileService $playerProfileService,
         private PlayerAvatarService $playerAvatarService,
+        private BadgeComparisonService $badgeComparisonService,
     ) {}
 
     /**
@@ -22,6 +24,28 @@ class PlayerProfileController
     {
         return response()->json(
             $this->playerProfileService->buildProfile($player, $request->user()),
+        );
+    }
+
+    /**
+     * GET /api/players/{player}/head-to-head?offset=
+     */
+    public function headToHead(Request $request, Player $player): JsonResponse
+    {
+        $offset = max(0, min(500, (int) $request->query('offset', 0)));
+
+        return response()->json(
+            $this->playerProfileService->headToHeadRecent($player, $request->user(), $offset),
+        );
+    }
+
+    /**
+     * GET /api/players/{player}/badges/compare
+     */
+    public function compareBadges(Request $request, Player $player): JsonResponse
+    {
+        return response()->json(
+            $this->badgeComparisonService->compare($player, $request->user()),
         );
     }
 

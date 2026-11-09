@@ -234,6 +234,12 @@ Route::get('/players/search', [PlayerController::class, 'search'])->name('player
 Route::get('/players/{player}/edit', [PlayerController::class, 'edit'])->middleware('auth')->name('players.edit');
 Route::put('/players/{player}', [PlayerController::class, 'update'])->middleware('auth')->name('players.update');
 Route::get('/players/{player}', [PlayerController::class, 'show'])->name('players.show');
+Route::get('/players/{player}/head-to-head', [PlayerController::class, 'headToHead'])
+    ->middleware('auth')
+    ->name('players.head-to-head');
+Route::get('/players/{player}/badges/compare', [PlayerController::class, 'compareBadges'])
+    ->middleware('auth')
+    ->name('players.badges.compare');
 Route::get('/players/{player}/games', [PlayerController::class, 'gameHistory'])->name('players.games');
 Route::get('/players/{player}/feed', [PlayerController::class, 'profileFeed'])->name('players.feed');
 Route::get('/players/{player}/career', [PlayerController::class, 'career'])->name('players.career');

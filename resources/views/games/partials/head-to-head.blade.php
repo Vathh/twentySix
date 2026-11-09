@@ -2,10 +2,13 @@
     @php
         $fmtAvg = static fn ($value) => \App\Support\AverageFormat::display($value);
         $streakName = ($headToHead['streak']['side'] ?? null) === 'player1' ? $player1->name : $player2->name;
+        $h2hMoreUrl = $h2hMoreUrl ?? route('games.head-to-head', ['type' => $kind, 'id' => $gameId]);
+        $h2hZeroText = $h2hZeroText ?? 'Pierwsze spotkanie tych zawodników.';
+        $h2hListEmptyText = $h2hListEmptyText ?? 'Brak wcześniejszych spotkań poza tym meczem.';
     @endphp
     <section class="h2h" aria-label="H2H">
         @if($headToHead['meetings'] === 0)
-            <p class="text-text-muted">Pierwsze spotkanie tych zawodników.</p>
+            <p class="text-text-muted">{{ $h2hZeroText }}</p>
         @else
             @php
                 $winsTotal = $headToHead['player1Wins'] + $headToHead['player2Wins'];
@@ -59,7 +62,7 @@
                 @endif
 
                 @if($headToHead['recent'] === [])
-                    <p class="h2h-empty">Brak wcześniejszych spotkań poza tym meczem.</p>
+                    <p class="h2h-empty">{{ $h2hListEmptyText }}</p>
                 @else
                     <h3 class="h2h-list-title">Ostatnie spotkania</h3>
                     <div class="h2h-list">
@@ -79,7 +82,7 @@
                     </div>
                     <div
                         x-data="headToHeadRecent(@js([
-                            'url' => route('games.head-to-head', ['type' => $kind, 'id' => $gameId]),
+                            'url' => $h2hMoreUrl,
                             'offset' => count($headToHead['recent']),
                             'hasMore' => (bool) ($headToHead['recentHasMore'] ?? false),
                         ]))"

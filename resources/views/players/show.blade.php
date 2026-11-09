@@ -172,6 +172,14 @@ document.addEventListener('alpine:init', () => {
                     class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
                 Historia meczów
             </button>
+            @if(!empty($headToHead))
+                <button type="button"
+                        @click="activeTab = 'h2h'"
+                        :class="activeTab === 'h2h' ? 'bg-accent/20 text-accent border-accent/50' : 'border-border text-text-secondary hover:bg-bg-elevated'"
+                        class="px-2.5 py-1 rounded-t border text-xs font-medium transition whitespace-nowrap shrink-0">
+                    H2H
+                </button>
+            @endif
             <button type="button"
                     @click="activeTab = 'stats'"
                     :class="activeTab === 'stats' ? 'bg-accent/20 text-accent border-accent/50' : 'border-border text-text-secondary hover:bg-bg-elevated'"
@@ -207,6 +215,18 @@ document.addEventListener('alpine:init', () => {
         <div x-show="activeTab === 'history'" x-cloak>
             @include('players.partials.game-history')
         </div>
+
+        @if(!empty($headToHead))
+            <div x-show="activeTab === 'h2h'" x-cloak>
+                @include('games.partials.head-to-head', [
+                    'player1' => $viewerPlayer,
+                    'player2' => $player,
+                    'h2hMoreUrl' => route('players.head-to-head', $player),
+                    'h2hZeroText' => 'Nie rozegraliście jeszcze wspólnego meczu.',
+                    'h2hListEmptyText' => 'Nie rozegraliście jeszcze wspólnego meczu.',
+                ])
+            </div>
+        @endif
 
         {{-- Zakładka: Odznaczenia --}}
         <div x-show="activeTab === 'badges'" x-cloak>

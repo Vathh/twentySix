@@ -36,6 +36,58 @@ class HeadToHeadService
      */
     public function between(int $player1Id, int $player2Id, string $currentKind, int $currentId): ?array
     {
+        return $this->firstPage($player1Id, $player2Id, $currentKind, $currentId);
+    }
+
+    /**
+     * Bilans pary na profilu. Nie ma „bieżącego meczu”, więc każde spotkanie
+     * jest w bilansie i na liście. Lewa strona to $leftId.
+     *
+     * @return array{
+     *     meetings: int,
+     *     meetingsWord: string,
+     *     player1Wins: int,
+     *     player2Wins: int,
+     *     player1Legs: int,
+     *     player2Legs: int,
+     *     player1Average: float|null,
+     *     player2Average: float|null,
+     *     streak: array{side: string, count: int, label: string}|null,
+     *     firstMeetingAt: string|null,
+     *     recent: list<array<string, mixed>>,
+     *     recentHasMore: bool
+     * }|null
+     */
+    public function betweenPlayers(int $leftId, int $rightId): ?array
+    {
+        return $this->firstPage($leftId, $rightId, null, null);
+    }
+
+    /**
+     * Kolejna porcja spotkań poza oglądanym meczem.
+     *
+     * @return array{recent: list<array<string, mixed>>, hasMore: bool}|null
+     */
+    public function recent(int $player1Id, int $player2Id, string $currentKind, int $currentId, int $offset): ?array
+    {
+        return $this->recentPage($player1Id, $player2Id, $currentKind, $currentId, $offset);
+    }
+
+    /**
+     * Kolejna porcja spotkań pary z profilu.
+     *
+     * @return array{recent: list<array<string, mixed>>, hasMore: bool}|null
+     */
+    public function recentBetweenPlayers(int $leftId, int $rightId, int $offset): ?array
+    {
+        return $this->recentPage($leftId, $rightId, null, null, $offset);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function firstPage(int $player1Id, int $player2Id, ?string $currentKind, ?int $currentId): ?array
+    {
         $built = $this->build($player1Id, $player2Id, $currentKind, $currentId);
         if ($built === null) {
             return null;
@@ -52,11 +104,9 @@ class HeadToHeadService
     }
 
     /**
-     * Kolejna porcja spotkań poza oglądanym meczem.
-     *
      * @return array{recent: list<array<string, mixed>>, hasMore: bool}|null
      */
-    public function recent(int $player1Id, int $player2Id, string $currentKind, int $currentId, int $offset): ?array
+    private function recentPage(int $player1Id, int $player2Id, ?string $currentKind, ?int $currentId, int $offset): ?array
     {
         $built = $this->build($player1Id, $player2Id, $currentKind, $currentId);
         if ($built === null) {
@@ -69,12 +119,12 @@ class HeadToHeadService
     /**
      * @return array<string, mixed>|null
      */
-    private function build(int $player1Id, int $player2Id, string $currentKind, int $currentId): ?array
+    private function build(int $player1Id, int $player2Id, ?string $currentKind, ?int $currentId): ?array
     {
         if ($player1Id < 1 || $player2Id < 1 || $player1Id === $player2Id) {
             return null;
         }
-        if ($currentKind === 'quick' && $this->headToHeadRepository->quickResultCount($currentId) > 2) {
+        if ($currentKind === 'quick' && $currentId !== null && $this->headToHeadRepository->quickResultCount($currentId) > 2) {
             return null;
         }
 
@@ -103,7 +153,10 @@ class HeadToHeadService
             $player1Averages[] = $oriented['player1Average'];
             $player2Averages[] = $oriented['player2Average'];
 
-            $isCurrent = $meeting['kind'] === $currentKind && $meeting['id'] === $currentId;
+            $isCurrent = $currentKind !== null
+                && $currentId !== null
+                && $meeting['kind'] === $currentKind
+                && $meeting['id'] === $currentId;
             if (! $isCurrent) {
                 $others[] = $oriented;
             }

@@ -9,7 +9,23 @@
     $unlocked = collect($checkoutItems)->where('timesEarned', '>', 0)->count();
     $total = count($checkoutItems);
 @endphp
-<p class="mb-6 text-sm text-text-muted">Liczą się mecze 501 w lidze i turnieju.</p>
+<div class="mb-6 flex flex-wrap items-center gap-3">
+    <p class="text-sm text-text-muted">Liczą się mecze 501 w lidze i turnieju.</p>
+    @if(! empty($canCompareBadges))
+        <a href="{{ route('players.badges.compare', $player) }}" class="compare-launch ml-auto">
+            <span class="compare-launch__marks" aria-hidden="true">
+                <svg viewBox="0 0 46 28" class="compare-launch__badges">
+                    <path d="M12 3.2 19.2 7.2v8.2L12 19.4 4.8 15.4V7.2Z" />
+                    <path d="M28.2 8.4 35.6 12.5v8.4l-7.4 4.2-7.4-4.2v-8.4Z" />
+                </svg>
+            </span>
+            <span class="compare-launch__label">Porównaj odznaczenia</span>
+            <svg class="compare-launch__arrow" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M4.5 10h11M11 5.5 15.5 10 11 14.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+    @endif
+</div>
 @if(count($highVisitItems) > 0)
 <section class="mb-10">
     <div class="career-section-head">

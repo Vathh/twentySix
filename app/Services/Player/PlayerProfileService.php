@@ -18,6 +18,7 @@ use App\Services\Badge\HighVisitBadgeAssembler;
 use App\Services\Badge\QfBadgeAssembler;
 use App\Services\Career\PlayerCareerStatsService;
 use App\Services\Friends\FriendshipService;
+use App\Services\Game\HeadToHeadService;
 use App\Services\Moderation\UserBlockService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -39,6 +40,7 @@ class PlayerProfileService
         private CareerBadgeAssembler $careerBadgeAssembler,
         private PlayerStatRepository $playerStatRepository,
         private UserBlockService $userBlocks,
+        private HeadToHeadService $headToHeadService,
     ) {}
 
     /**
@@ -79,6 +81,7 @@ class PlayerProfileService
             'finishItems' => $assembled['finishItems'],
             'careerItems' => $assembled['careerItems'],
             'highlights' => $assembled['highlights'],
+            'headToHead' => $assembled['headToHead'],
         ];
     }
 
@@ -208,7 +211,25 @@ class PlayerProfileService
             'finishItems' => $assembled['finishItems'],
             'careerItems' => $assembled['careerItems'],
             'highlights' => $assembled['highlights'],
+            'headToHead' => $assembled['headToHead'],
+            'viewerPlayer' => $assembled['headToHead'] !== null ? $viewer?->player : null,
         ];
+    }
+
+    /**
+     * Kolejna piątka spotkań H2H widza z tym profilem.
+     *
+     * @return array{recent: list<array<string, mixed>>, hasMore: bool}
+     */
+    public function headToHeadRecent(Player $player, ?User $viewer, int $offset): array
+    {
+        $leftId = $this->viewerPlayerId($player, $viewer);
+        if ($leftId === null) {
+            abort(404);
+        }
+
+        return $this->headToHeadService->recentBetweenPlayers($leftId, (int) $player->id, $offset)
+            ?? ['recent' => [], 'hasMore' => false];
     }
 
     /**
@@ -272,7 +293,31 @@ class PlayerProfileService
             'finishItems' => $finishItems,
             'careerItems' => $careerItems,
             'highlights' => $this->competitionHighlights((int) $player->id),
+            'headToHead' => $this->headToHeadFor($player, $viewer),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function headToHeadFor(Player $player, ?User $viewer): ?array
+    {
+        $leftId = $this->viewerPlayerId($player, $viewer);
+        if ($leftId === null) {
+            return null;
+        }
+
+        return $this->headToHeadService->betweenPlayers($leftId, (int) $player->id);
+    }
+
+    private function viewerPlayerId(Player $player, ?User $viewer): ?int
+    {
+        $viewerPlayer = $viewer?->player;
+        if ($viewerPlayer === null || (int) $viewerPlayer->id === (int) $player->id) {
+            return null;
+        }
+
+        return (int) $viewerPlayer->id;
     }
 
     /**

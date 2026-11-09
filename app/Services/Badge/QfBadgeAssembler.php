@@ -17,7 +17,7 @@ class QfBadgeAssembler
     ) {}
 
     /**
-     * Tylko zdobyte QF, od 9 do 19.
+     * QF od 9 do 19. Domyślnie tylko zdobyte; porównanie prosi też o niezdobyte (locked, grafika żelaza).
      *
      * @return list<array{
      *     key: string,
@@ -38,7 +38,7 @@ class QfBadgeAssembler
      *     lastGame: array{type: string, opponents: string, dateFormatted: string, tournamentName: string|null}|null
      * }>
      */
-    public function itemsForPlayer(int $playerId): array
+    public function itemsForPlayer(int $playerId, bool $includeUnearned = false): array
     {
         $badges = $this->playerBadgeRepository->forPlayerCategory($playerId, BadgeCategory::Qf->value);
         $hits = [];
@@ -73,7 +73,7 @@ class QfBadgeAssembler
         $items = [];
         foreach (QfCatalog::KEYS as $key) {
             $times = $hits[$key] ?? 0;
-            if ($times < 1) {
+            if ($times < 1 && ! $includeUnearned) {
                 continue;
             }
             $levelName = QfLevelPolicy::nameForHits($key, $times);
