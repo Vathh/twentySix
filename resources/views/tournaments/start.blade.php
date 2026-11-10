@@ -293,27 +293,28 @@
                                                     <select class="select-field w-full min-w-[5rem]"
                                                             x-bind:name="'matchFormats[' + stage.value + '][startingScore]'"
                                                             x-model.number="matchFormats[stage.value].startingScore">
-                                                        <template x-for="score in startingScoreOptions" x-bind:key="score">
-                                                            <option x-bind:value="score" x-text="score"></option>
-                                                        </template>
+                                                        {{-- Opcje muszą być w DOM zanim zadziała x-model, inaczej select wraca do 101. --}}
+                                                        @foreach ($startingScoreOptions as $score)
+                                                            <option value="{{ $score }}">{{ $score }}</option>
+                                                        @endforeach
                                                     </select>
                                                 </td>
                                                 <td class="py-2 px-2">
                                                     <select class="select-field w-full min-w-[4rem]"
                                                             x-bind:name="'matchFormats[' + stage.value + '][legsToWinSet]'"
                                                             x-model.number="matchFormats[stage.value].legsToWinSet">
-                                                        <template x-for="n in 15" x-bind:key="n">
-                                                            <option x-bind:value="n" x-text="n"></option>
-                                                        </template>
+                                                        @for ($n = 1; $n <= 15; $n++)
+                                                            <option value="{{ $n }}">{{ $n }}</option>
+                                                        @endfor
                                                     </select>
                                                 </td>
                                                 <td class="py-2 pl-2">
                                                     <select class="select-field w-full min-w-[4rem]"
                                                             x-bind:name="'matchFormats[' + stage.value + '][setsToWinMatch]'"
                                                             x-model.number="matchFormats[stage.value].setsToWinMatch">
-                                                        <template x-for="n in 5" x-bind:key="n">
-                                                            <option x-bind:value="n" x-text="n"></option>
-                                                        </template>
+                                                        @for ($n = 1; $n <= 5; $n++)
+                                                            <option value="{{ $n }}">{{ $n }}</option>
+                                                        @endfor
                                                     </select>
                                                 </td>
                                             </tr>
@@ -440,27 +441,27 @@
                                                     <select class="select-field w-full min-w-[5rem]"
                                                             x-bind:name="'consolationMatchFormats[' + stage.value + '][startingScore]'"
                                                             x-model.number="consolationMatchFormats[stage.value].startingScore">
-                                                        <template x-for="score in startingScoreOptions" x-bind:key="'cs-'+score">
-                                                            <option x-bind:value="score" x-text="score"></option>
-                                                        </template>
+                                                        @foreach ($startingScoreOptions as $score)
+                                                            <option value="{{ $score }}">{{ $score }}</option>
+                                                        @endforeach
                                                     </select>
                                                 </td>
                                                 <td class="py-2 px-2">
                                                     <select class="select-field w-full min-w-[4rem]"
                                                             x-bind:name="'consolationMatchFormats[' + stage.value + '][legsToWinSet]'"
                                                             x-model.number="consolationMatchFormats[stage.value].legsToWinSet">
-                                                        <template x-for="n in 15" x-bind:key="'cl-'+n">
-                                                            <option x-bind:value="n" x-text="n"></option>
-                                                        </template>
+                                                        @for ($n = 1; $n <= 15; $n++)
+                                                            <option value="{{ $n }}">{{ $n }}</option>
+                                                        @endfor
                                                     </select>
                                                 </td>
                                                 <td class="py-2 pl-2">
                                                     <select class="select-field w-full min-w-[4rem]"
                                                             x-bind:name="'consolationMatchFormats[' + stage.value + '][setsToWinMatch]'"
                                                             x-model.number="consolationMatchFormats[stage.value].setsToWinMatch">
-                                                        <template x-for="n in 5" x-bind:key="'cset-'+n">
-                                                            <option x-bind:value="n" x-text="n"></option>
-                                                        </template>
+                                                        @for ($n = 1; $n <= 5; $n++)
+                                                            <option value="{{ $n }}">{{ $n }}</option>
+                                                        @endfor
                                                     </select>
                                                 </td>
                                             </tr>
@@ -636,12 +637,15 @@
                         }
                     });
                     // Po zamontowaniu <select> Alpine potrafi nadpisać model pierwszą opcją (101/1/1).
+                    // Drabinka pocieszenia nie jest w DOM, dopóki szkic nie włączy hasConsolationBracket,
+                    // więc jej selecty powstają dopiero w tym ticku i trzeba je przywrócić w kolejnym.
                     this.$nextTick(() => {
                         this.syncMatchFormats({ preserveUserEdits: false });
                         this.syncConsolationMatchFormats({ preserveUserEdits: false });
                         if (!this.hasOldInput) {
                             this.applyStartDraft();
                         }
+                        this.restoreFormatsAfterSelectInit();
                     });
                 },
                 draftKey() {
@@ -718,6 +722,22 @@
                     this.syncBracketSelect();
                     this.syncMatchFormats({ preserveUserEdits: true });
                     this.syncConsolationMatchFormats({ preserveUserEdits: true });
+                },
+                restoreFormatsAfterSelectInit() {
+                    this.$nextTick(() => {
+                        if (this.hasOldInput) {
+                            this.syncMatchFormats({ preserveUserEdits: false });
+                            this.syncConsolationMatchFormats({ preserveUserEdits: false });
+                            return;
+                        }
+                        const draft = this.readStartDraft();
+                        if (!draft) {
+                            this.syncMatchFormats({ preserveUserEdits: false });
+                            this.syncConsolationMatchFormats({ preserveUserEdits: false });
+                            return;
+                        }
+                        this.applyStartDraft();
+                    });
                 },
                 onParticipantCountChange(next, { preserveUserEdits = true } = {}) {
                     this.participantCount = next;
