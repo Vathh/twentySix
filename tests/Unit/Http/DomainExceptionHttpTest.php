@@ -23,6 +23,11 @@ class DomainExceptionHttpTest extends TestCase
         $this->assertSame(403, DomainExceptionHttp::status(new DomainException('x', DomainExceptionHttp::FORBIDDEN)));
     }
 
+    public function test_not_found_code(): void
+    {
+        $this->assertSame(404, DomainExceptionHttp::status(new DomainException('x', DomainExceptionHttp::NOT_FOUND)));
+    }
+
     public function test_ignores_non_http_codes(): void
     {
         $this->assertSame(422, DomainExceptionHttp::status(new DomainException('x', 1)));

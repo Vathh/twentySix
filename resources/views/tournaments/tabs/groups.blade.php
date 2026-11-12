@@ -34,7 +34,16 @@
         $advancingIds = $highlight['advancingPlayerIds'] ?? [];
     @endphp
     <div class="rounded-lg p-4 bg-bg-deep border border-border mt-10" data-group-number="{{ $number }}">
-        <p class="text-center mb-3">Grupa {{ $number }}</p>
+        <p class="text-center mb-3">
+            Grupa {{ $number }}
+            @php
+                $groupAverage = $threeDartAverages->averageForPlayers(
+                    'group',
+                    collect($players[$number] ?? [])->map(fn ($player) => (int) $player->id)->all(),
+                );
+            @endphp
+            <span class="text-text-muted text-sm ml-2" data-group-average>{{ $groupAverage !== null ? \App\Support\AverageFormat::display($groupAverage) : '' }}</span>
+        </p>
         <p
             @class([
                 'text-center text-xs text-text-muted mb-3',

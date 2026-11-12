@@ -57,6 +57,34 @@ class OrganizationInvitationService
         return RelatedRosterInvite::invitation($invitation);
     }
 
+    /**
+     * @param  list<int>  $userIds
+     * @return array<int, 'member'|'pending'|'invitable'>
+     */
+    public function statesForUsers(int $organizationId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_map('intval', $userIds)));
+        $userIds = array_values(array_filter($userIds, fn (int $id) => $id > 0));
+        if ($userIds === []) {
+            return [];
+        }
+
+        $members = array_flip($this->organizationRepository->relatedIdsAmong($organizationId, $userIds));
+        $pending = array_flip($this->invitationRepository->pendingUserIds($organizationId, $userIds));
+        $states = [];
+        foreach ($userIds as $userId) {
+            if (isset($members[$userId])) {
+                $states[$userId] = 'member';
+            } elseif (isset($pending[$userId])) {
+                $states[$userId] = 'pending';
+            } else {
+                $states[$userId] = 'invitable';
+            }
+        }
+
+        return $states;
+    }
+
     public function cancel(int $organizationId, int $invitationId): void
     {
         $this->invitationRepository->cancelPending($invitationId, $organizationId);

@@ -5,6 +5,7 @@ namespace App\Domain\Activity;
 use App\Domain\Activity\Definitions\PlayerBadgesActivity;
 use App\Domain\Activity\Definitions\PlayerFirst180Activity;
 use App\Domain\Activity\Definitions\PlayerPersonalBestActivity;
+use App\Domain\Activity\Definitions\TournamentAnnouncedActivity;
 use App\Domain\Activity\Definitions\TournamentChampionActivity;
 use InvalidArgumentException;
 
@@ -17,6 +18,7 @@ final class ActivityRegistry
     {
         $definitions = [
             new TournamentChampionActivity,
+            new TournamentAnnouncedActivity,
             new PlayerFirst180Activity,
             new PlayerBadgesActivity,
             new PlayerPersonalBestActivity,

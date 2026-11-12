@@ -105,6 +105,27 @@ final class ThreeDartAverageSet
         return $this->playerAverage(self::KIND_GROUP, $playerId);
     }
 
+    /**
+     * Średnia grupy: suma punktów i lotek zawodników tej grupy, nie średnia ze średnich.
+     *
+     * @param  list<int>  $playerIds
+     */
+    public function averageForPlayers(string $kind, array $playerIds): ?float
+    {
+        $points = 0;
+        $darts = 0;
+        foreach ($playerIds as $playerId) {
+            $totals = $this->playersByKind[$kind][(int) $playerId] ?? null;
+            if ($totals === null) {
+                continue;
+            }
+            $points += $totals['points'];
+            $darts += $totals['darts'];
+        }
+
+        return ThreeDartAverage::fromTotals($points, $darts);
+    }
+
     public function playoffMatchAverage(int $matchId, int $playerId): ?float
     {
         return $this->matchAverage(self::KIND_PLAYOFF, $matchId, $playerId);

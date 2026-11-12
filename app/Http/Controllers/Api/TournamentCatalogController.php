@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\TournamentStatus;
 use App\Http\Controllers\Api\Concerns\MapsIndexPageForApi;
+use App\Models\Organization\Organization;
 use App\Models\Tournament\Tournament;
 use App\Services\Competition\CompetitionShowSerializer;
 use App\Services\GameScoring\GameAuthorizationService;
+use App\Services\Organization\OrganizationInvitationService;
 use App\Services\Tournament\LoginCodeService;
 use App\Services\Tournament\TournamentGroupMatrixLiveService;
 use App\Services\Tournament\TournamentJoinRequestService;
@@ -18,6 +20,7 @@ use App\Support\Catalog\TournamentCatalogStatus;
 use App\Support\Text\PolishFold;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class TournamentCatalogController
 {
@@ -32,6 +35,7 @@ class TournamentCatalogController
         private LoginCodeService $loginCodeService,
         private TournamentStartPageService $startPageService,
         private TournamentJoinRequestService $joinRequestService,
+        private OrganizationInvitationService $organizationInvitationService,
     ) {}
 
     /**
@@ -73,6 +77,25 @@ class TournamentCatalogController
                 'code' => $code,
                 'url' => $this->loginCodeService->loginUrl($code),
             ];
+        }
+
+        $payload['canInviteToOrganization'] = false;
+        if ($tournament->status === TournamentStatus::FINISHED && isset($payload['organization']['id'])) {
+            $organization = Organization::query()->find($payload['organization']['id']);
+            if ($organization !== null && Gate::allows('update', $organization)) {
+                $payload['canInviteToOrganization'] = true;
+                $userIds = array_values(array_filter(array_map(
+                    fn (array $row) => $row['userId'] ?? null,
+                    $payload['results'],
+                )));
+                $states = $this->organizationInvitationService->statesForUsers($organization->id, $userIds);
+                foreach ($payload['results'] as $index => $row) {
+                    $userId = $row['userId'] ?? null;
+                    $payload['results'][$index]['organizationInvite'] = $userId === null
+                        ? null
+                        : ($states[(int) $userId] ?? 'invitable');
+                }
+            }
         }
 
         return response()->json($payload);

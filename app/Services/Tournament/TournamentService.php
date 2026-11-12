@@ -21,6 +21,7 @@ use App\Repositories\Organization\OrganizationRepository;
 use App\Repositories\Season\SeasonRepository;
 use App\Repositories\Tournament\TournamentMatchFormatRepository;
 use App\Repositories\Tournament\TournamentRepository;
+use App\Services\Activity\ActivityRecorder;
 use App\Services\GameScoring\GameAuthorizationService;
 use App\Services\Player\PlayerService;
 use App\Services\PointScheme\PointSchemeService;
@@ -49,6 +50,7 @@ class TournamentService
         private SeasonRepository $seasonRepository,
         private PlayerService $playerService,
         private OrganizationRepository $organizationRepository,
+        private ActivityRecorder $activityRecorder,
     ) {}
 
     public function assertCanCreate(?int $seasonId, ?int $organizationId = null): void
@@ -144,7 +146,10 @@ class TournamentService
         ?int $createdByUserId = null,
         ?int $organizationId = null,
     ): int {
-        return $this->tournamentRepository->create($seasonId, $name, $date, $createdByUserId, $organizationId);
+        $tournamentId = $this->tournamentRepository->create($seasonId, $name, $date, $createdByUserId, $organizationId);
+        $this->activityRecorder->tournamentAnnounced($tournamentId);
+
+        return $tournamentId;
     }
 
     public function updateDetails(int $tournamentId, string $name, ?string $date): void

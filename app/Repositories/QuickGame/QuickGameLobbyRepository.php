@@ -7,6 +7,8 @@ use App\Models\QuickGame\QuickGameLobby;
 use App\Models\QuickGame\QuickGameLobbyInvitation;
 use App\Models\QuickGame\QuickGameLobbyPlayer;
 use App\Models\QuickGame\QuickGameLobbyRematchIntent;
+use App\Support\Http\DomainExceptionHttp;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 
 class QuickGameLobbyRepository
@@ -21,8 +23,14 @@ class QuickGameLobbyRepository
 
     public function find(int $lobbyId): QuickGameLobby
     {
-        return QuickGameLobby::with(['host.player', 'players.player', 'ffaSession'])
-            ->findOrFail($lobbyId);
+        $lobby = QuickGameLobby::with(['host.player', 'players.player', 'ffaSession'])
+            ->find($lobbyId);
+
+        if ($lobby === null) {
+            throw new DomainException('To lobby już nie istnieje.', DomainExceptionHttp::NOT_FOUND);
+        }
+
+        return $lobby;
     }
 
     public function findForChannelAuth(int $lobbyId): ?QuickGameLobby

@@ -39,6 +39,7 @@
         @if($canCorrectResult ?? false)
             <div class="bg-bg-deep rounded-lg p-6 mb-8 border border-accent/40">
                 <h2 class="text-lg font-semibold text-accent mb-1">Korekta wyniku / walkower</h2>
+                <x-errors/>
                 <p class="text-text-muted text-sm mb-4">
                     Format: {{ $formatLabel ?? '501 · do 2 legów' }}.
                     Wpisz wynik w {{ $scoreUnit ?? 'legach' }} (do {{ $scoreToWin ?? 2 }}).
@@ -82,22 +83,26 @@
                 <div class="mt-6 pt-4 border-t border-border">
                     <p class="text-sm text-text-muted mb-3">Walkover ({{ $walkoverScoreLine ?? '2:0 legi' }}):</p>
                     <div class="flex flex-wrap gap-2">
-                        <form method="POST" action="{{ route('games.result.update', ['type' => $kind, 'id' => $gameId]) }}">
+                        <form method="POST"
+                              action="{{ route('games.result.update', ['type' => $kind, 'id' => $gameId]) }}"
+                              data-confirm="{{ 'Ustawić walkover '.($walkoverScoreLine ?? '2:0').' dla '.$player1->name.'?' }}"
+                              onsubmit="return confirm(this.dataset.confirm)">
                             @csrf
                             <input type="hidden" name="walkover" value="1">
                             <input type="hidden" name="winner_id" value="{{ $player1->id }}">
                             <button type="submit"
-                                    onclick="return confirm('Ustawić walkover {{ $walkoverScoreLine ?? '2:0' }} dla {{ $player1->name }}?')"
                                     class="px-3 py-2 rounded border border-accent text-accent text-sm hover:bg-accent/10 transition">
                                 Walkover → {{ $player1->name }}
                             </button>
                         </form>
-                        <form method="POST" action="{{ route('games.result.update', ['type' => $kind, 'id' => $gameId]) }}">
+                        <form method="POST"
+                              action="{{ route('games.result.update', ['type' => $kind, 'id' => $gameId]) }}"
+                              data-confirm="{{ 'Ustawić walkover '.($walkoverScoreLine ?? '2:0').' dla '.$player2->name.'?' }}"
+                              onsubmit="return confirm(this.dataset.confirm)">
                             @csrf
                             <input type="hidden" name="walkover" value="1">
                             <input type="hidden" name="winner_id" value="{{ $player2->id }}">
                             <button type="submit"
-                                    onclick="return confirm('Ustawić walkover {{ $walkoverScoreLine ?? '2:0' }} dla {{ $player2->name }}?')"
                                     class="px-3 py-2 rounded border border-accent text-accent text-sm hover:bg-accent/10 transition">
                                 Walkover → {{ $player2->name }}
                             </button>
@@ -151,6 +156,10 @@
                 ],
             ];
         @endphp
+
+        @if($isLive ?? false)
+            @include('games.partials.live-current-leg')
+        @endif
 
         <div x-data="{ tab: 'stats' }">
             <div class="match-tabs" role="tablist" aria-label="Szczegóły meczu">

@@ -112,6 +112,7 @@
                         @include('tournaments.tabs.results', [
                             'showPointsColumn' => $tournament->tracksSeasonPoints(),
                             'showStageColumn' => $tournament->format !== \App\Enums\TournamentFormat::DoubleElimination,
+                            'organizationInvite' => $organizationInvite ?? null,
                         ])
                     @elseif($tab === 'achievements')
                         @include('tournaments.tabs.achievements', ['achievements' => $achievements])

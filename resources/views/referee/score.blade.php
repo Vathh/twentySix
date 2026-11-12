@@ -81,7 +81,7 @@
                 x-text="player1?.name ?? 'Gracz 1'"
             ></div>
             <div class="referee-remaining font-bold text-accent my-2 tabular-nums" x-text="remaining(player1)"></div>
-            <div class="text-xs text-text-muted">
+            <div class="referee-legs">
                 <span x-show="isSingleSetFormat()">Legi: <span x-text="matchScore(player1)"></span></span>
                 <span x-show="!isSingleSetFormat()">
                     Sety: <span x-text="matchScore(player1)"></span>
@@ -107,7 +107,7 @@
                 x-text="player2?.name ?? 'Gracz 2'"
             ></div>
             <div class="referee-remaining font-bold text-accent my-2 tabular-nums" x-text="remaining(player2)"></div>
-            <div class="text-xs text-text-muted">
+            <div class="referee-legs">
                 <span x-show="isSingleSetFormat()">Legi: <span x-text="matchScore(player2)"></span></span>
                 <span x-show="!isSingleSetFormat()">
                     Sety: <span x-text="matchScore(player2)"></span>
@@ -189,6 +189,15 @@
     <div class="rounded-xl border border-border bg-bg-deep px-4 py-5 mb-4 text-center">
         <div class="text-xs text-text-muted mb-1">Wynik wizyty</div>
         <div class="text-5xl font-bold tabular-nums text-text tracking-wider min-h-[3.5rem]" x-text="input === '' ? '—' : input"></div>
+    </div>
+
+    <div class="mb-4" x-show="!isFinished && !isCancelled" x-cloak>
+        <button
+            type="button"
+            class="btn btn-primary w-full !py-3"
+            @click="submitCheck()"
+            :disabled="!canCheck()"
+        >Check</button>
     </div>
 
     <div class="referee-numpad mb-4" x-show="!isFinished && !isCancelled" x-cloak>

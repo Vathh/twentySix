@@ -177,6 +177,9 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::delete('/organizations/{organization}', [OrganizationManageController::class, 'destroy'])->whereNumber('organization');
     Route::get('/organizations/{organization}/users', [OrganizationManageController::class, 'searchUsers'])->whereNumber('organization');
     Route::post('/organizations/{organization}/related-users', [OrganizationManageController::class, 'invite'])->whereNumber('organization');
+    Route::post('/organizations/{organization}/join-request', [\App\Http\Controllers\Api\OrganizationController::class, 'applyJoinRequest'])->whereNumber('organization');
+    Route::post('/organizations/{organization}/join-requests/{joinRequest}/approve', [OrganizationManageController::class, 'approveJoinRequest'])->whereNumber(['organization', 'joinRequest']);
+    Route::post('/organizations/{organization}/join-requests/{joinRequest}/reject', [OrganizationManageController::class, 'rejectJoinRequest'])->whereNumber(['organization', 'joinRequest']);
     Route::post('/organizations/{organization}/related-users/invitations/{invitation}/cancel', [OrganizationManageController::class, 'cancelInvitation'])->whereNumber(['organization', 'invitation']);
     Route::post('/organizations/{organization}/related-users/remove', [OrganizationManageController::class, 'removeMember'])->whereNumber('organization');
     Route::post('/organizations/{organization}/guests', [OrganizationManageController::class, 'addGuest'])->whereNumber('organization');

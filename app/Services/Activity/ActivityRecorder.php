@@ -33,6 +33,18 @@ class ActivityRecorder
         });
     }
 
+    public function tournamentAnnounced(int $tournamentId): void
+    {
+        $this->afterCommit(function () use ($tournamentId) {
+            $draft = $this->drafts->tournamentAnnounced($tournamentId);
+            if ($draft === null) {
+                return;
+            }
+
+            $this->activities->save($draft);
+        });
+    }
+
     public function tournamentChampionIfFinished(int $tournamentId): void
     {
         $this->afterCommit(function () use ($tournamentId) {

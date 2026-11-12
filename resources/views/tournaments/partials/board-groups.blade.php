@@ -36,7 +36,16 @@
                     ->all();
             @endphp
             <section class="board-group" data-group-number="{{ $number }}">
-                <h2 class="board-group-title">Grupa {{ $number }}</h2>
+                <h2 class="board-group-title">
+                    Grupa {{ $number }}
+                    @php
+                        $groupAverage = $threeDartAverages->averageForPlayers(
+                            'group',
+                            collect($roster)->map(fn ($player) => (int) $player->id)->all(),
+                        );
+                    @endphp
+                    <span class="board-group-average" data-group-average>{{ $groupAverage !== null ? \App\Support\AverageFormat::display($groupAverage) : '' }}</span>
+                </h2>
                 <p
                     @class([
                         'board-advance',

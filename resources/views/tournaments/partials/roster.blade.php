@@ -71,7 +71,10 @@
                     <div class="max-h-36 sm:max-h-44 overflow-y-auto overflow-x-hidden pr-1 -mr-1">
                         <div class="flex flex-wrap gap-2">
                             <template x-for="p in $store.tournamentStartLive.participants" :key="(p.kind || '') + '-' + (p.invitationId || p.playerId)">
-                                <div class="flex items-center gap-1 bg-bg text-text-secondary pl-3 pr-1 py-1.5 rounded-lg text-sm">
+                                <div
+                                    class="flex items-center gap-1 bg-bg text-text-secondary py-1.5 rounded-lg text-sm"
+                                    :class="p.removeUrl ? 'pl-3 pr-1' : 'px-3'"
+                                >
                                     <span>
                                         <span x-text="p.name"></span>
                                         <span
@@ -103,7 +106,7 @@
                 <div class="max-h-36 sm:max-h-44 overflow-y-auto overflow-x-hidden pr-1 -mr-1">
                     <div class="flex flex-wrap gap-2">
                         @foreach($participants as $participant)
-                            <div class="flex items-center gap-1 bg-bg text-text-secondary pl-3 pr-1 py-1.5 rounded-lg  text-sm">
+                            <div class="flex items-center gap-1 bg-bg text-text-secondary px-3 py-1.5 rounded-lg text-sm">
                                 <span>
                                     {{ $participant['name'] }}
                                     @if($participant['kind'] === 'guest')

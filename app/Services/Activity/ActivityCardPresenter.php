@@ -3,6 +3,7 @@
 namespace App\Services\Activity;
 
 use App\Domain\Activity\ActivityRegistry;
+use App\Domain\Activity\ActivityType;
 use App\Models\Activity\Activity;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
@@ -32,7 +33,7 @@ class ActivityCardPresenter
             'type' => $activity->type,
             'kind' => $this->registry->kind((string) $activity->type),
             'sentence' => $sentence,
-            'sentenceParts' => $this->sentenceParts($sentence, $name, $playerId),
+            'sentenceParts' => $this->sentenceParts((string) $activity->type, $sentence, $name, $playerId, $payload),
             'occurredAt' => $activity->occurred_at?->toIso8601String(),
             'header' => $this->header($activity, $payload, $player),
             'actor' => [
@@ -57,27 +58,81 @@ class ActivityCardPresenter
     }
 
     /**
-     * Imię zarejestrowanego gracza na początku zdania prowadzi do jego profilu.
-     *
-     * @return list<array{text: string, url: ?string, playerId: ?int}>
+     * @param  array<string, mixed>  $payload
+     * @return list<array{text: string, url: ?string, playerId: ?int, tournamentId: ?int, organizationId: ?int}>
      */
-    private function sentenceParts(string $sentence, string $actorName, ?int $playerId): array
+    private function sentenceParts(string $type, string $sentence, string $actorName, ?int $playerId, array $payload): array
     {
+        if ($type === ActivityType::TournamentChampion->value || $type === ActivityType::TournamentAnnounced->value) {
+            return $this->tournamentSentenceParts($type, $playerId, $payload);
+        }
+
         if ($playerId === null || $actorName === '' || ! str_starts_with($sentence, $actorName)) {
-            return [['text' => $sentence, 'url' => null, 'playerId' => null]];
+            return [$this->part($sentence)];
         }
 
         return [
-            [
-                'text' => $actorName,
-                'url' => route('players.show', $playerId),
-                'playerId' => $playerId,
-            ],
-            [
-                'text' => substr($sentence, strlen($actorName)),
-                'url' => null,
-                'playerId' => null,
-            ],
+            $this->part($actorName, route('players.show', $playerId), $playerId),
+            $this->part(substr($sentence, strlen($actorName))),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return list<array{text: string, url: ?string, playerId: ?int, tournamentId: ?int, organizationId: ?int}>
+     */
+    private function tournamentSentenceParts(string $type, ?int $playerId, array $payload): array
+    {
+        $tournamentName = (string) ($payload['tournamentName'] ?? 'turniej');
+        $tournamentId = isset($payload['tournamentId']) ? (int) $payload['tournamentId'] : null;
+        $organizationName = trim((string) ($payload['organizationName'] ?? ''));
+        $organizationId = isset($payload['organizationId']) ? (int) $payload['organizationId'] : null;
+        $tournamentUrl = $tournamentId ? route('tournaments.show', $tournamentId) : null;
+        $organizationUrl = $organizationId ? route('organizations.show', $organizationId) : null;
+
+        $parts = [];
+        if ($type === ActivityType::TournamentAnnounced->value) {
+            $parts[] = $this->part('Nowy turniej ');
+        } else {
+            $actor = (string) ($payload['actorName'] ?? 'Gracz');
+            $parts[] = $playerId
+                ? $this->part($actor, route('players.show', $playerId), $playerId)
+                : $this->part($actor);
+            $parts[] = $this->part(' wygrał turniej ');
+        }
+
+        $parts[] = $tournamentId
+            ? $this->part($tournamentName, $tournamentUrl, null, $tournamentId)
+            : $this->part($tournamentName);
+
+        if ($organizationName !== '') {
+            $parts[] = $this->part(' w ');
+            $parts[] = $organizationId
+                ? $this->part($organizationName, $organizationUrl, null, null, $organizationId)
+                : $this->part($organizationName);
+        }
+
+        $parts[] = $this->part('.');
+
+        return $parts;
+    }
+
+    /**
+     * @return array{text: string, url: ?string, playerId: ?int, tournamentId: ?int, organizationId: ?int}
+     */
+    private function part(
+        string $text,
+        ?string $url = null,
+        ?int $playerId = null,
+        ?int $tournamentId = null,
+        ?int $organizationId = null,
+    ): array {
+        return [
+            'text' => $text,
+            'url' => $url,
+            'playerId' => $playerId,
+            'tournamentId' => $tournamentId,
+            'organizationId' => $organizationId,
         ];
     }
 

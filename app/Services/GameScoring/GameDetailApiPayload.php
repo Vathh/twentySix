@@ -69,6 +69,8 @@ final class GameDetailApiPayload
             'leagueWalkoverLabel' => $detail['leagueWalkoverLabel'] ?? null,
             'usesSetScore' => (bool) ($detail['usesSetScore'] ?? false),
             'status' => $detail['status'],
+            'startingScore' => (int) ($detail['matchFormat']['startingScore'] ?? 501),
+            'broadcastChannel' => $detail['broadcastChannel'] ?? null,
             'player1' => self::playerRef($player1),
             'player2' => self::playerRef($player2),
             'player1Score' => (int) $detail['player1Score'],

@@ -56,6 +56,56 @@ class QuickGameLobbyMvpTest extends TestCase
             ->assertJsonPath('matchFormat.legsToWinSet', 2);
     }
 
+    public function test_invite_missing_lobby_is_not_found(): void
+    {
+        $response = $this->postJson('/api/quick-game/lobby/999999/invite', [
+            'playerId' => $this->friendPlayer->id,
+        ]);
+
+        $response->assertNotFound()
+            ->assertJsonPath('message', 'To lobby już nie istnieje.');
+
+        $body = $response->getContent();
+        $this->assertStringNotContainsString('QuickGameLobby', $body);
+        $this->assertStringNotContainsString('No query results', $body);
+    }
+
+    public function test_missing_lobby_is_not_found_on_read_join_leave_start_and_ffa_state(): void
+    {
+        $message = 'To lobby już nie istnieje.';
+
+        $this->getJson('/api/quick-game/lobby/999999')
+            ->assertNotFound()
+            ->assertJsonPath('message', $message);
+
+        $this->postJson('/api/quick-game/lobby/999999/join')
+            ->assertNotFound()
+            ->assertJsonPath('message', $message);
+
+        $this->postJson('/api/quick-game/lobby/999999/leave')
+            ->assertNotFound()
+            ->assertJsonPath('message', $message);
+
+        $this->postJson('/api/quick-game/lobby/999999/start')
+            ->assertNotFound()
+            ->assertJsonPath('message', $message);
+
+        $this->getJson('/api/quick-game/lobby/999999/ffa/state')
+            ->assertNotFound()
+            ->assertJsonPath('message', $message);
+    }
+
+    public function test_invite_started_lobby_still_rejects_in_polish(): void
+    {
+        $lobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');
+        QuickGameLobby::query()->whereKey($lobbyId)->update(['status' => 'started']);
+
+        $this->postJson("/api/quick-game/lobby/{$lobbyId}/invite", [
+            'playerId' => $this->friendPlayer->id,
+        ])->assertStatus(400)
+            ->assertJsonPath('message', 'Lobby nie przyjmuje już graczy');
+    }
+
     public function test_invite_non_friend_is_rejected(): void
     {
         $lobbyId = $this->postJson('/api/quick-game/lobby/create')->json('id');

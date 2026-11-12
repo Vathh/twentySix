@@ -8,6 +8,7 @@ use App\Enums\AssignableEntityType;
 use App\Models\Organization\Organization;
 use App\Models\Player\Player;
 use App\Services\Organization\OrganizationInvitationService;
+use App\Services\Organization\OrganizationJoinRequestService;
 use App\Services\Organization\OrganizationLogoService;
 use App\Services\Organization\OrganizationService;
 use App\Services\Player\PlayerService;
@@ -29,6 +30,7 @@ class OrganizationManageController
     public function __construct(
         private OrganizationService $organizationService,
         private OrganizationInvitationService $invitationService,
+        private OrganizationJoinRequestService $joinRequests,
         private OrganizationLogoService $logoService,
         private PlayerService $playerService,
         private UserService $userService,
@@ -198,6 +200,38 @@ class OrganizationManageController
         ));
     }
 
+    public function approveJoinRequest(Organization $organization, int $joinRequest): JsonResponse
+    {
+        Gate::authorize('update', $organization);
+
+        try {
+            $this->joinRequests->approve($organization, $joinRequest, (int) request()->user()->id);
+        } catch (RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(array_merge(
+            ['message' => 'Gracz dołączył do organizacji.'],
+            $this->payload($organization->fresh()),
+        ));
+    }
+
+    public function rejectJoinRequest(Organization $organization, int $joinRequest): JsonResponse
+    {
+        Gate::authorize('update', $organization);
+
+        try {
+            $this->joinRequests->reject($organization, $joinRequest, (int) request()->user()->id);
+        } catch (RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(array_merge(
+            ['message' => 'Zgłoszenie odrzucone.'],
+            $this->payload($organization->fresh()),
+        ));
+    }
+
     public function cancelInvitation(Organization $organization, int $invitation): JsonResponse
     {
         Gate::authorize('update', $organization);
@@ -346,6 +380,7 @@ class OrganizationManageController
                 'id' => $invitation->id,
                 'name' => $invitation->userPlayer?->name ?? '—',
             ])->values()->all(),
+            'pendingJoinRequests' => $this->joinRequests->pendingRows($organization->id),
             'guests' => $organization->guests
                 ->map(fn ($guest) => [
                     'id' => (int) $guest->id,

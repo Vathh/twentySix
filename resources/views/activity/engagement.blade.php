@@ -28,7 +28,10 @@
             </div>
             <p class="feed-comment-body" x-text="comment.body"></p>
             <div class="feed-comment-actions">
-                <button type="button" class="feed-post-action" @click="likeComment(comment)" :class="comment.reactions.mine === 'like' && 'is-on'">
+                <button type="button" class="feed-post-action" @click="likeComment(comment)" :class="comment.reactions.mine === 'like' && 'is-on'" aria-label="Lubię to">
+                    <svg viewBox="0 0 24 24" class="feed-heart" aria-hidden="true">
+                        <path d="M12 20.5s-6.4-4.1-8.9-7.8C1.2 10.2 1.6 6.8 4.3 5.4c2-.1 3.8.8 4.8 2.4L12 11l2.9-3.2c1-1.6 2.8-2.5 4.8-2.4 2.7 1.4 3.1 4.8 1.2 7.3-2.5 3.7-8.9 7.8-8.9 7.8z"/>
+                    </svg>
                     <span x-text="likesOf(comment)"></span>
                 </button>
                 <button type="button" class="feed-post-action" @click="startReply(comment)">Odpowiedz</button>
@@ -44,7 +47,10 @@
                     </div>
                     <p class="feed-comment-body" x-text="reply.body"></p>
                     <div class="feed-comment-actions">
-                        <button type="button" class="feed-post-action" @click="likeComment(reply)" :class="reply.reactions.mine === 'like' && 'is-on'">
+                        <button type="button" class="feed-post-action" @click="likeComment(reply)" :class="reply.reactions.mine === 'like' && 'is-on'" aria-label="Lubię to">
+                            <svg viewBox="0 0 24 24" class="feed-heart" aria-hidden="true">
+                                <path d="M12 20.5s-6.4-4.1-8.9-7.8C1.2 10.2 1.6 6.8 4.3 5.4c2-.1 3.8.8 4.8 2.4L12 11l2.9-3.2c1-1.6 2.8-2.5 4.8-2.4 2.7 1.4 3.1 4.8 1.2 7.3-2.5 3.7-8.9 7.8-8.9 7.8z"/>
+                            </svg>
                             <span x-text="likesOf(reply)"></span>
                         </button>
                         <button type="button" class="feed-post-action" x-show="reply.canDelete" @click="remove(reply)" x-text="pendingDelete === reply.id ? 'Usuń na pewno' : 'Usuń'"></button>

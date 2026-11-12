@@ -85,7 +85,7 @@ export function registerRefereeScoring(Alpine) {
         pendingSwitchIndex: null,
         dismissedLossKey: null,
         cancelled: false,
-        legVisitsHeight: 240,
+        legVisitsHeight: 160,
 
         init() {
             this.session = requireRefereeSessionOrRedirect();
@@ -233,6 +233,27 @@ export function registerRefereeScoring(Alpine) {
 
         remaining(player) {
             return player?.remaining ?? this.startingScore;
+        },
+
+        canCheck() {
+            if (this.busy || this.isFinished || this.inputLocked || this.openerOpen || !this.openerChosen || this.switchOpenerOpen || this.bullOffRequired || this.lossThresholdOpen) {
+                return false;
+            }
+            return this.checkoutAllowed(this.remaining(this.currentPlayer));
+        },
+
+        checkoutAllowed(remaining) {
+            const score = Number(remaining);
+            const bogeys = [159, 162, 163, 165, 166, 168, 169];
+            return Number.isInteger(score) && score >= 2 && score <= 170 && !bogeys.includes(score);
+        },
+
+        submitCheck() {
+            if (!this.canCheck()) {
+                return;
+            }
+            this.input = String(this.remaining(this.currentPlayer));
+            this.submitVisit();
         },
 
         get legVisitRows() {

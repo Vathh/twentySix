@@ -105,6 +105,29 @@
                     @endif
                 @endauth
 
+                @if(Auth::check())
+                    <div class="mt-4">
+                        @if(!empty($join['alreadyMember']))
+                            <p class="text-text-secondary text-sm">Jesteś w składzie tej organizacji.</p>
+                        @elseif(!empty($join['alreadyPending']))
+                            <p class="text-text-secondary text-sm">Zgłoszenie wysłane. Czekasz na decyzję organizatora.</p>
+                        @elseif(!empty($join['hasInvitation']))
+                            <p class="text-text-secondary text-sm">Masz zaproszenie do tej organizacji.</p>
+                        @elseif(!empty($join['canApply']))
+                            <form method="POST" action="{{ route('organizations.join-requests.store', $organization->id) }}">
+                                @csrf
+                                <button type="submit" class="btn btn-primary">Zgłoś się</button>
+                            </form>
+                        @elseif(!empty($join['reason']))
+                            <p class="text-text-secondary text-sm">{{ $join['reason'] }}</p>
+                        @endif
+                    </div>
+                @else
+                    <div class="mt-4">
+                        <a href="{{ route('pages.loginPanel') }}" class="btn btn-primary">Zaloguj się, aby się zgłosić</a>
+                    </div>
+                @endif
+
                 <x-section-head title="Sezony turniejowe" class="mt-8">
                     <x-slot:action>
                         @organizationAdmin($organization)

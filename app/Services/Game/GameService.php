@@ -32,6 +32,7 @@ use App\Services\Tournament\TournamentResultService;
 use App\Support\GameScoring\GameScoringContext;
 use App\Support\GameScoring\ScoringLock;
 use App\Support\Tournament\GroupRosterOrder;
+use DomainException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -354,6 +355,8 @@ class GameService
             $this->playoffBracketLiveService->pushTournament($dto->gameResultDTO->tournamentId);
 
             return true;
+        } catch (DomainException $e) {
+            throw $e;
         } catch (Throwable $e) {
             \Log::error('Playoff game update failed', [
                 'gameId' => $dto->gameResultDTO->gameId,
@@ -605,6 +608,8 @@ class GameService
             }
 
             return true;
+        } catch (DomainException $e) {
+            throw $e;
         } catch (Throwable $e) {
             \Log::error('Group game update failed', [
                 'gameId' => $dto->gameResultDTO->gameId,

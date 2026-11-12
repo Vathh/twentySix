@@ -261,6 +261,17 @@ Route::post('/organizations/{organization}/follow', [ActivityFeedWebController::
 Route::delete('/organizations/{organization}/follow', [ActivityFeedWebController::class, 'unfollowOrganization'])
     ->middleware('auth')
     ->name('organizations.unfollow');
+Route::post('/organizations/{organization}/join-requests', [OrganizationController::class, 'applyJoinRequest'])
+    ->middleware('auth')
+    ->name('organizations.join-requests.store');
+Route::post('/organizations/{organization}/join-requests/{joinRequest}/approve', [OrganizationController::class, 'approveJoinRequest'])
+    ->middleware('auth')
+    ->whereNumber('joinRequest')
+    ->name('organizations.join-requests.approve');
+Route::post('/organizations/{organization}/join-requests/{joinRequest}/reject', [OrganizationController::class, 'rejectJoinRequest'])
+    ->middleware('auth')
+    ->whereNumber('joinRequest')
+    ->name('organizations.join-requests.reject');
 Route::prefix('organizations/{organization}')->group(function () {
     Route::get('/relatedUsers', [OrganizationController::class, 'relatedUsers'])->name('organizations.relatedUsers');
     Route::post('/relatedUsers/add', [OrganizationController::class, 'addRelatedUser'])->name('organizations.relatedUsers.add');
@@ -359,6 +370,9 @@ Route::prefix('tournaments/{tournament}')->group(function () {
     Route::post('/join-code/toggle', [TournamentController::class, 'toggleJoinCode'])->name('tournaments.join-code.toggle');
     Route::post('/tablet-login-code/regenerate', [TournamentController::class, 'regenerateTabletLoginCode'])->name('tournaments.tablet-login-code.regenerate');
     Route::post('/join-requests', [TournamentController::class, 'applyJoinRequest'])->name('tournaments.join-requests.store')->middleware('auth');
+    Route::post('/organization-invite', [TournamentController::class, 'inviteParticipantToOrganization'])
+        ->middleware('auth')
+        ->name('tournaments.organization-invite');
     Route::post('/join-requests/{joinRequest}/approve', [TournamentController::class, 'approveJoinRequest'])->name('tournaments.join-requests.approve');
     Route::post('/join-requests/{joinRequest}/reject', [TournamentController::class, 'rejectJoinRequest'])->name('tournaments.join-requests.reject');
     Route::post('/participants/guests/add', [TournamentController::class, 'addGuestParticipant'])->name('tournaments.participants.guests.add');

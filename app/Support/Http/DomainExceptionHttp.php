@@ -8,11 +8,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
- * Jedna mapa DomainException → HTTP. 422 domyślnie; 409/403 gdy getCode() to CONFLICT/FORBIDDEN.
+ * Jedna mapa DomainException → HTTP. 422 domyślnie; 409/403/404 gdy getCode() to CONFLICT/FORBIDDEN/NOT_FOUND.
  */
 final class DomainExceptionHttp
 {
     public const FORBIDDEN = 403;
+
+    public const NOT_FOUND = 404;
 
     public const CONFLICT = 409;
 
@@ -22,6 +24,7 @@ final class DomainExceptionHttp
     {
         return match ($e->getCode()) {
             self::FORBIDDEN => self::FORBIDDEN,
+            self::NOT_FOUND => self::NOT_FOUND,
             self::CONFLICT => self::CONFLICT,
             default => self::UNPROCESSABLE,
         };

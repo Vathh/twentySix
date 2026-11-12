@@ -7,10 +7,13 @@ use App\Domain\Tournament\TournamentDomain;
 use App\Domain\Tournament\TournamentStartRules;
 use App\Enums\BracketSide;
 use App\Enums\TournamentStatus;
+use App\Models\Organization\Organization;
 use App\Models\Tournament\Tournament;
 use App\Models\Users\User;
 use App\Queries\GetTournamentData;
+use App\ViewModels\TournamentDataViewModel;
 use App\Services\GameScoring\GameAuthorizationService;
+use App\Services\Organization\OrganizationInvitationService;
 use App\Services\Retention\ApplicationEntityDeletionService;
 use App\Services\Stats\CompetitionThreeDartAverageService;
 use App\Services\Tournament\LoginCodeService;
@@ -34,6 +37,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
@@ -55,6 +59,7 @@ class TournamentController extends Controller
         private TournamentStartPageService $startPageService,
         private TournamentCancelService $tournamentCancelService,
         private ApplicationEntityDeletionService $applicationEntityDeletionService,
+        private OrganizationInvitationService $organizationInvitationService,
     ) {}
 
     public function index(Request $request)
@@ -163,6 +168,8 @@ class TournamentController extends Controller
             $join = $this->joinRequestService->statusForUser($tournament, Auth::id());
         }
 
+        $organizationInvite = $this->organizationInviteForFinishedTournament($tournament, $viewModel);
+
         return view('tournaments.show', [
             'tournament' => $tournamentDomain,
             'organizationName' => $season?->organization?->name ?? $tournament->organization?->name,
@@ -197,6 +204,7 @@ class TournamentController extends Controller
             'join' => $join,
             'participantCount' => $participantCount,
             'minPlayers' => $minPlayers,
+            'organizationInvite' => $organizationInvite,
         ]);
     }
 
@@ -762,6 +770,74 @@ class TournamentController extends Controller
         }
 
         return 'bracket';
+    }
+
+    public function inviteParticipantToOrganization(Request $request, Tournament $tournament): RedirectResponse
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+        ]);
+
+        $tournament->loadMissing(['organization', 'season.organization']);
+        $host = $tournament->hostOrganization();
+        abort_unless(
+            $host !== null
+            && $tournament->status === TournamentStatus::FINISHED
+            && Gate::allows('update', $host),
+            403,
+        );
+
+        $userId = (int) $validated['user_id'];
+        $participantIds = $tournament->results()
+            ->with('player')
+            ->get()
+            ->map(fn ($result) => $result->player?->user_id)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        abort_unless(in_array($userId, $participantIds, true), 422);
+
+        try {
+            $this->organizationInvitationService->send($host->id, $userId, (int) Auth::id());
+        } catch (RuntimeException $e) {
+            return redirect()
+                ->route('tournaments.show', ['tournament' => $tournament->id, 'tab' => 'results'])
+                ->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('tournaments.show', ['tournament' => $tournament->id, 'tab' => 'results'])
+            ->with('success', 'Wysłano zaproszenie do organizacji');
+    }
+
+    /**
+     * @return array{states: array<int, string>}|null
+     */
+    private function organizationInviteForFinishedTournament(Tournament $tournament, TournamentDataViewModel $viewModel): ?array
+    {
+        if ($tournament->status !== TournamentStatus::FINISHED) {
+            return null;
+        }
+
+        $host = $viewModel->hostOrganization();
+        if ($host === null) {
+            return null;
+        }
+
+        $organization = Organization::query()->find($host['id']);
+        if ($organization === null || ! Gate::allows('update', $organization)) {
+            return null;
+        }
+
+        $userIds = $viewModel->results()
+            ->map(fn (array $row) => $row['player']->userId ?? null)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return [
+            'states' => $this->organizationInvitationService->statesForUsers($organization->id, $userIds),
+        ];
     }
 
     private function resolveShowTab(TournamentDomain $tournament): string

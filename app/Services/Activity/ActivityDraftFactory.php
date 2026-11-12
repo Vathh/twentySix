@@ -7,6 +7,7 @@ use App\Domain\Activity\ActivityType;
 use App\Domain\Activity\Definitions\PlayerBadgesActivity;
 use App\Domain\Activity\Definitions\PlayerFirst180Activity;
 use App\Domain\Activity\Definitions\PlayerPersonalBestActivity;
+use App\Domain\Activity\Definitions\TournamentAnnouncedActivity;
 use App\Domain\Activity\Definitions\TournamentChampionActivity;
 use App\Domain\PlayerDomain;
 use App\Enums\TournamentStatus;
@@ -58,6 +59,38 @@ class ActivityDraftFactory
                 'organizationName' => $organization?->name ?? '',
             ],
             occurredAt: $occurredAt ?? $tournament->updated_at ?? Carbon::now(),
+            replaceExisting: $definition->replacesExisting(),
+        );
+    }
+
+    public function tournamentAnnounced(int $tournamentId): ?ActivityDraft
+    {
+        $tournament = $this->tournamentRepository->findModelOrNull($tournamentId, ['season.organization', 'organization']);
+        if ($tournament === null) {
+            return null;
+        }
+
+        $organization = $tournament->hostOrganization();
+        if ($organization === null) {
+            return null;
+        }
+
+        $definition = new TournamentAnnouncedActivity;
+
+        return new ActivityDraft(
+            type: ActivityType::TournamentAnnounced,
+            subjectType: $definition->subjectType(),
+            subjectId: $tournamentId,
+            actorPlayerId: null,
+            actorUserId: null,
+            organizationId: $organization->id,
+            payload: [
+                'tournamentId' => $tournamentId,
+                'tournamentName' => $tournament->name,
+                'organizationId' => $organization->id,
+                'organizationName' => $organization->name,
+            ],
+            occurredAt: $tournament->created_at ?? Carbon::now(),
             replaceExisting: $definition->replacesExisting(),
         );
     }

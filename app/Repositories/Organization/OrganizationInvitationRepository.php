@@ -42,6 +42,30 @@ class OrganizationInvitationRepository
             ->map(fn (OrganizationInvitation $invitation) => OrganizationInvitationDomain::fromEloquent($invitation));
     }
 
+    public function pendingUserIds(int $organizationId, array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        return OrganizationInvitation::query()
+            ->where('organization_id', $organizationId)
+            ->whereIn('user_id', $userIds)
+            ->where('status', OrganizationInvitationStatus::PENDING)
+            ->pluck('user_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    public function findPendingForPair(int $organizationId, int $userId): ?OrganizationInvitation
+    {
+        return OrganizationInvitation::query()
+            ->where('organization_id', $organizationId)
+            ->where('user_id', $userId)
+            ->where('status', OrganizationInvitationStatus::PENDING)
+            ->first();
+    }
+
     public function createOrReinvite(int $organizationId, int $userId, int $invitedBy): OrganizationInvitationDomain
     {
         $existing = OrganizationInvitation::query()

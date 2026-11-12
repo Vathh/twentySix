@@ -13,6 +13,7 @@ use App\Models\Player\Player;
 use App\Services\Activity\FeedService;
 use App\Services\League\LeagueService;
 use App\Services\Organization\OrganizationInvitationService;
+use App\Services\Organization\OrganizationJoinRequestService;
 use App\Services\Organization\OrganizationLogoService;
 use App\Services\Organization\OrganizationService;
 use App\Services\Player\PlayerService;
@@ -32,12 +33,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class OrganizationController extends Controller
 {
     public function __construct(
         private OrganizationService $organizationService,
         private OrganizationInvitationService $organizationInvitationService,
+        private OrganizationJoinRequestService $organizationJoinRequestService,
         private UserService $userService,
         private PlayerService $playerService,
         private LeagueService $leagueService,
@@ -114,6 +117,10 @@ class OrganizationController extends Controller
             'follow' => Auth::check()
                 ? $this->feed->followState(Auth::user(), FollowSubject::Organization, (string) $organization->id)
                 : null,
+            'join' => $this->organizationJoinRequestService->statusForUser(
+                $organization,
+                Auth::user(),
+            ),
         ]);
     }
 
@@ -244,6 +251,9 @@ class OrganizationController extends Controller
             'organization' => $organization,
             'relatedUsers' => $relatedUsers,
             'pendingInvitations' => $pendingInvitations,
+            'pendingJoinRequests' => $canManage
+                ? $this->organizationJoinRequestService->pendingRows($organizationId)
+                : [],
             'canManage' => $canManage,
         ]);
     }
@@ -302,6 +312,58 @@ class OrganizationController extends Controller
         return redirect()
             ->route('organizations.relatedUsers', $organizationId)
             ->with('success', 'Wysłano zaproszenie do organizacji');
+    }
+
+    public function applyJoinRequest(Organization $organization): RedirectResponse
+    {
+        $user = Auth::user();
+        abort_unless($user instanceof \App\Models\Users\User, 403);
+
+        try {
+            $this->organizationJoinRequestService->apply($organization, $user);
+        } catch (RuntimeException $e) {
+            return redirect()
+                ->route('organizations.show', $organization)
+                ->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('organizations.show', $organization)
+            ->with('success', 'Zgłoszenie wysłane. Czekasz na decyzję organizatora.');
+    }
+
+    public function approveJoinRequest(Organization $organization, int $joinRequest): RedirectResponse
+    {
+        $this->authorize('update', $organization);
+
+        try {
+            $this->organizationJoinRequestService->approve($organization, $joinRequest, (int) Auth::id());
+        } catch (RuntimeException $e) {
+            return redirect()
+                ->route('organizations.relatedUsers', $organization)
+                ->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('organizations.relatedUsers', $organization)
+            ->with('success', 'Gracz dołączył do organizacji.');
+    }
+
+    public function rejectJoinRequest(Organization $organization, int $joinRequest): RedirectResponse
+    {
+        $this->authorize('update', $organization);
+
+        try {
+            $this->organizationJoinRequestService->reject($organization, $joinRequest, (int) Auth::id());
+        } catch (RuntimeException $e) {
+            return redirect()
+                ->route('organizations.relatedUsers', $organization)
+                ->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('organizations.relatedUsers', $organization)
+            ->with('success', 'Zgłoszenie odrzucone.');
     }
 
     public function cancelRelatedUserInvitation(Request $request, int $organizationId, int $invitation): RedirectResponse|JsonResponse

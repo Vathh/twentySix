@@ -7,6 +7,7 @@ use App\Enums\GameStatus;
 use App\Models\Game\Game;
 use App\Models\GroupStanding\GroupStanding;
 use App\Models\Organization\Organization;
+use App\Models\PlayoffGame\PlayoffGame;
 use App\Models\Player\Player;
 use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
@@ -164,6 +165,75 @@ class GameResultCorrectionTest extends TestCase
         ]);
     }
 
+    public function test_http_walkover_on_group_game_first_to_two(): void
+    {
+        ['user' => $user, 'game' => $game] = $this->createOpenGroupGame(MatchFormat::default());
+
+        $this->actingAs($user)
+            ->post(route('games.result.update', ['type' => 'group', 'id' => $game->id]), [
+                'walkover' => 1,
+                'winner_id' => $game->player1_id,
+            ])
+            ->assertRedirect(route('games.show', ['type' => 'group', 'id' => $game->id]));
+
+        $game->refresh();
+        $this->assertSame(GameStatus::FINISHED, $game->status);
+        $this->assertSame(2, $game->player1_score);
+        $this->assertSame(0, $game->player2_score);
+        $this->assertSame($game->player1_id, $game->winner_id);
+    }
+
+    public function test_http_walkover_on_playoff_first_to_four(): void
+    {
+        ['user' => $user, 'game' => $game] = $this->createOpenPlayoffGame(new MatchFormat(legsToWinSet: 4, setsToWinMatch: 1));
+
+        $this->actingAs($user)
+            ->post(route('games.result.update', ['type' => 'playoff', 'id' => $game->id]), [
+                'walkover' => 1,
+                'winner_id' => $game->player2_id,
+            ])
+            ->assertRedirect(route('games.show', ['type' => 'playoff', 'id' => $game->id]));
+
+        $game->refresh();
+        $this->assertSame(GameStatus::FINISHED, $game->status);
+        $this->assertSame(0, $game->player1_score);
+        $this->assertSame(4, $game->player2_score);
+        $this->assertSame($game->player2_id, $game->winner_id);
+    }
+
+    public function test_walkover_without_winner_is_visible_on_the_match_page(): void
+    {
+        ['user' => $user, 'game' => $game] = $this->createOpenGroupGame(MatchFormat::default());
+        $show = route('games.show', ['type' => 'group', 'id' => $game->id]);
+
+        $this->actingAs($user)
+            ->from($show)
+            ->post(route('games.result.update', ['type' => 'group', 'id' => $game->id]), [
+                'walkover' => 1,
+            ])
+            ->assertRedirect($show)
+            ->assertSessionHasErrors('winner_id');
+
+        $this->actingAs($user)
+            ->get($show)
+            ->assertOk()
+            ->assertSee('Wybierz zwycięzcę walkovera.');
+    }
+
+    public function test_walkover_confirm_escapes_apostrophe_in_player_name(): void
+    {
+        ['user' => $user, 'game' => $game] = $this->createOpenGroupGame(MatchFormat::default(), "O'Brien");
+
+        $html = $this->actingAs($user)
+            ->get(route('games.show', ['type' => 'group', 'id' => $game->id]))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('data-confirm=', $html);
+        $this->assertStringContainsString('O&#039;Brien', $html);
+        $this->assertStringNotContainsString('onclick="return confirm', $html);
+    }
+
     private function createGroupGame(MatchFormat $format): Game
     {
         $user = User::factory()->create(['can_create_organizations' => true]);
@@ -207,5 +277,86 @@ class GameResultCorrectionTest extends TestCase
             'group_number' => 1,
             'status' => GameStatus::FINISHED,
         ], $format->toDatabaseColumns()));
+    }
+
+    /**
+     * @return array{user: User, game: Game}
+     */
+    private function createOpenGroupGame(MatchFormat $format, string $player1Name = 'A'): array
+    {
+        $user = User::factory()->create(['can_create_organizations' => true]);
+        $organization = Organization::create(['name' => 'Organizacja', 'description' => '']);
+        $organization->admins()->attach($user->id);
+        $season = Season::create([
+            'name' => 'Sezon',
+            'organization_id' => $organization->id,
+            'start_date' => '2024-01-01',
+            'end_date' => '2024-12-31',
+        ]);
+        $season->admins()->attach($user->id);
+        $tournament = Tournament::create([
+            'name' => 'Turniej',
+            'season_id' => $season->id,
+            'date' => '2024-06-01',
+            'status' => \App\Enums\TournamentStatus::GROUP,
+        ]);
+        $tournament->admins()->attach($user->id);
+
+        $p1 = Player::create(['name' => $player1Name, 'season_id' => $season->id, 'organization_id' => $organization->id]);
+        $p2 = Player::create(['name' => 'B', 'season_id' => $season->id, 'organization_id' => $organization->id]);
+
+        GroupStanding::create([
+            'tournament_id' => $tournament->id,
+            'group_number' => 1,
+            'player_id' => $p1->id,
+        ]);
+        GroupStanding::create([
+            'tournament_id' => $tournament->id,
+            'group_number' => 1,
+            'player_id' => $p2->id,
+        ]);
+
+        $game = Game::create(array_merge([
+            'tournament_id' => $tournament->id,
+            'player1_id' => $p1->id,
+            'player2_id' => $p2->id,
+            'player1_score' => 0,
+            'player2_score' => 0,
+            'winner_id' => null,
+            'group_number' => 1,
+            'status' => GameStatus::IN_PROGRESS,
+        ], $format->toDatabaseColumns()));
+
+        return ['user' => $user, 'game' => $game];
+    }
+
+    /**
+     * @return array{user: User, game: PlayoffGame}
+     */
+    private function createOpenPlayoffGame(MatchFormat $format): array
+    {
+        $user = User::factory()->create();
+        $tournament = Tournament::create([
+            'name' => 'Playoff',
+            'season_id' => null,
+            'date' => '2024-06-01',
+            'status' => \App\Enums\TournamentStatus::PLAYOFF,
+        ]);
+        $tournament->admins()->attach($user->id);
+
+        $p1 = Player::create(['name' => 'Ernest']);
+        $p2 = Player::create(['name' => 'Marek']);
+        $game = PlayoffGame::create(array_merge([
+            'tournament_id' => $tournament->id,
+            'round' => 'SF',
+            'slot' => 'SF-0',
+            'player1_id' => $p1->id,
+            'player2_id' => $p2->id,
+            'player1_score' => 0,
+            'player2_score' => 0,
+            'status' => GameStatus::IN_PROGRESS,
+        ], $format->toDatabaseColumns()));
+
+        return ['user' => $user, 'game' => $game];
     }
 }

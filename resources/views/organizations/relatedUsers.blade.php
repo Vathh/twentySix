@@ -25,5 +25,27 @@
             add-label="Zaproś"
             empty-related="Nikt jeszcze nie jest powiązany z tą organizacją."
         />
+        @if($canManage && count($pendingJoinRequests ?? []) > 0)
+            <div class="card mt-6">
+                <h2 class="text-lg font-semibold text-text mb-3">Zgłoszenia</h2>
+                <ul class="space-y-3">
+                    @foreach($pendingJoinRequests as $request)
+                        <li class="flex flex-wrap items-center justify-between gap-3">
+                            <span class="text-text">{{ $request['name'] }}</span>
+                            <span class="flex gap-2">
+                                <form method="POST" action="{{ route('organizations.join-requests.approve', [$organization->id, $request['id']]) }}">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary">Dołącz</button>
+                                </form>
+                                <form method="POST" action="{{ route('organizations.join-requests.reject', [$organization->id, $request['id']]) }}">
+                                    @csrf
+                                    <button type="submit" class="btn btn-secondary">Odrzuć</button>
+                                </form>
+                            </span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
     </x-people-page>
 @endsection

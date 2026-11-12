@@ -76,14 +76,24 @@ export function registerGameLiveViewer(Alpine) {
 
         init() {
             this.connectWebSocket(config);
-            this.pollTimer = setInterval(() => this.fetchState(), 30000);
+            if (config.enablePoll !== false) {
+                this.pollTimer = setInterval(() => this.fetchState(), 30000);
+            }
+            if (!config.initialState) {
+                this.fetchState();
+            }
             this.snapRemainingFromState();
             this.$watch(
                 () => this.state?.game?.status,
                 (status) => {
-                    if (status === 'finished') {
-                        this.redirectToShow();
+                    if (status !== 'finished') {
+                        return;
                     }
+                    if (config.reloadOnFinish) {
+                        window.location.reload();
+                        return;
+                    }
+                    this.redirectToShow();
                 },
             );
             this.announcedVisitId = Number(this.highlightVisit?.id ?? 0);

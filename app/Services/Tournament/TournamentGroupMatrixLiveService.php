@@ -44,6 +44,7 @@ class TournamentGroupMatrixLiveService
 
         $averages = $this->groupAverages($tournamentId);
 
+        $standings = $this->standingsForGroup($tournamentId, $groupNumber);
         $payload = [
             'tournamentId' => $tournamentId,
             'groupNumber' => $groupNumber,
@@ -62,14 +63,15 @@ class TournamentGroupMatrixLiveService
                     (int) $game->player2_id,
                 ),
             ],
-            'standings' => null,
-            'playoffHighlight' => null,
+            'standings' => $includeStandings ? $standings : null,
+            'playoffHighlight' => $includeStandings
+                ? $this->playoffHighlightForGroup($tournamentId, $groupNumber)
+                : null,
+            'groupAverage' => $averages->averageForPlayers(
+                ThreeDartAverageSet::KIND_GROUP,
+                array_column($standings, 'playerId'),
+            ),
         ];
-
-        if ($includeStandings) {
-            $payload['standings'] = $this->standingsForGroup($tournamentId, $groupNumber);
-            $payload['playoffHighlight'] = $this->playoffHighlightForGroup($tournamentId, $groupNumber);
-        }
 
         broadcast(new TournamentGroupMatrixUpdated($tournamentId, $payload));
     }
@@ -113,9 +115,15 @@ class TournamentGroupMatrixLiveService
         })->values()->all();
 
         $standingsByGroup = [];
+        $groupAverages = [];
         $groupNumbers = $games->pluck('group_number')->unique()->filter()->map(fn ($n) => (int) $n);
         foreach ($groupNumbers as $groupNumber) {
-            $standingsByGroup[$groupNumber] = $this->standingsForGroup($tournamentId, $groupNumber);
+            $rows = $this->standingsForGroup($tournamentId, $groupNumber);
+            $standingsByGroup[$groupNumber] = $rows;
+            $groupAverages[$groupNumber] = $averages->averageForPlayers(
+                ThreeDartAverageSet::KIND_GROUP,
+                array_column($rows, 'playerId'),
+            );
         }
 
         $tournament = $this->tournamentRepository->findModelOrNull($tournamentId, [
@@ -139,6 +147,7 @@ class TournamentGroupMatrixLiveService
                 : ($status !== null ? (string) $status : null),
             'games' => $gamePayload,
             'standingsByGroup' => $standingsByGroup,
+            'groupAverages' => $groupAverages,
             'playoffHighlights' => $playoffHighlights,
         ];
     }

@@ -28,14 +28,33 @@
                         {{ $result['place'] ?? '—' }}
                     @endif
                 </td>
-                <td class="px-3 py-2 font-medium text-text whitespace-nowrap sticky-player">
-                    @if($result['player']->userId)
-                        <a href="{{ route('players.show', $result['player']->id) }}" class="text-text hover:text-accent hover:underline transition-colors">
+                <td class="px-3 py-2 font-medium text-text sticky-player">
+                    @php
+                        $playerUserId = $result['player']->userId ? (int) $result['player']->userId : null;
+                        $inviteState = $playerUserId && is_array($organizationInvite ?? null)
+                            ? ($organizationInvite['states'][$playerUserId] ?? null)
+                            : null;
+                    @endphp
+                    <div class="flex flex-col items-start gap-1">
+                        @if($playerUserId)
+                            <a href="{{ route('players.show', $result['player']->id) }}" class="text-text hover:text-accent hover:underline transition-colors">
+                                {{ $result['player']->name }}
+                            </a>
+                        @else
                             {{ $result['player']->name }}
-                        </a>
-                    @else
-                        {{ $result['player']->name }}
-                    @endif
+                        @endif
+                        @if($inviteState === 'invitable')
+                            <form method="POST" action="{{ route('tournaments.organization-invite', $tournament->id) }}">
+                                @csrf
+                                <input type="hidden" name="user_id" value="{{ $playerUserId }}">
+                                <button type="submit" class="text-xs font-semibold text-accent hover:underline">Zaproś do organizacji</button>
+                            </form>
+                        @elseif($inviteState === 'pending')
+                            <span class="text-xs text-text-muted">Oczekuje</span>
+                        @elseif($inviteState === 'member')
+                            <span class="text-xs text-text-muted">W organizacji</span>
+                        @endif
+                    </div>
                 </td>
                 <td class="px-2 py-2 text-center tabular-nums text-text-muted">
                     {{ \App\Support\AverageFormat::display($threeDartAverages->tournamentPlayerAverage((int) ($result['player']->id ?? 0))) }}

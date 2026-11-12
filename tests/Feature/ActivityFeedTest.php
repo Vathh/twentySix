@@ -14,6 +14,7 @@ use App\Repositories\Organization\OrganizationRepository;
 use App\Services\Activity\ActivityRecorder;
 use App\Services\Organization\OrganizationService;
 use App\Services\Player\PlayerService;
+use App\Services\Tournament\TournamentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -51,7 +52,9 @@ class ActivityFeedTest extends TestCase
         $this->actingAs($viewer)
             ->get('/?cursor=not-a-real-cursor')
             ->assertOk()
-            ->assertSee('wygrał turniej Piątkowe Granie w Apagon.', false)
+            ->assertSee('wygrał turniej ', false)
+            ->assertSee('Piątkowe Granie', false)
+            ->assertSee(route('tournaments.show', $tournament), false)
             ->assertSee(route('organizations.show', $organization), false)
             ->assertSee(route('players.show', $playerId), false)
             ->assertSee('data-feed-end', false)
@@ -117,7 +120,10 @@ class ActivityFeedTest extends TestCase
         $this->actingAs($viewer)
             ->get('/')
             ->assertOk()
-            ->assertSee('jjj wygrał turniej Piątkowe Granie w Apagon.', false)
+            ->assertSee('jjj', false)
+            ->assertSee('wygrał turniej ', false)
+            ->assertSee('Piątkowe Granie', false)
+            ->assertSee(route('tournaments.show', $tournament), false)
             ->assertDontSee(route('players.show', $guest), false)
             ->assertSee(route('organizations.show', $organization), false);
     }
@@ -175,7 +181,9 @@ class ActivityFeedTest extends TestCase
             ->assertOk()
             ->assertSee('Podsumowanie')
             ->assertSee('Tablica')
-            ->assertSee('wygrał turniej Piątkowe Granie w Apagon.', false)
+            ->assertSee('wygrał turniej ', false)
+            ->assertSee('Piątkowe Granie', false)
+            ->assertSee(route('tournaments.show', $tournament), false)
             ->assertSee(route('players.show', $player), false);
 
         $this->get(route('players.feed', $player))
@@ -306,5 +314,40 @@ class ActivityFeedTest extends TestCase
         ]);
 
         return [$viewer, $andrzej, $organizationModel, $tournament];
+    }
+
+    public function test_creating_a_tournament_posts_one_announcement_for_followers(): void
+    {
+        [$viewer, $andrzej, $organization] = $this->club();
+        app(OrganizationRepository::class)->addRelatedUser($organization->id, $viewer->id);
+        $outsider = User::factory()->create();
+        app(PlayerService::class)->create('Obcy', $outsider->id);
+
+        $id = app(TournamentService::class)->create(
+            null,
+            'Środowy turniej',
+            '2026-07-01',
+            $andrzej->id,
+            $organization->id,
+        );
+        app(ActivityRecorder::class)->tournamentAnnounced($id);
+
+        $this->assertSame(1, \App\Models\Activity\Activity::query()->where('subject_id', $id)->count());
+
+        $this->actingAs($andrzej);
+        app(TournamentService::class)->updateDetails($id, 'Środowy turniej', '2026-07-02');
+        $this->assertSame(1, \App\Models\Activity\Activity::query()->where('subject_id', $id)->count());
+
+        $this->actingAs($viewer, 'sanctum')
+            ->getJson('/api/feed')
+            ->assertOk()
+            ->assertJsonPath('items.0.sentence', 'Nowy turniej Środowy turniej w Apagon.')
+            ->assertJsonPath('items.0.sentenceParts.1.tournamentId', $id)
+            ->assertJsonPath('items.0.sentenceParts.3.organizationId', $organization->id);
+
+        $this->actingAs($outsider, 'sanctum')
+            ->getJson('/api/feed')
+            ->assertOk()
+            ->assertJsonCount(0, 'items');
     }
 }

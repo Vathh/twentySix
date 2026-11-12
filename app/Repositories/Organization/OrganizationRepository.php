@@ -129,6 +129,20 @@ class OrganizationRepository
             ->all();
     }
 
+    public function relatedIdsAmong(int $organizationId, array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        return DB::table('organization_user')
+            ->where('organization_id', $organizationId)
+            ->whereIn('user_id', $userIds)
+            ->pluck('user_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
     public function isRelated(int $organizationId, int $userId): bool
     {
         return Organization::query()

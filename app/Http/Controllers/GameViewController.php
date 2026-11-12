@@ -38,7 +38,10 @@ class GameViewController extends Controller
             $id,
         );
 
-        return view('games.show', $detail);
+        return view('games.show', array_merge($detail, [
+            'reverb' => ReverbClientConfig::forWeb(),
+            'liveStateUrl' => route('games.live.state', ['type' => $type, 'id' => $id]),
+        ]));
     }
 
     public function updateResult(WebGameResultRequest $request, string $type, int $id): RedirectResponse

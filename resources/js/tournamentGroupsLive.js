@@ -175,6 +175,17 @@ export function registerTournamentGroupsLive(Alpine) {
 			if (payload.includeStandings && payload.playoffHighlight) {
 				this.applyPlayoffHighlight(payload.groupNumber, payload.playoffHighlight);
 			}
+			if (Object.prototype.hasOwnProperty.call(payload, 'groupAverage')) {
+				this.applyGroupAverage(payload.groupNumber, payload.groupAverage);
+			}
+		},
+
+		applyGroupAverage(groupNumber, average) {
+			const el = this.$el.querySelector(`[data-group-number="${groupNumber}"] [data-group-average]`);
+			if (!el) {
+				return;
+			}
+			el.textContent = average == null || average === '' ? '' : Number(average).toFixed(2);
 		},
 
 		applyGame(game) {
@@ -311,6 +322,9 @@ export function registerTournamentGroupsLive(Alpine) {
 				});
 				Object.entries(data.playoffHighlights ?? {}).forEach(([groupNumber, highlight]) => {
 					this.applyPlayoffHighlight(Number(groupNumber), highlight);
+				});
+				Object.entries(data.groupAverages ?? {}).forEach(([groupNumber, average]) => {
+					this.applyGroupAverage(Number(groupNumber), average);
 				});
 			} catch {
 				// WebSocket is primary

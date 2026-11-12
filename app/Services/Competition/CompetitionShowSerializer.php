@@ -368,6 +368,13 @@ class CompetitionShowSerializer
 
             $groups[] = [
                 'groupNumber' => $groupNumber,
+                'groupAverage' => $averages->averageForPlayers(
+                    ThreeDartAverageSet::KIND_GROUP,
+                    array_values(array_filter(array_map(
+                        fn (array $row) => $row['playerId'] ?? null,
+                        $standingRows,
+                    ))),
+                ),
                 'standings' => $standingRows,
                 'games' => $gameRows,
                 'playoffHighlight' => $highlights[$groupNumber] ?? [
