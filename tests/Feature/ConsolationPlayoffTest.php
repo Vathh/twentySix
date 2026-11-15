@@ -7,6 +7,8 @@ use App\DTO\GameResultDTO;
 use App\DTO\UpdateGameDTO;
 use App\Domain\Tournament\PlayoffConsolationSeeding;
 use App\Enums\BracketSide;
+use App\Support\Tournament\PlayoffByePairing;
+use App\Support\Tournament\PlayoffSlotIds;
 use App\Enums\GameKind;
 use App\Enums\GameStage;
 use App\Enums\GameStatus;
@@ -23,6 +25,7 @@ use App\Services\GameScoring\GameResultCorrectionService;
 use App\Services\Tournament\TournamentFinishService;
 use DomainException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\SeedsTournamentParticipants;
 use Tests\TestCase;
 
@@ -149,6 +152,100 @@ class ConsolationPlayoffTest extends TestCase
             ->where('bracket_side', BracketSide::Main)
             ->where('round', GameStage::FINAL->value)
             ->value('legs_to_win_set'));
+    }
+
+    public function test_uneven_groups_create_consolation_when_first_round_has_an_odd_match_count(): void
+    {
+        $tournament = $this->startedConsolationTournament(21, 4, 8);
+
+        $this->finishAllGroupGames($tournament->id);
+
+        $tournament->refresh();
+        $this->assertSame(16, $tournament->consolation_bracket_size);
+        $this->assertSame(15, PlayoffGame::where('tournament_id', $tournament->id)
+            ->where('bracket_side', BracketSide::Consolation)
+            ->count());
+        $this->assertSame(
+            $this->consolationPairsFromStandings($tournament),
+            $this->consolationPairsFromGames($tournament->id, GameStage::EIGHT),
+        );
+    }
+
+    /**
+     * @return array<string, array{0: int, 1: int, 2: int}>
+     */
+    public static function variedAdvanceCounts(): array
+    {
+        return [
+            '6 graczy, 2 grupy, 4 do głównej, 2 do pocieszenia' => [6, 2, 4],
+            '8 graczy, 2 grupy, 4 do głównej, 4 do pocieszenia' => [8, 2, 4],
+            '10 graczy, 2 grupy, 4 do głównej, 6 do pocieszenia' => [10, 2, 4],
+            '9 graczy, 3 grupy, 4 do głównej, 5 do pocieszenia' => [9, 3, 4],
+            '12 graczy, 3 grupy, 8 do głównej, 4 do pocieszenia' => [12, 3, 8],
+            '12 graczy, 4 grupy, 4 do głównej, 8 do pocieszenia' => [12, 4, 4],
+            '14 graczy, 4 grupy, 8 do głównej, 6 do pocieszenia' => [14, 4, 8],
+            '16 graczy, 4 grupy, 8 do głównej, 8 do pocieszenia' => [16, 4, 8],
+            '18 graczy, 4 grupy, 8 do głównej, 10 do pocieszenia' => [18, 4, 8],
+            '15 graczy, 5 grup, 8 do głównej, 7 do pocieszenia' => [15, 5, 8],
+            '24 graczy, 4 grupy, 16 do głównej, 8 do pocieszenia' => [24, 4, 16],
+        ];
+    }
+
+    #[DataProvider('variedAdvanceCounts')]
+    public function test_draw_creates_both_brackets_for_varied_advance_counts(
+        int $players,
+        int $groups,
+        int $mainSize,
+    ): void {
+        $tournament = $this->startedConsolationTournament($players, $groups, $mainSize);
+        $this->finishAllGroupGames($tournament->id);
+        $tournament->refresh();
+
+        $this->assertSame(TournamentStatus::PLAYOFF, $tournament->status);
+        $this->assertSame($mainSize, (int) $tournament->playoff_bracket_size);
+
+        $advances = array_values($tournament->group_advances ?? []);
+        $loserCount = GroupStanding::query()
+            ->where('tournament_id', $tournament->id)
+            ->where('place', '>', 0)
+            ->get()
+            ->filter(fn (GroupStanding $standing) => $standing->place > (int) ($advances[$standing->group_number - 1] ?? 0))
+            ->count();
+        $consolationSize = PlayoffByePairing::nextPowerOfTwo($loserCount);
+
+        $this->assertGreaterThanOrEqual(2, $loserCount);
+        $this->assertSame($consolationSize, (int) $tournament->consolation_bracket_size);
+        $this->assertSame($mainSize, PlayoffGame::where('tournament_id', $tournament->id)
+            ->where('bracket_side', BracketSide::Main)
+            ->count());
+        $this->assertSame($consolationSize - 1, PlayoffGame::where('tournament_id', $tournament->id)
+            ->where('bracket_side', BracketSide::Consolation)
+            ->count());
+
+        $consolationRound = PlayoffSlotIds::stageForFirstRoundMatchCount(intdiv($consolationSize, 2));
+        $this->assertSame(
+            $this->consolationPairsFromStandings($tournament),
+            $this->consolationPairsFromGames($tournament->id, $consolationRound),
+        );
+
+        $mainRound = PlayoffSlotIds::stageForFirstRoundMatchCount(intdiv($mainSize, 2));
+        $this->assertSame(intdiv($mainSize, 2), PlayoffGame::query()
+            ->where('tournament_id', $tournament->id)
+            ->where('bracket_side', BracketSide::Main)
+            ->where('round', $mainRound->value)
+            ->whereNotNull('player1_id')
+            ->whereNotNull('player2_id')
+            ->count());
+
+        $byeId = app(PlayerRepository::class)->byePlayerId();
+        $this->assertSame(0, PlayoffGame::query()
+            ->where('tournament_id', $tournament->id)
+            ->where('bracket_side', BracketSide::Consolation)
+            ->where('status', GameStatus::SCHEDULED)
+            ->where(function ($query) use ($byeId) {
+                $query->where('player1_id', $byeId)->orWhere('player2_id', $byeId);
+            })
+            ->count());
     }
 
     public function test_main_bracket_fills_early_without_consolation(): void

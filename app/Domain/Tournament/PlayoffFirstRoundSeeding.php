@@ -50,7 +50,7 @@ final class PlayoffFirstRoundSeeding
             return self::pairUniform($byGroup, $groupNumbers, $perGroup);
         }
 
-        $matches = self::pairGreedy($advancingPlayers);
+        $matches = self::pairGreedy($advancingPlayers) ?? self::pairAcrossGroups($advancingPlayers);
 
         if ($matches === null) {
             throw new RuntimeException('Nie można utworzyć par pierwszej rundy bez wspólnej grupy.');
@@ -324,6 +324,73 @@ final class PlayoffFirstRoundSeeding
     }
 
     /**
+     * Gdy zachłanne dobieranie utknie na jednej grupie, łączy największe grupy.
+     * Sukces jest możliwy, dopóki żadna grupa nie ma więcej osób niż reszta razem.
+     *
+     * @param  list<array{player_id: int, group_number: int, place: int}>  $players
+     * @return list<array{0: array{player_id: int, group_number: int, place: int}, 1: array{player_id: int, group_number: int, place: int}>}|null
+     */
+    private static function pairAcrossGroups(array $players): ?array
+    {
+        $byGroup = [];
+        foreach ($players as $player) {
+            $byGroup[$player['group_number']][] = $player;
+        }
+        foreach ($byGroup as &$groupPlayers) {
+            usort(
+                $groupPlayers,
+                static fn (array $a, array $b): int => $a['place'] <=> $b['place'] ?: $a['player_id'] <=> $b['player_id'],
+            );
+        }
+        unset($groupPlayers);
+
+        $matches = [];
+        while ($byGroup !== []) {
+            $counts = array_map('count', $byGroup);
+            $total = array_sum($counts);
+            $max = max($counts);
+            if ($max > $total - $max) {
+                return null;
+            }
+
+            $anchorGroup = null;
+            foreach ($counts as $group => $count) {
+                if ($count === $max && ($anchorGroup === null || $group < $anchorGroup)) {
+                    $anchorGroup = $group;
+                }
+            }
+
+            $opponentGroup = null;
+            $opponentCount = -1;
+            foreach ($counts as $group => $count) {
+                if ($group === $anchorGroup) {
+                    continue;
+                }
+                if ($count > $opponentCount || ($count === $opponentCount && $group < $opponentGroup)) {
+                    $opponentGroup = $group;
+                    $opponentCount = $count;
+                }
+            }
+
+            if ($anchorGroup === null || $opponentGroup === null) {
+                return null;
+            }
+
+            $anchor = array_shift($byGroup[$anchorGroup]);
+            $opponent = array_pop($byGroup[$opponentGroup]);
+            $matches[] = self::orderedPlayers($anchor, $opponent);
+
+            foreach ([$anchorGroup, $opponentGroup] as $group) {
+                if ($byGroup[$group] === []) {
+                    unset($byGroup[$group]);
+                }
+            }
+        }
+
+        return $matches;
+    }
+
+    /**
      * @param  list<array{player_id: int, group_number: int, place: int}>  $remaining
      */
     private static function weakestOpponentIndex(array $remaining, int $groupNumber): ?int
@@ -393,7 +460,9 @@ final class PlayoffFirstRoundSeeding
             );
         }
 
-        $half = intdiv(count($matches), 2);
+        // Nieparzysta liczba meczów: jedna połówka jest o jeden większa.
+        // intdiv(n, 2) jako limit obu połówek gubi ostatni mecz (np. 5 → 2+2).
+        $half = intdiv(count($matches) + 1, 2);
         $halves = [[], []];
         $groupCounts = [[], []];
 
@@ -420,6 +489,10 @@ final class PlayoffFirstRoundSeeding
                     $bestKey = $key;
                     $chosen = $side;
                 }
+            }
+
+            if ($chosen === null) {
+                throw new RuntimeException('Nie można rozłożyć meczu na połówki drabinki.');
             }
 
             $halves[$chosen][] = [$match[0]['player_id'], $match[1]['player_id']];

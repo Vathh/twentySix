@@ -164,6 +164,59 @@ class PlayoffFirstRoundSeedingTest extends TestCase
         $this->assertSame(2, $winnerVsWinner);
     }
 
+    public function test_odd_match_count_keeps_every_player_in_a_half(): void
+    {
+        $players = [
+            ['player_id' => 43, 'group_number' => 4, 'place' => 3],
+            ['player_id' => 14, 'group_number' => 1, 'place' => 4],
+            ['player_id' => 24, 'group_number' => 2, 'place' => 4],
+            ['player_id' => 34, 'group_number' => 3, 'place' => 4],
+            ['player_id' => 44, 'group_number' => 4, 'place' => 4],
+            ['player_id' => 15, 'group_number' => 1, 'place' => 5],
+            ['player_id' => 25, 'group_number' => 2, 'place' => 5],
+            ['player_id' => 35, 'group_number' => 3, 'place' => 5],
+            ['player_id' => 45, 'group_number' => 4, 'place' => 5],
+            ['player_id' => 16, 'group_number' => 1, 'place' => 6],
+        ];
+
+        $pairs = PlayoffFirstRoundSeeding::pair($players);
+
+        $this->assertSame([
+            [43, 16],
+            [24, 15],
+            [44, 35],
+            [14, 25],
+            [34, 45],
+        ], $pairs);
+        $this->assertTrue(PlayoffFirstRoundSeeding::pairsSatisfyGroupConstraint(
+            $pairs,
+            $this->groupByPlayer($players),
+        ));
+    }
+
+    public function test_three_groups_still_pair_when_greedy_would_leave_one_group(): void
+    {
+        $players = [
+            ['player_id' => 14, 'group_number' => 1, 'place' => 4],
+            ['player_id' => 15, 'group_number' => 1, 'place' => 5],
+            ['player_id' => 24, 'group_number' => 2, 'place' => 4],
+            ['player_id' => 25, 'group_number' => 2, 'place' => 5],
+            ['player_id' => 34, 'group_number' => 3, 'place' => 4],
+            ['player_id' => 35, 'group_number' => 3, 'place' => 5],
+        ];
+
+        $pairs = PlayoffFirstRoundSeeding::pair($players);
+
+        $this->assertCount(3, $pairs);
+        $this->assertTrue(PlayoffFirstRoundSeeding::pairsSatisfyGroupConstraint(
+            $pairs,
+            $this->groupByPlayer($players),
+        ));
+        $seen = array_merge(...$pairs);
+        sort($seen);
+        $this->assertSame([14, 15, 24, 25, 34, 35], $seen);
+    }
+
     public function test_rejects_odd_advancer_count(): void
     {
         $this->expectException(InvalidArgumentException::class);
