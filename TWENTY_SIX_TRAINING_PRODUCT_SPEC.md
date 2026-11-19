@@ -157,56 +157,28 @@ Plany i ćwiczenia można dodawać do Ulubionych niezależnie od tego, czy użyt
 
 # 5. Biblioteka ćwiczeń
 
-Biblioteka zawiera gotowe ćwiczenia przygotowane przez administratora.
+Biblioteka zawiera stałą listę ćwiczeń. Administrator jej nie zakłada i nie wyłącza.
+
+Każde ćwiczenie ma domyślny czas albo domyślną liczbę lotek. W planie administrator może zmienić tylko tę jedną zmienną. Zasady rzutów zostają przy ćwiczeniu.
 
 Dostępne funkcje:
 
-- wyszukiwarka,
-- filtrowanie według poziomu umiejętności,
+- wyszukiwarka po nazwie,
 - szczegóły ćwiczeń.
 
-Biblioteka oraz szybkie uruchamianie pojedynczych ćwiczeń korzystają z tych samych definicji ćwiczeń.
+Biblioteka oraz szybkie uruchamianie pojedynczych ćwiczeń korzystają z tej samej listy.
 
 Użytkownik nie może samodzielnie modyfikować parametrów ćwiczenia.
 
-## 5.1. Dezaktywowanie ćwiczenia
+## 5.1. Lista jest stała
 
-Administrator może dezaktywować ćwiczenie bez jego trwałego usuwania.
+Ćwiczenia nie mają statusu. Nie dezaktywuje się ich i nie usuwa z biblioteki.
 
-Po dezaktywacji:
+Z planu wyjmuje się ćwiczenie edycją planu przed publikacją. Po publikacji układu się nie zmienia.
 
-- ćwiczenie znika z Biblioteki widocznej dla użytkowników,
-- aktywne Plany zawierające ćwiczenie zostają automatycznie dezaktywowane,
-- aktywne Wyzwania zawierające ćwiczenie zostają automatycznie dezaktywowane,
-- aktywne Eventy zawierające ćwiczenie zostają automatycznie dezaktywowane,
-- rozpoczęte treningi i próby korzystające z ćwiczenia zostają unieważnione.
+Wyzwanie i event biorą domyślny czas albo domyślną liczbę lotek ćwiczenia. Tej zmiennej tam się nie nadpisuje.
 
-Unieważnione próby nie trafiają do historii i nie wpływają na statystyki, rekordy, cele ani klasyfikacje.
-
-Jeżeli dezaktywacja ćwiczenia spowoduje dezaktywację Eventu, Event pozostaje nieaktywny. Nie jest automatycznie anulowany ani usuwany.
-
-Dezaktywowane ćwiczenia są dostępne w osobnej liście panelu administratora. Administrator może je ponownie aktywować.
-
-Ponowna aktywacja ćwiczenia nie aktywuje automatycznie Planów, Wyzwań ani Eventów, które wcześniej zostały dezaktywowane. Administrator decyduje o ich ponownej aktywacji samodzielnie.
-
-W szczegółach ćwiczenia panel administratora pokazuje listę Planów, Wyzwań i Eventów zawierających dane ćwiczenie.
-
-## 5.2. Usuwanie ćwiczenia
-
-Usunięcie ćwiczenia jest odrębną operacją od jego dezaktywacji.
-
-Jeżeli administrator usuwa ćwiczenie, które jest wykorzystywane w istniejącym Planie lub Wyzwaniu, ćwiczenie zostaje również usunięte ze struktury tego Planu lub Wyzwania.
-
-Nie pozostawiamy w Planie ani Wyzwaniu odwołania do usuniętego ćwiczenia.
-
-Usunięcie ćwiczenia nie jest tym samym co jego dezaktywacja:
-
-- dezaktywacja zachowuje ćwiczenie i jego zależności, ale blokuje korzystanie z niego,
-- usunięcie usuwa ćwiczenie z Biblioteki oraz z Planów i Wyzwań, w których było wykorzystywane.
-
-Nie należy automatycznie utożsamiać usunięcia ćwiczenia z anulowaniem całego Planu lub Wyzwania. Usunięcie ćwiczenia ze struktury nie jest równoznaczne z anulowaniem tych elementów.
-
-Sposób obsługi zależności Eventów przy trwałym usuwaniu ćwiczenia wymaga osobnego uzgodnienia, jeżeli taka sytuacja pojawi się podczas implementacji. Nie należy samodzielnie wymyślać zachowania.
+Ekran każdego ćwiczenia ustala się osobno. Do tego czasu ćwiczenie jest pustym szablonem.
 
 # 6. Plany treningowe
 
@@ -288,7 +260,7 @@ Może:
 - umieszczać przerwy w dowolnym miejscu, również na początku lub końcu,
 - ustalać czas każdej przerwy.
 
-Nie może modyfikować parametrów ćwiczeń ani ich czasu w kontekście Planu.
+Przy ćwiczeniu w planie może zmienić tylko czas albo liczbę lotek. Zasad rzutów nie zmienia.
 
 Administrator wybiera deklarowany czas Planu spośród wartości 30, 60, 90 i 120 minut. Czas nie jest automatycznie wyliczany z sumy elementów. System nie ostrzega, jeśli deklarowany czas różni się od sumy czasów ćwiczeń i przerw.
 
@@ -1362,15 +1334,13 @@ Nie wysyłamy automatycznych powiadomień w związku z aktywacją, dezaktywacją
 
 # 20. Bezpieczeństwo operacji administratora
 
-Zwykłe operacje, takie jak aktywacja i dezaktywacja ćwiczenia, Planu lub Wyzwania, wymagają standardowego okna potwierdzenia.
+Zwykłe operacje, takie jak aktywacja i dezaktywacja Planu lub Wyzwania, wymagają standardowego okna potwierdzenia. Ćwiczenia nie mają statusu.
 
 Operacje nieodwracalne wymagają ponownego wpisania hasła administratora.
 
 Nie ma potrzeby wyświetlania dodatkowej listy skutków operacji. Wystarczy okno wpisania hasła i końcowego potwierdzenia.
 
 Wysłanie powiadomienia push wymaga osobnego potwierdzenia.
-
-Automatyczna dezaktywacja wielu elementów po dezaktywacji ćwiczenia wymaga jednego potwierdzenia całej operacji.
 
 # 21. Zasady prywatności i przechowywania danych
 
@@ -1404,12 +1374,12 @@ Poniższe reguły są nadrzędne i należy je stosować we wszystkich częściac
 5. **Podczas treningu:** nie pokazujemy punktacji ani statystyk. Są dostępne dopiero po zakończeniu.
 6. **Dane lokalne:** aktywna sesja jest przechowywana na urządzeniu, na którym została rozpoczęta. Zakończone, niesynchronizowane sesje są powiązane z kontem.
 7. **Analiza zawodnika:** dane są pobierane przy wejściu. Otwarty widok nie aktualizuje się po zmianach API ani synchronizacji. Ponowne wejście pobiera nowy komplet danych.
-8. **Dezaktywacja ćwiczenia:** automatycznie dezaktywuje zależne aktywne Plany, Wyzwania i Eventy. Ponowna aktywacja ćwiczenia nie reaktywuje zależnych elementów.
-9. **Usunięcie ćwiczenia:** usuwa je również ze struktury Planów i Wyzwań, w których było wykorzystywane. Usunięcia nie należy utożsamiać z dezaktywacją ani anulowaniem całego Planu lub Wyzwania.
+8. **Lista ćwiczeń:** jest stała. Ćwiczenia nie mają statusu i nie dezaktywują planów, wyzwań ani eventów.
+9. **Zmienna ćwiczenia w planie:** administrator może zmienić tylko czas albo liczbę lotek. Z nieopublikowanego planu da się wyjąć ćwiczenie. To nie anuluje planu.
 10. **Dezaktywacja a anulowanie:** dezaktywacja jest odwracalna, anulowanie jest nieodwracalne.
 11. **Usunięcie historii:** użytkownik usuwa całą historię jednym działaniem. Dane przez 30 dni mogą zostać przywrócone przez programistę, a później są trwale usuwane. Usunięcie historii odejmuje również ćwiczenia tego użytkownika od globalnego licznika.
 12. **Event zakończony wcześniej:** znika z widoku użytkowników i nie przyjmuje nowych prób, ale jego status „Zakończony” oraz ostateczna klasyfikacja pojawiają się dopiero po zakończeniu lub unieważnieniu wszystkich rozpoczętych prób.
-13. **Dezaktywacja Eventu wskutek dezaktywacji ćwiczenia:** Event pozostaje nieaktywny. Nie jest automatycznie anulowany ani usuwany.
+13. **Event i ćwiczenie:** event bierze domyślny czas albo domyślną liczbę lotek ćwiczenia. Wyłączenie ćwiczenia nie istnieje, więc nie wyłącza eventu.
 14. **Brak pełnego dziennika rzutów:** aplikacja nie wysyła i nie przechowuje pełnego zapisu każdego rzutu. Użytkownik i administrator widzą szczegółowe statystyki, nie historię każdego trafienia.
 15. **Projektowanie ekranów ćwiczeń:** Cursor nie projektuje samodzielnie szczegółowych widoków pojedynczych ćwiczeń ani całego przebiegu Planów. Te elementy są uzgadniane z właścicielem projektu na bieżąco.
 
@@ -1421,7 +1391,7 @@ Dotyczy to w szczególności:
 
 - dokładnych progów poziomów odznak treningowych,
 - szczegółowych definicji i parametrów poszczególnych ćwiczeń,
-- szczegółowych mechanik ćwiczeń wykorzystywanych w Planach, Wyzwaniach i Eventach.
+- szczegółowych zasad ćwiczeń wykorzystywanych w Planach, Wyzwaniach i Eventach.
 
 Te wartości pozostają zgodne z wcześniej zatwierdzonymi definicjami projektu.
 

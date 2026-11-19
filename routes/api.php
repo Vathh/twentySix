@@ -29,7 +29,11 @@ use App\Http\Controllers\Api\TournamentCatalogController;
 use App\Http\Controllers\Api\TournamentInvitationController;
 use App\Http\Controllers\Api\TournamentJoinController;
 use App\Http\Controllers\Api\TournamentManageController;
+use App\Http\Controllers\Api\TrainingCatalogController;
+use App\Http\Controllers\Api\TrainingDefinitionController;
+use App\Http\Controllers\Api\TrainingFavoriteController;
 use App\Http\Controllers\Api\TrainingGameController;
+use App\Http\Controllers\Api\TrainingSessionController;
 use App\Http\Controllers\FeedModerationController;
 use Illuminate\Support\Facades\Route;
 
@@ -164,6 +168,23 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     });
 
     Route::post('/training/games', [TrainingGameController::class, 'store']);
+    Route::post('/training/definitions', [TrainingDefinitionController::class, 'store']);
+    Route::post('/training/definitions/{definition}/activate', [TrainingDefinitionController::class, 'activate'])
+        ->whereNumber('definition');
+    Route::post('/training/sessions', [TrainingSessionController::class, 'store']);
+    Route::get('/training/catalog/{kind}', [TrainingCatalogController::class, 'index'])
+        ->whereIn('kind', ['exercises', 'plans', 'challenges']);
+    Route::get('/training/exercises/{exercise}', [TrainingCatalogController::class, 'showExercise'])
+        ->where('exercise', '[a-z][a-z0-9_]{0,63}');
+    Route::get('/training/definitions/{definition}', [TrainingCatalogController::class, 'show'])
+        ->whereNumber('definition');
+    Route::get('/training/favorites', [TrainingFavoriteController::class, 'index']);
+    Route::post('/training/favorites', [TrainingFavoriteController::class, 'store']);
+    Route::put('/training/favorites', [TrainingFavoriteController::class, 'update']);
+    Route::delete('/training/favorites/exercises/{exercise}', [TrainingFavoriteController::class, 'destroyExercise'])
+        ->where('exercise', '[a-z][a-z0-9_]{0,63}');
+    Route::delete('/training/favorites/{definition}', [TrainingFavoriteController::class, 'destroy'])
+        ->whereNumber('definition');
 
     Route::prefix('quick-game')->group(function () {
         Route::post('/update', [QuickGameController::class, 'update']);

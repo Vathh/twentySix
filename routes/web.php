@@ -155,6 +155,38 @@ Route::middleware(['auth', 'platform.admin'])->prefix('admin')->name('admin.')->
     Route::post('/deleted/{kind}/{id}/restore', [\App\Http\Controllers\PlatformAdminController::class, 'restore'])
         ->whereNumber('id')
         ->name('deleted.restore');
+
+    Route::get('/training', [\App\Http\Controllers\TrainingAdminController::class, 'index'])->name('training.index');
+    Route::get('/training/{kind}', [\App\Http\Controllers\TrainingAdminController::class, 'list'])
+        ->whereIn('kind', ['exercises', 'plans', 'challenges', 'events'])
+        ->name('training.list');
+    Route::get('/training/{kind}/create', [\App\Http\Controllers\TrainingAdminController::class, 'create'])
+        ->whereIn('kind', ['exercises', 'plans', 'challenges', 'events'])
+        ->name('training.create');
+    Route::post('/training/{kind}', [\App\Http\Controllers\TrainingAdminController::class, 'store'])
+        ->whereIn('kind', ['exercises', 'plans', 'challenges', 'events'])
+        ->name('training.store');
+    Route::get('/training/definitions/{definition}', [\App\Http\Controllers\TrainingAdminController::class, 'show'])
+        ->whereNumber('definition')
+        ->name('training.show');
+    Route::get('/training/definitions/{definition}/edit', [\App\Http\Controllers\TrainingAdminController::class, 'edit'])
+        ->whereNumber('definition')
+        ->name('training.edit');
+    Route::put('/training/definitions/{definition}', [\App\Http\Controllers\TrainingAdminController::class, 'update'])
+        ->whereNumber('definition')
+        ->name('training.update');
+    Route::post('/training/definitions/{definition}/activate', [\App\Http\Controllers\TrainingAdminController::class, 'activate'])
+        ->whereNumber('definition')
+        ->name('training.activate');
+    Route::post('/training/definitions/{definition}/deactivate', [\App\Http\Controllers\TrainingAdminController::class, 'deactivate'])
+        ->whereNumber('definition')
+        ->name('training.deactivate');
+    Route::post('/training/definitions/{definition}/cancel', [\App\Http\Controllers\TrainingAdminController::class, 'cancel'])
+        ->whereNumber('definition')
+        ->name('training.cancel');
+    Route::post('/training/definitions/{definition}/remove', [\App\Http\Controllers\TrainingAdminController::class, 'remove'])
+        ->whereNumber('definition')
+        ->name('training.remove');
 });
 
 Route::middleware('auth')->group(function () {

@@ -90,7 +90,7 @@ Komunikaty: „Dodano do Ulubionych”, „Usunięto z Ulubionych”.
 
 Nie ma wyszukiwarki, zmiany widoku ani „Wyczyść wszystkie”.
 
-Nieaktywny plan lub wyzwanie zostaje w ulubionych z oznaczeniem „Nieaktywne”. Nie da się go uruchomić ani dodać do ulubionych, dopóki jest nieaktywne. Anulowany plan, anulowane wyzwanie i usunięte ćwiczenie znikają z ulubionych wszystkich użytkowników.
+Nieaktywny plan lub wyzwanie zostaje w ulubionych z oznaczeniem „Nieaktywne”. Nie da się go uruchomić ani dodać do ulubionych, dopóki jest nieaktywne. Anulowany plan i anulowane wyzwanie znikają z ulubionych wszystkich użytkowników. Ćwiczenie zostaje, bo lista ćwiczeń jest stała.
 
 Eventy nie wchodzą do ulubionych.
 
@@ -98,15 +98,21 @@ Pozycję można dodać bez wcześniejszego rozegrania.
 
 ---
 
-## 5. Biblioteka i definicje ćwiczeń
+## 5. Biblioteka ćwiczeń
 
-Biblioteka i szybki start ćwiczenia korzystają z tych samych definicji.
+Biblioteka i szybki start korzystają z tej samej, stałej listy ćwiczeń. Ta lista jest całym katalogiem sposobów rozgrywki. Administrator jej nie zakłada, nie nazywa po swojemu i nie wyłącza.
 
-Jest wyszukiwarka i filtr **poziom trudności**: Łatwy, Średni, Trudny. Ten sam zestaw co przy planach.
+Każde ćwiczenie ma jedną zmienną. Albo czas, albo liczbę lotek. Druga zostaje pusta. Wartości w punktach 5.1–5.15 są domyślne: tak ćwiczenie startuje z biblioteki i z szybkiego startu.
 
-Użytkownik nie zmienia parametrów ćwiczenia. Czas i liczba lotek stoją przy definicji. Plan nie może ich nadpisać.
+W planie administrator bierze ćwiczenie z tej listy i może zmienić tylko tę zmienną, w tym jednym miejscu planu. To samo ćwiczenie może wejść drugi raz, z inną wartością. Zasady rzutów zostają przy ćwiczeniu. Po publikacji planu tej wartości się nie zmienia.
 
-Grafika ćwiczenia, planu, wyzwania i eventu jest opcjonalna. Plik jak awatar: JPEG, PNG albo WebP, do 2 MB. Brak pliku daje inicjały z nazwy.
+Użytkownik nie zmienia parametrów.
+
+Jest wyszukiwarka po nazwie ćwiczenia. Filtr poziomu trudności zostaje przy planach.
+
+Grafika planu, wyzwania i eventu jest opcjonalna. Plik jak awatar: JPEG, PNG albo WebP, do 2 MB. Brak pliku daje inicjały z nazwy. Ćwiczenie nie ma własnej grafiki: na kafelku są inicjały nazwy.
+
+Ekran i przebieg każdego ćwiczenia ustalamy osobno. Do tego czasu ćwiczenie jest pustym szablonem z nazwą, zasadami i domyślną zmienną.
 
 ### Zasada podsumowania
 
@@ -128,6 +134,8 @@ Trafienie w sektor, jeśli ćwiczenie nie mówi inaczej, to single, double albo 
 
 3 minuty. Dowolne rzuty, bez celu, bez punktacji, bez skuteczności, bez listy lotek. Zapisujemy czas. Status ukończone albo pominięte.
 
+Na środku ekranu jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Nie ma celu ani przycisków lotek. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania z zapisanym czasem.
+
 ### 5.2. 9 lotek
 
 36 lotek, cztery etapy po 9:
@@ -139,13 +147,17 @@ Trafienie w sektor, jeśli ćwiczenie nie mówi inaczej, to single, double albo 
 
 Bez punktacji. W podsumowaniu trafienia i procent osobno dla każdego etapu oraz łącznie.
 
-### 5.3. Zegar 1–20 + Bull
+### 5.3. Zegar szybki
 
-21 lotek, po jednej w sektory 1–20, potem Bull. Bull to outer albo inner. Nietrafienie nie zatrzymuje przejścia. Bez punktacji. W podsumowaniu trafienia i procent.
+21 lotek, po jednej w sektory 1–20, potem Bull. Bull to outer albo inner. Nietrafienie nie zatrzymuje przejścia: kolejna lotka celuje w następny sektor. Bez punktacji. W podsumowaniu trafienia i procent.
 
-### 5.4. Zegar S/D/T
+Ekran pokazuje napis „Celuj kolejno po jednej lotce w te sektory” i aktualną trójkę celów (1, 2, 3, potem 4, 5, 6, aż do 19, 20 i Bull). Podświetlony jest cel lotki, którą gracz właśnie oznacza. Między celami a przyciskami jest licznik lotki w podejściu: „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Po trzeciej lotce wraca do „Lotka nr 1”. Pod spodem dwa duże przyciski obok siebie: Pudło po lewej, Trafiona po prawej. Licznik pozycji w całym ćwiczeniu nie jest pokazywany.
 
-5 minut. Sektory 1–20, bez bulla. Sektor zalicza dowolny pierścień tej liczby: single 1 punkt, double 2, triple 3. Trzy pudła zostawiają ten sam sektor. Koniec czasu ucina ćwiczenie w trakcie sektora. Ukończenie sektora 20 przed czasem kończy ćwiczenie.
+### 5.4. Zegar sektory
+
+5 minut. Sektory 1–20, potem Bull. Bull to outer albo inner. Sektor zalicza dowolny pierścień tej liczby: single 1 punkt, double 2, triple 3. Pudło zostawia aktualny cel. Trafienie przechodzi do następnego, także w tej samej trójce lotek. Koniec czasu ucina ćwiczenie w trakcie celu. Ukończenie bulla przed czasem kończy ćwiczenie.
+
+Na górze ekranu, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Pod nim napis „Celuj w podświetlony sektor aż trafisz. Jeżeli Ci się uda to celuj w następny z wyświetlonych.” i okno kolejnych celów, najwyżej trzech, od aktualnego (1, 2, 3, po trafieniu jedynki 2, 3, 4, na końcu 20 i Bull). Podświetlony jest pierwszy z tego okna. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania. Między celami a przyciskami jest licznik lotki w podejściu: „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Po trzeciej lotce wraca do „Lotka nr 1”. Pod spodem dwa duże przyciski obok siebie: Pudło po lewej, Trafiona po prawej. Licznik pozycji w całym ćwiczeniu nie jest pokazywany.
 
 ### 5.5. Bob's 27 easy
 
@@ -235,15 +247,13 @@ Start od 81 w górę do 90, potem powrót do 81. Po ponownym zamknięciu 81, je�
 
 3 minuty. Jedna lotka w ręce, po rzucie ta sama wraca do ręki. Inner 4 punkty, outer 2, reszta 0. Wynik to suma.
 
-### 5.16. Dezaktywacja i usunięcie ćwiczenia
+### 5.16. Lista jest stała
 
-Dezaktywacja ukrywa ćwiczenie w bibliotece. Aktywne plany, wyzwania i eventy, które je zawierają, same stają się nieaktywne. Rozpoczęte sesje tych treści są unieważnione: nie wchodzą do historii i nie ruszają statystyk, rekordów, celów ani klasyfikacji. Event po takiej dezaktywacji zostaje nieaktywny. Nie jest sam anulowany ani usuwany.
+Ćwiczenia nie mają statusu. Nie da się ich dezaktywować ani usunąć z biblioteki.
 
-Ponowna aktywacja ćwiczenia nie włącza z powrotem planów, wyzwań ani eventów. Robi to administrator.
+Z planu wyjmuje się ćwiczenie edycją planu, zanim plan zostanie opublikowany. Po publikacji układu się nie zmienia. Nowa treść to nowy plan, nowe wyzwanie albo nowy event.
 
-Usunięcie ćwiczenia wyjmuje je ze struktury planów i wyzwań. Nie anuluje całego planu ani wyzwania. Jeśli ćwiczenie jest w evencie, ten event staje się nieaktywny, żeby dało się ułożyć nowy bez tego ćwiczenia.
-
-Edytora opublikowanego planu, wyzwania i eventu na tym etapie nie ma. Po pierwszej publikacji właściwości się nie zmienia. Nowa treść to nowy byt.
+Wyzwanie i event, które używają ćwiczenia, biorą jego domyślny czas albo domyślną liczbę lotek. Tej zmiennej tam się nie nadpisuje.
 
 ---
 
@@ -257,7 +267,7 @@ Kafelek: nazwa, trudność, deklarowany czas, gwiazdka ulubionych. Bez liczby ć
 
 Szczegóły: pełny opis, deklarowany czas, liczba ukończeń tego użytkownika, ulubione, „Podgląd planu”, „Rozpocznij plan”. Podgląd przy każdym wejściu jest zwinięty. Po rozwinięciu: ćwiczenia po kolei, czas każdego, przerwy i ich czas. Można przeczytać opis ćwiczenia. Nie da się wystartować jednego elementu z podglądu. „Rozpocznij plan” jest zawsze widoczny i nie pyta drugi raz.
 
-Administrator układa plan wyłącznie z ćwiczeń biblioteki. Może powtórzyć to samo ćwiczenie, wstawić dowolnie wiele przerw, także na początku i na końcu, i ustalić czas każdej przerwy. Nie zmienia parametrów ani czasu ćwiczenia. Deklarowany czas wybiera z 30, 60, 90, 120. System go nie liczy z sumy elementów i nie ostrzega, gdy suma się różni.
+Administrator układa plan z ćwiczeń biblioteki. Może powtórzyć to samo ćwiczenie, wstawić dowolnie wiele przerw, także na początku i na końcu, i ustalić czas każdej przerwy. Przy ćwiczeniu może zmienić tylko jego zmienną: czas albo liczbę lotek. Pominięta wartość zostawia domyślną. Deklarowany czas wybiera z 30, 60, 90, 120. System go nie liczy z sumy elementów i nie ostrzega, gdy suma się różni.
 
 Nowy plan jest nieaktywny, aż administrator go włączy. Po pierwszej publikacji nie edytuje się nazwy, opisu, grafiki, trudności, czasu ani układu. Zmiana to nowy plan.
 
@@ -297,7 +307,7 @@ Szczegółowy wygląd ekranów wewnątrz planu uzgadniamy osobno. Zasady z tej s
 
 Po zakończeniu od razu podsumowanie: wynik i statystyki, bez listy rzutów.
 
-Przyciski: „Powtórz ćwiczenie” i „Powrót do ekranu treningu”. Powtórzenie pyta i zaczyna nową sesję. Poprzedni wynik zostaje w historii. Z historii zamiast powrotu do Treningu jest „Wróć do historii”.
+Przyciski: „Powtórz ćwiczenie” i „Powrót do ekranu treningu”. Powtórzenie od razu zaczyna nową sesję, bez dodatkowego pytania. Poprzedni wynik zostaje w historii. Z historii zamiast powrotu do Treningu jest „Wróć do historii”.
 
 Nie da się wznowić. Przerwanie pyta. Po potwierdzeniu użytkownik wraca na ekran Trening, a sesja przepada: bez historii, statystyk, rekordów i celów.
 
@@ -561,7 +571,7 @@ Administrator nie widzi postępu bieżących celów użytkownika.
 
 Dokładamy Training do istniejącego panelu. Bez dziennika operacji. Bez zmian w banach i rolach.
 
-Aktywacja i dezaktywacja ćwiczenia, planu albo wyzwania: zwykłe potwierdzenie. Jedno potwierdzenie obejmuje też automatyczną dezaktywację zależności po wyłączeniu ćwiczenia.
+Aktywacja i dezaktywacja planu albo wyzwania: zwykłe potwierdzenie. Ćwiczenia nie mają statusu.
 
 Nieodwracalne operacje: hasło administratora i końcowe potwierdzenie, bez dodatkowej listy skutków. Dotyczy anulowania i usuwania oraz operacji eventu wymienionych w rozdziale 9.
 
@@ -615,7 +625,7 @@ Każdy numer jest osobnym podejściem. Agent najpierw czyta ten dokument, układ
 
 Nie ruszamy silnika meczowego, turnieju, ligi, szybkiej gry online ani odznak profilu. Wolna gra zostaje przy swoim silniku. Ekranu ćwiczenia ani szczegółowego przebiegu planu nie wymyślamy. Jeśli numer go potrzebuje, praca staje do uzgodnienia wyglądu z właścicielem.
 
-Playlist 30 i 60 minut nie jest warunkiem żadnego numeru. Plan składa administrator z opublikowanych ćwiczeń.
+Playlist 30 i 60 minut nie jest warunkiem żadnego numeru. Plan składa administrator z listy ćwiczeń. Przy ćwiczeniu w planie może zmienić tylko czas albo liczbę lotek.
 
 ### 1. Fundament danych
 
@@ -635,11 +645,11 @@ Gotowe, gdy: oba wejścia działają, a wiszący plan jeszcze nie, bo nie ma sil
 
 ### 3. Treść w panelu administratora
 
-Cel: ćwiczenia, plany, wyzwania i eventy. Tworzenie, grafika albo inicjały, poziom trudności, czas, status nieaktywny i aktywny, dezaktywacja zależności, usunięcie ćwiczenia ze struktury planu i wyzwania, dezaktywacja eventu po usunięciu użytego w nim ćwiczenia. Po publikacji brak edycji. Anulowanie i usunięcie z hasłem.
+Cel: plany, wyzwania i eventy. Ćwiczenia są stałą listą z domyślnym czasem albo liczbą lotek. Tworzenie planu, wyzwania i eventu, grafika albo inicjały, poziom trudności planu, w planie zmienna ćwiczenia, status nieaktywny i aktywny. Z nieopublikowanego planu da się wyjąć ćwiczenie. Po publikacji brak edycji. Anulowanie i usunięcie z hasłem.
 
 Zależy od: 1.
 
-Gotowe, gdy: administrator publikuje definicje, a aplikacja ich jeszcze nie rozgrywa.
+Gotowe, gdy: administrator układa plan z ćwiczenia i innej wartości czasu albo lotek, a aplikacja jeszcze nie rozgrywa planu.
 
 ### 4. Ulubione i ostatnio używane
 
@@ -665,7 +675,7 @@ Zależy od: 5.
 
 Kolejność wewnątrz: luźne rzuty, 9 lotek, 18 lotek, zegary, Scoring 20/19/18, Walka o licznik, Catch20, Bob's 27 easy, Bob's 27 hard, Scoring z presją, Singielki z presją, Checkout 41+, Checkout Bull 81+.
 
-Gotowe, gdy: każde opublikowane ćwiczenie da się zagrać samodzielnie i zsynchronizować.
+Gotowe, gdy: każde ćwiczenie z listy da się zagrać samodzielnie i zsynchronizować.
 
 ### 7. Plany
 

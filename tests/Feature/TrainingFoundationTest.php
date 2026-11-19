@@ -1,0 +1,457 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Domain\Training\TrainingExerciseCatalog;
+use App\Models\Users\User;
+use App\Services\Training\TrainingDefinitionService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class TrainingFoundationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_exercises_are_a_fixed_catalog_and_a_plan_keeps_their_defaults(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'exercise',
+                'name' => 'Luźne rzuty',
+                'difficulty' => 'easy',
+                'mechanic' => 'loose_throws',
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_exercise_is_catalog');
+
+        $this->actingAs($admin, 'sanctum')
+            ->getJson('/api/training/exercises/loose_throws')
+            ->assertOk()
+            ->assertJsonPath('exerciseKey', 'loose_throws')
+            ->assertJsonPath('name', 'Luźne rzuty')
+            ->assertJsonPath('durationSeconds', 180)
+            ->assertJsonPath('dartCount', null);
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'plan',
+                'name' => 'Wieczór',
+                'difficulty' => 'medium',
+                'declaredMinutes' => 60,
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'loose_throws'],
+                    ['kind' => 'exercise', 'exerciseKey' => 'nine_darts'],
+                ],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('items.0.exerciseKey', 'loose_throws')
+            ->assertJsonPath('items.0.durationSeconds', 180)
+            ->assertJsonPath('items.0.dartCount', null)
+            ->assertJsonPath('items.1.exerciseKey', 'nine_darts')
+            ->assertJsonPath('items.1.dartCount', 36)
+            ->assertJsonPath('items.1.durationSeconds', null);
+
+        $this->assertDatabaseCount('training_definitions', 1);
+    }
+
+    public function test_player_and_guest_cannot_save_a_definition(): void
+    {
+        $this->postJson('/api/training/definitions', [])->assertUnauthorized();
+        $this->postJson('/api/training/sessions', [])->assertUnauthorized();
+
+        $player = User::factory()->create();
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'plan',
+                'name' => 'Wieczór',
+                'difficulty' => 'easy',
+                'declaredMinutes' => 30,
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'loose_throws'],
+                ],
+            ])
+            ->assertForbidden()
+            ->assertJsonPath('reason', 'training_forbidden');
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/definitions/1/activate')
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('training_definitions', 0);
+    }
+
+    public function test_unknown_exercise_is_rejected(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'plan',
+                'name' => 'Coś',
+                'difficulty' => 'easy',
+                'declaredMinutes' => 30,
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'not_an_exercise'],
+                ],
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_exercise_not_found');
+
+        $this->assertDatabaseCount('training_definitions', 0);
+    }
+
+    public function test_plan_overrides_only_the_variable_of_the_exercise(): void
+    {
+        $admin = $this->admin();
+
+        $id = (int) $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'plan',
+                'name' => 'Bob',
+                'difficulty' => 'easy',
+                'declaredMinutes' => 30,
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'bobs_27_easy', 'durationSeconds' => 600],
+                    ['kind' => 'exercise', 'exerciseKey' => 'bobs_27_easy', 'durationSeconds' => 480],
+                ],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('items.0.exerciseKey', 'bobs_27_easy')
+            ->assertJsonPath('items.0.durationSeconds', 600)
+            ->assertJsonPath('items.1.durationSeconds', 480)
+            ->assertJsonPath('items.0.dartCount', null)
+            ->json('id');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'plan',
+                'name' => 'Zła zmienna',
+                'difficulty' => 'easy',
+                'declaredMinutes' => 30,
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'bobs_27_easy', 'dartCount' => 20],
+                ],
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_exercise_wrong_limit');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'plan',
+                'name' => 'Pusto',
+                'difficulty' => 'easy',
+                'declaredMinutes' => 30,
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'bobs_27_easy', 'durationSeconds' => null],
+                ],
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_exercise_needs_limit');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions/'.$id.'/activate')
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->from(route('admin.training.show', $id))
+            ->put(route('admin.training.update', $id), [
+                'name' => 'Bob',
+                'difficulty' => 'easy',
+                'declared_minutes' => 30,
+                'items' => [
+                    ['kind' => 'exercise', 'exercise_key' => 'bobs_27_easy', 'duration_seconds' => 300],
+                ],
+            ])
+            ->assertRedirect(route('admin.training.show', $id))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('training_definition_items', [
+            'definition_id' => $id,
+            'exercise_key' => 'bobs_27_easy',
+            'duration_seconds' => 600,
+        ]);
+        $this->assertDatabaseHas('training_definition_items', [
+            'definition_id' => $id,
+            'exercise_key' => 'bobs_27_easy',
+            'duration_seconds' => 480,
+        ]);
+    }
+
+    public function test_plan_uses_catalog_exercises_and_stays_inactive(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'plan',
+                'name' => 'Nadpisany czas',
+                'difficulty' => 'medium',
+                'declaredMinutes' => 60,
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'loose_throws', 'durationSeconds' => 10],
+                ],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('items.0.durationSeconds', 10);
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'challenge',
+                'name' => 'Z czasem',
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'loose_throws', 'durationSeconds' => 10],
+                ],
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_exercise_limit_on_plan');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'plan',
+                'name' => 'Wieczór',
+                'difficulty' => 'medium',
+                'declaredMinutes' => 60,
+                'items' => [
+                    ['kind' => 'break', 'breakSeconds' => 30],
+                    ['kind' => 'exercise', 'exerciseKey' => 'loose_throws'],
+                    ['kind' => 'break', 'breakSeconds' => 60],
+                ],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('status', 'inactive')
+            ->assertJsonPath('declaredMinutes', 60)
+            ->assertJsonPath('durationSeconds', null)
+            ->assertJsonPath('items.0.kind', 'break')
+            ->assertJsonPath('items.0.breakSeconds', 30)
+            ->assertJsonPath('items.1.kind', 'exercise')
+            ->assertJsonPath('items.1.exerciseKey', 'loose_throws')
+            ->assertJsonPath('items.1.position', 2)
+            ->assertJsonPath('items.2.position', 3);
+
+        $this->assertDatabaseHas('training_definitions', [
+            'name' => 'Wieczór',
+            'status' => 'inactive',
+            'declared_minutes' => 60,
+        ]);
+    }
+
+    public function test_admin_can_save_inactive_challenge_and_event(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'challenge',
+                'name' => '54 lotki',
+                'mechanic' => 'fifty_four_dart',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('status', 'inactive')
+            ->assertJsonPath('mechanic', 'fifty_four_dart');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'event',
+                'name' => 'Sierpień',
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'clock_1_20_bull'],
+                ],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('kind', 'event')
+            ->assertJsonPath('status', 'inactive')
+            ->assertJsonPath('items.0.exerciseKey', 'clock_1_20_bull')
+            ->assertJsonPath('items.0.dartCount', 21);
+    }
+
+    public function test_second_completed_session_is_rejected_and_the_first_stays(): void
+    {
+        $player = User::factory()->create();
+        $other = User::factory()->create();
+        $uuid = '11111111-1111-4111-8111-111111111111';
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/sessions', $this->sessionPayload($uuid, 'loose_throws', 12, [
+                'hits' => 4,
+                'attempts' => 9,
+            ]))
+            ->assertCreated()
+            ->assertJsonPath('score', 12)
+            ->assertJsonPath('kind', 'exercise')
+            ->assertJsonPath('exerciseKey', 'loose_throws')
+            ->assertJsonPath('definitionId', null)
+            ->assertJsonPath('stats.hits', 4);
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/sessions', $this->sessionPayload($uuid, 'loose_throws', 99, [
+                'hits' => 1,
+                'darts' => [20, 5, 1],
+            ]))
+            ->assertStatus(409)
+            ->assertJsonPath('reason', 'training_session_already_stored');
+
+        $this->assertDatabaseCount('training_sessions', 1);
+        $this->assertDatabaseHas('training_sessions', [
+            'user_id' => $player->id,
+            'client_session_id' => $uuid,
+            'exercise_key' => 'loose_throws',
+            'definition_id' => null,
+            'score' => 12,
+        ]);
+
+        $this->actingAs($other, 'sanctum')
+            ->postJson('/api/training/sessions', $this->sessionPayload($uuid, 'loose_throws', 3, [
+                'hits' => 1,
+            ]))
+            ->assertCreated();
+
+        $this->assertDatabaseCount('training_sessions', 2);
+        $this->assertDatabaseHas('training_sessions', [
+            'user_id' => $player->id,
+            'client_session_id' => $uuid,
+            'score' => 12,
+        ]);
+    }
+
+    public function test_dart_list_and_unknown_exercise_do_not_create_a_session(): void
+    {
+        $admin = $this->admin();
+        $player = User::factory()->create();
+        $planId = $this->publishPlan($admin);
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/sessions', $this->sessionPayload(
+                '22222222-2222-4222-8222-222222222222',
+                'loose_throws',
+                null,
+                ['darts' => [20, 19, 18]],
+            ))
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_dart_log_rejected');
+
+        app(TrainingDefinitionService::class)->deactivate($admin, $planId);
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/sessions', [
+                'clientSessionId' => '33333333-3333-4333-8333-333333333333',
+                'definitionId' => $planId,
+                'completedAt' => '2026-11-19T12:00:00Z',
+                'score' => null,
+                'stats' => ['elapsedSeconds' => 180],
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_definition_not_active');
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/sessions', $this->sessionPayload(
+                '44444444-4444-4444-8444-444444444444',
+                'not_an_exercise',
+                null,
+                ['elapsedSeconds' => 180],
+            ))
+            ->assertNotFound()
+            ->assertJsonPath('reason', 'training_exercise_not_found');
+
+        $this->assertDatabaseCount('training_sessions', 0);
+    }
+
+    public function test_clock_summary_is_stored_once_and_a_repeat_does_not_add_history(): void
+    {
+        $player = User::factory()->create();
+        $uuid = '55555555-5555-4555-8555-555555555555';
+        $stats = ['hits' => 15, 'attempts' => 21, 'percent' => 71];
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/sessions', $this->sessionPayload($uuid, 'clock_1_20_bull', null, $stats))
+            ->assertCreated()
+            ->assertJsonPath('score', null)
+            ->assertJsonPath('exerciseKey', 'clock_1_20_bull')
+            ->assertJsonPath('stats.hits', 15)
+            ->assertJsonPath('stats.attempts', 21)
+            ->assertJsonPath('stats.percent', 71);
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/sessions', $this->sessionPayload($uuid, 'clock_1_20_bull', null, [
+                'hits' => 21,
+                'attempts' => 21,
+                'percent' => 100,
+            ]))
+            ->assertStatus(409)
+            ->assertJsonPath('reason', 'training_session_already_stored');
+
+        $this->assertDatabaseCount('training_sessions', 1);
+        $this->assertDatabaseHas('training_sessions', [
+            'user_id' => $player->id,
+            'client_session_id' => $uuid,
+            'exercise_key' => 'clock_1_20_bull',
+            'score' => null,
+        ]);
+    }
+
+    public function test_activation_is_only_from_inactive(): void
+    {
+        $admin = $this->admin();
+        $id = $this->publishPlan($admin);
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions/'.$id.'/activate')
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_definition_not_inactive');
+
+        $this->assertDatabaseHas('training_definitions', [
+            'id' => $id,
+            'status' => 'active',
+        ]);
+
+        $this->assertSame(180, TrainingExerciseCatalog::parameters('loose_throws')['durationSeconds']);
+    }
+
+    private function admin(): User
+    {
+        $admin = User::factory()->create();
+        $admin->forceFill(['role' => 'admin'])->save();
+
+        return $admin;
+    }
+
+    private function publishPlan(User $admin): int
+    {
+        $id = (int) $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'plan',
+                'name' => 'Luźny wieczór',
+                'difficulty' => 'easy',
+                'declaredMinutes' => 30,
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'loose_throws'],
+                ],
+            ])
+            ->assertCreated()
+            ->json('id');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions/'.$id.'/activate')
+            ->assertOk()
+            ->assertJsonPath('status', 'active');
+
+        return $id;
+    }
+
+    /**
+     * @param  array<string, mixed>  $stats
+     * @return array<string, mixed>
+     */
+    private function sessionPayload(string $uuid, string $exerciseKey, ?int $score, array $stats): array
+    {
+        return [
+            'clientSessionId' => $uuid,
+            'exerciseKey' => $exerciseKey,
+            'completedAt' => '2026-11-19T12:00:00Z',
+            'score' => $score,
+            'stats' => $stats,
+        ];
+    }
+}

@@ -24,7 +24,7 @@
 - Nie oceniamy skuteczności.
 - Rejestrujemy przebieg lotek w sesji.
 
-## 3. Zegar 1–20 + Bull
+## 3. Zegar szybki
 
 - Zawodnik rzuca po jednej lotce kolejno w sektory 1–20, a następnie w Bull.
 - Przechodzi do następnego celu niezależnie od wyniku rzutu.
@@ -33,20 +33,20 @@
 - Nie oceniamy skuteczności.
 - Rejestrujemy przebieg lotek w sesji.
 
-## 4. Zegar S/D/T
+## 4. Zegar sektory
 
 - Zawodnik przechodzi kolejno przez sektory 1–20.
 - Aby zaliczyć sektor, wystarczy trafić w dowolne pole tego sektora: Single, Double lub Triple.
 - Nie trzeba trafiać kolejno we wszystkie trzy pola.
-- Jeżeli zawodnik nie trafi w aktualny sektor w ciągu trzech lotek, powtarza ten sam sektor.
+- Pudło zostawia aktualny sektor. Trafienie przechodzi do następnego, także w tej samej trójce lotek.
 - Punktacja za trafienie w aktualny sektor:
   - Single – 1 pkt.
   - Double – 2 pkt.
   - Triple – 3 pkt.
-- Bull nie jest uwzględniany.
+- Po sektorze 20 jest Bull. Bulla zalicza outer albo inner.
 - Ćwiczenie trwa 5 minut.
-- Jeżeli czas upłynie w trakcie zaliczania sektora, ćwiczenie kończy się na aktualnym etapie.
-- Jeżeli zawodnik ukończy sektor 20 przed upływem czasu, ćwiczenie kończy się od razu.
+- Jeżeli czas upłynie w trakcie zaliczania celu, ćwiczenie kończy się na aktualnym etapie.
+- Jeżeli zawodnik ukończy bulla przed upływem czasu, ćwiczenie kończy się od razu.
 
 ## 5. Bob's 27
 

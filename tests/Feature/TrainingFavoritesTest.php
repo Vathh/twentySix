@@ -1,0 +1,304 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Domain\Training\TrainingExerciseCatalog;
+use App\Models\Users\User;
+use App\Services\Training\TrainingDefinitionService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
+use Tests\TestCase;
+
+class TrainingFavoritesTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_favorites_belong_to_the_account_and_keep_tab_order(): void
+    {
+        $admin = $this->admin();
+        $player = User::factory()->create();
+        $other = User::factory()->create();
+        $first = $this->publish($admin, [
+            'kind' => 'challenge',
+            'name' => 'Pierwsze',
+            'mechanic' => 'fifty_four_dart',
+        ]);
+        $second = $this->publish($admin, [
+            'kind' => 'challenge',
+            'name' => 'Drugie',
+            'mechanic' => 'fifty_four_dart',
+        ]);
+
+        $this->asGuest();
+        $this->getJson('/api/training/favorites')->assertUnauthorized();
+        $this->postJson('/api/training/favorites', ['definitionId' => $first])->assertUnauthorized();
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['definitionId' => $first])
+            ->assertCreated()
+            ->assertJsonPath('created', true)
+            ->assertJsonPath('item.name', 'Pierwsze')
+            ->assertJsonPath('item.favorite', true);
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['definitionId' => $first])
+            ->assertOk()
+            ->assertJsonPath('created', false);
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['definitionId' => $second])
+            ->assertCreated();
+
+        $this->actingAs($other, 'sanctum')
+            ->getJson('/api/training/favorites')
+            ->assertOk()
+            ->assertJsonPath('challenges', [])
+            ->assertJsonPath('plans', [])
+            ->assertJsonPath('exercises', []);
+
+        $this->actingAs($player, 'sanctum')
+            ->putJson('/api/training/favorites', [
+                'kind' => 'challenges',
+                'definitionIds' => [$second, $first],
+            ])
+            ->assertOk()
+            ->assertJsonPath('items.0.id', $second)
+            ->assertJsonPath('items.1.id', $first);
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/favorites')
+            ->assertOk()
+            ->assertJsonPath('challenges.0.id', $second)
+            ->assertJsonPath('challenges.1.id', $first);
+
+        $this->actingAs($player, 'sanctum')
+            ->putJson('/api/training/favorites', [
+                'kind' => 'challenges',
+                'definitionIds' => [$first],
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_favorite_order');
+
+        $this->actingAs($player, 'sanctum')
+            ->putJson('/api/training/favorites', [
+                'kind' => 'challenges',
+                'definitionIds' => [],
+            ])
+            ->assertStatus(422);
+
+        $this->assertDatabaseCount('training_favorites', 2);
+    }
+
+    public function test_inactive_plan_stays_visible_only_to_who_saved_it(): void
+    {
+        $admin = $this->admin();
+        $player = User::factory()->create();
+        $other = User::factory()->create();
+        $plan = $this->publish($admin, [
+            'kind' => 'plan',
+            'name' => 'Wieczór',
+            'difficulty' => 'medium',
+            'declaredMinutes' => 60,
+            'items' => [
+                ['kind' => 'exercise', 'exerciseKey' => 'loose_throws'],
+            ],
+        ]);
+        $event = $this->publish($admin, [
+            'kind' => 'event',
+            'name' => 'Sierpień',
+        ]);
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['exerciseKey' => 'loose_throws'])
+            ->assertCreated()
+            ->assertJsonPath('item.name', 'Luźne rzuty')
+            ->assertJsonPath('item.exerciseKey', 'loose_throws');
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['definitionId' => $plan])
+            ->assertCreated();
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['definitionId' => $event])
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_favorite_not_allowed');
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['exerciseKey' => 'not_an_exercise'])
+            ->assertNotFound()
+            ->assertJsonPath('reason', 'training_exercise_not_found');
+
+        app(TrainingDefinitionService::class)->deactivate($admin, $plan);
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/favorites')
+            ->assertOk()
+            ->assertJsonPath('exercises.0.id', 'loose_throws')
+            ->assertJsonPath('exercises.0.inactive', false)
+            ->assertJsonPath('plans.0.id', $plan)
+            ->assertJsonPath('plans.0.inactive', true);
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/catalog/plans')
+            ->assertOk()
+            ->assertJsonCount(0, 'items');
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/definitions/'.$plan)
+            ->assertOk()
+            ->assertJsonPath('inactive', true)
+            ->assertJsonPath('favorite', true);
+
+        $this->actingAs($other, 'sanctum')
+            ->getJson('/api/training/definitions/'.$plan)
+            ->assertNotFound()
+            ->assertJsonPath('reason', 'training_definition_not_found');
+
+        $this->actingAs($player, 'sanctum')
+            ->deleteJson('/api/training/favorites/'.$plan)
+            ->assertOk()
+            ->assertJsonPath('removed', true);
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/definitions/'.$plan)
+            ->assertNotFound();
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['definitionId' => $plan])
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_favorite_inactive');
+    }
+
+    public function test_cancel_drops_plan_favorites_and_leaves_exercises(): void
+    {
+        $admin = $this->admin();
+        $player = User::factory()->create();
+        $other = User::factory()->create();
+        $plan = $this->publish($admin, [
+            'kind' => 'plan',
+            'name' => 'Wieczór',
+            'difficulty' => 'medium',
+            'declaredMinutes' => 30,
+            'items' => [
+                ['kind' => 'exercise', 'exerciseKey' => 'loose_throws'],
+                ['kind' => 'exercise', 'exerciseKey' => 'clock_sdt'],
+            ],
+        ]);
+
+        foreach ([$player, $other] as $user) {
+            $this->actingAs($user, 'sanctum')
+                ->postJson('/api/training/favorites', ['exerciseKey' => 'loose_throws'])
+                ->assertCreated();
+            $this->actingAs($user, 'sanctum')
+                ->postJson('/api/training/favorites', ['definitionId' => $plan])
+                ->assertCreated();
+        }
+
+        app(TrainingDefinitionService::class)->cancel($admin, $plan);
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/favorites')
+            ->assertOk()
+            ->assertJsonPath('plans', [])
+            ->assertJsonPath('exercises.0.id', 'loose_throws');
+        $this->actingAs($other, 'sanctum')
+            ->getJson('/api/training/favorites')
+            ->assertOk()
+            ->assertJsonPath('plans', [])
+            ->assertJsonPath('exercises.0.id', 'loose_throws');
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/definitions/'.$plan)
+            ->assertNotFound();
+
+        $this->assertDatabaseMissing('training_favorites', ['definition_id' => $plan]);
+        $this->assertDatabaseHas('training_favorites', ['exercise_key' => 'loose_throws']);
+    }
+
+    public function test_catalog_lists_every_exercise_with_the_star_state(): void
+    {
+        $player = User::factory()->create();
+
+        $this->asGuest();
+        $this->getJson('/api/training/catalog/exercises')->assertUnauthorized();
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/catalog/events')
+            ->assertNotFound();
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/catalog/exercises')
+            ->assertOk()
+            ->assertJsonCount(count(TrainingExerciseCatalog::all()), 'items')
+            ->assertJsonPath('items.0.id', 'loose_throws')
+            ->assertJsonPath('items.0.name', 'Luźne rzuty')
+            ->assertJsonPath('items.0.durationSeconds', 180)
+            ->assertJsonPath('items.0.favorite', false)
+            ->assertJsonPath('items.0.inactive', false);
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['exerciseKey' => 'loose_throws'])
+            ->assertCreated();
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['exerciseKey' => 'nine_darts'])
+            ->assertCreated();
+
+        $this->actingAs($player, 'sanctum')
+            ->putJson('/api/training/favorites', [
+                'kind' => 'exercises',
+                'exerciseKeys' => ['nine_darts', 'loose_throws'],
+            ])
+            ->assertOk()
+            ->assertJsonPath('items.0.id', 'nine_darts')
+            ->assertJsonPath('items.1.id', 'loose_throws');
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/catalog/exercises')
+            ->assertOk()
+            ->assertJsonPath('items.0.favorite', true);
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/exercises/loose_throws')
+            ->assertOk()
+            ->assertJsonPath('name', 'Luźne rzuty')
+            ->assertJsonPath('favorite', true);
+
+        $this->actingAs($player, 'sanctum')
+            ->deleteJson('/api/training/favorites/exercises/loose_throws')
+            ->assertOk()
+            ->assertJsonPath('removed', true);
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['definitionId' => 99999])
+            ->assertNotFound();
+    }
+
+    private function asGuest(): void
+    {
+        Auth::forgetGuards();
+        $this->app['auth']->forgetGuards();
+    }
+
+    private function admin(): User
+    {
+        $admin = User::factory()->create();
+        $admin->forceFill(['role' => 'admin'])->save();
+
+        return $admin;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function publish(User $admin, array $payload): int
+    {
+        $id = (int) $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', $payload)
+            ->assertCreated()
+            ->json('id');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions/'.$id.'/activate')
+            ->assertOk();
+
+        return $id;
+    }
+}
