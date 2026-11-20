@@ -9,16 +9,16 @@
 - Nie rejestrujemy przebiegu lotek.
 - Rejestrowany jest wyłącznie czas ćwiczenia.
 
-## 2. Ćwiczenie 9 lotek
+## 2. Ćwiczenie 9/18 lotek
 
 **Cel:** rozgrzewka i przygotowanie do treningu.
 
-Łącznie 36 lotek, podzielonych na cztery etapy po 9 lotek:
+Jedno ćwiczenie z wariantem 9 albo 18 lotek na etap. Wariant 9 to 36 lotek, wariant 18 to 72. Cztery etapy:
 
-1. 9 lotek w środek tarczy – Outer Bull lub Inner Bull.
-2. 9 lotek w sektor 20.
-3. 9 lotek w sektor 19.
-4. 9 lotek naprzemiennie w sektory 20, 19 i 18.
+1. Środek tarczy – Outer Bull lub Inner Bull.
+2. Sektor 20.
+3. Sektor 19.
+4. Naprzemiennie sektory 20, 19 i 18.
 
 - Ćwiczenie nie jest punktowane.
 - Nie oceniamy skuteczności.
@@ -84,20 +84,7 @@ Wynik ćwiczenia: liczba skutecznie zamkniętych checkoutów.
 
 ## 8. Ćwiczenie 18 lotek
 
-**Cel:** rozgrzewka i przygotowanie do treningu.
-
-Łącznie 18 lotek, w sześciu kolejkach po 3 lotki:
-
-1. Środek tarczy – Outer Bull lub Inner Bull.
-2. Sektor 20.
-3. Sektor 19.
-4. Sektor 20.
-5. Sektor 19.
-6. Sektor 18.
-
-- Ćwiczenie nie jest punktowane.
-- Nie oceniamy skuteczności.
-- Rejestrujemy przebieg lotek w sesji.
+Wariant ćwiczenia 9/18 lotek. Te same cztery etapy i te same ekrany. Na każdy etap przypada 18 lotek, łącznie 72.
 
 ## 9. Zegar Doubli
 
@@ -227,11 +214,17 @@ Wynik ćwiczenia ustala się na podstawie najwyższego skutecznie zamkniętego c
 
 ### Przebieg podejścia
 
-- Pierwsza lotka służy do ustawienia checkoutu wyłącznie Single.
-- Druga lotka służy do dalszego ustawienia checkoutu wyłącznie Single.
-- Nie wolno celować w Double ani Triple podczas ustawiania wyniku.
-- Trzecia lotka zawsze jest kierowana w Bull, niezależnie od tego, czy udało się prawidłowo ustawić checkout.
-- Bull obejmuje Outer Bull i Inner Bull.
+- Podejście ma zawsze 3 lotki. Wpisywanie tylko lotka po lotce.
+- Dwie pierwsze lotki ustawiają checkout i odejmują pełną wartość z tarczy (single, double, triple, outer, inner). Pudło odejmuje 0.
+- Niezależnie od wyniku dwóch pierwszych lotek podejście nie kończy się wcześniej — trzecia lotka jest zawsze.
+- Trzecia lotka zawsze jest kierowana w Inner Bull (czerwony środek), także gdy nie udało się ustawić 50.
+
+### Zamknięcie i bonus
+
+- Zamknięcie (+10): po dwóch pierwszych zostało dokładnie 50 i trzecia trafiła w Inner.
+- Outer przy ustawionych 50 nic nie daje i nie zamyka.
+- Bonus (+4): po dwóch pierwszych nie zostało 50, a trzecia trafiła w Inner.
+- Inny wynik trzeciej lotki daje 0. Nieudane podejście (także z bonusem) zostawia tę samą wartość checkoutu.
 
 ### Kolejność checkoutów
 
@@ -245,7 +238,8 @@ Wynik ćwiczenia ustala się na podstawie najwyższego skutecznie zamkniętego c
 ### Punktacja
 
 - Każdy skutecznie zamknięty checkout daje 10 pkt.
-- Sumujemy punkty za wszystkie udane checkouty w czasie 8 minut.
+- Trafiony Inner bez ustawionych 50 daje 4 pkt.
+- Sumujemy punkty za zamknięcia i bonusy w czasie 8 minut.
 
 ## 14. Walka o licznik
 

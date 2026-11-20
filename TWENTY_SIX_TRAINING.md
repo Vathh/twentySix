@@ -102,11 +102,13 @@ Pozycję można dodać bez wcześniejszego rozegrania.
 
 Biblioteka i szybki start korzystają z tej samej, stałej listy ćwiczeń. Ta lista jest całym katalogiem sposobów rozgrywki. Administrator jej nie zakłada, nie nazywa po swojemu i nie wyłącza.
 
-Każde ćwiczenie ma jedną zmienną. Albo czas, albo liczbę lotek. Druga zostaje pusta. Wartości w punktach 5.1–5.15 są domyślne: tak ćwiczenie startuje z biblioteki i z szybkiego startu.
+Każde ćwiczenie ma jedną zmienną. Albo czas, albo liczbę lotek. Druga zostaje pusta. Scoring z presją ma drugą zmienną: wariant. Wartości w punktach 5.1–5.15 są domyślne: tak ćwiczenie startuje z biblioteki i z szybkiego startu. Wariant z biblioteki wybiera gracz.
 
-W planie administrator bierze ćwiczenie z tej listy i może zmienić tylko tę zmienną, w tym jednym miejscu planu. To samo ćwiczenie może wejść drugi raz, z inną wartością. Zasady rzutów zostają przy ćwiczeniu. Po publikacji planu tej wartości się nie zmienia.
+W planie administrator bierze ćwiczenie z tej listy i w tym jednym miejscu planu może zmienić tylko tę zmienną oraz zaznaczyć, czy ćwiczenie jest punktowane. Przy Scoring z presją zmienia też wariant. To samo ćwiczenie może wejść drugi raz, z inną wartością i z innym zaznaczeniem. Zasady rzutów i wzór wyniku zostają przy ćwiczeniu. Po publikacji planu tej wartości i tego zaznaczenia się nie zmienia.
 
-Użytkownik nie zmienia parametrów.
+Użytkownik nie zmienia parametrów ćwiczenia: czasu ani liczby lotek. W Scoring z presją z biblioteki wybiera tylko wariant. Wybrany wariant oraz wybrany sposób wpisywania mają żółtą obwódkę i żółty napis. Tło przycisku zostaje takie jak przy niewybranym.
+
+Sposób wpisywania wyniku, tam gdzie ćwiczenie liczy punkty jak X01, jest wyborem na telefonie, wspólnym dla sekcji Trening. Dwie opcje, te same co w meczu: „Suma trzech rzutów” i „Każdy rzut osobno”. Wybór stoi przy rozpoczynaniu takiego ćwiczenia. Ostatni wybór jest zaznaczony przy następnym starcie, także innego ćwiczenia z tej sekcji. Ustawienie meczu tego nie zmienia i to ustawienie nie zmienia meczu. Ćwiczenia, które mają już własne przyciski lotki, zostają przy tych przyciskach.
 
 Jest wyszukiwarka po nazwie ćwiczenia. Filtr poziomu trudności zostaje przy planach.
 
@@ -118,11 +120,52 @@ Ekran i przebieg każdego ćwiczenia ustalamy osobno. Do tego czasu ćwiczenie j
 
 Podczas ćwiczenia nie pokazujemy punktacji ani statystyk. Wynik jest po zakończeniu.
 
-Nie wysyłamy i nie trzymamy na serwerze listy kolejnych lotek. Zostają statystyki.
+### Punktacja ćwiczenia
 
-Dopóki ćwiczenie w planie jest otwarte, telefon trzyma jego rzuty lokalnie, bo cofanie w tym ćwiczeniu jest nieograniczone, a plan ma wrócić po zamknięciu aplikacji. Przejście do następnego elementu zatwierdza poprzedni: zostają statystyki, lista rzutów tego elementu znika.
+Każde ćwiczenie poza luźnymi rzutami ma własny wynik. Wzór stoi przy ćwiczeniu. Ćwiczenie z biblioteki i z szybkiego startu kończy się tym wynikiem. Luźne rzuty są rozgrzewką bez punktacji i w planie też dają zero, niezależnie od checkboxa.
 
-Ćwiczenie z wyznaczonym celem zapisuje w podsumowaniu liczbę lotek, które trafiły w cel, i procent na tym celu. Ćwiczenie bez celu (luźne rzuty) nie zbiera trafień. Kończy się statusem ukończone albo pominięte.
+W planie administrator przy każdym ćwiczeniu ma checkbox „Punktowane”. Nowy wiersz startuje zaznaczony. Zaznaczone ćwiczenie wnosi swój wynik do sumy planu. Odznaczone jest rozgrzewką: wynik zostaje przy tym ćwiczeniu i w jego podsumowaniu, do sumy planu wchodzi zero. Pominięte też daje zero. Rozgrzewka w podsumowaniu planu ma oznaczenie „Rozgrzewka”.
+
+### Nagłówek ćwiczenia
+
+Na górze ekranu ćwiczenia widać jego nazwę. Jeśli ćwiczenie ma wariant, pod nazwą widać wariant. Ten sam nagłówek jest w trakcie i w podsumowaniu, także wewnątrz planu.
+
+- 9/18 lotek: „9 lotek” albo „18 lotek”.
+- Zegar: „Szybki”, „Sektory” albo „Double”.
+- Scoring z presją: „20”, „19”, „18” albo „20/19/18”.
+
+Ćwiczenie bez wariantu pokazuje samą nazwę. Sposób wpisywania, „Suma trzech rzutów” albo „Każdy rzut osobno”, nie jest wariantem i na nagłówku go nie ma.
+
+### Zasada zapisu lotek
+
+Każda lotka, która weszła do ćwiczenia, zostawia na telefonie cel i wynik: w co była celowana oraz czy była trafiona. Pudło zostaje z tym samym celem. Lista lotek jest tylko na telefonie. Nie idzie na serwer i nie jest pokazywana jako lista rzutów.
+
+Cel jest taki, jaki wyznaczyło ćwiczenie.
+
+Cel w cały sektor liczby zapisujemy numerem. 20 oznacza single, double albo triple sektora 20. Cel w jeden segment zapisujemy z pierścieniem: S20, D20 albo T20. Cel w cały środek, outer albo inner, zapisujemy jako Bull. Cel tylko w inner zapisujemy jako Inner. Cel tylko w outer zapisujemy jako Outer.
+
+Z tej listy liczymy statystyki. Przy każdym celu, w który poszła choć jedna lotka, zostaje liczba lotek celowanych i liczba trafień. Te liczby idą na serwer razem z wynikiem ćwiczenia. Skuteczność to trafienia wobec lotek celowanych w ten cel. 20, S20, D20 i T20 są osobnymi celami i liczą się osobno.
+
+### Skuteczność po celu lotki
+
+Podsumowanie grupuje lotki po celu, nie po etapie ćwiczenia. Etap, który z lotki na lotkę zmienia cel, nie dostaje własnej rubryki. Nie ma też rubryki łącznej dla całego ćwiczenia ani dla zestawu celów w rodzaju „20/19/18”. Każda lotka zasila wyłącznie konto tego jednego celu, w który była celowana. Pudło zostaje na tym samym koncie. W rubryce widać trafienia wobec lotek celowanych w ten cel, na przykład 5/9. Cel, w który nie poszła żadna lotka, nie ma rubryki.
+
+Ta zasada obowiązuje każde ćwiczenie, które zapisuje cel lotki. Przebieg etapów zostaje na ekranie ćwiczenia. Do podsumowania wchodzi już tylko zestawienie celów.
+
+Przykład to wariant 9 lotek. Etap 1 celuje w Bull, etap 2 w 20, etap 3 w 19. Etap 4 celuje kolejno w 20, potem 19, potem 18 i tak do końca etapu. Dziewięć lotek etapu 4 to trzy próby sektora 20, trzy próby sektora 19 i trzy próby sektora 18.
+
+Przy takim przebiegu podsumowanie ma cztery rubryki:
+
+- Bull 5/9. Pięć trafień na dziewięć lotek etapu 1.
+- 20: 6/12. Cztery trafienia na dziewięć lotek etapu 2 oraz dwa trafienia na trzy lotki etapu 4 celowane w 20.
+- 19: 6/12. Cztery trafienia na dziewięć lotek etapu 3 oraz dwa trafienia na trzy lotki etapu 4 celowane w 19.
+- 18: 1/3. Jedno trafienie na trzy lotki etapu 4 celowane w 18.
+
+Rubryki „etap 4” i „20/19/18” w tym podsumowaniu nie występują. Wariant 18 lotek liczy się tak samo: lotki czwartego etapu wchodzą osobno do 20, do 19 i do 18.
+
+Dopóki ćwiczenie jest otwarte, telefon trzyma jego lotki, bo cofanie w tym ćwiczeniu jest nieograniczone, a plan ma wrócić po zamknięciu aplikacji. Po zamknięciu ćwiczenia lista zostaje na telefonie do podsumowania planu. Znika z widoku.
+
+Ćwiczenie z wyznaczonym celem pokazuje w podsumowaniu skuteczność po celu lotki. Ćwiczenie bez celu (luźne rzuty) nie zbiera trafień. Kończy się statusem ukończone albo pominięte.
 
 Pominięty element planu nie wnosi punktów, trafień ani licznika. Ma status „Pominięty”.
 
@@ -136,75 +179,116 @@ Trafienie w sektor, jeśli ćwiczenie nie mówi inaczej, to single, double albo 
 
 Na środku ekranu jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Nie ma celu ani przycisków lotek. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania z zapisanym czasem.
 
-### 5.2. 9 lotek
+### 5.2. 9/18 lotek
 
-36 lotek, cztery etapy po 9:
+Jedno ćwiczenie. Na ekranie szczegółów, nad „Rozpocznij”, gracz wybiera wariant „9 lotek” albo „18 lotek”. Zasady i ekrany są te same. Wariant 9 ma 9 lotek na etap, łącznie 36. Wariant 18 ma 18 lotek na etap, łącznie 72.
+
+Cztery etapy:
 
 1. Środek tarczy, outer albo inner.
 2. Sektor 20.
 3. Sektor 19.
-4. Na zmianę 20, 19, 18, aż do 9 lotek.
+4. Na zmianę 20, 19, 18, aż do końca etapu.
 
-Bez punktacji. W podsumowaniu trafienia i procent osobno dla każdego etapu oraz łącznie.
+Każde trafienie daje 1 punkt. Pudło daje 0. Wynik to suma tych punktów, w obu wariantach. W podsumowaniu jest ten wynik oraz skuteczność po celu lotki, według zasady z sekcji „Skuteczność po celu lotki”. Etapy nie mają własnych rubryk. Lotki etapu 4 zasilają osobno sektor 20, sektor 19 i sektor 18.
+
+Na ekranie jest instrukcja celu i przyciski lotki. Między instrukcją a przyciskami jest licznik lotki w podejściu: „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Po trzeciej lotce wraca do „Lotka nr 1”. Etap 1: „Celuj w czerwony środek.” oraz Inner, Outer i Pudło. Etap 2: „Celuj w sektor 20.” oraz Triple, Double, Single i Pudło. Etap 3: „Celuj w sektor 19.” oraz te same przyciski. Etap 4: „Celuj kolejno po jednej lotce w sektor 20, 19 i 18.” i trzy rzędy Triple, Double, Single dla 20, 19 i 18 oraz osobny przycisk Pudło. W zdaniu pogrubione są środek, 20, 19 i 18. Po ostatniej lotce etapu wchodzą przyciski następnego. W wariancie 9 jest to dziewiąta lotka, w wariancie 18 osiemnasta. Trafienie etapu 1 to inner albo outer. Trafienie etapu 2 i 3 to single, double albo triple tego sektora. Trafienie etapu 4 to single, double albo triple sektora, w który ta lotka miała celować. Inny sektor z rzędu 20, 19, 18 jest pudłem.
 
 ### 5.3. Zegar szybki
 
-21 lotek, po jednej w sektory 1–20, potem Bull. Bull to outer albo inner. Nietrafienie nie zatrzymuje przejścia: kolejna lotka celuje w następny sektor. Bez punktacji. W podsumowaniu trafienia i procent.
+Wariant ćwiczenia Zegar, nie osobna pozycja katalogu. Na ekranie szczegółów gracz wybiera Szybki, Sektory albo Double.
 
-Ekran pokazuje napis „Celuj kolejno po jednej lotce w te sektory” i aktualną trójkę celów (1, 2, 3, potem 4, 5, 6, aż do 19, 20 i Bull). Podświetlony jest cel lotki, którą gracz właśnie oznacza. Między celami a przyciskami jest licznik lotki w podejściu: „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Po trzeciej lotce wraca do „Lotka nr 1”. Pod spodem dwa duże przyciski obok siebie: Pudło po lewej, Trafiona po prawej. Licznik pozycji w całym ćwiczeniu nie jest pokazywany.
+21 lotek, po jednej w sektory 1–20, potem Bull. Bull to outer albo inner. Nietrafienie nie zatrzymuje przejścia: kolejna lotka celuje w następny sektor. Każde trafienie daje 1 punkt. Pudło daje 0. Wynik to suma tych punktów. W podsumowaniu wynik, trafienia i procent.
+
+Ekran pokazuje napis „Celuj kolejno po jednej lotce w te sektory” i okno trzech celów. Przez podejście okno stoi, a ramka sunie na następną cyfrę po każdej lotce, także po pudle. Po trzeciej lotce cyfry zjeżdżają w karuzeli (1, 2, 3, potem 4, 5, 6, aż do 19, 20 i Bull). Między celami a przyciskami jest licznik lotki w podejściu: „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Po trzeciej lotce wraca do „Lotka nr 1”. Pod spodem dwa duże przyciski obok siebie: Pudło po lewej, Trafiona po prawej. Licznik pozycji w całym ćwiczeniu nie jest pokazywany.
 
 ### 5.4. Zegar sektory
 
-5 minut. Sektory 1–20, potem Bull. Bull to outer albo inner. Sektor zalicza dowolny pierścień tej liczby: single 1 punkt, double 2, triple 3. Pudło zostawia aktualny cel. Trafienie przechodzi do następnego, także w tej samej trójce lotek. Koniec czasu ucina ćwiczenie w trakcie celu. Ukończenie bulla przed czasem kończy ćwiczenie.
+Wariant ćwiczenia Zegar.
 
-Na górze ekranu, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Pod nim napis „Celuj w podświetlony sektor aż trafisz. Jeżeli Ci się uda to celuj w następny z wyświetlonych.” i okno kolejnych celów, najwyżej trzech, od aktualnego (1, 2, 3, po trafieniu jedynki 2, 3, 4, na końcu 20 i Bull). Podświetlony jest pierwszy z tego okna. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania. Między celami a przyciskami jest licznik lotki w podejściu: „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Po trzeciej lotce wraca do „Lotka nr 1”. Pod spodem dwa duże przyciski obok siebie: Pudło po lewej, Trafiona po prawej. Licznik pozycji w całym ćwiczeniu nie jest pokazywany.
+5 minut. Sektory 1–20, potem Bull. Razem 21 sektorów. Bull to outer albo inner. Pudło zostawia aktualny cel. Trafienie przechodzi do następnego, także w tej samej trójce lotek. Koniec czasu ucina ćwiczenie w trakcie celu. Ukończenie bulla przed czasem kończy ćwiczenie.
+
+Najszybsze zamknięcie to 21 lotek, po jednej na sektor. Takie zamknięcie bez pudła daje 30 punktów. Każde pudło odejmuje 1 punkt. Każdy sektor, którego nie zaliczono do końca ćwiczenia, też odejmuje 1 punkt. Wynik może być ujemny. Zamknięcie wszystkich sektorów w 50 lotkach to 21 trafień i 29 pudeł, czyli 30 − 29 = 1.
+
+Na górze ekranu, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Pod nim napis „Celuj w podświetlony sektor aż trafisz. Jeżeli Ci się uda to celuj w następny z wyświetlonych.” i okno trzech celów. Przez podejście okno stoi: pudło nie rusza ramki, trafienie przesuwa ją na następną cyfrę. Po trzeciej lotce cyfry zjeżdżają w karuzeli i aktualny cel staje z lewej. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania. Między celami a przyciskami jest licznik lotki w podejściu: „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Po trzeciej lotce wraca do „Lotka nr 1”. Pod spodem dwa duże przyciski obok siebie: Pudło po lewej, Trafiona po prawej. Licznik pozycji w całym ćwiczeniu nie jest pokazywany.
 
 ### 5.5. Bob's 27 easy
 
-Osobne ćwiczenie. Start 27. Cele D1–D20, bez bulla. Trzy lotki na cel. Wartość D1 to 2, D2 to 4, aż do D20 równego 40. Każde trafienie dodaje tę wartość. Trzy pudła odejmują ją raz. Wynik może zejść poniżej zera i ćwiczenie jedzie dalej. Czas 5 minut. Niedokończona trójka na końcu czasu nic nie dodaje i nic nie odejmuje. Wynik to stan licznika, także ujemny.
+Osobne ćwiczenie. Start 27. Cele D1–D20, bez bulla. Trzy lotki na cel. Wartość D1 to 2, D2 to 4, aż do D20 równego 40. Każde trafienie dodaje tę wartość. Trzy pudła odejmują ją raz. Wynik może zejść poniżej zera i ćwiczenie jedzie dalej. Czas 5 minut. Niedokończona trójka na końcu czasu nic nie dodaje i nic nie odejmuje. Rozliczenie D20 przed czasem kończy ćwiczenie. Wynik to stan licznika, także ujemny.
+
+Na górze ekranu, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Pod nim napis „Rzuć trzy lotki w wyświetloną podwójną.” i jeden podświetlony cel (D1, potem D2, aż do D20). Między celem a przyciskami jest licznik lotki w podejściu: „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Po trzeciej lotce cel przechodzi na następny dubl i licznik wraca do „Lotka nr 1”. Pod spodem dwa duże przyciski obok siebie: Pudło po lewej, Trafiona po prawej. W trakcie nie ma punktacji. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania. W podsumowaniu widać wynik, trafienia i procent.
+
+Każda rozliczona lotka jest zapisana jako cel w aktualny dubl, od D1 do D20, oraz trafiona albo pudło. Niedokończona trójka na końcu czasu nie zostawia lotek. W statystykach każdy dubl, w który poszła choć jedna lotka, ma liczbę lotek i liczbę trafień. Dubl, do którego ćwiczenie nie doszło, nie ma wpisu.
 
 ### 5.6. Bob's 27 hard
 
 Osobne ćwiczenie. Jak easy, plus bull o wartości 50 po D20. Outer bull nie jest trafieniem. Jeśli rozliczenie celu zjechałoby wynik poniżej 1, ćwiczenie się kończy. Nie zapisujemy liczby ujemnej. Wynik takiego zakończenia to 0. Inaczej koniec po 5 minutach albo po ostatnim celu, ze stanem licznika.
 
+Na górze ekranu, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Pod nim jest aktualny wynik licznika, potem napis „Rzuć trzy lotki w wyświetloną podwójną.”, a na innerze „Rzuć trzy lotki w inner bull”. Cel jest jeden: D1, potem D2, aż do D20, na końcu Inner. Między celem a przyciskami jest licznik lotki w podejściu: „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Po trzeciej lotce cel przechodzi dalej i licznik wraca do „Lotka nr 1”. Pod spodem dwa duże przyciski obok siebie: Pudło po lewej, Trafiona po prawej. Trafienie podbija wynik od razu. Trzy pudła odejmują wartość przy trzecim pudle. Jedno albo dwa pudła wyniku nie zmieniają. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania. Rozliczenie poniżej 1 oraz rozliczenie innera przed czasem kończą ćwiczenie bez dzwonka. W podsumowaniu widać wynik, trafienia i procent.
+
+Każda rozliczona lotka jest zapisana jako cel w aktualny dubl, od D1 do D20, albo jako Inner, oraz trafiona albo pudło. Outer przy innerze jest pudłem. Niedokończona trójka na końcu czasu nie zostawia lotek. Lotki celu, który zjechał wynik poniżej 1, zostają. W statystykach każdy cel, w który poszła choć jedna lotka, ma liczbę lotek i liczbę trafień. Cel, do którego ćwiczenie nie doszło, nie ma wpisu.
+
 ### 5.7. Catch20
 
-Checkouty od 41 do 60 po kolei. Na liczbę najwyżej 6 lotek. Zamknięcie albo 6 lotek bez zamknięcia przenosi dalej. Bez powrotu. Koniec po 9 minutach albo po przejściu wszystkich wartości.
+Checkouty od 41 do 60 po kolei. Na każdy checkout są dwie wizyty po najwyżej 3 lotki. Zamknięcie przenosi na następną wartość. Dwie wizyty bez zamknięcia też. Bez powrotu. Koniec po 9 minutach albo po przejściu wszystkich wartości.
 
-Zamknięcie jest jak w X01: dokładnie zero, ostatnia lotka w double. Przestrzelenie i inna ostatnia lotka nie zamykają.
+Zamknięcie jest jak w X01: dokładnie zero, ostatnia lotka w double. Przestrzelenie, zostawienie 1 i inna ostatnia lotka są bustem i nie zamykają.
+
+Bust w pierwszej wizycie cofa licznik do stanu sprzed tej wizyty. Zostaje druga wizyta, trzy lotki na ten sam checkout. Bust w drugiej wizycie kończy próbę tego checkoutu i przenosi na następny, także gdy w drugiej wizycie poleciało mniej niż trzy lotki. Wizyta, która nie jest bustem i nie zamyka, zostawia nowy licznik na drugą wizytę. Po dwóch takich wizytach checkout przepada.
+
+Przykład: 41, pierwsza wizyta 20 i 25 albo suma 45. To bust. Licznik wraca do 41 i jest jeszcze jedna wizyta. Taki sam bust w drugiej wizycie zabiera 41 i otwiera 42.
+
+Koniec czasu urywa otwartą wizytę. Ta wizyta nie zamyka checkoutu i nie wchodzi do wyniku ani do statystyk. Ćwiczenie idzie do podsumowania. Wizyta rozliczona przed końcem czasu zostaje.
 
 Wynik: liczba zamkniętych checkoutów.
 
-### 5.8. Scoring 20/19/18
+W trybie „Każdy rzut osobno” zbieramy skuteczność na doublach. Lotka wpada do tej listy tylko wtedy, gdy przed nią licznik da się zamknąć jedną podwójną: 2 to D1, 4 to D2, aż do 40 jako D20. Ta podwójna jest celem lotki. Trafienie to dokładnie ten dubel. Każda inna lotka z tego licznika, także 0 i bust, jest pudłem na ten sam cel. Przykład: licznik 26, potem 0 i D13, daje dwa wpisy: cel D13 pudło, cel D13 trafione. Po pudle, które zostawia ten sam dubel do zamknięcia, następna lotka jest kolejną próbą tego samego celu. Suma trzech rzutów nie rozbija lotek, więc tej listy nie zbiera.
 
-9 minut. Kolejki po 3 lotki. Cele w kółko: 20, 19, 18. Po kolejce sektor się zmienia, także przy pudle. Trafienie w aktualny sektor: single 1, double 2, triple 3. Inne pole, także bull, daje 0. Wynik to suma.
+Na serwer i do podsumowania idzie wynik oraz, w trybie lotek, liczba prób i trafień każdego dubla, w który poszła choć jedna lotka. Listy kolejnych lotek nie ma. Dubel, do którego ćwiczenie nie doszło, nie ma wpisu. Niedokończona wizyta na końcu czasu nie zostawia lotek.
+
+Na ekranie szczegółów, nad „Rozpocznij”, są „Suma trzech rzutów” i „Każdy rzut osobno”. Zaznaczony jest ostatni wybór z tego telefonu. Na górze ekranu ćwiczenia, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek. Zamknięcie 60 przed czasem kończy ćwiczenie bez dzwonka. Pod zegarem jest numer checkoutu i duży licznik, na starcie równy tej liczbie. Pod nim „Wizyta 1” albo „Wizyta 2”. W trybie lotek jest też „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Wpisywanie jest jak w X01: klawiatura sumy albo pola lotki. W trakcie nie ma liczby zamkniętych checkoutów. W podsumowaniu widać liczbę zamkniętych checkoutów, a w trybie lotek próby i trafienia każdego dubla, w który poszła choć jedna lotka.
+
+### 5.8. Scoring 65
+
+Osobne ćwiczenie. 5 minut. Podejście to 3 lotki. Liczą się punkty z tarczy, na przykład 20, 20 i 25. Suma co najmniej 65 daje 1 punkt ćwiczenia. Słabsze podejście daje 0. Powtarzane do końca czasu. Urwane podejście na końcu czasu nie wchodzi do wyniku. Wynik to suma tych punktów.
+
+Średnia to suma punktów zakończonych podejść podzielona przez ich liczbę. Podejście poniżej 65 wchodzi do średniej. Brak zakończonego podejścia zostawia średnią pustą. Na serwer idzie wynik, suma punktów i liczba podejść.
+
+Na ekranie szczegółów, nad „Rozpocznij”, są „Suma trzech rzutów” i „Każdy rzut osobno”. Zaznaczony jest ostatni wybór z tego telefonu. Na górze ekranu ćwiczenia, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania.
+
+Pod zegarem widać Punkty. Startują od 0. Po rozliczeniu podejścia za co najmniej 65 rosną o 1. Pod nimi jest instrukcja „Zdobądź jak najwięcej punktów w trzech lotkach”.
+
+W trybie sumy jest pole „Wprowadź wynik” i klawiatura z cyframi, C, OK i Cofnij. Przycisk OK ma złotą obwódkę. Suma od 0 do 180. OK rozlicza podejście.
+
+W trybie lotek duży licznik pokazuje bieżącą sumę lotek tego podejścia i odlicza w górę albo w dół do nowej wartości. Klawiatura jest jak w X01. Trzecia lotka rozlicza podejście: licznik chwilę pokazuje sumę, potem spada do 0. Pod licznikiem widać lotki otwartego podejścia.
+
+Cofnij zdejmuje ostatnią lotkę albo całe podejście sumy. Jeśli zdjęte podejście dało punkt, Punkty maleją o 1.
+
+W podsumowaniu widać wynik, średnią i liczbę podejść.
 
 ### 5.9. 18 lotek
 
-Sześć kolejek po 3 lotki:
-
-1. Środek, outer albo inner.
-2. Sektor 20.
-3. Sektor 19.
-4. Sektor 20.
-5. Sektor 19.
-6. Sektor 18.
-
-Bez punktacji. W podsumowaniu trafienia i procent.
+To wariant ćwiczenia 9/18 lotek, nie osobna pozycja katalogu. Te same cztery etapy i te same ekrany, po 18 lotek na etap.
 
 ### 5.10. Zegar doubli
 
-Po jednej lotce w D1–D20, potem Bull. Bull to outer albo inner. Nietrafienie nie zatrzymuje. Bez punktacji. Trafienie doubli to double tego numeru. W podsumowaniu trafienia i procent.
+Wariant ćwiczenia Zegar. Po jednej lotce w D1–D20, potem Bull. Bull to outer albo inner. Nietrafienie nie zatrzymuje. Każde trafienie daje 3 punkty. Pudło daje 0. Wynik to suma tych punktów. Trafienie doubli to double tego numeru. W podsumowaniu wynik, trafienia i procent.
+
+Ekran jest jak w zegarze szybkim. Napis brzmi „Celuj kolejno po jednej lotce w pole podwójne tych sektorów”. Okno, ramka i karuzela są te same.
 
 ### 5.11. Scoring z presją
 
-Trzy elementy po 5 minut.
+5 minut. Warianty: 20, 19, 18 i 20/19/18. Z biblioteki gracz zaznacza wariant i klika „Rozpocznij”. Czas zostaje domyślny. W planie administrator wybiera wariant i czas. Gracz w planie ich nie zmienia.
 
-**Sektor 20.** Single 1, double 2, triple 3. Trafienie poza 20 zeruje aktualną serię. Nie ma dodatkowej kary. Wynik elementu to najwyższa seria, nie suma serii.
+Single aktualnego sektora daje 1, double 2, triple 3. Pudło albo inny sektor zeruje bieżącą serię. Wynik ćwiczenia to najwyższa seria. W trakcie widać tylko bieżącą serię.
 
-**Sektory 20/19/18.** Zawodnik przy każdej lotce sam wybiera, który z tych trzech sektorów jest celem. Nie ma narzuconej kolejności. Ta sama skala 1, 2, 3. Trafienie poza tą trójką zeruje serię. Wynik elementu to najwyższa seria.
+Wariant 20, 19 albo 18 celuje cały czas w ten jeden sektor. Licznik „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3” wraca do jedynki po trzeciej lotce. Cel się nie zmienia.
 
-**65.** Podejście to 3 lotki. Liczą się punkty z tarczy, na przykład 20, 20 i 25. Suma co najmniej 65 daje 1 punkt ćwiczenia. Słabsze podejście daje 0. Powtarzane do końca czasu. Urwane podejście na końcu czasu nie wchodzi do wyniku. Wynik elementu to suma tych punktów.
+Wariant 20/19/18 zmienia cel co lotkę: 20, 19, 18 i od nowa. Zły rząd zeruje serię i zużywa lotkę, tak samo jak Pudło.
+
+Na górze, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Pod nim jest bieżąca seria, potem instrukcja celu i licznik lotki, potem przyciski. Wariant jednego sektora: Triple, Double, Single i Pudło. Wariant 20/19/18: trzy rzędy Triple, Double, Single dla 20, 19 i 18, podświetlony jest rząd aktualnej lotki, oraz Pudło. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania. Lotki rzucone przed końcem zostają. W podsumowaniu widać najwyższą serię, trafienia i procent.
+
+Każda lotka jest zapisana jako cel w wyznaczony sektor oraz trafiona albo pudło. Trafienie to single, double albo triple tego sektora. Do serii single dodaje 1, double 2, triple 3. Na serwer idzie najwyższa seria oraz liczba lotek i trafień każdego sektora, w który poszła choć jedna lotka.
 
 ### 5.12. Singielki z presją
 
@@ -223,9 +307,13 @@ Punkty zależą od pozycji:
 
 Single 1 na powrocie kończy ścieżkę za 45 punktów. Jeśli czas jeszcze idzie, nowa ścieżka zaczyna się od sektora 1. Nie wracamy do ukończonej ścieżki. Wynik końcowy to suma ukończonych ścieżek plus punkty pozycji ścieżki niedokończonej w chwili końca czasu.
 
+Na górze ekranu, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Pod nim napis „Celuj w pole pojedyncze wskazanego sektora, jeśli trafisz - celuj w kolejny”. Okno, ramka i karuzela są jak w zegarze szybkim. Ciąg celów jest dłuższy: 1, 2, …, 20, Bull, potem 20, 19, …, 1, a po zamknięciu ścieżki od nowa od 1. Przez podejście okno stoi. Trafienie przesuwa ramkę na następną wartość, także w tej samej trójce. Pudło ramki nie rusza. Po trzeciej lotce aktualny cel staje z lewej. Trzy pudła cofają karuzelę o jedną wartość. Nie schodzi poniżej 1. Na powrocie trzy pudła przy 1 zostawiają 1. Nowa ścieżka nie cofa się do ukończonej. Między celami a przyciskami jest licznik lotki w podejściu: „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Po trzeciej lotce wraca do „Lotka nr 1”. Pod spodem dwa duże przyciski obok siebie: Pudło po lewej, Trafiona po prawej. W trakcie nie ma punktacji. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania. Niedokończona trójka nie cofa. Lotki rzucone przed końcem zostają.
+
+Każda lotka jest zapisana jako cel S z numerem sektora albo Bull oraz trafiona albo pudło. W podsumowaniu widać wynik i skuteczność po celu lotki.
+
 ### 5.13. Checkout 41+
 
-10 minut. Start od 41. Na liczbę najwyżej 3 lotki. Zamknięcie jak w X01. Sukces wchodzi o jeden w górę. Porażka schodzi o jeden, nie niżej niż 41. Niedokończona trójka na końcu czasu nie zamyka.
+10 minut. Start od 41. Na liczbę najwyżej 3 lotki, jedna wizyta na wartość. Zamknięcie jak w X01: dokładnie zero, ostatnia lotka w double. Przestrzelenie, zostawienie 1 i inna ostatnia lotka są bustem i nie zamykają. Bust domyka wizytę. Sukces wchodzi o jeden w górę. Porażka schodzi o jeden, nie niżej niż 41. Niedokończona wizyta na końcu czasu nie zamyka i nie wchodzi do wyniku ani do statystyk. Wizyta rozliczona przed końcem czasu zostaje.
 
 Zapisujemy najwyższy zamknięty checkout, nawet jeśli później zawodnik zejdzie niżej. Od niego liczy się wynik:
 
@@ -235,17 +323,51 @@ Zapisujemy najwyższy zamknięty checkout, nawet jeśli później zawodnik zejdz
 
 Stąd 49 to 41, 50 to 46, 51 to 53, 52 to 60. Górnego limitu nie ma.
 
+W trybie „Każdy rzut osobno” zbieramy skuteczność na doublach tak jak w Catch20. Lotka wpada do tej listy tylko wtedy, gdy przed nią licznik da się zamknąć jedną podwójną: 2 to D1, 4 to D2, aż do 40 jako D20. Ta podwójna jest celem lotki. Trafienie to dokładnie ten dubel. Każda inna lotka z tego licznika, także 0 i bust, jest pudłem na ten sam cel. Suma trzech rzutów nie rozbija lotek, więc tej listy nie zbiera.
+
+Na serwer i do podsumowania idzie wynik oraz, w trybie lotek, liczba prób i trafień każdego dubla, w który poszła choć jedna lotka. Listy kolejnych lotek nie ma. Dubel, do którego ćwiczenie nie doszło, nie ma wpisu. Niedokończona wizyta na końcu czasu nie zostawia lotek.
+
+Na ekranie szczegółów, nad „Rozpocznij”, są „Suma trzech rzutów” i „Każdy rzut osobno”. Zaznaczony jest ostatni wybór z tego telefonu. Na górze ekranu ćwiczenia, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania.
+
+Pod zegarem jest okno trzech wartości checkoutu i ramka na środku. Ramka stoi w miejscu. Aktualnie zamykana wartość jest w ramce. Na starcie w ramce jest 41, z prawej 42, z lewej nie ma wartości poniżej 41. Karuzela przesuwa się dopiero po rozliczeniu wizyty. Sukces: wartości jadą w lewo i w ramce staje się wyższa o jeden. Porażka: wartości jadą w prawo i w ramce staje się niższa o jeden. Nieudane 41 zostawia karuzelę na 41. Bust w trybie lotek też rozlicza wizytę i rusza karuzelę jak porażka.
+
+W trybie sumy zawodnik sam liczy punkty. Pod karuzelą jest napis „Zamknij wskazany checkout w trzech lotkach” i dwa duże przyciski: Fail po lewej, Check po prawej. Check zamyka aktualną wartość od razu, bez dodatkowego potwierdzenia. Fail kończy próbę bez zamknięcia. Nie ma klawiatury cyfr ani wpisywania sumy.
+
+W trybie lotek pod karuzelą jest duży licznik pozostałych punktów. Na starcie wizyty równa się wartości z ramki i maleje po lotkach, jak w X01. Jest też „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Wpisywanie jest jak w X01: pola lotki. Cofnij zdejmuje ostatnią lotkę, także tę, która właśnie rozliczyła wizytę (trzecia lotka, bust albo zamknięcie). W trybie lotek cofanie może iść przez rozliczone wizyty aż do początku ćwiczenia. W trybie sumy Cofnij zdejmuje ostatni Fail albo Check i może iść aż do początku ćwiczenia.
+
+W trakcie nie ma punktacji ani najwyższego zamkniętego checkoutu. W podsumowaniu widać wynik oraz, w trybie lotek, próby i trafienia każdego dubla, w który poszła choć jedna lotka.
+
 ### 5.14. Checkout Bull 81+
 
-8 minut. Podejście ma 3 lotki. Dwie pierwsze ustawiają checkout i liczą się tylko jako single: odejmują swoją wartość. Inne trafienie na tych lotkach nic nie odejmuje. Trzecia lotka zawsze idzie w czerwony, inner bull, także wtedy, gdy single nie zostawiły 50. To jest wskazówka dla gracza i zarazem przebieg podejścia.
+8 minut. Podejście ma zawsze 3 lotki. Wpisywanie tylko „Każdy rzut osobno”. Nie ma trybu sumy ani wyboru sposobu wpisywania na szczegółach.
 
-Zamknięcie jest tylko wtedy, gdy po dwóch single zostało dokładnie 50 i trzecia lotka trafiła w inner. Outer nie zamyka. Nieudane podejście zostawia tę samą liczbę.
+Dwie pierwsze lotki ustawiają checkout. Odejmują pełną wartość z tarczy: single, double, triple, outer (25) albo inner (50). Pudło odejmuje 0. Niezależnie od wyniku tych dwóch lotek podejście nie kończy się wcześniej — zawodnik zawsze rzuca trzecią.
 
-Start od 81 w górę do 90, potem powrót do 81. Po ponownym zamknięciu 81, jeśli został czas, kolejna runda od 81. Każde zamknięcie daje 10 punktów. Wynik to suma.
+Trzecia lotka zawsze idzie w czerwony środek (inner). To jest wskazówka dla gracza i zarazem przebieg podejścia.
+
+Zamknięcie (+10) jest tylko wtedy, gdy po dwóch pierwszych lotkach zostało dokładnie 50 i trzecia trafiła w inner. Outer przy ustawionych 50 nic nie daje i nie zamyka. Inna lotka przy ustawionych 50 też nic nie daje.
+
+Bonus (+4): gdy po dwóch pierwszych nie zostało 50, a trzecia lotka trafiła w inner. Outer i pudło nie dają bonusu. Nieudane podejście — także to z bonusem +4 — zostawia tę samą wartość checkoutu.
+
+Start od 81 w górę do 90, potem powrót 89 → … → 81. Po ponownym zamknięciu 81, jeśli został czas, kolejna runda od 81. Wynik ćwiczenia to suma punktów z zamknięć i bonusów. W trakcie ćwiczenia wyniku nie pokazujemy.
+
+Do skuteczności po celu lotki liczy się wyłącznie trzecia lotka każdego podejścia, z celem Inner. Trafienie to inner. Outer, pudło i każda inna lotka na trzeciej to pudło na Inner. Lotki 1 i 2 nie mają celu i nie wchodzą do tych rubryk. Niedokończone podejście na końcu czasu nie zamyka, nie daje bonusu i nie zostawia lotek w statystykach.
+
+Na górze ekranu, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania.
+
+Pod zegarem jest okno trzech wartości checkoutu i ramka na środku, jak w Checkout 41+. Ramka stoi w miejscu. Aktualnie zamykana wartość jest w ramce. Na starcie w ramce jest 81, z prawej 82, z lewej nie ma wartości poniżej 81. Karuzela przesuwa się dopiero po udanym zamknięciu. Wartości jadą w lewo przy drodze w górę i w prawo przy powrocie. Nieudane podejście i bonus +4 nie ruszają karuzeli.
+
+Pod karuzelą jest duży licznik pozostałych punktów. Na starcie podejścia równa się wartości z ramki i maleje po lotkach 1 i 2. Jest „Lotka nr 1”, „Lotka nr 2”, „Lotka nr 3”. Klawiatura jak w X01 w trybie lotek. Cofnij zdejmuje ostatnią lotkę, także trzecią po rozliczeniu podejścia, i może iść przez rozliczone podejścia aż do początku ćwiczenia.
+
+W podsumowaniu widać wynik oraz skuteczność Inner (trafienia wobec trzecich lotek).
 
 ### 5.15. Walka o licznik
 
-3 minuty. Jedna lotka w ręce, po rzucie ta sama wraca do ręki. Inner 4 punkty, outer 2, reszta 0. Wynik to suma.
+3 minuty. Jedna lotka w ręce, po rzucie ta sama wraca do ręki. Inner 4 punkty, outer 2, reszta 0. Wynik to suma. Czas jest zmienną ćwiczenia.
+
+Na górze ekranu, na środku, jest zegar „Zostało” i pasek, który wypełnia się wraz z upływem. Rusza wraz ze startem. Pod nim jest aktualny wynik licznika, potem napis „Celuj w czerwony środek. Używaj tylko jednej lotki.” Pod spodem trzy duże przyciski w jednym rzędzie: Inner, Outer i Pudło. Trafienie podbija wynik od razu. Nie ma licznika lotki w podejściu. Przez ostatnie 5 sekund leci tykanie i kończy się razem z czasem. Po upływie czasu gra dzwonek i ćwiczenie przechodzi do podsumowania. W podsumowaniu widać wynik, trafienia i procent. Trafieniem jest inner albo outer.
+
+Każda rozliczona lotka jest zapisana jako cel Inner oraz inner, outer albo pudło. W statystykach liczą się wszystkie rzucone lotki. Inner i outer to trafienia. Lista lotek zostaje na telefonie.
 
 ### 5.16. Lista jest stała
 
@@ -267,7 +389,7 @@ Kafelek: nazwa, trudność, deklarowany czas, gwiazdka ulubionych. Bez liczby ć
 
 Szczegóły: pełny opis, deklarowany czas, liczba ukończeń tego użytkownika, ulubione, „Podgląd planu”, „Rozpocznij plan”. Podgląd przy każdym wejściu jest zwinięty. Po rozwinięciu: ćwiczenia po kolei, czas każdego, przerwy i ich czas. Można przeczytać opis ćwiczenia. Nie da się wystartować jednego elementu z podglądu. „Rozpocznij plan” jest zawsze widoczny i nie pyta drugi raz.
 
-Administrator układa plan z ćwiczeń biblioteki. Może powtórzyć to samo ćwiczenie, wstawić dowolnie wiele przerw, także na początku i na końcu, i ustalić czas każdej przerwy. Przy ćwiczeniu może zmienić tylko jego zmienną: czas albo liczbę lotek. Pominięta wartość zostawia domyślną. Deklarowany czas wybiera z 30, 60, 90, 120. System go nie liczy z sumy elementów i nie ostrzega, gdy suma się różni.
+Administrator układa plan z ćwiczeń biblioteki. Może powtórzyć to samo ćwiczenie, wstawić dowolnie wiele przerw, także na początku i na końcu, i ustalić czas każdej przerwy. Przy ćwiczeniu może zmienić tylko jego zmienną: czas albo liczbę lotek, oraz checkbox „Punktowane”. Pominięta wartość zostawia domyślną. Checkbox na nowym wierszu jest zaznaczony. Deklarowany czas wybiera z 30, 60, 90, 120. System go nie liczy z sumy elementów i nie ostrzega, gdy suma się różni.
 
 Nowy plan jest nieaktywny, aż administrator go włączy. Po pierwszej publikacji nie edytuje się nazwy, opisu, grafiki, trudności, czasu ani układu. Zmiana to nowy plan.
 
@@ -291,9 +413,11 @@ Na telefonie, na którym plan wystartował, da się go pauzować i wrócić dok�
 
 ### Podsumowanie planu
 
-Jedno podsumowanie sesji: nazwa, data ukończenia, łączna punktacja. Suma bierze się z ukończonych ćwiczeń. Pominięte dają zero.
+Jedno podsumowanie sesji: nazwa, data ukończenia, łączna punktacja. Suma bierze się z ukończonych ćwiczeń, które w tym planie są punktowane. Rozgrzewka i pominięte dają zero.
 
-Niżej ćwiczenia po kolei, każde zwinięte. Można rozwinąć kilka naraz. Przy następnym otwarciu znów są zwinięte. W środku: wynik i statystyki ćwiczenia, bez listy rzutów. Pominięte mają oznaczenie i nie mają statystyk.
+Jest też skuteczność per cel. Liczy się ją z lokalnych list lotek ukończonych ćwiczeń: ten sam cel sumuje lotki i trafienia. 20, S20, D20 i T20 zostają osobno. Pominięte ćwiczenie nie wnosi lotek. Wygląd tego zestawienia uzgadniamy ze szczegółowym ekranem planu.
+
+Niżej ćwiczenia po kolei, każde zwinięte. Można rozwinąć kilka naraz. Przy następnym otwarciu znów są zwinięte. W środku: wynik i statystyki ćwiczenia, bez listy rzutów. Rozgrzewka ma oznaczenie „Rozgrzewka” i swój wynik, który nie wchodzi do sumy. Pominięte mają oznaczenie i nie mają statystyk.
 
 Przyciski: „Powrót do ekranu treningu” i „Powtórz plan”. Powtórzenie pyta: „Czy na pewno chcesz rozpocząć ten plan ponownie?” Przyciski „Anuluj” i „Rozpocznij”. Nowa sesja, bez przenoszenia stanu. Jeśli plan jest nieaktywny, powtórzenie jest wyłączone.
 
@@ -451,7 +575,7 @@ Aktywny plan żyje na telefonie, na którym wystartował. Drugi telefon może mi
 
 Po ukończeniu telefon trzyma podsumowanie i statystyki do czasu potwierdzenia serwera. Taka sesja nie blokuje następnego treningu. Jest przypisana do konta, na którym powstała. Po wylogowaniu czeka na to samo konto i nie może wejść na inne. Po ponownym zalogowaniu wysyłka rusza sama.
 
-Na serwer idzie: podsumowanie, statystyki, wyniki ćwiczeń planu, status pominięć. Bez listy lotek. Zapis ukończonej sesji na serwerze jest niezmienny. Powtórna wysyłka tej samej sesji nie tworzy drugiego wpisu historii.
+Na serwer idzie: podsumowanie, statystyki, wyniki ćwiczeń planu, status pominięć. W statystykach jest skuteczność per cel: ile lotek było w ten cel celowanych i ile trafiło. Bez listy lotek. Zapis ukończonej sesji na serwerze jest niezmienny. Powtórna wysyłka tej samej sesji nie tworzy drugiego wpisu historii.
 
 Do czasu udanej synchronizacji sesja nie rusza statystyk, rekordów, celów, odznak ani liczników. Po udanej aktualizują się same.
 
@@ -673,7 +797,7 @@ Cel: pozostałe ćwiczenia z rozdziału 5, reguły już opisane. Każde ćwiczen
 
 Zależy od: 5.
 
-Kolejność wewnątrz: luźne rzuty, 9 lotek, 18 lotek, zegary, Scoring 20/19/18, Walka o licznik, Catch20, Bob's 27 easy, Bob's 27 hard, Scoring z presją, Singielki z presją, Checkout 41+, Checkout Bull 81+.
+Kolejność wewnątrz: luźne rzuty, 9/18 lotek, zegary, Walka o licznik, Catch20, Bob's 27 easy, Bob's 27 hard, Scoring z presją, Scoring 65, Singielki z presją, Checkout 41+, Checkout Bull 81+.
 
 Gotowe, gdy: każde ćwiczenie z listy da się zagrać samodzielnie i zsynchronizować.
 

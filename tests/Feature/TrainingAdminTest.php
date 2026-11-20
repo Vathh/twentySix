@@ -46,7 +46,7 @@ class TrainingAdminTest extends TestCase
             ->assertOk()
             ->assertSee('Luźne rzuty')
             ->assertSee('180 s')
-            ->assertSee('9 lotek')
+            ->assertSee('9/18 lotek')
             ->assertSee('36 lotek')
             ->assertDontSee('>Nowe<', false);
 
@@ -73,7 +73,7 @@ class TrainingAdminTest extends TestCase
             ->assertOk()
             ->assertSee('Luźne rzuty')
             ->assertSee('240 s')
-            ->assertSee('9 lotek')
+            ->assertSee('9/18 lotek')
             ->assertSee('36 lotek')
             ->assertSee('Nieaktywne');
 
