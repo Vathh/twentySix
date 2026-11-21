@@ -530,7 +530,7 @@ Nie wysyłamy powiadomień, gdy inny użytkownik wyprzedzi gracza w rankingu.
 
 # 9. 54-Dart Challenge
 
-Wyzwanie składa się z 54 rzutów i trzech etapów.
+Wyzwanie składa się z 54 rzutów i trzech etapów. Kolejność: Shanghai 10–15, Doubles, Shanghai 16–20.
 
 ## Etap 1: Shanghai 10–15
 
@@ -543,16 +543,7 @@ Wyzwanie składa się z 54 rzutów i trzech etapów.
 
 Maksymalny wynik: 1140 punktów.
 
-## Etap 2: Shanghai 16–20
-
-- 5 sektorów,
-- 3 rzuty na sektor,
-- ta sama punktacja,
-- bonus 100 punktów za S+D+T w tej samej wizycie.
-
-Maksymalny wynik: 950 punktów.
-
-## Etap 3: Doubles 1–20 i Bull
+## Etap 2: Doubles 1–20 i Bull
 
 - jeden rzut do każdego D1–D20,
 - następnie jeden rzut do Bull,
@@ -561,6 +552,15 @@ Maksymalny wynik: 950 punktów.
 - Outer Bull: 0 punktów.
 
 Maksymalny wynik: 1100 punktów.
+
+## Etap 3: Shanghai 16–20
+
+- 5 sektorów,
+- 3 rzuty na sektor,
+- ta sama punktacja,
+- bonus 100 punktów za S+D+T w tej samej wizycie.
+
+Maksymalny wynik: 950 punktów.
 
 Maksymalny wynik całego Wyzwania: 3190 punktów.
 
@@ -658,11 +658,15 @@ Ukończone Eventy są widoczne również dla osób, które nie brały w nich udz
 
 ## 10.5. Próby Eventów
 
-Eventów nie można pauzować z poziomu użytkownika ani wznowić po przerwaniu.
+Event składa się z ćwiczeń z katalogu. Wynik próby to suma wyników ćwiczeń punktowanych (jak w planie). Nie można pomijać ćwiczeń.
 
-Przerwanie wymaga potwierdzenia modalnego. Po potwierdzeniu próba zostaje unieważniona i nie trafia do historii ani statystyk.
+Start próby wymaga sieci i zapisuje na serwerze próbę `in_progress`. Wielu uczestników gra równolegle.
 
-Nie można pomijać ćwiczeń ani etapów.
+Utrata sieci i crash nie unieważniają próby. Aplikacja trzyma lokalnie pełny stan (pozycja, lotki). Po odzyskaniu sieci / restarcie wznawia się **ta sama** próba. Nie wolno rozpocząć nowej, dopóki otwarta żyje.
+
+Świadome przerwanie (modal) unieważnia próbę, zużywa slot w oknie i nie trafia do historii ani statystyk. Timeout otwartej próby działa tak samo. Ukończenie też zużywa slot.
+
+Gracz nie ma pauzy „na życzenie”. Wznowienie = tylko odzyskanie tej samej próby.
 
 Podczas próby nie pokazujemy punktacji ani statystyk.
 

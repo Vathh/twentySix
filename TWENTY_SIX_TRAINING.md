@@ -447,7 +447,7 @@ Są dwie kategorie treści rywalizacyjnej: wyzwania i eventy. Nie ma osobnej kat
 
 Wyzwanie jest indywidualne, bezterminowe i powtarzalne. Event jest czasowy, z limitem prób, klasyfikacją i medalami.
 
-Nowe wyzwanie powstaje od zera jako nieaktywne. Nie ma kopiowania ani wersjonowania. Po pierwszej publikacji nie edytuje się nazwy, opisu, grafiki, mechaniki, punktacji ani zasad. Zmiana to dezaktywacja albo anulowanie i nowy byt.
+Wyzwania MVP są gotową listą katalogu (jak ćwiczenia) — na start: 54-Dart Challenge. Nie tworzy się ich od zera w panelu. Administrator włącza, wyłącza i ustawia progi odznaki. Po pierwszej aktywacji nie edytuje się nazwy, opisu, grafiki, punktacji ani zasad. Zmiana to dezaktywacja albo anulowanie.
 
 Dezaktywacja jest odwracalna i wymaga zwykłego potwierdzenia, bez hasła. Wyzwanie znika z katalogu. Próby w toku są unieważnione. Użytkownik widzi: „Wyzwanie zostało dezaktywowane przez administratora”. Unieważniona próba nie wchodzi do historii i nie rusza statystyk, rekordów, celów ani odznak. Ranking znika z widoku. W ulubionych zostaje oznaczenie „Nieaktywne”. Po ponownym włączeniu ranking wraca razem z wcześniejszymi opublikowanymi wynikami. Włączyć można, edytować nie.
 
@@ -477,27 +477,43 @@ Ranking jest zakładką szczegółów aktywnego wyzwania. Pusto: „Brak opublik
 
 ### 8.1. 54-Dart Challenge
 
-Zwykłe wyzwanie, dostępne stale, dopóki administrator go nie wyłączy albo nie anuluje. Trzy etapy, 54 rzuty.
+Zwykłe wyzwanie, dostępne stale, dopóki administrator go nie wyłączy albo nie anuluje. Trzy etapy, 54 rzuty. Kolejność etapów: Shanghai 10–15, Doubles, Shanghai 16–20.
 
 **Shanghai 10–15.** Sześć sektorów, 3 rzuty na sektor. Single 15, double 30, triple 45. Bonus 100 za komplet S+D+T w jednej wizycie. Maksimum 1140.
 
-**Shanghai 16–20.** Pięć sektorów, ta sama punktacja i ten sam bonus. Maksimum 950.
-
 **Doubles 1–20 i Bull.** Po jednej lotce w każdy double, potem Bull. Double 50. Inner bull 100. Outer bull 0 i nie jest trafieniem. Maksimum 1100.
+
+**Shanghai 16–20.** Pięć sektorów, ta sama punktacja i ten sam bonus. Maksimum 950.
 
 Maksimum całości: 3190.
 
 Podsumowanie pokazuje wynik łączny. Etapy są w historii. Progi kolorystyczne wyniku nie istnieją.
 
-Cele tego wyzwania: od 100 do 3100 co 100, według najlepszego ukończonego wyniku. Progi odznaki tego wyzwania ustala administrator przy definicji. Nie ma jednej drabinki dla wszystkich wyzwań.
+Cele tego wyzwania: od 100 do 3100 co 100, według najlepszego ukończonego wyniku. Progi odznaki ustala administrator (domyślne są w katalogu). Nie ma jednej drabinki dla wszystkich wyzwań.
 
-Ekran próby uzgadniamy osobno. Zasady punktacji powyżej są wiążące.
+#### Ekran próby (uzgodniony)
+
+Nagłówek: tylko nazwa wyzwania. Bez paska postępu i bez numeru etapu. Przycisk tylko Przerwij (z potwierdzeniem). Bez pauzy i bez wznowienia.
+
+W trakcie widać tylko cel (sektor / D-n / Bull), bez sumy punktów. Jest licznik lotek w wizycie („Lotka 1 z 3”). Po domknięciu wizyty (3 lotki) gra dźwięk `click`.
+
+Shanghai: przyciski Single / Double / Triple / Pudło, wpis lotka po lotce. Komplet S+D+T liczy aplikacja.
+
+Doubles: Trafiona / Pudło; przy Bull — Inner bull / Pudło. Ten sam licznik lotek do 3 i dźwięk po wizycie (także gdy cele są po jednej lotce — trzy kolejne cele tworzą wizytę UI).
+
+Po końcu sektora lub etapu od razu następny, bez ekranu pośredniego. Punktacja łączna dopiero na podsumowaniu.
 
 ---
 
 ## 9. Eventy
 
-Event wymaga sieci od startu do końca. Bez sieci nie da się zacząć. Utrata sieci w trakcie przerywa próbę i zużywa ją. Crash i świadoma rezygnacja też zużywają próbę. Zużyta, niedokończona próba nie wchodzi do historii ani statystyk.
+Event wymaga sieci, żeby **zacząć** próbę i żeby **domknąć** ją na serwerze. Wielu graczy może grać równolegle.
+
+Start próby jest zapisany na serwerze (`in_progress`). To nie jest blokada „jedna osoba naraz” — serwer wie, że ten gracz ma otwartą próbę.
+
+**Utrata sieci i crash nie unieważniają próby.** Telefon trzyma pełny stan: które ćwiczenie, postęp i wpisane lotki. Po powrocie sieci i po restarcie aplikacji gracz **wznawia tę samą próbę** od miejsca przerwania. Wynik po dokończeniu ma być taki, jakby przerwy nie było. Nie wolno zacząć drugiej próby, dopóki ta jest otwarta.
+
+**Zużycie slotu w oknie** następuje przy: ukończeniu, świadomym przerwaniu (z potwierdzeniem) albo po przekroczeniu limitu czasu otwartej próby bez dokończenia. Świadome przerwanie i timeout unieważniają niedokończoną próbę — nie wchodzi do historii, statystyk ani klasyfikacji. Celowe zerwanie sieci nie daje świeżego startu.
 
 To jedyny byt Training, w którym udział jest limitowany. Administrator ustawia, ile prób przypada na okno. Niewykorzystana próba nie przechodzi na następne okno.
 
@@ -509,7 +525,7 @@ Okno jest stałe. Nie liczy się od chwili, w której gracz skończył próbę. 
 
 Przykład drugiego i trzeciego trybu: 25–31 sierpnia jedna próba, potem 1–7 września kolejna.
 
-Próby nie da się pauzować ani wznowić. Przerwanie pyta, unieważnia próbę i wraca na ekran Trening. Etapów nie pomijamy. W trakcie nie ma punktacji.
+Gracz nie ma przycisku pauzy. Wznowienie dotyczy wyłącznie odzyskania tej samej próby po sieci / crashu. Świadome przerwanie pyta, unieważnia próbę, zużywa slot i wraca na ekran Trening. Ćwiczeń nie pomijamy. W trakcie nie ma punktacji.
 
 ### Prowadzenie eventu
 
@@ -835,11 +851,11 @@ Gotowe, gdy: ukończona próba jest prywatna, lepsza daje się opublikować, gor
 
 ### 11. Eventy
 
-Cel: start tylko online, stała sieć, zużycie próby przy crashu, rezygnacji i utracie sieci, okna prób, pauza i wcześniejsze zakończenie eventu, klasyfikacja, medale w Analizie, dyskwalifikacja z przeliczeniem.
+Cel: event ze składu ćwiczeń, start próby online z zapisem `in_progress`, wznowienie tej samej próby po sieci/crashu (stan + lotki lokalnie), zużycie przy abort/timeout/ukończeniu, okna prób, pauza i wcześniejsze zakończenie eventu, klasyfikacja, medale w Analizie, dyskwalifikacja z przeliczeniem.
 
 Zależy od: 9 i 10.
 
-Gotowe, gdy: bez sieci próba się nie zaczyna, drugie podejście w tym samym oknie jest odrzucone, a medal widać w Analizie po zamknięciu eventu.
+Gotowe, gdy: bez sieci próba się nie zaczyna, otwarta próba wznawia się zamiast dawać nowy start, drugie podejście w oknie ponad limit jest odrzucone, a medal widać w Analizie po zamknięciu eventu.
 
 ### 12. Operacje administratora i dane użytkownika
 

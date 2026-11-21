@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Training;
 
+use App\Domain\Training\TrainingChallengeCatalog;
 use App\Domain\Training\TrainingDefinitionDraft;
 use App\Domain\Training\TrainingDefinitionStatus;
 use App\Domain\Training\TrainingException;
@@ -23,20 +24,20 @@ class TrainingDefinitionRepository
             'difficulty' => $draft->difficulty,
             'declared_minutes' => $draft->declaredMinutes,
             'mechanic' => $draft->mechanic,
+            'badge_thresholds' => $draft->badgeThresholds,
             'duration_seconds' => $draft->durationSeconds,
             'dart_count' => $draft->dartCount,
             'published_at' => null,
+            'starts_at' => $draft->startsAt,
+            'ends_at' => $draft->endsAt,
+            'attempts_per_window' => $draft->attemptsPerWindow,
+            'window_mode' => $draft->windowMode,
+            'window_anchor_date' => $draft->windowAnchorDate,
+            'attempt_timeout_hours' => $draft->attemptTimeoutHours,
         ]);
 
         foreach ($draft->items as $index => $item) {
-            $definition->items()->create([
-                'position' => $index + 1,
-                'item_kind' => $item->kind,
-                'exercise_key' => $item->exerciseKey,
-                'duration_seconds' => $item->durationSeconds,
-                'dart_count' => $item->dartCount,
-                'break_seconds' => $item->breakSeconds,
-            ]);
+            $definition->items()->create($this->itemAttributes($index + 1, $item));
         }
 
         return $definition->load('items');
@@ -94,12 +95,22 @@ class TrainingDefinitionRepository
      */
     public function visible(TrainingKind $kind): Collection
     {
+        $statuses = [
+            TrainingDefinitionStatus::Inactive,
+            TrainingDefinitionStatus::Active,
+        ];
+        if ($kind === TrainingKind::Event) {
+            $statuses = [
+                ...$statuses,
+                TrainingDefinitionStatus::Paused,
+                TrainingDefinitionStatus::Closing,
+                TrainingDefinitionStatus::Finished,
+            ];
+        }
+
         return TrainingDefinition::query()
             ->where('kind', $kind)
-            ->whereIn('status', [
-                TrainingDefinitionStatus::Inactive,
-                TrainingDefinitionStatus::Active,
-            ])
+            ->whereIn('status', $statuses)
             ->orderBy('name')
             ->orderBy('id')
             ->get();
@@ -116,6 +127,56 @@ class TrainingDefinitionRepository
             ->orderBy('name')
             ->orderBy('id')
             ->get();
+    }
+
+    /**
+     * Gotowe wyzwanie z katalogu (np. 54-Dart). Jedna żywa definicja na klucz.
+     */
+    public function findCatalogChallenge(string $challengeKey): ?TrainingDefinition
+    {
+        if (! TrainingChallengeCatalog::exists($challengeKey)) {
+            return null;
+        }
+
+        return TrainingDefinition::query()
+            ->where('kind', TrainingKind::Challenge)
+            ->where('mechanic', $challengeKey)
+            ->whereNotIn('status', [
+                TrainingDefinitionStatus::Cancelled,
+                TrainingDefinitionStatus::Removed,
+            ])
+            ->orderBy('id')
+            ->first();
+    }
+
+    public function requireCatalogChallenge(string $challengeKey): TrainingDefinition
+    {
+        $definition = $this->findCatalogChallenge($challengeKey);
+        if ($definition === null) {
+            throw new TrainingException(
+                'Nie ma takiego wyzwania.',
+                'training_challenge_not_found',
+                DomainExceptionHttp::NOT_FOUND,
+            );
+        }
+
+        return $definition;
+    }
+
+    /**
+     * @return Collection<int, TrainingDefinition>
+     */
+    public function catalogChallenges(): Collection
+    {
+        $rows = collect();
+        foreach (array_keys(TrainingChallengeCatalog::all()) as $key) {
+            $definition = $this->findCatalogChallenge($key);
+            if ($definition !== null) {
+                $rows->push($definition);
+            }
+        }
+
+        return $rows;
     }
 
     /**
@@ -141,23 +202,40 @@ class TrainingDefinitionRepository
         $definition->difficulty = $draft->difficulty;
         $definition->declared_minutes = $draft->declaredMinutes;
         $definition->mechanic = $draft->mechanic;
+        $definition->badge_thresholds = $draft->badgeThresholds;
         $definition->duration_seconds = $draft->durationSeconds;
         $definition->dart_count = $draft->dartCount;
+        $definition->starts_at = $draft->startsAt;
+        $definition->ends_at = $draft->endsAt;
+        $definition->attempts_per_window = $draft->attemptsPerWindow;
+        $definition->window_mode = $draft->windowMode;
+        $definition->window_anchor_date = $draft->windowAnchorDate;
+        $definition->attempt_timeout_hours = $draft->attemptTimeoutHours;
         $definition->save();
 
         $definition->items()->delete();
         foreach ($draft->items as $index => $item) {
-            $definition->items()->create([
-                'position' => $index + 1,
-                'item_kind' => $item->kind,
-                'exercise_key' => $item->exerciseKey,
-                'duration_seconds' => $item->durationSeconds,
-                'dart_count' => $item->dartCount,
-                'break_seconds' => $item->breakSeconds,
-            ]);
+            $definition->items()->create($this->itemAttributes($index + 1, $item));
         }
 
         return $definition->load('items');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function itemAttributes(int $position, \App\Domain\Training\TrainingDefinitionItemDraft $item): array
+    {
+        return [
+            'position' => $position,
+            'item_kind' => $item->kind,
+            'exercise_key' => $item->exerciseKey,
+            'duration_seconds' => $item->durationSeconds,
+            'dart_count' => $item->dartCount,
+            'scored' => $item->kind === \App\Domain\Training\TrainingItemKind::Break ? true : $item->scored,
+            'variant' => $item->variant,
+            'break_seconds' => $item->breakSeconds,
+        ];
     }
 
     public function setImagePath(TrainingDefinition $definition, ?string $path): TrainingDefinition

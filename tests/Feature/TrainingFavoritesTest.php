@@ -18,15 +18,28 @@ class TrainingFavoritesTest extends TestCase
         $admin = $this->admin();
         $player = User::factory()->create();
         $other = User::factory()->create();
+        $challenge = (int) \App\Models\Training\TrainingDefinition::query()
+            ->where('kind', 'challenge')
+            ->where('mechanic', 'fifty_four_dart')
+            ->where('status', 'active')
+            ->value('id');
         $first = $this->publish($admin, [
-            'kind' => 'challenge',
-            'name' => 'Pierwsze',
-            'mechanic' => 'fifty_four_dart',
+            'kind' => 'plan',
+            'name' => 'Pierwszy',
+            'difficulty' => 'easy',
+            'declaredMinutes' => 30,
+            'items' => [
+                ['kind' => 'exercise', 'exerciseKey' => 'loose_throws'],
+            ],
         ]);
         $second = $this->publish($admin, [
-            'kind' => 'challenge',
-            'name' => 'Drugie',
-            'mechanic' => 'fifty_four_dart',
+            'kind' => 'plan',
+            'name' => 'Drugi',
+            'difficulty' => 'medium',
+            'declaredMinutes' => 60,
+            'items' => [
+                ['kind' => 'exercise', 'exerciseKey' => 'loose_throws'],
+            ],
         ]);
 
         $this->asGuest();
@@ -34,10 +47,18 @@ class TrainingFavoritesTest extends TestCase
         $this->postJson('/api/training/favorites', ['definitionId' => $first])->assertUnauthorized();
 
         $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['definitionId' => $challenge])
+            ->assertCreated()
+            ->assertJsonPath('created', true)
+            ->assertJsonPath('item.name', '54-Dart Challenge')
+            ->assertJsonPath('item.challengeKey', 'fifty_four_dart')
+            ->assertJsonPath('item.favorite', true);
+
+        $this->actingAs($player, 'sanctum')
             ->postJson('/api/training/favorites', ['definitionId' => $first])
             ->assertCreated()
             ->assertJsonPath('created', true)
-            ->assertJsonPath('item.name', 'Pierwsze')
+            ->assertJsonPath('item.name', 'Pierwszy')
             ->assertJsonPath('item.favorite', true);
 
         $this->actingAs($player, 'sanctum')
@@ -58,7 +79,7 @@ class TrainingFavoritesTest extends TestCase
 
         $this->actingAs($player, 'sanctum')
             ->putJson('/api/training/favorites', [
-                'kind' => 'challenges',
+                'kind' => 'plans',
                 'definitionIds' => [$second, $first],
             ])
             ->assertOk()
@@ -68,12 +89,13 @@ class TrainingFavoritesTest extends TestCase
         $this->actingAs($player, 'sanctum')
             ->getJson('/api/training/favorites')
             ->assertOk()
-            ->assertJsonPath('challenges.0.id', $second)
-            ->assertJsonPath('challenges.1.id', $first);
+            ->assertJsonPath('challenges.0.id', $challenge)
+            ->assertJsonPath('plans.0.id', $second)
+            ->assertJsonPath('plans.1.id', $first);
 
         $this->actingAs($player, 'sanctum')
             ->putJson('/api/training/favorites', [
-                'kind' => 'challenges',
+                'kind' => 'plans',
                 'definitionIds' => [$first],
             ])
             ->assertStatus(422)
@@ -81,12 +103,12 @@ class TrainingFavoritesTest extends TestCase
 
         $this->actingAs($player, 'sanctum')
             ->putJson('/api/training/favorites', [
-                'kind' => 'challenges',
+                'kind' => 'plans',
                 'definitionIds' => [],
             ])
             ->assertStatus(422);
 
-        $this->assertDatabaseCount('training_favorites', 2);
+        $this->assertDatabaseCount('training_favorites', 3);
     }
 
     public function test_inactive_plan_stays_visible_only_to_who_saved_it(): void

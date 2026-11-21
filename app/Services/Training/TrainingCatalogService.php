@@ -2,6 +2,7 @@
 
 namespace App\Services\Training;
 
+use App\Domain\Training\TrainingChallengeCatalog;
 use App\Domain\Training\TrainingDefinitionStatus;
 use App\Domain\Training\TrainingException;
 use App\Domain\Training\TrainingExerciseCatalog;
@@ -9,6 +10,7 @@ use App\Domain\Training\TrainingKind;
 use App\Models\Users\User;
 use App\Repositories\Training\TrainingDefinitionRepository;
 use App\Repositories\Training\TrainingFavoriteRepository;
+use App\Repositories\Training\TrainingSessionRepository;
 use App\Support\Http\DomainExceptionHttp;
 
 class TrainingCatalogService
@@ -16,6 +18,7 @@ class TrainingCatalogService
     public function __construct(
         private TrainingDefinitionRepository $definitions,
         private TrainingFavoriteRepository $favorites,
+        private TrainingSessionRepository $sessions,
     ) {}
 
     /**
@@ -34,6 +37,39 @@ class TrainingCatalogService
             return $items;
         }
 
+        if ($kind === TrainingKind::Challenge) {
+            $favoriteIds = array_fill_keys($this->favorites->idsFor((int) $user->id, $kind), true);
+            $items = [];
+            foreach ($this->definitions->catalogChallenges() as $definition) {
+                if ($definition->status !== TrainingDefinitionStatus::Active) {
+                    continue;
+                }
+                $items[] = TrainingCatalogCard::from($definition, isset($favoriteIds[$definition->id]));
+            }
+
+            return $items;
+        }
+
+        if ($kind === TrainingKind::Event) {
+            return $this->definitions->visible(TrainingKind::Event)
+                ->filter(fn ($definition) => in_array($definition->status, [
+                    TrainingDefinitionStatus::Active,
+                    TrainingDefinitionStatus::Paused,
+                    TrainingDefinitionStatus::Closing,
+                    TrainingDefinitionStatus::Finished,
+                ], true))
+                ->filter(function ($definition) {
+                    if ($definition->status === TrainingDefinitionStatus::Finished) {
+                        return true;
+                    }
+                    // Aktywne/paused/closing tylko gdy już wystartowały albo są w oknie widoczności.
+                    return $definition->status !== TrainingDefinitionStatus::Inactive;
+                })
+                ->map(fn ($definition) => TrainingCatalogCard::from($definition, false))
+                ->values()
+                ->all();
+        }
+
         $favoriteIds = array_fill_keys($this->favorites->idsFor((int) $user->id, $kind), true);
 
         return $this->definitions->activeOfKind($kind)
@@ -46,9 +82,53 @@ class TrainingCatalogService
      */
     public function show(User $user, int $id): array
     {
-        $definition = $this->definitions->find($id);
-        if ($definition->kind === TrainingKind::Event
-            || $definition->status === TrainingDefinitionStatus::Cancelled
+        $definition = $this->definitions->findWithItems($id);
+        if ($definition->status === TrainingDefinitionStatus::Cancelled
+            || $definition->status === TrainingDefinitionStatus::Removed) {
+            $this->missing();
+        }
+
+        $favorite = $definition->kind === TrainingKind::Event
+            ? false
+            : $this->favorites->exists((int) $user->id, (int) $definition->id);
+
+        if ($definition->kind === TrainingKind::Event) {
+            if (! in_array($definition->status, [
+                TrainingDefinitionStatus::Active,
+                TrainingDefinitionStatus::Paused,
+                TrainingDefinitionStatus::Closing,
+                TrainingDefinitionStatus::Finished,
+            ], true)) {
+                $this->missing();
+            }
+        } elseif ($definition->status !== TrainingDefinitionStatus::Active && ! $favorite) {
+            $this->missing();
+        }
+
+        $completionCount = $this->sessions->countCompletedFor((int) $user->id, (int) $definition->id);
+
+        if ($definition->kind === TrainingKind::Challenge) {
+            return TrainingCatalogCard::challenge($definition, $favorite, $completionCount);
+        }
+
+        return TrainingCatalogCard::detail($definition, $favorite, $completionCount);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function showChallenge(User $user, string $challengeKey): array
+    {
+        if (! TrainingChallengeCatalog::exists($challengeKey)) {
+            throw new TrainingException(
+                'Nie ma takiego wyzwania.',
+                'training_challenge_not_found',
+                DomainExceptionHttp::NOT_FOUND,
+            );
+        }
+
+        $definition = $this->definitions->requireCatalogChallenge($challengeKey);
+        if ($definition->status === TrainingDefinitionStatus::Cancelled
             || $definition->status === TrainingDefinitionStatus::Removed) {
             $this->missing();
         }
@@ -58,7 +138,9 @@ class TrainingCatalogService
             $this->missing();
         }
 
-        return TrainingCatalogCard::from($definition, $favorite);
+        $completionCount = $this->sessions->countCompletedFor((int) $user->id, (int) $definition->id);
+
+        return TrainingCatalogCard::challenge($definition, $favorite, $completionCount);
     }
 
     /**
@@ -78,7 +160,7 @@ class TrainingCatalogService
     private function kind(string $slug): TrainingKind
     {
         $kind = TrainingKind::tryFromSlug($slug);
-        if ($kind === null || $kind === TrainingKind::Event) {
+        if ($kind === null) {
             throw new TrainingException(
                 'Nie ma takiego katalogu.',
                 'training_catalog_not_found',

@@ -20,6 +20,8 @@
                 'break_seconds' => $item->break_seconds,
                 'duration_seconds' => $item->duration_seconds,
                 'dart_count' => $item->dart_count,
+                'scored' => (bool) $item->scored,
+                'variant' => $item->variant,
             ])->all()
             : [];
     }
@@ -31,7 +33,9 @@
             'dartCount' => $limits['dartCount'],
         ])->values();
     $allowsBreaks = $kind === \App\Domain\Training\TrainingKind::Plan;
-    $allowsLimits = $allowsBreaks;
+    $allowsLimits = $kind === \App\Domain\Training\TrainingKind::Plan;
+    $allowsEventItems = $kind === \App\Domain\Training\TrainingKind::Event;
+    $allowsItemEditor = $allowsBreaks || $allowsEventItems;
 @endphp
 <div class="max-w-3xl mx-auto px-4 pt-6 pb-12">
     <a href="{{ $isEdit ? route('admin.training.show', $definition) : route('admin.training.list', $kind->slug()) }}" class="text-text-secondary text-sm hover:text-accent">← Wróć</a>
@@ -93,21 +97,96 @@
         @endif
 
         @if($kind === \App\Domain\Training\TrainingKind::Challenge)
+            @php
+                $thresholds = $definition?->badge_thresholds ?? [];
+                if (! is_array($thresholds)) {
+                    $thresholds = [];
+                }
+                $isCatalogChallenge = is_string($selectedMechanic)
+                    && \App\Domain\Training\TrainingChallengeCatalog::exists($selectedMechanic);
+            @endphp
+            @if($isCatalogChallenge)
+                <input type="hidden" name="mechanic" value="{{ $selectedMechanic }}">
+                <p class="text-text-muted text-sm">
+                    Gotowe wyzwanie:
+                    <span class="text-text font-medium">{{ \App\Domain\Training\TrainingChallengeCatalog::name($selectedMechanic) }}</span>.
+                    Nazwy i zasad nie zmieniasz — tylko progi odznaki przed pierwszą aktywacją.
+                </p>
+            @endif
+            <div class="space-y-2">
+                <span class="form-label">Progi odznaki (wynik)</span>
+                <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                    @foreach([
+                        'iron' => 'Żelazo',
+                        'bronze' => 'Brąz',
+                        'gold' => 'Złoto',
+                        'platinum' => 'Platyna',
+                        'diamond' => 'Diament',
+                    ] as $level => $label)
+                        <label class="block">
+                            <span class="form-label">{{ $label }}</span>
+                            <input
+                                class="input-field"
+                                type="number"
+                                min="0"
+                                max="3190"
+                                name="badge_{{ $level }}"
+                                value="{{ old('badge_'.$level, $thresholds[$level] ?? '') }}"
+                                required
+                            >
+                        </label>
+                    @endforeach
+                </div>
+                <p class="text-text-muted text-xs">Pięć rosnących progów. Odznaki nalicza numer 13.</p>
+            </div>
+        @endif
+
+        @if($kind === \App\Domain\Training\TrainingKind::Event)
+            @php
+                $startsAt = old('starts_at', optional($definition?->starts_at)->format('Y-m-d\TH:i'));
+                $endsAt = old('ends_at', optional($definition?->ends_at)->format('Y-m-d\TH:i'));
+                $windowMode = old('window_mode', $definition?->window_mode ?? 'calendar_week');
+                $attemptsPerWindow = old('attempts_per_window', $definition?->attempts_per_window ?? 1);
+                $windowAnchor = old('window_anchor_date', optional($definition?->window_anchor_date)->format('Y-m-d'));
+                $timeoutHours = old('attempt_timeout_hours', $definition?->attempt_timeout_hours ?? 4);
+            @endphp
+            <div class="grid gap-3 sm:grid-cols-2">
+                <label class="block">
+                    <span class="form-label">Start</span>
+                    <input class="input-field" type="datetime-local" name="starts_at" value="{{ $startsAt }}" required>
+                </label>
+                <label class="block">
+                    <span class="form-label">Koniec</span>
+                    <input class="input-field" type="datetime-local" name="ends_at" value="{{ $endsAt }}" required>
+                </label>
+            </div>
             <label class="block">
-                <span class="form-label">Mechanika</span>
-                <select class="select-field" name="mechanic">
-                    <option value="" @selected(! is_string($selectedMechanic) || $selectedMechanic === '')>Bez mechaniki, tylko ćwiczenia</option>
-                    @foreach($challengeMechanics as $value => $label)
-                        <option value="{{ $value }}" @selected($selectedMechanic === $value)>{{ $label }}</option>
+                <span class="form-label">Prób w oknie</span>
+                <input class="input-field" type="number" min="1" max="20" name="attempts_per_window" value="{{ $attemptsPerWindow }}" required>
+            </label>
+            <label class="block">
+                <span class="form-label">Tryb okna</span>
+                <select class="select-field" name="window_mode" required>
+                    @foreach(\App\Domain\Training\TrainingEventWindow::modes() as $mode)
+                        <option value="{{ $mode }}" @selected($windowMode === $mode)>{{ \App\Domain\Training\TrainingEventWindow::label($mode) }}</option>
                     @endforeach
                 </select>
             </label>
-            <p class="text-text-muted text-xs">Wyzwanie ma mechanikę albo listę ćwiczeń. Czas i liczbę lotek bierze z ćwiczenia.</p>
+            <label class="block">
+                <span class="form-label">Data kotwicy (gdy tryb od wskazanej daty)</span>
+                <input class="input-field" type="date" name="window_anchor_date" value="{{ $windowAnchor }}">
+            </label>
+            <label class="block">
+                <span class="form-label">Limit otwartej próby (godziny)</span>
+                <input class="input-field" type="number" min="1" max="72" name="attempt_timeout_hours" value="{{ $timeoutHours }}" required>
+                <span class="text-text-muted text-xs">Po tym czasie niedokończona próba wygasa i zużywa slot. Crash/sieć nie voidują — gracz wznawia tę samą próbę.</span>
+            </label>
         @endif
 
             <div
                 class="space-y-3"
-                x-data="trainingItems({{ \Illuminate\Support\Js::from($itemRows) }}, {{ \Illuminate\Support\Js::from($exerciseOptions) }}, {{ $allowsBreaks ? 'true' : 'false' }}, {{ $allowsLimits ? 'true' : 'false' }})"
+                x-show="{{ $allowsItemEditor ? 'true' : 'false' }}"
+                x-data="trainingItems({{ \Illuminate\Support\Js::from($itemRows) }}, {{ \Illuminate\Support\Js::from($exerciseOptions) }}, {{ $allowsBreaks ? 'true' : 'false' }}, {{ ($allowsLimits || $allowsEventItems) ? 'true' : 'false' }})"
             >
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <span class="form-label mb-0">Elementy</span>
@@ -116,7 +195,7 @@
                         <button type="button" class="btn btn-secondary" x-show="allowsBreaks" @click="addBreak()">Dodaj przerwę</button>
                     </div>
                 </div>
-                <p class="text-text-muted text-xs" x-show="allowsLimits">Przy ćwiczeniu zmieniasz tylko jego czas albo liczbę lotek. Puste pole po wyborze dostaje wartość domyślną.</p>
+                <p class="text-text-muted text-xs" x-show="allowsLimits">Przy ćwiczeniu zmieniasz tylko czas albo liczbę lotek, checkbox Punktowane i — przy Scoringu z presją — wariant. Puste pole czasu/lotek dostaje wartość domyślną.</p>
                 <template x-for="(row, index) in rows" :key="index">
                     <div class="flex flex-wrap items-end gap-2 border border-border/60 rounded-lg p-3">
                         <input type="hidden" :name="`items[${index}][kind]`" :value="row.kind">
@@ -129,15 +208,30 @@
                                 </template>
                             </select>
                         </div>
-                        @if($allowsLimits)
-                            <div class="w-40" x-show="row.kind === 'exercise' && usesDuration(row)">
-                                <span class="form-label">Czas (sekundy)</span>
-                                <input class="input-field" type="number" min="1" max="14400" :name="`items[${index}][duration_seconds]`" x-model="row.duration_seconds">
+                        @if($allowsLimits || $allowsEventItems)
+                            @if($allowsLimits)
+                                <div class="w-40" x-show="row.kind === 'exercise' && usesDuration(row)">
+                                    <span class="form-label">Czas (sekundy)</span>
+                                    <input class="input-field" type="number" min="1" max="14400" :name="`items[${index}][duration_seconds]`" x-model="row.duration_seconds">
+                                </div>
+                                <div class="w-40" x-show="row.kind === 'exercise' && usesDarts(row)">
+                                    <span class="form-label">Liczba lotek</span>
+                                    <input class="input-field" type="number" min="1" max="500" :name="`items[${index}][dart_count]`" x-model="row.dart_count">
+                                </div>
+                            @endif
+                            <div class="w-40" x-show="row.kind === 'exercise' && usesVariant(row)">
+                                <span class="form-label">Wariant</span>
+                                <select class="select-field" :name="`items[${index}][variant]`" x-model="row.variant">
+                                    <template x-for="option in pressureVariants" :key="option">
+                                        <option :value="option" x-text="option"></option>
+                                    </template>
+                                </select>
                             </div>
-                            <div class="w-40" x-show="row.kind === 'exercise' && usesDarts(row)">
-                                <span class="form-label">Liczba lotek</span>
-                                <input class="input-field" type="number" min="1" max="500" :name="`items[${index}][dart_count]`" x-model="row.dart_count">
-                            </div>
+                            <label class="flex items-center gap-2 text-sm text-text pb-2" x-show="row.kind === 'exercise'">
+                                <input type="hidden" :name="`items[${index}][scored]`" :value="row.scored ? 1 : 0">
+                                <input type="checkbox" x-model="row.scored">
+                                <span>Punktowane</span>
+                            </label>
                         @endif
                         <div class="flex-1 min-w-[8rem]" x-show="row.kind === 'break'">
                             <span class="form-label">Przerwa (sekundy)</span>
@@ -165,12 +259,17 @@
 @section('scripts')
 <script>
     function trainingItems(initial, exercises, allowsBreaks, allowsLimits) {
+        const pressureVariants = ['20', '19', '18', '20/19/18'];
         const rows = (Array.isArray(initial) ? initial : []).map((row) => ({
             kind: row.kind === 'break' ? 'break' : 'exercise',
             exercise_key: String(row.exercise_key ?? row.exerciseKey ?? ''),
             break_seconds: row.break_seconds ?? row.breakSeconds ?? '',
             duration_seconds: row.duration_seconds ?? row.durationSeconds ?? '',
             dart_count: row.dart_count ?? row.dartCount ?? '',
+            scored: row.scored === false || row.scored === 0 || row.scored === '0' ? false : true,
+            variant: row.variant && pressureVariants.includes(String(row.variant))
+                ? String(row.variant)
+                : '20',
         }));
 
         return {
@@ -178,6 +277,7 @@
             exercises,
             allowsBreaks,
             allowsLimits,
+            pressureVariants,
             exerciseByKey(key) {
                 return this.exercises.find((exercise) => exercise.key === key) ?? null;
             },
@@ -195,12 +295,19 @@
                 const exercise = this.exerciseByKey(row.exercise_key);
                 return Boolean(exercise && exercise.dartCount);
             },
+            usesVariant(row) {
+                return row.exercise_key === 'scoring_under_pressure';
+            },
             applyExercise(row) {
                 const exercise = this.exerciseByKey(row.exercise_key);
                 if (!exercise) {
                     row.duration_seconds = '';
                     row.dart_count = '';
+                    row.variant = '20';
                     return;
+                }
+                if (exercise.key === 'scoring_under_pressure' && !row.variant) {
+                    row.variant = '20';
                 }
                 if (exercise.durationSeconds) {
                     row.duration_seconds = String(exercise.durationSeconds);
@@ -217,6 +324,8 @@
                     break_seconds: '',
                     duration_seconds: '',
                     dart_count: '',
+                    scored: true,
+                    variant: '20',
                 });
             },
             addBreak() {
@@ -226,6 +335,8 @@
                     break_seconds: '',
                     duration_seconds: '',
                     dart_count: '',
+                    scored: true,
+                    variant: '20',
                 });
             },
             remove(index) {

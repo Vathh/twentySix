@@ -14,12 +14,17 @@ use App\Models\Season\Season;
 use App\Models\Tournament\Tournament;
 use App\Models\Tournament\TournamentResult;
 use App\Models\Users\User;
+use App\Services\Training\TrainingExerciseCountService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class PlatformAdminRepository
 {
+    public function __construct(
+        private TrainingExerciseCountService $trainingExerciseCount,
+    ) {}
+
     /**
      * @return array{
      *     usersTotal: int,
@@ -36,7 +41,8 @@ class PlatformAdminRepository
      *     quickGameLobbiesInProgress: int,
      *     quickGamesFinished: int,
      *     ffaSessionsInProgress: int,
-     *     ffaSessionsFinished: int
+     *     ffaSessionsFinished: int,
+     *     trainingCompletedExercises: int
      * }
      */
     public function dashboardStats(): array
@@ -80,6 +86,7 @@ class PlatformAdminRepository
             'ffaSessionsFinished' => QuickGameFfaSession::query()
                 ->where('status', QuickGameFfaSession::STATUS_FINISHED)
                 ->count(),
+            'trainingCompletedExercises' => $this->trainingExerciseCount->globalTotal(),
         ];
     }
 

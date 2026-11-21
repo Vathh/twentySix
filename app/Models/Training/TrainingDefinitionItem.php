@@ -16,6 +16,8 @@ class TrainingDefinitionItem extends Model
         'exercise_key',
         'duration_seconds',
         'dart_count',
+        'scored',
+        'variant',
         'break_seconds',
     ];
 
@@ -23,6 +25,8 @@ class TrainingDefinitionItem extends Model
         'item_kind' => TrainingItemKind::class,
         'duration_seconds' => 'integer',
         'dart_count' => 'integer',
+        'scored' => 'boolean',
+        'break_seconds' => 'integer',
     ];
 
     /** @return BelongsTo<TrainingDefinition, $this> */

@@ -25,6 +25,12 @@ class TrainingDefinitionController
             'difficulty' => ['nullable', 'string', 'max:16'],
             'declaredMinutes' => ['nullable', 'integer', Rule::in([30, 60, 90, 120])],
             'mechanic' => ['nullable', 'string', 'max:64'],
+            'badgeThresholds' => ['nullable', 'array'],
+            'badgeThresholds.iron' => ['nullable', 'integer', 'min:0', 'max:3190'],
+            'badgeThresholds.bronze' => ['nullable', 'integer', 'min:0', 'max:3190'],
+            'badgeThresholds.gold' => ['nullable', 'integer', 'min:0', 'max:3190'],
+            'badgeThresholds.platinum' => ['nullable', 'integer', 'min:0', 'max:3190'],
+            'badgeThresholds.diamond' => ['nullable', 'integer', 'min:0', 'max:3190'],
             'durationSeconds' => ['nullable', 'integer', 'min:1', 'max:14400'],
             'dartCount' => ['nullable', 'integer', 'min:1', 'max:500'],
             'items' => ['nullable', 'array', 'max:80'],
@@ -33,6 +39,8 @@ class TrainingDefinitionController
             'items.*.breakSeconds' => ['nullable', 'integer', 'min:1', 'max:7200'],
             'items.*.durationSeconds' => ['nullable', 'integer', 'min:1', 'max:14400'],
             'items.*.dartCount' => ['nullable', 'integer', 'min:1', 'max:500'],
+            'items.*.scored' => ['nullable', 'boolean'],
+            'items.*.variant' => ['nullable', 'string', 'max:32'],
         ]);
 
         $definition = $this->definitions->create($this->user($request), $request->all());
@@ -71,7 +79,8 @@ class TrainingDefinitionController
             'imagePath' => $definition->image_path,
             'difficulty' => $definition->difficulty?->value,
             'declaredMinutes' => $definition->declared_minutes,
-            'mechanic' => $definition->mechanic,
+            'challengeKey' => $definition->kind->value === 'challenge' ? $definition->mechanic : null,
+            'badgeThresholds' => $definition->badge_thresholds,
             'durationSeconds' => $definition->duration_seconds,
             'dartCount' => $definition->dart_count,
             'publishedAt' => $definition->published_at?->toIso8601String(),
@@ -83,6 +92,8 @@ class TrainingDefinitionController
                 'durationSeconds' => $item->duration_seconds,
                 'dartCount' => $item->dart_count,
                 'breakSeconds' => $item->break_seconds,
+                'scored' => (bool) $item->scored,
+                'variant' => $item->variant,
             ])->values()->all(),
         ];
     }

@@ -6,6 +6,7 @@ use App\Domain\Training\TrainingDefinitionRules;
 use App\Domain\Training\TrainingException;
 use App\Domain\Training\TrainingExerciseCatalog;
 use App\Domain\Training\TrainingKind;
+use App\Domain\Training\TrainingPlanSessionItems;
 use App\Domain\Training\TrainingSessionStats;
 use App\Models\Training\TrainingSession;
 use App\Models\Users\User;
@@ -58,12 +59,21 @@ class TrainingSessionService
                 }
 
                 $stats = TrainingSessionStats::assertAggregate($payload['stats'] ?? null);
+                if (array_key_exists('items', $payload)) {
+                    $stats['items'] = TrainingPlanSessionItems::assert($payload['items']);
+                }
                 if ($exerciseKey !== null) {
                     if (TrainingExerciseCatalog::parameters($exerciseKey) === null) {
                         throw new TrainingException(
                             'Wskazane ćwiczenie nie istnieje.',
                             'training_exercise_not_found',
                             DomainExceptionHttp::NOT_FOUND,
+                        );
+                    }
+                    if (array_key_exists('items', $payload)) {
+                        throw new TrainingException(
+                            'Elementy planu należą do sesji planu.',
+                            'training_session_invalid',
                         );
                     }
 
@@ -116,6 +126,7 @@ class TrainingSessionService
             'completedAt',
             'score',
             'stats',
+            'items',
         ]);
         if ($extra === []) {
             return;

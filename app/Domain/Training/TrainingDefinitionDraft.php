@@ -6,6 +6,7 @@ final readonly class TrainingDefinitionDraft
 {
     /**
      * @param  list<TrainingDefinitionItemDraft>  $items
+     * @param  array<string, int>|null  $badgeThresholds
      */
     public function __construct(
         public TrainingKind $kind,
@@ -17,6 +18,13 @@ final readonly class TrainingDefinitionDraft
         public ?int $durationSeconds,
         public ?int $dartCount,
         public array $items,
+        public ?array $badgeThresholds = null,
+        public ?string $startsAt = null,
+        public ?string $endsAt = null,
+        public ?int $attemptsPerWindow = null,
+        public ?string $windowMode = null,
+        public ?string $windowAnchorDate = null,
+        public ?int $attemptTimeoutHours = null,
     ) {}
 
     /**
@@ -38,6 +46,13 @@ final readonly class TrainingDefinitionDraft
             'durationSeconds',
             'dartCount',
             'items',
+            'badgeThresholds',
+            'startsAt',
+            'endsAt',
+            'attemptsPerWindow',
+            'windowMode',
+            'windowAnchorDate',
+            'attemptTimeoutHours',
         ]);
 
         $kind = TrainingKind::tryFrom((string) ($payload['kind'] ?? ''));
@@ -94,11 +109,19 @@ final readonly class TrainingDefinitionDraft
             }
         }
 
-        if ($kind === TrainingKind::Challenge && $mechanic === null && $items === []) {
-            throw new TrainingException(
-                'Wyzwanie wymaga mechaniki albo listy ćwiczeń.',
-                'training_definition_invalid',
-            );
+        if ($kind === TrainingKind::Challenge) {
+            if ($mechanic === null || ! TrainingChallengeCatalog::exists($mechanic)) {
+                throw new TrainingException(
+                    'Wyzwania są gotową listą katalogu.',
+                    'training_challenge_is_catalog',
+                );
+            }
+            if ($items !== []) {
+                throw new TrainingException(
+                    'Gotowe wyzwanie nie składa się z listy ćwiczeń.',
+                    'training_definition_invalid',
+                );
+            }
         }
 
         if ($kind === TrainingKind::Challenge || $kind === TrainingKind::Event) {
@@ -108,6 +131,86 @@ final readonly class TrainingDefinitionDraft
             if ($declaredMinutes !== null) {
                 throw new TrainingException('Deklarowany czas dotyczy planu.', 'training_definition_invalid');
             }
+        }
+
+        $badgeThresholds = null;
+        if ($kind === TrainingKind::Challenge) {
+            if ($mechanic === FiftyFourDartChallenge::MECHANIC || array_key_exists('badgeThresholds', $payload)) {
+                $badgeThresholds = TrainingBadgeThresholds::normalize($payload['badgeThresholds'] ?? null);
+                if ($mechanic === FiftyFourDartChallenge::MECHANIC && $badgeThresholds === null) {
+                    throw new TrainingException(
+                        'Wyzwanie 54-Dart wymaga pięciu progów odznaki.',
+                        'training_badge_thresholds_invalid',
+                    );
+                }
+            }
+        } elseif (array_key_exists('badgeThresholds', $payload) && $payload['badgeThresholds'] !== null) {
+            throw new TrainingException(
+                'Progi odznaki dotyczą wyzwania.',
+                'training_definition_invalid',
+            );
+        }
+
+        $startsAt = null;
+        $endsAt = null;
+        $attemptsPerWindow = null;
+        $windowMode = null;
+        $windowAnchorDate = null;
+        $attemptTimeoutHours = null;
+
+        if ($kind === TrainingKind::Event) {
+            if ($mechanic !== null) {
+                throw new TrainingException('Event składa się z ćwiczeń.', 'training_definition_invalid');
+            }
+            if ($items === []) {
+                throw new TrainingException('Event wymaga co najmniej jednego ćwiczenia.', 'training_definition_invalid');
+            }
+            foreach ($items as $item) {
+                if ($item->kind === TrainingItemKind::Break) {
+                    throw new TrainingException(
+                        'Event nie ma przerw — tylko ćwiczenia.',
+                        'training_definition_invalid',
+                    );
+                }
+            }
+            $startsAt = self::dateTimeString($payload['startsAt'] ?? null, 'startsAt');
+            $endsAt = self::dateTimeString($payload['endsAt'] ?? null, 'endsAt');
+            if ($startsAt === null || $endsAt === null) {
+                throw new TrainingException('Event wymaga daty startu i końca.', 'training_definition_invalid');
+            }
+            if (strcmp($endsAt, $startsAt) <= 0) {
+                throw new TrainingException('Data końca musi być po starcie.', 'training_definition_invalid');
+            }
+            $attemptsPerWindow = self::optionalInt($payload['attemptsPerWindow'] ?? null, 'attemptsPerWindow');
+            if ($attemptsPerWindow === null || $attemptsPerWindow < 1 || $attemptsPerWindow > 20) {
+                throw new TrainingException(
+                    'Liczba prób w oknie to 1–20.',
+                    'training_definition_invalid',
+                );
+            }
+            $windowMode = is_string($payload['windowMode'] ?? null) ? (string) $payload['windowMode'] : null;
+            if ($windowMode === null || ! in_array($windowMode, TrainingEventWindow::modes(), true)) {
+                throw new TrainingException('Wybierz tryb okna prób.', 'training_definition_invalid');
+            }
+            if ($windowMode === TrainingEventWindow::MODE_FROM_ANCHOR) {
+                $windowAnchorDate = self::dateString($payload['windowAnchorDate'] ?? null, 'windowAnchorDate');
+                if ($windowAnchorDate === null) {
+                    throw new TrainingException(
+                        'Tryb od wskazanej daty wymaga daty kotwicy.',
+                        'training_definition_invalid',
+                    );
+                }
+            }
+            $attemptTimeoutHours = self::optionalInt($payload['attemptTimeoutHours'] ?? null, 'attemptTimeoutHours')
+                ?? TrainingEventWindow::DEFAULT_TIMEOUT_HOURS;
+            if ($attemptTimeoutHours < 1 || $attemptTimeoutHours > 72) {
+                throw new TrainingException(
+                    'Limit czasu otwartej próby to 1–72 godziny.',
+                    'training_definition_invalid',
+                );
+            }
+        } elseif (array_key_exists('startsAt', $payload) || array_key_exists('windowMode', $payload)) {
+            throw new TrainingException('Harmonogram dotyczy eventu.', 'training_definition_invalid');
         }
 
         return new self(
@@ -120,7 +223,44 @@ final readonly class TrainingDefinitionDraft
             $durationSeconds,
             $dartCount,
             $items,
+            $badgeThresholds,
+            $startsAt,
+            $endsAt,
+            $attemptsPerWindow,
+            $windowMode,
+            $windowAnchorDate,
+            $attemptTimeoutHours,
         );
+    }
+
+    private static function dateTimeString(mixed $value, string $field): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (! is_string($value) && ! is_numeric($value)) {
+            throw new TrainingException('Nieprawidłowa data '.$field.'.', 'training_definition_invalid');
+        }
+        try {
+            return \Carbon\CarbonImmutable::parse((string) $value)->toIso8601String();
+        } catch (\Throwable) {
+            throw new TrainingException('Nieprawidłowa data '.$field.'.', 'training_definition_invalid');
+        }
+    }
+
+    private static function dateString(mixed $value, string $field): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (! is_string($value)) {
+            throw new TrainingException('Nieprawidłowa data '.$field.'.', 'training_definition_invalid');
+        }
+        try {
+            return \Carbon\CarbonImmutable::parse($value)->toDateString();
+        } catch (\Throwable) {
+            throw new TrainingException('Nieprawidłowa data '.$field.'.', 'training_definition_invalid');
+        }
     }
 
     /**
@@ -219,7 +359,15 @@ final readonly class TrainingDefinitionDraft
                 throw new TrainingException('Element definicji musi być obiektem.', 'training_definition_invalid');
             }
 
-            self::assertAllowedKeys($item, ['kind', 'exerciseKey', 'breakSeconds', 'durationSeconds', 'dartCount']);
+            self::assertAllowedKeys($item, [
+                'kind',
+                'exerciseKey',
+                'breakSeconds',
+                'durationSeconds',
+                'dartCount',
+                'scored',
+                'variant',
+            ]);
             $itemKind = TrainingItemKind::tryFrom((string) ($item['kind'] ?? ''));
             if ($itemKind === null) {
                 throw new TrainingException('Nieznany rodzaj elementu.', 'training_definition_invalid');
@@ -238,10 +386,12 @@ final readonly class TrainingDefinitionDraft
                 }
                 if (($item['exerciseKey'] ?? null) !== null
                     || array_key_exists('durationSeconds', $item)
-                    || array_key_exists('dartCount', $item)) {
+                    || array_key_exists('dartCount', $item)
+                    || array_key_exists('scored', $item)
+                    || array_key_exists('variant', $item)) {
                     throw new TrainingException('Przerwa nie wskazuje ćwiczenia.', 'training_definition_invalid');
                 }
-                $items[] = new TrainingDefinitionItemDraft($itemKind, null, $seconds, null, null);
+                $items[] = new TrainingDefinitionItemDraft($itemKind, null, $seconds, null, null, true, null);
 
                 continue;
             }
@@ -261,19 +411,30 @@ final readonly class TrainingDefinitionDraft
             }
             if ($kind !== TrainingKind::Plan && (array_key_exists('durationSeconds', $item) || array_key_exists('dartCount', $item))) {
                 throw new TrainingException(
-                    'Czas i liczbę lotek zmieniasz w planie.',
+                    'Czas i liczbę lotek zmieniasz w planie. Event bierze domyślne.',
                     'training_exercise_limit_on_plan',
+                );
+            }
+            if ($kind !== TrainingKind::Plan && $kind !== TrainingKind::Event
+                && (array_key_exists('scored', $item) || array_key_exists('variant', $item))) {
+                throw new TrainingException(
+                    'Punktowanie i wariant ustawiasz w planie albo evencie.',
+                    'training_definition_invalid',
                 );
             }
             $limits = $kind === TrainingKind::Plan
                 ? TrainingExerciseLimits::forPlanSlot($exerciseKey, $item)
                 : TrainingExerciseCatalog::parameters($exerciseKey);
+            $scored = self::scored($item['scored'] ?? true);
+            $variant = self::variant($exerciseKey, $item['variant'] ?? null, $kind);
             $items[] = new TrainingDefinitionItemDraft(
                 $itemKind,
                 $exerciseKey,
                 null,
                 $limits['durationSeconds'],
                 $limits['dartCount'],
+                $scored,
+                $variant,
             );
         }
 
@@ -296,5 +457,57 @@ final readonly class TrainingDefinitionDraft
             'Pole „'.$field.'” musi być liczbą całkowitą.',
             'training_definition_invalid',
         );
+    }
+
+    private static function scored(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+        if ($value === 1 || $value === '1' || $value === 'true') {
+            return true;
+        }
+        if ($value === 0 || $value === '0' || $value === 'false') {
+            return false;
+        }
+
+        throw new TrainingException(
+            'Pole „scored” musi być wartością logiczną.',
+            'training_definition_invalid',
+        );
+    }
+
+    private static function variant(string $exerciseKey, mixed $value, TrainingKind $kind): ?string
+    {
+        if ($exerciseKey !== 'scoring_under_pressure') {
+            if ($value !== null && $value !== '') {
+                throw new TrainingException(
+                    'Wariant dotyczy tylko Scoringu z presją.',
+                    'training_definition_invalid',
+                );
+            }
+
+            return null;
+        }
+
+        if ($kind !== TrainingKind::Plan && $kind !== TrainingKind::Event) {
+            if ($value !== null && $value !== '') {
+                throw new TrainingException(
+                    'Wariant Scoringu z presją ustawiasz w planie albo evencie.',
+                    'training_definition_invalid',
+                );
+            }
+
+            return null;
+        }
+
+        if (! is_string($value) && $value !== null) {
+            throw new TrainingException(
+                'Nieznany wariant Scoringu z presją.',
+                'training_definition_invalid',
+            );
+        }
+
+        return TrainingScoringPressureVariant::assert(is_string($value) ? $value : null);
     }
 }

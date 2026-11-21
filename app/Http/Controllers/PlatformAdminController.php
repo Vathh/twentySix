@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Retention\ApplicationEntityKind;
+use App\Repositories\User\UserRepository;
 use App\Services\Moderation\ContentReportService;
 use App\Services\Platform\PlatformAdminService;
 use App\Services\Retention\ApplicationEntityDeletionService;
+use App\Services\Training\TrainingAdminUserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,6 +18,8 @@ class PlatformAdminController extends Controller
         private PlatformAdminService $platformAdminService,
         private ApplicationEntityDeletionService $applicationEntityDeletionService,
         private ContentReportService $contentReports,
+        private TrainingAdminUserService $trainingAdminUser,
+        private UserRepository $users,
     ) {}
 
     public function dashboard(): View
@@ -43,6 +47,21 @@ class PlatformAdminController extends Controller
             'user' => $detail['user'],
             'activity' => $detail['activity'],
             'recentGames' => $detail['recentGames'],
+        ]);
+    }
+
+    public function showUserTraining(Request $request, int $userId): View
+    {
+        $user = $this->users->findModel($userId);
+        $user->loadMissing('player');
+
+        return view('admin.user-training', [
+            'user' => $user,
+            'training' => $this->trainingAdminUser->present($user, $request->all()),
+            'filters' => [
+                'kinds' => $request->input('kinds'),
+                'days' => $request->input('days'),
+            ],
         ]);
     }
 

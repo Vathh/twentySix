@@ -4,10 +4,13 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto px-4 pt-6 pb-12">
-    <div class="mb-6">
-        <a href="{{ route('admin.dashboard') }}" class="text-text-secondary text-sm hover:text-accent">← Panel</a>
-        <h1 class="text-xl sm:text-2xl font-semibold text-accent mt-1">Trening</h1>
-        <p class="text-text-secondary text-sm mt-2">Ćwiczenia są stałą listą. Plany, wyzwania i eventy powstają jako nieaktywne, aż je włączysz.</p>
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+        <div>
+            <a href="{{ route('admin.dashboard') }}" class="text-text-secondary text-sm hover:text-accent">← Panel</a>
+            <h1 class="text-xl sm:text-2xl font-semibold text-accent mt-1">Trening</h1>
+            <p class="text-text-secondary text-sm mt-2">Ćwiczenia są stałą listą. Plany, wyzwania i eventy powstają jako nieaktywne, aż je włączysz.</p>
+        </div>
+        <a href="{{ route('admin.push.index') }}" class="btn btn-secondary">Powiadomienia push</a>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

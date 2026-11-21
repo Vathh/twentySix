@@ -57,4 +57,20 @@ class UserPushTokenRepository
             ->where('user_id', $userId)
             ->pluck('expo_push_token');
     }
+
+    /**
+     * Wszystkie tokeny zarejestrowanych użytkowników (unikalne).
+     *
+     * @return list<string>
+     */
+    public function allTokens(): array
+    {
+        return UserPushToken::query()
+            ->whereNotNull('user_id')
+            ->pluck('expo_push_token')
+            ->unique()
+            ->values()
+            ->all();
+    }
 }
+

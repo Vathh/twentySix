@@ -30,6 +30,11 @@ class TrainingCatalogController
         return response()->json($this->catalog->showExercise($this->user($request), $exercise));
     }
 
+    public function showChallenge(Request $request, string $challenge): JsonResponse
+    {
+        return response()->json($this->catalog->showChallenge($this->user($request), $challenge));
+    }
+
     private function user(Request $request): User
     {
         $user = $request->user();

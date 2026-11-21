@@ -9,10 +9,14 @@
             <a href="{{ route('admin.training.index') }}" class="text-text-secondary text-sm hover:text-accent">← Trening</a>
             <h1 class="text-xl sm:text-2xl font-semibold text-accent mt-1">{{ $kind->plural() }}</h1>
         </div>
-        @if($kind !== \App\Domain\Training\TrainingKind::Exercise)
+        @if($kind !== \App\Domain\Training\TrainingKind::Exercise && $kind !== \App\Domain\Training\TrainingKind::Challenge)
             <a href="{{ route('admin.training.create', $kind->slug()) }}" class="btn btn-primary">Nowe</a>
         @endif
     </div>
+
+    @if(! empty($challengeCatalog))
+        <p class="text-text-muted text-sm mb-4">Wyzwania są gotową listą — jak ćwiczenia. Tu włączasz, wyłączasz i ustawiasz progi odznaki.</p>
+    @endif
 
     @if($kind === \App\Domain\Training\TrainingKind::Exercise)
         <div class="overflow-x-auto rounded-lg border border-border">

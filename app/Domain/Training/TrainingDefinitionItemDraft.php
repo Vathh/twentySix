@@ -10,5 +10,7 @@ final readonly class TrainingDefinitionItemDraft
         public ?int $breakSeconds,
         public ?int $durationSeconds,
         public ?int $dartCount,
+        public bool $scored = true,
+        public ?string $variant = null,
     ) {}
 }

@@ -13,7 +13,7 @@
     ], true);
     $canRemove = $kind === \App\Domain\Training\TrainingKind::Event;
 @endphp
-<div class="max-w-3xl mx-auto px-4 pt-6 pb-12" x-data="{ dialog: @js(old('dialog')) }">
+<div class="max-w-6xl mx-auto px-4 pt-6 pb-12" x-data="{ dialog: @js(old('dialog')) }">
     <a href="{{ route('admin.training.list', $kind->slug()) }}" class="text-text-secondary text-sm hover:text-accent">← {{ $kind->plural() }}</a>
 
     <div class="flex items-start gap-4 mt-3 mb-6">
@@ -54,10 +54,16 @@
                         <span class="text-text-secondary">
                             @if($item->item_kind === \App\Domain\Training\TrainingItemKind::Break)
                                 {{ $item->break_seconds }} s
-                            @elseif($item->duration_seconds)
-                                {{ $item->duration_seconds }} s
-                            @elseif($item->dart_count)
-                                {{ $item->dart_count }} lotek
+                            @else
+                                @if($item->duration_seconds)
+                                    {{ $item->duration_seconds }} s
+                                @elseif($item->dart_count)
+                                    {{ $item->dart_count }} lotek
+                                @endif
+                                @if($item->variant)
+                                    · {{ $item->variant }}
+                                @endif
+                                · {{ $item->scored ? 'punktowane' : 'rozgrzewka' }}
                             @endif
                         </span>
                     </li>
@@ -66,6 +72,10 @@
         @endif
     </div>
 
+    @if(!empty($stats))
+        @include('admin.training.partials.stats', ['definition' => $definition, 'stats' => $stats])
+    @endif
+
     <div class="flex flex-wrap gap-2">
         @if(! $definition->isPublished())
             <a href="{{ route('admin.training.edit', $definition) }}" class="btn btn-secondary">Edytuj</a>
@@ -73,8 +83,16 @@
         @if($definition->status === \App\Domain\Training\TrainingDefinitionStatus::Inactive)
             <button type="button" class="btn btn-primary" @click="dialog = 'activate'">Aktywuj</button>
         @endif
-        @if($definition->status === \App\Domain\Training\TrainingDefinitionStatus::Active)
+        @if($definition->status === \App\Domain\Training\TrainingDefinitionStatus::Active && $kind !== \App\Domain\Training\TrainingKind::Event)
             <button type="button" class="btn btn-secondary" @click="dialog = 'deactivate'">Dezaktywuj</button>
+        @endif
+        @if($kind === \App\Domain\Training\TrainingKind::Event && $definition->status === \App\Domain\Training\TrainingDefinitionStatus::Active)
+            <button type="button" class="btn btn-secondary" @click="dialog = 'pause'">Wstrzymaj</button>
+            <button type="button" class="btn btn-secondary" @click="dialog = 'close'">Zakończ wcześniej</button>
+        @endif
+        @if($kind === \App\Domain\Training\TrainingKind::Event && $definition->status === \App\Domain\Training\TrainingDefinitionStatus::Paused)
+            <button type="button" class="btn btn-primary" @click="dialog = 'resume'">Wznów</button>
+            <button type="button" class="btn btn-secondary" @click="dialog = 'close'">Zakończ wcześniej</button>
         @endif
         @if($canCancel)
             <button type="button" class="btn btn-danger" @click="dialog = 'cancel'">Anuluj</button>
@@ -93,13 +111,45 @@
             'password' => $passwordForStatus,
         ])
     @endif
-    @if($definition->status === \App\Domain\Training\TrainingDefinitionStatus::Active)
+    @if($definition->status === \App\Domain\Training\TrainingDefinitionStatus::Active && $kind !== \App\Domain\Training\TrainingKind::Event)
         @include('admin.training.partials.action', [
             'dialog' => 'deactivate',
             'title' => 'Dezaktywować?',
             'action' => route('admin.training.deactivate', $definition),
             'label' => 'Dezaktywuj',
             'password' => $passwordForStatus,
+        ])
+    @endif
+    @if($kind === \App\Domain\Training\TrainingKind::Event && $definition->status === \App\Domain\Training\TrainingDefinitionStatus::Active)
+        @include('admin.training.partials.action', [
+            'dialog' => 'pause',
+            'title' => 'Wstrzymać event?',
+            'action' => route('admin.training.event.pause', $definition),
+            'label' => 'Wstrzymaj',
+            'password' => true,
+        ])
+        @include('admin.training.partials.action', [
+            'dialog' => 'close',
+            'title' => 'Zakończyć event wcześniej?',
+            'action' => route('admin.training.event.close', $definition),
+            'label' => 'Zakończ',
+            'password' => true,
+        ])
+    @endif
+    @if($kind === \App\Domain\Training\TrainingKind::Event && $definition->status === \App\Domain\Training\TrainingDefinitionStatus::Paused)
+        @include('admin.training.partials.action', [
+            'dialog' => 'resume',
+            'title' => 'Wznowić event?',
+            'action' => route('admin.training.event.resume', $definition),
+            'label' => 'Wznów',
+            'password' => true,
+        ])
+        @include('admin.training.partials.action', [
+            'dialog' => 'close',
+            'title' => 'Zakończyć event wcześniej?',
+            'action' => route('admin.training.event.close', $definition),
+            'label' => 'Zakończ',
+            'password' => true,
         ])
     @endif
     @if($canCancel)

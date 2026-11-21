@@ -9,6 +9,7 @@ use App\Repositories\Activity\ActivityCommentRepository;
 use App\Repositories\Organization\OrganizationRepository;
 use App\Repositories\Player\PlayerRepository;
 use App\Repositories\User\UserRepository;
+use App\Services\Training\TrainingHistoryWipeService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,7 @@ class AccountDeletionService
         private PlayerRepository $players,
         private OrganizationRepository $organizations,
         private ActivityCommentRepository $comments,
+        private TrainingHistoryWipeService $trainingHistory,
     ) {}
 
     public function deleteAuthenticated(User $user, string $password): void
@@ -53,6 +55,7 @@ class AccountDeletionService
         $avatarPath = $user->player?->avatar_path;
 
         DB::transaction(function () use ($user): void {
+            $this->trainingHistory->forceDeleteForAccount($user);
             $this->comments->deleteOwnedAndKeepOthersReplies((int) $user->id);
             if ($user->player !== null) {
                 $this->players->releaseAccount($user->player, AccountDeletionRules::ANONYMOUS_PLAYER_NAME);

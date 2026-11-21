@@ -13,6 +13,7 @@
             <p class="text-text-secondary text-sm mt-1 break-all">{{ $user->email }} · ID {{ $user->id }}</p>
         </div>
         <div class="flex flex-wrap gap-2">
+            <a href="{{ route('admin.users.training', $user->id) }}" class="btn btn-secondary">Trening</a>
             @unless($user->isPlatformAdmin())
                 <form method="POST" action="{{ route('admin.users.ban', $user->id) }}">
                     @csrf

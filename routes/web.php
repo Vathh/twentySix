@@ -132,6 +132,9 @@ Route::middleware(['auth', 'platform.admin'])->prefix('admin')->name('admin.')->
     Route::get('/users/{user}', [\App\Http\Controllers\PlatformAdminController::class, 'showUser'])
         ->whereNumber('user')
         ->name('users.show');
+    Route::get('/users/{user}/training', [\App\Http\Controllers\PlatformAdminController::class, 'showUserTraining'])
+        ->whereNumber('user')
+        ->name('users.training');
     Route::post('/users/{user}/can-create-organizations', [\App\Http\Controllers\PlatformAdminController::class, 'updateCanCreateOrganizations'])
         ->whereNumber('user')
         ->name('users.can-create-organizations');
@@ -155,6 +158,9 @@ Route::middleware(['auth', 'platform.admin'])->prefix('admin')->name('admin.')->
     Route::post('/deleted/{kind}/{id}/restore', [\App\Http\Controllers\PlatformAdminController::class, 'restore'])
         ->whereNumber('id')
         ->name('deleted.restore');
+
+    Route::get('/push', [\App\Http\Controllers\AdminPushController::class, 'index'])->name('push.index');
+    Route::post('/push', [\App\Http\Controllers\AdminPushController::class, 'store'])->name('push.store');
 
     Route::get('/training', [\App\Http\Controllers\TrainingAdminController::class, 'index'])->name('training.index');
     Route::get('/training/{kind}', [\App\Http\Controllers\TrainingAdminController::class, 'list'])
@@ -187,6 +193,15 @@ Route::middleware(['auth', 'platform.admin'])->prefix('admin')->name('admin.')->
     Route::post('/training/definitions/{definition}/remove', [\App\Http\Controllers\TrainingAdminController::class, 'remove'])
         ->whereNumber('definition')
         ->name('training.remove');
+    Route::post('/training/definitions/{definition}/event/pause', [\App\Http\Controllers\TrainingAdminController::class, 'pauseEvent'])
+        ->whereNumber('definition')
+        ->name('training.event.pause');
+    Route::post('/training/definitions/{definition}/event/resume', [\App\Http\Controllers\TrainingAdminController::class, 'resumeEvent'])
+        ->whereNumber('definition')
+        ->name('training.event.resume');
+    Route::post('/training/definitions/{definition}/event/close', [\App\Http\Controllers\TrainingAdminController::class, 'closeEvent'])
+        ->whereNumber('definition')
+        ->name('training.event.close');
 });
 
 Route::middleware('auth')->group(function () {

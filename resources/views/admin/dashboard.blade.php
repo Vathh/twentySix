@@ -11,6 +11,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('admin.training.index') }}" class="btn btn-secondary">Trening</a>
+            <a href="{{ route('admin.push.index') }}" class="btn btn-secondary">Push</a>
             <a href="{{ route('admin.reports') }}" class="btn btn-secondary">Zgłoszenia</a>
             <a href="{{ route('admin.deleted') }}" class="btn btn-secondary">Usunięte byty</a>
             <a href="{{ route('admin.users') }}" class="btn btn-primary">Użytkownicy</a>
@@ -90,6 +91,12 @@
                 </li>
             </ul>
         </div>
+    </div>
+
+    <div class="card p-5 mb-8">
+        <h2 class="text-accent font-semibold mb-4">Statystyki treningowe</h2>
+        <p class="text-text-secondary text-sm mb-2">Ukończone indywidualne ćwiczenia (łącznie, od początku)</p>
+        <p class="text-2xl font-semibold text-text">{{ $stats['trainingCompletedExercises'] }}</p>
     </div>
 
     <p class="text-text-muted text-xs">

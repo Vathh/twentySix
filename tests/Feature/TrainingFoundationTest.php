@@ -103,6 +103,48 @@ class TrainingFoundationTest extends TestCase
         $this->assertDatabaseCount('training_definitions', 0);
     }
 
+    public function test_plan_slot_keeps_scored_flag_and_pressure_variant(): void
+    {
+        $admin = $this->admin();
+        $player = User::factory()->create();
+
+        $id = (int) $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'plan',
+                'name' => 'Presja',
+                'difficulty' => 'medium',
+                'declaredMinutes' => 60,
+                'items' => [
+                    [
+                        'kind' => 'exercise',
+                        'exerciseKey' => 'scoring_under_pressure',
+                        'durationSeconds' => 300,
+                        'scored' => false,
+                        'variant' => '20/19/18',
+                    ],
+                    ['kind' => 'break', 'breakSeconds' => 45],
+                ],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('items.0.scored', false)
+            ->assertJsonPath('items.0.variant', '20/19/18')
+            ->assertJsonPath('items.1.kind', 'break')
+            ->json('id');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions/'.$id.'/activate')
+            ->assertOk();
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/definitions/'.$id)
+            ->assertOk()
+            ->assertJsonPath('completionCount', 0)
+            ->assertJsonPath('items.0.scored', false)
+            ->assertJsonPath('items.0.variant', '20/19/18')
+            ->assertJsonPath('items.0.name', 'Scoring z presją')
+            ->assertJsonPath('items.1.breakSeconds', 45);
+    }
+
     public function test_plan_overrides_only_the_variable_of_the_exercise(): void
     {
         $admin = $this->admin();
@@ -238,19 +280,39 @@ class TrainingFoundationTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_save_inactive_challenge_and_event(): void
+    public function test_catalog_challenge_is_ready_and_admin_cannot_create_one(): void
     {
         $admin = $this->admin();
+        $player = User::factory()->create();
 
         $this->actingAs($admin, 'sanctum')
             ->postJson('/api/training/definitions', [
                 'kind' => 'challenge',
                 'name' => '54 lotki',
                 'mechanic' => 'fifty_four_dart',
+                'badgeThresholds' => [
+                    'iron' => 500,
+                    'bronze' => 1000,
+                    'gold' => 1500,
+                    'platinum' => 2000,
+                    'diamond' => 2500,
+                ],
             ])
-            ->assertCreated()
-            ->assertJsonPath('status', 'inactive')
-            ->assertJsonPath('mechanic', 'fifty_four_dart');
+            ->assertStatus(422)
+            ->assertJsonPath('reason', 'training_challenge_is_catalog');
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/challenges/fifty_four_dart')
+            ->assertOk()
+            ->assertJsonPath('kind', 'challenge')
+            ->assertJsonPath('challengeKey', 'fifty_four_dart')
+            ->assertJsonPath('name', '54-Dart Challenge')
+            ->assertJsonPath('inactive', false);
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/catalog/challenges')
+            ->assertOk()
+            ->assertJsonPath('items.0.challengeKey', 'fifty_four_dart');
 
         $this->actingAs($admin, 'sanctum')
             ->postJson('/api/training/definitions', [
@@ -356,6 +418,84 @@ class TrainingFoundationTest extends TestCase
             ->assertJsonPath('reason', 'training_exercise_not_found');
 
         $this->assertDatabaseCount('training_sessions', 0);
+    }
+
+    public function test_history_lists_sessions_in_pages_of_five(): void
+    {
+        $player = User::factory()->create();
+        for ($i = 1; $i <= 6; $i++) {
+            $this->actingAs($player, 'sanctum')
+                ->postJson('/api/training/sessions', [
+                    'clientSessionId' => sprintf('55555555-5555-4555-8555-55555555555%d', $i),
+                    'exerciseKey' => 'loose_throws',
+                    'completedAt' => sprintf('2026-11-%02dT12:00:00Z', 10 + $i),
+                    'score' => $i,
+                    'stats' => ['elapsedSeconds' => 180],
+                ])
+                ->assertCreated();
+        }
+
+        $first = $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/sessions?kinds=exercise&days=90')
+            ->assertOk()
+            ->assertJsonPath('hasMore', true)
+            ->assertJsonCount(5, 'items')
+            ->assertJsonPath('items.0.name', 'Luźne rzuty')
+            ->json();
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/sessions?kinds=exercise&days=90'
+                .'&beforeCompletedAt='.urlencode($first['items'][4]['completedAt'])
+                .'&beforeId='.$first['items'][4]['id'])
+            ->assertOk()
+            ->assertJsonPath('hasMore', false)
+            ->assertJsonCount(1, 'items');
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/sessions/'.$first['items'][0]['id'])
+            ->assertOk()
+            ->assertJsonPath('stats.elapsedSeconds', 180);
+    }
+
+    public function test_records_and_dry_goals_endpoints(): void
+    {
+        $player = User::factory()->create();
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/sessions', $this->sessionPayload(
+                '66666666-6666-4666-8666-666666666661',
+                'bull_counter',
+                12,
+                ['hits' => 3, 'attempts' => 5],
+            ))
+            ->assertCreated();
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/sessions', $this->sessionPayload(
+                '66666666-6666-4666-8666-666666666662',
+                'bull_counter',
+                20,
+                ['hits' => 5, 'attempts' => 5],
+            ))
+            ->assertCreated();
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/records')
+            ->assertOk()
+            ->assertJsonPath('items.0.exerciseKey', 'bull_counter')
+            ->assertJsonPath('items.0.score', 20)
+            ->assertJsonPath('items.0.name', 'Walka o licznik');
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/goals')
+            ->assertOk()
+            ->assertJsonCount(5, 'goals')
+            ->assertJsonPath('goals.0.value', 0)
+            ->assertJsonPath('goals.0.progress', 0)
+            ->assertJsonCount(4, 'badges')
+            ->assertJsonPath('badges.0.placeholder', true)
+            ->assertJsonPath('badges.0.level', null)
+            ->assertJsonCount(1, 'medals');
     }
 
     public function test_clock_summary_is_stored_once_and_a_repeat_does_not_add_history(): void

@@ -39,12 +39,25 @@ class TrainingDefinitionRequest extends FormRequest
                 Rule::in([30, 60, 90, 120]),
             ],
             'mechanic' => ['nullable', 'string', 'max:64'],
+            'badge_iron' => ['nullable', 'integer', 'min:0', 'max:3190'],
+            'badge_bronze' => ['nullable', 'integer', 'min:0', 'max:3190'],
+            'badge_gold' => ['nullable', 'integer', 'min:0', 'max:3190'],
+            'badge_platinum' => ['nullable', 'integer', 'min:0', 'max:3190'],
+            'badge_diamond' => ['nullable', 'integer', 'min:0', 'max:3190'],
+            'starts_at' => ['nullable', 'date'],
+            'ends_at' => ['nullable', 'date', 'after:starts_at'],
+            'attempts_per_window' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'window_mode' => ['nullable', 'string', 'max:32'],
+            'window_anchor_date' => ['nullable', 'date'],
+            'attempt_timeout_hours' => ['nullable', 'integer', 'min:1', 'max:72'],
             'items' => ['nullable', 'array', 'max:80'],
             'items.*.kind' => ['nullable', 'string', 'max:16'],
             'items.*.exercise_key' => ['nullable', 'string', 'max:64'],
             'items.*.break_seconds' => ['nullable', 'integer', 'min:1', 'max:7200'],
             'items.*.duration_seconds' => ['nullable', 'integer', 'min:1', 'max:14400'],
             'items.*.dart_count' => ['nullable', 'integer', 'min:1', 'max:500'],
+            'items.*.scored' => ['nullable', 'boolean'],
+            'items.*.variant' => ['nullable', 'string', 'max:32'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
             'remove_image' => ['nullable', 'boolean'],
         ];
@@ -61,6 +74,11 @@ class TrainingDefinitionRequest extends FormRequest
             'difficulty' => 'poziom trudności',
             'declared_minutes' => 'deklarowany czas',
             'mechanic' => 'mechanika',
+            'badge_iron' => 'próg Żelazo',
+            'badge_bronze' => 'próg Brąz',
+            'badge_gold' => 'próg Złoto',
+            'badge_platinum' => 'próg Platyna',
+            'badge_diamond' => 'próg Diament',
             'items.*.duration_seconds' => 'czas',
             'items.*.dart_count' => 'liczba lotek',
             'items.*.exercise_key' => 'ćwiczenie',
@@ -87,6 +105,22 @@ class TrainingDefinitionRequest extends FormRequest
 
         if ($kind === TrainingKind::Challenge && $this->filled('mechanic')) {
             $payload['mechanic'] = $this->input('mechanic');
+            $payload['badgeThresholds'] = [
+                'iron' => $this->input('badge_iron'),
+                'bronze' => $this->input('badge_bronze'),
+                'gold' => $this->input('badge_gold'),
+                'platinum' => $this->input('badge_platinum'),
+                'diamond' => $this->input('badge_diamond'),
+            ];
+        }
+
+        if ($kind === TrainingKind::Event) {
+            $payload['startsAt'] = $this->input('starts_at');
+            $payload['endsAt'] = $this->input('ends_at');
+            $payload['attemptsPerWindow'] = $this->input('attempts_per_window');
+            $payload['windowMode'] = $this->input('window_mode');
+            $payload['windowAnchorDate'] = $this->input('window_anchor_date');
+            $payload['attemptTimeoutHours'] = $this->input('attempt_timeout_hours');
         }
 
         $payload['items'] = $this->itemPayload();
@@ -132,12 +166,16 @@ class TrainingDefinitionRequest extends FormRequest
             $item = [
                 'kind' => 'exercise',
                 'exerciseKey' => $row['exercise_key'] ?? null,
+                'scored' => ! in_array($row['scored'] ?? true, [false, 0, '0', 'false', ''], true),
             ];
             if (($row['duration_seconds'] ?? '') !== '') {
                 $item['durationSeconds'] = $row['duration_seconds'];
             }
             if (($row['dart_count'] ?? '') !== '') {
                 $item['dartCount'] = $row['dart_count'];
+            }
+            if (($row['exercise_key'] ?? null) === 'scoring_under_pressure') {
+                $item['variant'] = ($row['variant'] ?? '') !== '' ? $row['variant'] : '20';
             }
             $items[] = $item;
         }

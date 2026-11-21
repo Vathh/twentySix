@@ -30,9 +30,13 @@ use App\Http\Controllers\Api\TournamentInvitationController;
 use App\Http\Controllers\Api\TournamentJoinController;
 use App\Http\Controllers\Api\TournamentManageController;
 use App\Http\Controllers\Api\TrainingCatalogController;
+use App\Http\Controllers\Api\TrainingChallengeController;
 use App\Http\Controllers\Api\TrainingDefinitionController;
+use App\Http\Controllers\Api\TrainingEventController;
 use App\Http\Controllers\Api\TrainingFavoriteController;
 use App\Http\Controllers\Api\TrainingGameController;
+use App\Http\Controllers\Api\TrainingHistoryWipeController;
+use App\Http\Controllers\Api\TrainingProgressController;
 use App\Http\Controllers\Api\TrainingSessionController;
 use App\Http\Controllers\FeedModerationController;
 use Illuminate\Support\Facades\Route;
@@ -172,10 +176,37 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::post('/training/definitions/{definition}/activate', [TrainingDefinitionController::class, 'activate'])
         ->whereNumber('definition');
     Route::post('/training/sessions', [TrainingSessionController::class, 'store']);
+    Route::get('/training/sessions', [TrainingSessionController::class, 'index']);
+    Route::delete('/training/history', [TrainingHistoryWipeController::class, 'destroy']);
+    Route::get('/training/sessions/{session}', [TrainingSessionController::class, 'show'])
+        ->whereNumber('session');
+    Route::post('/training/sessions/{session}/publish', [TrainingChallengeController::class, 'publish'])
+        ->whereNumber('session');
+    Route::delete('/training/challenges/{definition}/publication', [TrainingChallengeController::class, 'withdraw'])
+        ->whereNumber('definition');
+    Route::get('/training/challenges/{definition}/ranking', [TrainingChallengeController::class, 'ranking'])
+        ->whereNumber('definition');
+    Route::get('/training/challenges/{definition}/attempts', [TrainingChallengeController::class, 'attempts'])
+        ->whereNumber('definition');
+    Route::get('/training/records', [TrainingProgressController::class, 'records']);
+    Route::get('/training/goals', [TrainingProgressController::class, 'goals']);
+    Route::get('/training/analysis', [TrainingProgressController::class, 'analysis']);
     Route::get('/training/catalog/{kind}', [TrainingCatalogController::class, 'index'])
-        ->whereIn('kind', ['exercises', 'plans', 'challenges']);
+        ->whereIn('kind', ['exercises', 'plans', 'challenges', 'events']);
+    Route::post('/training/events/{definition}/attempts', [TrainingEventController::class, 'start'])
+        ->whereNumber('definition');
+    Route::get('/training/events/{definition}/attempts/current', [TrainingEventController::class, 'current'])
+        ->whereNumber('definition');
+    Route::post('/training/events/{definition}/attempts/{clientAttempt}/complete', [TrainingEventController::class, 'complete'])
+        ->whereNumber('definition');
+    Route::post('/training/events/{definition}/attempts/{clientAttempt}/abort', [TrainingEventController::class, 'abort'])
+        ->whereNumber('definition');
+    Route::get('/training/events/{definition}/classification', [TrainingEventController::class, 'classification'])
+        ->whereNumber('definition');
     Route::get('/training/exercises/{exercise}', [TrainingCatalogController::class, 'showExercise'])
         ->where('exercise', '[a-z][a-z0-9_]{0,63}');
+    Route::get('/training/challenges/{challenge}', [TrainingCatalogController::class, 'showChallenge'])
+        ->where('challenge', '[a-z][a-z0-9_]{0,63}');
     Route::get('/training/definitions/{definition}', [TrainingCatalogController::class, 'show'])
         ->whereNumber('definition');
     Route::get('/training/favorites', [TrainingFavoriteController::class, 'index']);

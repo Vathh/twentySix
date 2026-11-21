@@ -7,7 +7,9 @@ use App\Domain\Training\TrainingKind;
 use App\Http\Requests\Admin\TrainingDefinitionRequest;
 use App\Models\Training\TrainingDefinition;
 use App\Models\Users\User;
+use App\Services\Training\TrainingAdminStatsService;
 use App\Services\Training\TrainingDefinitionService;
+use App\Services\Training\TrainingEventLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,6 +18,8 @@ class TrainingAdminController extends Controller
 {
     public function __construct(
         private TrainingDefinitionService $definitions,
+        private TrainingEventLifecycleService $events,
+        private TrainingAdminStatsService $adminStats,
     ) {}
 
     public function index(Request $request): View
@@ -34,6 +38,19 @@ class TrainingAdminController extends Controller
                 'active' => collect(),
                 'inactive' => collect(),
                 'catalog' => true,
+                'challengeCatalog' => false,
+            ]);
+        }
+
+        if ($trainingKind === TrainingKind::Challenge) {
+            $rows = $this->definitions->catalog($this->admin($request), $trainingKind);
+
+            return view('admin.training.list', [
+                'kind' => $trainingKind,
+                'active' => $rows['active'],
+                'inactive' => $rows['inactive'],
+                'catalog' => false,
+                'challengeCatalog' => true,
             ]);
         }
 
@@ -44,13 +61,14 @@ class TrainingAdminController extends Controller
             'active' => $catalog['active'],
             'inactive' => $catalog['inactive'],
             'catalog' => false,
+            'challengeCatalog' => false,
         ]);
     }
 
     public function create(Request $request, string $kind): View
     {
         $trainingKind = $this->kind($kind);
-        if ($trainingKind === TrainingKind::Exercise) {
+        if ($trainingKind === TrainingKind::Exercise || $trainingKind === TrainingKind::Challenge) {
             abort(404);
         }
 
@@ -60,7 +78,7 @@ class TrainingAdminController extends Controller
     public function store(TrainingDefinitionRequest $request, string $kind): RedirectResponse
     {
         $trainingKind = $this->kind($kind);
-        if ($trainingKind === TrainingKind::Exercise) {
+        if ($trainingKind === TrainingKind::Exercise || $trainingKind === TrainingKind::Challenge) {
             abort(404);
         }
 
@@ -77,8 +95,11 @@ class TrainingAdminController extends Controller
 
     public function show(Request $request, TrainingDefinition $definition): View
     {
+        $presented = $this->definitions->present($this->admin($request), (int) $definition->id);
+
         return view('admin.training.show', [
-            'definition' => $this->definitions->present($this->admin($request), (int) $definition->id),
+            'definition' => $presented,
+            'stats' => $this->adminStats->forDefinition($presented, $request->all()),
         ]);
     }
 
@@ -149,6 +170,38 @@ class TrainingAdminController extends Controller
         return redirect()
             ->route('admin.training.list', $kind->slug())
             ->with('success', $kind->removedSentence());
+    }
+
+    public function pauseEvent(Request $request, TrainingDefinition $definition): RedirectResponse
+    {
+        $this->validatePassword($request);
+        $updated = $this->events->pause($this->admin($request), (int) $definition->id);
+
+        return redirect()
+            ->route('admin.training.show', $updated)
+            ->with('success', 'Event wstrzymany.');
+    }
+
+    public function resumeEvent(Request $request, TrainingDefinition $definition): RedirectResponse
+    {
+        $this->validatePassword($request);
+        $updated = $this->events->resume($this->admin($request), (int) $definition->id);
+
+        return redirect()
+            ->route('admin.training.show', $updated)
+            ->with('success', 'Event wznowiony.');
+    }
+
+    public function closeEvent(Request $request, TrainingDefinition $definition): RedirectResponse
+    {
+        $this->validatePassword($request);
+        $updated = $this->events->closeEarly($this->admin($request), (int) $definition->id);
+
+        return redirect()
+            ->route('admin.training.show', $updated)
+            ->with('success', $updated->status->value === 'finished'
+                ? 'Event zakończony.'
+                : 'Event w fazie domykania — czeka na otwarte próby.');
     }
 
     /**
