@@ -58,7 +58,12 @@
                                 @if($item->duration_seconds)
                                     {{ $item->duration_seconds }} s
                                 @elseif($item->dart_count)
-                                    {{ $item->dart_count }} lotek
+                                    @php
+                                        $dartLabel = collect(\App\Domain\Training\TrainingExerciseLimits::dartCountSelectOptions((string) $item->exercise_key) ?? [])
+                                            ->firstWhere('value', (int) $item->dart_count)['label']
+                                            ?? ($item->dart_count.' lotek');
+                                    @endphp
+                                    {{ $dartLabel }}
                                 @endif
                                 @if($item->variant)
                                     · {{ $item->variant }}

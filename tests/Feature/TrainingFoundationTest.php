@@ -401,11 +401,12 @@ class TrainingFoundationTest extends TestCase
                 'clientSessionId' => '33333333-3333-4333-8333-333333333333',
                 'definitionId' => $planId,
                 'completedAt' => '2026-11-19T12:00:00Z',
-                'score' => null,
+                'score' => 8,
                 'stats' => ['elapsedSeconds' => 180],
             ])
-            ->assertStatus(422)
-            ->assertJsonPath('reason', 'training_definition_not_active');
+            ->assertCreated()
+            ->assertJsonPath('definitionId', $planId)
+            ->assertJsonPath('score', 8);
 
         $this->actingAs($player, 'sanctum')
             ->postJson('/api/training/sessions', $this->sessionPayload(
@@ -417,7 +418,7 @@ class TrainingFoundationTest extends TestCase
             ->assertNotFound()
             ->assertJsonPath('reason', 'training_exercise_not_found');
 
-        $this->assertDatabaseCount('training_sessions', 0);
+        $this->assertDatabaseCount('training_sessions', 1);
     }
 
     public function test_history_lists_sessions_in_pages_of_five(): void

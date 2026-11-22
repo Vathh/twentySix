@@ -9,6 +9,40 @@ final class TrainingExerciseLimits
     public const MAX_DART_COUNT = 500;
 
     /**
+     * Dozwolone wartości silnika dla selecta w planie.
+     * Etykiety UI (9/18) mapują się na łączną liczbę lotek schematu (36/72).
+     *
+     * @return list<int>|null null = dowolna liczba 1–500
+     */
+    public static function allowedDartCounts(string $exerciseKey): ?array
+    {
+        return match ($exerciseKey) {
+            'nine_darts' => [36, 72],
+            'clock_1_20_bull', 'doubles_clock' => [21],
+            default => null,
+        };
+    }
+
+    /**
+     * Opcje selecta: value = silnik, label = to, co widzi admin.
+     *
+     * @return list<array{value: int, label: string}>|null
+     */
+    public static function dartCountSelectOptions(string $exerciseKey): ?array
+    {
+        return match ($exerciseKey) {
+            'nine_darts' => [
+                ['value' => 36, 'label' => '9 lotek'],
+                ['value' => 72, 'label' => '18 lotek'],
+            ],
+            'clock_1_20_bull', 'doubles_clock' => [
+                ['value' => 21, 'label' => '21 lotek'],
+            ],
+            default => null,
+        };
+    }
+
+    /**
      * W planie wolno podać tylko zmienną tego ćwiczenia. Brak wartości zostawia domyślną.
      *
      * @param  array<mixed>  $item
@@ -62,11 +96,28 @@ final class TrainingExerciseLimits
             ? self::nullableInt($item['dartCount'], 'dartCount', self::MAX_DART_COUNT)
             : $defaults['dartCount'];
         self::assertHasLimit(null, $dartCount);
+        self::assertAllowedDartCount($exerciseKey, $dartCount);
 
         return [
             'durationSeconds' => null,
             'dartCount' => $dartCount,
         ];
+    }
+
+    private static function assertAllowedDartCount(string $exerciseKey, ?int $dartCount): void
+    {
+        $allowed = self::allowedDartCounts($exerciseKey);
+        if ($allowed === null || $dartCount === null) {
+            return;
+        }
+        if (in_array($dartCount, $allowed, true)) {
+            return;
+        }
+
+        throw new TrainingException(
+            'Ta liczba lotek nie jest dozwolona dla tego ćwiczenia.',
+            'training_definition_invalid',
+        );
     }
 
     private static function assertHasLimit(?int $durationSeconds, ?int $dartCount): void

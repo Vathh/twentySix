@@ -25,23 +25,20 @@ Gość nie widzi kafelka Trening. Na ekranie Graj ma od razu przycisk Wolnej gry
 Kolejność:
 
 1. Rozpocznij trening
-2. Plany
+2. Plany treningowe
 3. Wyzwania
-4. Biblioteka ćwiczeń
-5. Wolna gra
-6. Analiza zawodnika
-7. Moje rekordy
-8. Moje cele
-9. Ulubione
-10. Moje treningi
+4. Eventy
+5. Biblioteka
+6. Wolna gra
+7. Postępy (Analiza zawodnika, Moje rekordy, Moje cele, Moje treningi)
 
-Ekran jest minimalistyczny. Nie ma na nim ostatnich treningów ani statystyk.
+Ekran jest minimalistyczny. Nie ma na nim ostatnich treningów ani statystyk. Ulubione nie są osobnym kafelkiem — są w „Rozpocznij trening”.
 
 Jeśli na tym telefonie jest niezakończony plan, widać subtelny komunikat „Wznów trening” i przycisk „Anuluj trening”. Anulowanie nie pyta drugi raz. Kasuje lokalny stan tej sesji.
 
 Na jednym telefonie jest jedna wisząca sesja. Wisząca sesja to plan. Pojedyncze ćwiczenie, wyzwanie i event po przerwaniu nie zostają do wznowienia.
 
-**Rozpocznij trening** prowadzi do: planu, pojedynczego ćwiczenia, wyzwania, ulubionych, ostatnio używanych.
+**Rozpocznij trening** ma dwie zakładki: Ulubione i Ostatnie. Bez podziału na plan / wyzwanie / ćwiczenie.
 
 Ostatnio używane:
 
@@ -98,9 +95,9 @@ Pozycję można dodać bez wcześniejszego rozegrania.
 
 ---
 
-## 5. Biblioteka ćwiczeń
+## 5. Biblioteka
 
-Biblioteka i szybki start korzystają z tej samej, stałej listy ćwiczeń. Ta lista jest całym katalogiem sposobów rozgrywki. Administrator jej nie zakłada, nie nazywa po swojemu i nie wyłącza.
+W UI nazwa to **Biblioteka**. Lista łączy ćwiczenia z aktywnymi wyzwaniami (np. 54-Dart Challenge). Biblioteka i szybki start korzystają z tej samej, stałej listy ćwiczeń. Ta lista jest całym katalogiem sposobów rozgrywki. Administrator jej nie zakłada, nie nazywa po swojemu i nie wyłącza.
 
 Każde ćwiczenie ma jedną zmienną. Albo czas, albo liczbę lotek. Druga zostaje pusta. Scoring z presją ma drugą zmienną: wariant. Wartości w punktach 5.1–5.15 są domyślne: tak ćwiczenie startuje z biblioteki i z szybkiego startu. Wariant z biblioteki wybiera gracz.
 
@@ -240,7 +237,7 @@ Przykład: 41, pierwsza wizyta 20 i 25 albo suma 45. To bust. Licznik wraca do 4
 
 Koniec czasu urywa otwartą wizytę. Ta wizyta nie zamyka checkoutu i nie wchodzi do wyniku ani do statystyk. Ćwiczenie idzie do podsumowania. Wizyta rozliczona przed końcem czasu zostaje.
 
-Wynik: liczba zamkniętych checkoutów.
+Wynik: 2 punkty za każdy zamknięty checkout.
 
 W trybie „Każdy rzut osobno” zbieramy skuteczność na doublach. Lotka wpada do tej listy tylko wtedy, gdy przed nią licznik da się zamknąć jedną podwójną: 2 to D1, 4 to D2, aż do 40 jako D20. Ta podwójna jest celem lotki. Trafienie to dokładnie ten dubel. Każda inna lotka z tego licznika, także 0 i bust, jest pudłem na ten sam cel. Przykład: licznik 26, potem 0 i D13, daje dwa wpisy: cel D13 pudło, cel D13 trafione. Po pudle, które zostawia ten sam dubel do zamknięcia, następna lotka jest kolejną próbą tego samego celu. Suma trzech rzutów nie rozbija lotek, więc tej listy nie zbiera.
 
@@ -272,7 +269,7 @@ To wariant ćwiczenia 9/18 lotek, nie osobna pozycja katalogu. Te same cztery et
 
 ### 5.10. Zegar doubli
 
-Wariant ćwiczenia Zegar. Po jednej lotce w D1–D20, potem Bull. Bull to outer albo inner. Nietrafienie nie zatrzymuje. Każde trafienie daje 3 punkty. Pudło daje 0. Wynik to suma tych punktów. Trafienie doubli to double tego numeru. W podsumowaniu wynik, trafienia i procent.
+Wariant ćwiczenia Zegar. Po jednej lotce w D1–D20, potem Bull. Nietrafienie nie zatrzymuje. Trafienie Double 1–20 daje 3 punkty. Outer Bull daje 3 punkty. Inner Bull daje 6 punktów. Pudło daje 0. Wynik to suma tych punktów. Przy Bullu gracz wybiera Outer albo Inner. W podsumowaniu wynik, trafienia i procent.
 
 Ekran jest jak w zegarze szybkim. Napis brzmi „Celuj kolejno po jednej lotce w pole podwójne tych sektorów”. Okno, ramka i karuzela są te same.
 
@@ -479,9 +476,9 @@ Ranking jest zakładką szczegółów aktywnego wyzwania. Pusto: „Brak opublik
 
 Zwykłe wyzwanie, dostępne stale, dopóki administrator go nie wyłączy albo nie anuluje. Trzy etapy, 54 rzuty. Kolejność etapów: Shanghai 10–15, Doubles, Shanghai 16–20.
 
-**Shanghai 10–15.** Sześć sektorów, 3 rzuty na sektor. Single 15, double 30, triple 45. Bonus 100 za komplet S+D+T w jednej wizycie. Maksimum 1140.
+**Shanghai 10–15.** Sześć sektorów, 3 rzuty na sektor. Wartość pojedyncza daje 15 punktów, podwójna 30 punktów, potrójna 45 punktów. Za komplet trafień (pojedyncza, podwójna, potrójna) w jednym podejściu dodatkowo doliczane jest 100 punktów. Najbardziej optymalne jest trafienie pełnego shanghai (S, D, T). Maksimum 1140.
 
-**Doubles 1–20 i Bull.** Po jednej lotce w każdy double, potem Bull. Double 50. Inner bull 100. Outer bull 0 i nie jest trafieniem. Maksimum 1100.
+**Doubles 1–20 i Bull.** Po jednej lotce w D1–D20 + Inner Bull. Outer bull traktowany jest jako pudło. Double 50. Inner bull 100. Maksimum 1100.
 
 **Shanghai 16–20.** Pięć sektorów, ta sama punktacja i ten sam bonus. Maksimum 950.
 
@@ -495,7 +492,9 @@ Cele tego wyzwania: od 100 do 3100 co 100, według najlepszego ukończonego wyni
 
 Nagłówek: tylko nazwa wyzwania. Bez paska postępu i bez numeru etapu. Przycisk tylko Przerwij (z potwierdzeniem). Bez pauzy i bez wznowienia.
 
-W trakcie widać tylko cel (sektor / D-n / Bull), bez sumy punktów. Jest licznik lotek w wizycie („Lotka 1 z 3”). Po domknięciu wizyty (3 lotki) gra dźwięk `click`.
+Nad celem krótka wskazówka: „Celuj w sektor n”, „Celuj w D-n” albo „Celuj w Inner Bull”. W trakcie widać tylko cel (sektor / D-n / Bull), bez sumy punktów. Jest licznik lotek w wizycie („Lotka 1 z 3”). Po domknięciu wizyty (3 lotki) gra dźwięk `click`.
+
+Szczegółowa instrukcja (cel / jak / punktacja / limit lotek) jest na ekranie definicji wyzwania — tak samo jak przy ćwiczeniach w Bibliotece.
 
 Shanghai: przyciski Single / Double / Triple / Pudło, wpis lotka po lotce. Komplet S+D+T liczy aplikacja.
 
@@ -595,7 +594,7 @@ Na serwer idzie: podsumowanie, statystyki, wyniki ćwiczeń planu, status pomini
 
 Do czasu udanej synchronizacji sesja nie rusza statystyk, rekordów, celów, odznak ani liczników. Po udanej aktualizują się same.
 
-Jeśli treść została w międzyczasie dezaktywowana albo anulowana, serwer odrzuca domknięcie. Sesja nie wchodzi do historii.
+Jeśli treść została w międzyczasie dezaktywowana albo anulowana, serwer i tak przyjmuje ukończoną sesję z lokalnej kopii (historia i statystyki). Nie da się już zacząć nowej sesji tej treści z katalogu.
 
 Oznaczenie „Do zsynchronizowania” stoi na liście historii i znika po sukcesie. Przy błędzie niezgodności zostaje lokalny rekord i oznaczenie „Błąd synchronizacji”. Nie ma ręcznego ponowienia. System próbuje sam, w dłuższych odstępach. Danych nie kasuje. Statusu błędu nie ma na ekranie szczegółów.
 

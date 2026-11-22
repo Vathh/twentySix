@@ -16,12 +16,20 @@ final class TrainingDefinitionRules
 
     public static function assertCompletable(TrainingDefinitionStatus $status): void
     {
-        if ($status !== TrainingDefinitionStatus::Active) {
-            throw new TrainingException(
-                'Tej treści nie da się teraz zapisać.',
-                'training_definition_not_active',
-            );
+        // Offline: ukończony plan/wyzwanie z lokalnej kopii wchodzi do historii
+        // także gdy treść została w międzyczasie wyłączona albo anulowana.
+        if (in_array($status, [
+            TrainingDefinitionStatus::Active,
+            TrainingDefinitionStatus::Inactive,
+            TrainingDefinitionStatus::Cancelled,
+        ], true)) {
+            return;
         }
+
+        throw new TrainingException(
+            'Tej treści nie da się teraz zapisać.',
+            'training_definition_not_active',
+        );
     }
 
     public static function assertDraftEditable(TrainingDefinitionStatus $status, bool $published): void

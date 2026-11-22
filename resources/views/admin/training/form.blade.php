@@ -31,6 +31,7 @@
             'name' => \App\Domain\Training\TrainingExerciseCatalog::label($key),
             'durationSeconds' => $limits['durationSeconds'],
             'dartCount' => $limits['dartCount'],
+            'dartCountOptions' => \App\Domain\Training\TrainingExerciseLimits::dartCountSelectOptions($key),
         ])->values();
     $allowsBreaks = $kind === \App\Domain\Training\TrainingKind::Plan;
     $allowsLimits = $kind === \App\Domain\Training\TrainingKind::Plan;
@@ -195,7 +196,7 @@
                         <button type="button" class="btn btn-secondary" x-show="allowsBreaks" @click="addBreak()">Dodaj przerwę</button>
                     </div>
                 </div>
-                <p class="text-text-muted text-xs" x-show="allowsLimits">Przy ćwiczeniu zmieniasz tylko czas albo liczbę lotek, checkbox Punktowane i — przy Scoringu z presją — wariant. Puste pole czasu/lotek dostaje wartość domyślną.</p>
+                <p class="text-text-muted text-xs" x-show="allowsLimits">Przy ćwiczeniu zmieniasz tylko czas albo liczbę lotek (select), checkbox Punktowane i — przy Scoringu z presją — wariant. Dla 9/18 lotek wybór 9 albo 18 oznacza lotki na etap. Puste pole czasu dostaje wartość domyślną.</p>
                 <template x-for="(row, index) in rows" :key="index">
                     <div class="flex flex-wrap items-end gap-2 border border-border/60 rounded-lg p-3">
                         <input type="hidden" :name="`items[${index}][kind]`" :value="row.kind">
@@ -216,7 +217,11 @@
                                 </div>
                                 <div class="w-40" x-show="row.kind === 'exercise' && usesDarts(row)">
                                     <span class="form-label">Liczba lotek</span>
-                                    <input class="input-field" type="number" min="1" max="500" :name="`items[${index}][dart_count]`" x-model="row.dart_count">
+                                    <select class="select-field" :name="`items[${index}][dart_count]`" x-model="row.dart_count">
+                                        <template x-for="option in dartCountOptions(row)" :key="option.value">
+                                            <option :value="String(option.value)" x-text="option.label"></option>
+                                        </template>
+                                    </select>
                                 </div>
                             @endif
                             <div class="w-40" x-show="row.kind === 'exercise' && usesVariant(row)">
@@ -272,7 +277,7 @@
                 : '20',
         }));
 
-        return {
+        const state = {
             rows,
             exercises,
             allowsBreaks,
@@ -285,6 +290,11 @@
                 if (exercise.durationSeconds) {
                     return exercise.name + ' · ' + exercise.durationSeconds + ' s';
                 }
+                const options = Array.isArray(exercise.dartCountOptions) ? exercise.dartCountOptions : [];
+                const match = options.find((option) => Number(option.value) === Number(exercise.dartCount));
+                if (match) {
+                    return exercise.name + ' · ' + match.label;
+                }
                 return exercise.name + ' · ' + exercise.dartCount + ' lotek';
             },
             usesDuration(row) {
@@ -294,6 +304,28 @@
             usesDarts(row) {
                 const exercise = this.exerciseByKey(row.exercise_key);
                 return Boolean(exercise && exercise.dartCount);
+            },
+            dartCountOptions(row) {
+                const exercise = this.exerciseByKey(row.exercise_key);
+                if (!exercise || !Array.isArray(exercise.dartCountOptions) || exercise.dartCountOptions.length === 0) {
+                    return exercise?.dartCount
+                        ? [{ value: Number(exercise.dartCount), label: exercise.dartCount + ' lotek' }]
+                        : [];
+                }
+                return exercise.dartCountOptions;
+            },
+            normalizeDartCount(row) {
+                const options = this.dartCountOptions(row);
+                if (options.length === 0) {
+                    row.dart_count = '';
+                    return;
+                }
+                const current = Number(row.dart_count);
+                if (options.some((option) => Number(option.value) === current)) {
+                    row.dart_count = String(current);
+                    return;
+                }
+                row.dart_count = String(options[0].value);
             },
             usesVariant(row) {
                 return row.exercise_key === 'scoring_under_pressure';
@@ -316,6 +348,7 @@
                 }
                 row.duration_seconds = '';
                 row.dart_count = String(exercise.dartCount ?? '');
+                this.normalizeDartCount(row);
             },
             addExercise() {
                 this.rows.push({
@@ -352,6 +385,14 @@
                 this.rows.splice(target, 0, row);
             },
         };
+
+        state.rows.forEach((row) => {
+            if (row.kind === 'exercise' && row.exercise_key) {
+                state.normalizeDartCount(row);
+            }
+        });
+
+        return state;
     }
 </script>
 @endsection

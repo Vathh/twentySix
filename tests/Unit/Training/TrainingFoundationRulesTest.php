@@ -4,6 +4,7 @@ namespace Tests\Unit\Training;
 
 use App\Domain\Training\TrainingException;
 use App\Domain\Training\TrainingExerciseCatalog;
+use App\Domain\Training\TrainingExerciseLimits;
 use App\Domain\Training\TrainingSessionStats;
 use PHPUnit\Framework\TestCase;
 
@@ -27,6 +28,32 @@ class TrainingFoundationRulesTest extends TestCase
             'checkout_bull_81' => ['durationSeconds' => 480, 'dartCount' => null],
             'bull_counter' => ['durationSeconds' => 180, 'dartCount' => null],
         ], TrainingExerciseCatalog::all());
+    }
+
+    public function test_nine_darts_plan_slot_accepts_36_and_72_only(): void
+    {
+        $this->assertSame(
+            ['durationSeconds' => null, 'dartCount' => 36],
+            TrainingExerciseLimits::forPlanSlot('nine_darts', ['dartCount' => 36]),
+        );
+        $this->assertSame(
+            ['durationSeconds' => null, 'dartCount' => 72],
+            TrainingExerciseLimits::forPlanSlot('nine_darts', ['dartCount' => 72]),
+        );
+
+        $this->expectException(TrainingException::class);
+        TrainingExerciseLimits::forPlanSlot('nine_darts', ['dartCount' => 18]);
+    }
+
+    public function test_clock_plan_slot_accepts_only_21(): void
+    {
+        $this->assertSame(
+            ['durationSeconds' => null, 'dartCount' => 21],
+            TrainingExerciseLimits::forPlanSlot('clock_1_20_bull', ['dartCount' => 21]),
+        );
+
+        $this->expectException(TrainingException::class);
+        TrainingExerciseLimits::forPlanSlot('doubles_clock', ['dartCount' => 18]);
     }
 
     public function test_stats_keep_aggregates(): void

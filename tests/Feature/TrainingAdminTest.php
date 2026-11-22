@@ -171,7 +171,7 @@ class TrainingAdminTest extends TestCase
                 'declared_minutes' => 30,
                 'items' => [
                     ['kind' => 'break', 'break_seconds' => 45],
-                    ['kind' => 'exercise', 'exercise_key' => 'nine_darts', 'dart_count' => 18],
+                    ['kind' => 'exercise', 'exercise_key' => 'nine_darts', 'dart_count' => 72],
                 ],
             ])
             ->assertRedirect(route('admin.training.show', $planId));
@@ -183,7 +183,7 @@ class TrainingAdminTest extends TestCase
         $this->assertDatabaseHas('training_definition_items', [
             'definition_id' => $planId,
             'exercise_key' => 'nine_darts',
-            'dart_count' => 18,
+            'dart_count' => 72,
         ]);
         $this->assertDatabaseHas('training_definition_items', [
             'definition_id' => $planId,
