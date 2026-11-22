@@ -15,9 +15,9 @@
                 <h1 class="page-title text-center">Edycja turnieju</h1>
                 <p class="card-description text-center mb-6">
                     @if($tournament->canEditDate())
-                        Nazwa i data rozgrywek.
+                        Nazwa, opis i data rozgrywek.
                     @else
-                        Po starcie można zmienić tylko nazwę. Datę zmienisz po anulowaniu rozgrywek.
+                        Po starcie można zmienić nazwę i opis. Datę zmienisz po anulowaniu rozgrywek.
                     @endif
                 </p>
 
@@ -46,6 +46,16 @@
                     <p class="form-label text-accent">Data wydarzenia</p>
                     <p class="mb-3 text-text-secondary">{{ $tournament->getPlayDateFormatted() }}</p>
                 @endif
+
+                <label class="form-label text-accent" for="description">Opis</label>
+                <textarea
+                    class="mb-3 input-field"
+                    id="description"
+                    name="description"
+                    rows="4"
+                    maxlength="2000"
+                    placeholder="Np. link do transmisji na YouTube…"
+                >{{ old('description', $tournament->description) }}</textarea>
 
                 <button class="btn btn-primary" type="submit">Zapisz zmiany</button>
                 <a href="{{ route('tournaments.show', $tournament->id) }}" class="btn btn-secondary mt-4 text-center">Powrót</a>

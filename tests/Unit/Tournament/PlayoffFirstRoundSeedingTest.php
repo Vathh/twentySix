@@ -320,4 +320,23 @@ class PlayoffFirstRoundSeedingTest extends TestCase
             [null, null],
         ], PlayoffFirstRoundSeeding::pairKnownSlots($byGroup, [1, 2, 3, 4], 2));
     }
+
+    public function test_known_slots_fill_known_side_when_one_neighbor_group_finishes(): void
+    {
+        $ready = array_values(array_filter(
+            $this->uniform(4, 2),
+            fn (array $player) => $player['group_number'] === 1,
+        ));
+        $byGroup = [1 => [], 2 => null, 3 => null, 4 => null];
+        foreach ($ready as $player) {
+            $byGroup[$player['group_number']][] = $player;
+        }
+
+        $this->assertSame([
+            [11, null],
+            [null, null],
+            [null, 12],
+            [null, null],
+        ], PlayoffFirstRoundSeeding::pairKnownSlots($byGroup, [1, 2, 3, 4], 2));
+    }
 }

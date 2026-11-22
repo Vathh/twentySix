@@ -884,6 +884,9 @@ body.game-overlay-preview {
 }
 
 .ticker-result {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
     padding: 0.18em 0.5em;
     border-radius: 999px;
     background: var(--color-accent);
@@ -891,6 +894,7 @@ body.game-overlay-preview {
     font-size: 0.58em;
     font-weight: 700;
     letter-spacing: 0.08em;
+    line-height: 1;
     text-transform: uppercase;
 }
 

@@ -37,6 +37,20 @@
                     :current-meta="$tournament->getPlayDateFormatted() ?? 'Data nieustalona'"
                 />
 
+                @if(filled($tournament->description) || ($threeDartAverages->tournamentAverage() !== null && $tournament->isStarted()))
+                    <div class="mt-4 mb-2 space-y-2 text-sm text-text-secondary">
+                        @if($threeDartAverages->tournamentAverage() !== null && $tournament->isStarted())
+                            <p>
+                                <span class="font-semibold text-text">Średnia turnieju:</span>
+                                {{ \App\Support\AverageFormat::display($threeDartAverages->tournamentAverage()) }}
+                            </p>
+                        @endif
+                        @if(filled($tournament->description))
+                            <div class="tournament-description whitespace-pre-wrap break-words">{{ $tournament->description }}</div>
+                        @endif
+                    </div>
+                @endif
+
                 @if($canManageTournament && $tournament->isStarted() && !empty($loginCode))
                     @include('tournaments.partials.login-codes', [
                         'loginCode' => $loginCode,

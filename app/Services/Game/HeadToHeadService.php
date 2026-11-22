@@ -260,16 +260,11 @@ class HeadToHeadService
      */
     private function placeLabel(array $meeting): string
     {
-        $kind = match ($meeting['kind']) {
+        return match ($meeting['kind']) {
             'group', 'playoff' => 'Turniej',
             'league' => 'Liga',
             default => 'Szybka gra',
         };
-        if ($meeting['organization_name'] === null) {
-            return $kind;
-        }
-
-        return $kind.' · '.$meeting['organization_name'];
     }
 
     /**

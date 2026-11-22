@@ -41,6 +41,7 @@ class ThreeDartAverageTest extends TestCase
         $this->assertSame(100.0, $set->groupPlayerAverage(7));
         $this->assertSame(50.0, $set->playoffMatchAverage(9, 7));
         $this->assertSame(75.0, $set->tournamentPlayerAverage(7));
+        $this->assertSame(75.0, $set->tournamentAverage());
     }
 
     public function test_missing_match_has_no_average(): void

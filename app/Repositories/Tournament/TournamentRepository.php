@@ -78,11 +78,13 @@ class TournamentRepository
         ?string $date,
         ?int $createdByUserId = null,
         ?int $organizationId = null,
+        ?string $description = null,
     ): int {
         $tournament = Tournament::create([
             'season_id' => $seasonId,
             'organization_id' => $seasonId === null ? $organizationId : null,
             'name' => $name,
+            'description' => $description,
             'date' => $date,
         ]);
 
@@ -113,10 +115,18 @@ class TournamentRepository
         return (int) $tournament->id;
     }
 
-    public function updateDetails(int $tournamentId, string $name, ?string $date): void
-    {
+    public function updateDetails(
+        int $tournamentId,
+        string $name,
+        ?string $date,
+        ?string $description = null,
+        bool $updateDescription = true,
+    ): void {
         $tournament = $this->findModel($tournamentId);
         $tournament->name = $name;
+        if ($updateDescription) {
+            $tournament->description = $description;
+        }
         if ($date !== null) {
             $tournament->date = $date;
         }

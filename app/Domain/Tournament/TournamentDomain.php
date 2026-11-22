@@ -46,6 +46,7 @@ class TournamentDomain
         public readonly ?string $organizationName = null,
         public readonly ?string $organizationLogoPath = null,
         public readonly int $organizationLogoVersion = 0,
+        public readonly ?string $description = null,
     ) {}
 
     public static function fromEloquent(Tournament $tournament, array $with = []): self
@@ -84,6 +85,7 @@ class TournamentDomain
             organizationName: self::organizationName($tournament, $with),
             organizationLogoPath: self::organizationLogoPath($tournament, $with),
             organizationLogoVersion: self::organizationLogoVersion($tournament, $with),
+            description: $tournament->description,
         );
     }
 

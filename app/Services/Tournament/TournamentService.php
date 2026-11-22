@@ -145,15 +145,28 @@ class TournamentService
         ?string $date = null,
         ?int $createdByUserId = null,
         ?int $organizationId = null,
+        ?string $description = null,
     ): int {
-        $tournamentId = $this->tournamentRepository->create($seasonId, $name, $date, $createdByUserId, $organizationId);
+        $tournamentId = $this->tournamentRepository->create(
+            $seasonId,
+            $name,
+            $date,
+            $createdByUserId,
+            $organizationId,
+            $description,
+        );
         $this->activityRecorder->tournamentAnnounced($tournamentId);
 
         return $tournamentId;
     }
 
-    public function updateDetails(int $tournamentId, string $name, ?string $date): void
-    {
+    public function updateDetails(
+        int $tournamentId,
+        string $name,
+        ?string $date,
+        ?string $description = null,
+        bool $updateDescription = true,
+    ): void {
         $tournament = $this->tournamentRepository->findModel($tournamentId, ['admins', 'season.admins']);
         $this->gameAuthorizationService->authorizeManageTournament($tournament);
         $domain = TournamentDomain::fromEloquent($tournament);
@@ -166,6 +179,8 @@ class TournamentService
             $tournamentId,
             $name,
             $domain->canEditDate() ? $date : null,
+            $description,
+            $updateDescription,
         );
     }
 

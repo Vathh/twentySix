@@ -66,7 +66,7 @@ class TournamentController extends Controller
     {
         $page = max(1, (int) $request->query('page', 1));
         $search = PolishFold::term($request->query('q'));
-        $sort = CatalogSort::from($request->query('sort'));
+        $sort = CatalogSort::fromTournament($request->query('sort'));
         $status = TournamentCatalogStatus::from($request->query('status'));
         $data = $this->tournamentService->getIndexPage($page, $search, $sort, $status);
 
@@ -110,6 +110,7 @@ class TournamentController extends Controller
         $validated = $request->validate([
             'tournamentName' => 'required|string|max:25',
             'date' => 'required|date',
+            'description' => 'nullable|string|max:2000',
         ]);
 
         [$seasonId, $organizationId] = $this->createTarget($request);
@@ -127,6 +128,7 @@ class TournamentController extends Controller
             $validated['date'],
             Auth::id(),
             $organizationId,
+            $this->normalizedDescription($validated['description'] ?? null),
         );
 
         if ($seasonId !== null) {
@@ -301,7 +303,10 @@ class TournamentController extends Controller
             abort(403, 'Zakończonego turnieju nie można edytować.');
         }
 
-        $rules = ['tournamentName' => 'required|string|max:25'];
+        $rules = [
+            'tournamentName' => 'required|string|max:25',
+            'description' => 'nullable|string|max:2000',
+        ];
         if ($tournamentDomain->canEditDate()) {
             $rules['date'] = 'required|date';
         }
@@ -311,13 +316,12 @@ class TournamentController extends Controller
             $tournament->id,
             $validated['tournamentName'],
             $tournamentDomain->canEditDate() ? $validated['date'] : null,
+            $this->normalizedDescription($validated['description'] ?? null),
         );
 
         return redirect()
             ->route('tournaments.show', $tournament)
-            ->with('success', $tournamentDomain->canEditDate()
-                ? 'Zapisano nazwę i datę turnieju.'
-                : 'Zapisano nazwę turnieju.');
+            ->with('success', 'Zapisano dane turnieju.');
     }
 
     public function destroy(Request $request, Tournament $tournament): RedirectResponse
@@ -877,5 +881,15 @@ class TournamentController extends Controller
             $this->startPageService->rosterLiveSnapshot($tournamentId),
             ['message' => $message],
         );
+    }
+
+    private function normalizedDescription(?string $description): ?string
+    {
+        if ($description === null) {
+            return null;
+        }
+        $trimmed = trim($description);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

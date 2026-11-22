@@ -107,20 +107,15 @@ final class PlayoffFirstRoundSeeding
             $ready[$groupNumber] = $players;
         }
 
-        $bundleReady = static function (int $groupA, int $groupB) use ($ready, $perGroup): bool {
-            return isset($ready[$groupA], $ready[$groupB])
-                && count($ready[$groupA]) === $perGroup
-                && count($ready[$groupB]) === $perGroup;
-        };
-
         if ($perGroup === 1) {
             $pairs = [];
             for ($index = 0; $index < count($groupNumbers); $index += 2) {
                 $groupA = $groupNumbers[$index];
                 $groupB = $groupNumbers[$index + 1];
-                $pairs[] = $bundleReady($groupA, $groupB)
-                    ? self::orderedIds($ready[$groupA][0], $ready[$groupB][0])
-                    : [null, null];
+                $pairs[] = self::partialOrderedPair(
+                    isset($ready[$groupA][0]) ? $ready[$groupA][0] : null,
+                    isset($ready[$groupB][0]) ? $ready[$groupB][0] : null,
+                );
             }
 
             return $pairs;
@@ -134,19 +129,13 @@ final class PlayoffFirstRoundSeeding
             for ($bundle = 0; $bundle < $bundleCount; $bundle++) {
                 $groupA = $groupNumbers[$bundle * 2];
                 $groupB = $groupNumbers[$bundle * 2 + 1];
-                if (! $bundleReady($groupA, $groupB)) {
-                    $uppers[] = [null, null];
-                    $lowers[] = [null, null];
-
-                    continue;
-                }
-                $uppers[] = self::orderedIds(
-                    $ready[$groupA][$rank - 1],
-                    $ready[$groupB][$perGroup - $rank],
+                $uppers[] = self::partialOrderedPair(
+                    isset($ready[$groupA][$rank - 1]) ? $ready[$groupA][$rank - 1] : null,
+                    isset($ready[$groupB][$perGroup - $rank]) ? $ready[$groupB][$perGroup - $rank] : null,
                 );
-                $lowers[] = self::orderedIds(
-                    $ready[$groupB][$rank - 1],
-                    $ready[$groupA][$perGroup - $rank],
+                $lowers[] = self::partialOrderedPair(
+                    isset($ready[$groupB][$rank - 1]) ? $ready[$groupB][$rank - 1] : null,
+                    isset($ready[$groupA][$perGroup - $rank]) ? $ready[$groupA][$perGroup - $rank] : null,
                 );
             }
         }
@@ -156,6 +145,26 @@ final class PlayoffFirstRoundSeeding
         }
 
         return array_merge($uppers, $lowers);
+    }
+
+    /**
+     * Przy równym awansie pierwszy argument orderedIds jest zawsze lepszym seedem,
+     * więc znana strona trafia w to samo miejsce slotu co przy pełnej parze.
+     *
+     * @param  array{player_id: int, group_number: int, place: int}|null  $first
+     * @param  array{player_id: int, group_number: int, place: int}|null  $second
+     * @return array{0: int|null, 1: int|null}
+     */
+    private static function partialOrderedPair(?array $first, ?array $second): array
+    {
+        if ($first !== null && $second !== null) {
+            return self::orderedIds($first, $second);
+        }
+
+        return [
+            $first !== null ? $first['player_id'] : null,
+            $second !== null ? $second['player_id'] : null,
+        ];
     }
 
     /**

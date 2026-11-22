@@ -112,14 +112,14 @@ class PlayoffService
         }
 
         $pairs = PlayoffFirstRoundSeeding::pairKnownSlots($playersByGroup, $groupNumbers, $perGroup);
-        $hasKnownPair = false;
+        $hasKnownSide = false;
         foreach ($pairs as $pair) {
-            if ($pair[0] !== null && $pair[1] !== null) {
-                $hasKnownPair = true;
+            if ($pair[0] !== null || $pair[1] !== null) {
+                $hasKnownSide = true;
                 break;
             }
         }
-        if (! $hasKnownPair) {
+        if (! $hasKnownSide) {
             return;
         }
 
@@ -139,7 +139,7 @@ class PlayoffService
         $games = $this->gameRepository->mainRoundGames($tournamentId, $round);
         foreach ($pairs as $index => $pair) {
             $game = $games->get($index);
-            if ($game === null || $pair[0] === null || $pair[1] === null) {
+            if ($game === null || ($pair[0] === null && $pair[1] === null)) {
                 continue;
             }
             $this->gameRepository->replaceScheduledPlayers($game, $pair[0], $pair[1]);
@@ -205,7 +205,7 @@ class PlayoffService
             $games = $this->gameRepository->roundGames($tournamentId, $round, BracketSide::Consolation);
             foreach ($pairs as $index => $pair) {
                 $game = $games->get($index);
-                if ($game === null || $pair[0] === null || $pair[1] === null) {
+                if ($game === null || ($pair[0] === null && $pair[1] === null)) {
                     continue;
                 }
                 $this->gameRepository->replaceScheduledPlayers($game, $pair[0], $pair[1]);
@@ -261,19 +261,19 @@ class PlayoffService
         );
 
         $pairs = [];
-        $hasKnownPair = false;
+        $hasKnownSide = false;
         foreach ($rawPairs as [$left, $right]) {
             $resolved = [
                 $this->resolveConsolationSide($left, $byeId, $playersBySlot),
                 $this->resolveConsolationSide($right, $byeId, $playersBySlot),
             ];
-            if ($resolved[0] !== null && $resolved[1] !== null) {
-                $hasKnownPair = true;
+            if ($resolved[0] !== null || $resolved[1] !== null) {
+                $hasKnownSide = true;
             }
             $pairs[] = $resolved;
         }
 
-        return $hasKnownPair ? $pairs : null;
+        return $hasKnownSide ? $pairs : null;
     }
 
     /**

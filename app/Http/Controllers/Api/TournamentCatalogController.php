@@ -45,7 +45,7 @@ class TournamentCatalogController
     {
         $page = max(1, (int) $request->query('page', 1));
         $search = PolishFold::term($request->query('q'));
-        $sort = CatalogSort::from($request->query('sort'));
+        $sort = CatalogSort::fromTournament($request->query('sort'));
         $status = TournamentCatalogStatus::from($request->query('status'));
 
         return response()->json(

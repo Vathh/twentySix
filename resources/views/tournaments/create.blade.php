@@ -40,6 +40,14 @@
                        value="{{ old('date') }}"
                        required>
 
+                <label class="form-label text-accent" for="description">Opis (opcjonalnie)</label>
+                <textarea class="mb-3 input-field"
+                          id="description"
+                          name="description"
+                          rows="4"
+                          maxlength="2000"
+                          placeholder="Np. regulamin, lokalizacja, link do transmisji…">{{ old('description') }}</textarea>
+
                 <button class="btn btn-primary mt-2" type="submit">Stwórz turniej</button>
 
                 @if($seasonId)

@@ -136,7 +136,7 @@ class HeadToHeadTest extends TestCase
             ->assertJsonPath('headToHead.recent.4.winnerSide', 'player1')
             ->assertJsonPath('headToHead.recent.4.player1Average', 80)
             ->assertJsonPath('headToHead.recent.4.player2Average', 40)
-            ->assertJsonPath('headToHead.recent.4.placeLabel', 'Turniej · Klub 26');
+            ->assertJsonPath('headToHead.recent.4.placeLabel', 'Turniej');
 
         $this->get(route('games.show', ['type' => 'playoff', 'id' => $current->id]))
             ->assertOk()
@@ -144,7 +144,7 @@ class HeadToHeadTest extends TestCase
             ->assertSee('Anna ma serię 3 zwycięstw z rzędu')
             ->assertSee('Załaduj więcej')
             ->assertSee('Pierwsze spotkanie: 15.01.2020')
-            ->assertSee('Turniej · Klub 26')
+            ->assertSee('Turniej')
             ->assertSee('Szybka gra')
             ->assertDontSee('Liga · Klub 26 · Liga Zimowa');
 
@@ -153,7 +153,7 @@ class HeadToHeadTest extends TestCase
             ->assertJsonPath('hasMore', false)
             ->assertJsonCount(1, 'recent')
             ->assertJsonPath('recent.0.kind', 'league')
-            ->assertJsonPath('recent.0.placeLabel', 'Liga · Klub 26');
+            ->assertJsonPath('recent.0.placeLabel', 'Liga');
 
         $this->getJson(route('games.head-to-head', ['type' => 'playoff', 'id' => $current->id]).'?offset=5')
             ->assertOk()

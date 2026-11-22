@@ -14,6 +14,7 @@
     'sort' => 'activity',
     'status' => '',
     'showStatusFilter' => false,
+    'showDateSort' => false,
     'createUrl' => null,
     'createLabel' => null,
 ])
@@ -87,6 +88,15 @@
                 role="menu"
                 aria-label="Sortowanie"
             >
+                @if($showDateSort)
+                <button type="button" class="catalog-menu-item" role="menuitemradio" :aria-checked="sort === 'date' ? 'true' : 'false'" @click="chooseSort('date')">
+                    <svg class="catalog-menu-check" x-show="sort === 'date'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span class="catalog-menu-check" x-show="sort !== 'date'" aria-hidden="true"></span>
+                    Data wydarzenia
+                </button>
+                @endif
                 <button type="button" class="catalog-menu-item" role="menuitemradio" :aria-checked="sort === 'activity' ? 'true' : 'false'" @click="chooseSort('activity')">
                     <svg class="catalog-menu-check" x-show="sort === 'activity'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
@@ -104,7 +114,10 @@
             </div>
             <noscript>
                 <select name="sort" class="catalog-sort" aria-label="Sortowanie">
-                    <option value="activity" @selected($sort !== 'members')>Ostatnia aktywność</option>
+                    @if($showDateSort)
+                        <option value="date" @selected($sort === 'date' || ($sort !== 'activity' && $sort !== 'members'))>Data wydarzenia</option>
+                    @endif
+                    <option value="activity" @selected($sort === 'activity' || (! $showDateSort && $sort !== 'members'))>Ostatnia aktywność</option>
                     <option value="members" @selected($sort === 'members')>Użytkownicy</option>
                 </select>
             </noscript>

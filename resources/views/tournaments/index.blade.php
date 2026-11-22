@@ -20,6 +20,7 @@
         :sort="$sort"
         :status="$status"
         show-status-filter
+        show-date-sort
     />
 
 @endsection

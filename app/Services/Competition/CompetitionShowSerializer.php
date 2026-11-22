@@ -242,6 +242,7 @@ class CompetitionShowSerializer
                 'id' => $tournament->id,
                 'name' => $tournament->name,
                 'date' => $tournament->getDate(),
+                'description' => $tournament->description,
                 'status' => $tournament->status->value,
                 'statusLabel' => $tournament->status->label(),
                 'statusVariant' => $tournament->status->badgeVariant(),
@@ -250,6 +251,7 @@ class CompetitionShowSerializer
                 'tracksSeasonPoints' => $tournament->tracksSeasonPoints(),
                 'format' => $tournament->format->value,
                 'showStageInResults' => $showStageInResults,
+                'tournamentAverage' => $averages->tournamentAverage(),
             ],
             'organization' => $organization,
             'season' => $season

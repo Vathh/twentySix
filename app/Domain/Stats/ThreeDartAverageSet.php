@@ -145,4 +145,19 @@ final class ThreeDartAverageSet
     {
         return $this->playerAverageAcross([self::KIND_GROUP, self::KIND_PLAYOFF], $playerId);
     }
+
+    /** Średnia 3-lotkowa całego turnieju (wszystkie wizyty grup + playoff). */
+    public function tournamentAverage(): ?float
+    {
+        $points = 0;
+        $darts = 0;
+        foreach ([self::KIND_GROUP, self::KIND_PLAYOFF] as $kind) {
+            foreach ($this->playersByKind[$kind] ?? [] as $totals) {
+                $points += $totals['points'];
+                $darts += $totals['darts'];
+            }
+        }
+
+        return ThreeDartAverage::fromTotals($points, $darts);
+    }
 }

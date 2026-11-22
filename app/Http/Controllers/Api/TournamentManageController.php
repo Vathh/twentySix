@@ -44,6 +44,7 @@ class TournamentManageController
         $validated = $request->validate([
             'name' => 'required|string|max:25',
             'date' => 'required|date',
+            'description' => 'nullable|string|max:2000',
         ]);
 
         $id = $this->tournamentService->create(
@@ -52,6 +53,7 @@ class TournamentManageController
             $validated['date'],
             (int) $request->user()->id,
             $organization->id,
+            $this->normalizedDescription($validated['description'] ?? null),
         );
 
         return response()->json(['id' => $id], 201);
@@ -64,6 +66,7 @@ class TournamentManageController
         $validated = $request->validate([
             'name' => 'required|string|max:25',
             'date' => 'required|date',
+            'description' => 'nullable|string|max:2000',
         ]);
 
         $id = $this->tournamentService->create(
@@ -72,6 +75,7 @@ class TournamentManageController
             $validated['date'],
             (int) $request->user()->id,
             null,
+            $this->normalizedDescription($validated['description'] ?? null),
         );
 
         return response()->json(['id' => $id], 201);
@@ -84,7 +88,10 @@ class TournamentManageController
             abort(403, 'Zakończonego turnieju nie można edytować.');
         }
 
-        $rules = ['name' => 'required|string|max:25'];
+        $rules = [
+            'name' => 'required|string|max:25',
+            'description' => 'nullable|string|max:2000',
+        ];
         if ($domain->canEditDate()) {
             $rules['date'] = 'required|date';
         }
@@ -94,18 +101,19 @@ class TournamentManageController
             $tournament->id,
             $validated['name'],
             $domain->canEditDate() ? $validated['date'] : null,
+            $this->normalizedDescription($validated['description'] ?? null),
+            array_key_exists('description', $validated),
         );
 
         $tournament->refresh();
 
         return response()->json([
-            'message' => $domain->canEditDate()
-                ? 'Zapisano nazwę i datę turnieju.'
-                : 'Zapisano nazwę turnieju.',
+            'message' => 'Zapisano dane turnieju.',
             'tournament' => [
                 'id' => $tournament->id,
                 'name' => $tournament->name,
                 'date' => $tournament->date?->format('Y-m-d'),
+                'description' => $tournament->description,
             ],
         ]);
     }
@@ -510,5 +518,15 @@ class TournamentManageController
         }
 
         return response()->json($this->startPageService->apiSetup($tournamentId));
+    }
+
+    private function normalizedDescription(?string $description): ?string
+    {
+        if ($description === null) {
+            return null;
+        }
+        $trimmed = trim($description);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }
