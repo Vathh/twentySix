@@ -13,6 +13,7 @@ class TrainingFavorite extends Model
         'user_id',
         'definition_id',
         'exercise_key',
+        'variant',
         'kind',
         'position',
     ];

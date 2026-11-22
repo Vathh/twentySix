@@ -45,7 +45,9 @@ class TrainingGoalsProgressTest extends TestCase
             ->getJson('/api/training/analysis')
             ->assertOk()
             ->assertJsonPath('goals.0.id', 'scoring')
-            ->assertJsonPath('completedExerciseCount', 1);
+            ->assertJsonPath('completedExerciseCount', 1)
+            ->assertJsonPath('activity.days', 90)
+            ->assertJsonCount(90, 'activity.points');
 
         $this->actingAs($player, 'sanctum')
             ->deleteJson('/api/training/history')
@@ -75,9 +77,9 @@ class TrainingGoalsProgressTest extends TestCase
                     'checkoutsClosed' => 5,
                     'checkoutAttempts' => 20,
                     'inputMode' => 'per_dart',
-                    'doubles' => [
-                        ['label' => 'D10', 'attempts' => 10, 'hits' => 4],
-                        ['label' => 'D20', 'attempts' => 10, 'hits' => 2],
+                    'aims' => [
+                        ['aim' => 'D10', 'attempts' => 10, 'hits' => 4],
+                        ['aim' => 'D20', 'attempts' => 10, 'hits' => 2],
                     ],
                 ],
             ])

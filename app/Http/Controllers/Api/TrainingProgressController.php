@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Users\User;
+use App\Services\Training\TrainingActivityService;
 use App\Services\Training\TrainingExerciseCountService;
 use App\Services\Training\TrainingGoalsService;
 use App\Services\Training\TrainingRecordsService;
@@ -15,6 +16,7 @@ class TrainingProgressController
         private TrainingRecordsService $records,
         private TrainingGoalsService $goals,
         private TrainingExerciseCountService $exerciseCount,
+        private TrainingActivityService $activity,
     ) {}
 
     public function records(Request $request): JsonResponse
@@ -40,6 +42,7 @@ class TrainingProgressController
             'goals' => $progress['goals'],
             'badges' => $progress['badges'],
             'medals' => $progress['medals'],
+            'activity' => $this->activity->forUser($user, TrainingActivityService::DEFAULT_DAYS),
         ]);
     }
 

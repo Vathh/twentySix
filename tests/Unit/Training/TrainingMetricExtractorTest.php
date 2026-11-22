@@ -55,14 +55,22 @@ class TrainingMetricExtractorTest extends TestCase
             'closed' => 4,
             'checkoutsClosed' => 4,
             'checkoutAttempts' => 10,
-            'doubles' => [
-                ['label' => 'D13', 'attempts' => 2, 'hits' => 1],
+            'aims' => [
+                ['aim' => 'D13', 'attempts' => 2, 'hits' => 1],
             ],
         ]);
         $this->assertSame(2, $catch['doublesAttempts']);
         $this->assertSame(1, $catch['doublesHits']);
         $this->assertSame(4, $catch['checkoutsClosed']);
         $this->assertSame(10, $catch['checkoutAttempts']);
+
+        $legacy = TrainingMetricExtractor::fromExercise('catch_20', [
+            'doubles' => [
+                ['label' => 'D13', 'attempts' => 2, 'hits' => 1],
+            ],
+        ]);
+        $this->assertSame(2, $legacy['doublesAttempts']);
+        $this->assertSame(1, $legacy['doublesHits']);
     }
 
     public function test_bull_81_feeds_inner_doubles_and_checkouts(): void

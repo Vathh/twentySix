@@ -5,6 +5,7 @@ namespace App\Services\Training;
 use App\Domain\Training\TrainingDefinitionStatus;
 use App\Domain\Training\TrainingException;
 use App\Domain\Training\TrainingExerciseCatalog;
+use App\Domain\Training\TrainingExerciseVariant;
 use App\Domain\Training\TrainingFavoriteRules;
 use App\Domain\Training\TrainingKind;
 use App\Support\Http\DomainExceptionHttp;
@@ -37,7 +38,11 @@ class TrainingFavoriteService
                 if ($row->kind !== TrainingKind::Exercise || TrainingExerciseCatalog::parameters($row->exercise_key) === null) {
                     continue;
                 }
-                $grouped['exercises'][] = TrainingCatalogCard::exercise($row->exercise_key, true);
+                $grouped['exercises'][] = TrainingCatalogCard::exercise(
+                    $row->exercise_key,
+                    true,
+                    is_string($row->variant) ? $row->variant : '',
+                );
 
                 continue;
             }
@@ -95,7 +100,7 @@ class TrainingFavoriteService
     /**
      * @return array{created: bool, item: array<string, mixed>}
      */
-    public function addExercise(User $user, string $exerciseKey): array
+    public function addExercise(User $user, string $exerciseKey, ?string $variant = null): array
     {
         if (TrainingExerciseCatalog::parameters($exerciseKey) === null) {
             throw new TrainingException(
@@ -104,16 +109,18 @@ class TrainingFavoriteService
                 DomainExceptionHttp::NOT_FOUND,
             );
         }
+        $normalized = TrainingExerciseVariant::normalize($variant);
+        TrainingExerciseVariant::assertAllowed($exerciseKey, $normalized);
 
-        return DB::transaction(function () use ($user, $exerciseKey): array {
-            $already = $this->favorites->exerciseExists((int) $user->id, $exerciseKey);
+        return DB::transaction(function () use ($user, $exerciseKey, $normalized): array {
+            $already = $this->favorites->exerciseExists((int) $user->id, $exerciseKey, $normalized);
             if (! $already) {
-                $this->favorites->addExercise((int) $user->id, $exerciseKey);
+                $this->favorites->addExercise((int) $user->id, $exerciseKey, $normalized);
             }
 
             return [
                 'created' => ! $already,
-                'item' => TrainingCatalogCard::exercise($exerciseKey, true),
+                'item' => TrainingCatalogCard::exercise($exerciseKey, true, $normalized),
             ];
         });
     }
@@ -121,10 +128,11 @@ class TrainingFavoriteService
     /**
      * @return array{removed: bool}
      */
-    public function removeExercise(User $user, string $exerciseKey): array
+    public function removeExercise(User $user, string $exerciseKey, ?string $variant = null): array
     {
+        $normalized = TrainingExerciseVariant::normalize($variant);
         $removed = DB::transaction(
-            fn () => $this->favorites->removeExercise((int) $user->id, $exerciseKey),
+            fn () => $this->favorites->removeExercise((int) $user->id, $exerciseKey, $normalized),
         );
 
         return ['removed' => $removed];
@@ -152,13 +160,33 @@ class TrainingFavoriteService
     }
 
     /**
-     * @param  list<string>  $exerciseKeys
+     * @param  list<array{exerciseKey: string, variant?: string|null}|string>  $refs
      * @return list<array<string, mixed>>
      */
-    public function reorderExercises(User $user, array $exerciseKeys): array
+    public function reorderExercises(User $user, array $refs): array
     {
-        DB::transaction(function () use ($user, $exerciseKeys): void {
-            $this->favorites->replaceExerciseOrder((int) $user->id, $exerciseKeys);
+        $normalized = [];
+        foreach ($refs as $ref) {
+            if (is_string($ref)) {
+                $normalized[] = ['exerciseKey' => $ref, 'variant' => ''];
+                continue;
+            }
+            if (! is_array($ref) || ! is_string($ref['exerciseKey'] ?? null)) {
+                throw new TrainingException(
+                    'Kolejność dotyczy tylko pozycji na tej zakładce.',
+                    'training_favorite_order',
+                );
+            }
+            $normalized[] = [
+                'exerciseKey' => (string) $ref['exerciseKey'],
+                'variant' => TrainingExerciseVariant::normalize(
+                    is_string($ref['variant'] ?? null) ? (string) $ref['variant'] : '',
+                ),
+            ];
+        }
+
+        DB::transaction(function () use ($user, $normalized): void {
+            $this->favorites->replaceExerciseOrder((int) $user->id, $normalized);
         });
 
         return $this->grouped($user)['exercises'];

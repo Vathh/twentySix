@@ -5,6 +5,7 @@ namespace App\Services\Training;
 use App\Domain\Training\TrainingChallengeCatalog;
 use App\Domain\Training\TrainingDefinitionStatus;
 use App\Domain\Training\TrainingExerciseCatalog;
+use App\Domain\Training\TrainingExerciseVariant;
 use App\Domain\Training\TrainingItemKind;
 use App\Domain\Training\TrainingKind;
 use App\Models\Training\TrainingDefinition;
@@ -82,21 +83,23 @@ final class TrainingCatalogCard
     /**
      * @return array<string, mixed>
      */
-    public static function exercise(string $exerciseKey, bool $favorite): array
+    public static function exercise(string $exerciseKey, bool $favorite, ?string $variant = null): array
     {
         $limits = TrainingExerciseCatalog::parameters($exerciseKey);
+        $normalized = TrainingExerciseVariant::normalize($variant);
 
         return [
             'id' => $exerciseKey,
             'kind' => TrainingKind::Exercise->value,
             'status' => 'active',
             'inactive' => false,
-            'name' => TrainingExerciseCatalog::label($exerciseKey),
+            'name' => TrainingExerciseVariant::displayName($exerciseKey, $normalized),
             'description' => null,
             'difficulty' => null,
             'difficultyLabel' => null,
             'declaredMinutes' => null,
             'exerciseKey' => $exerciseKey,
+            'variant' => $normalized === '' ? null : $normalized,
             'durationSeconds' => $limits['durationSeconds'] ?? null,
             'dartCount' => $limits['dartCount'] ?? null,
             'imageUrl' => null,

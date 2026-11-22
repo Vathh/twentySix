@@ -128,6 +128,14 @@ class TrainingFavoritesTest extends TestCase
         $event = $this->publish($admin, [
             'kind' => 'event',
             'name' => 'Sierpień',
+            'startsAt' => now()->subHour()->toIso8601String(),
+            'endsAt' => now()->addDays(7)->toIso8601String(),
+            'attemptsPerWindow' => 1,
+            'windowMode' => 'calendar_week',
+            'attemptTimeoutHours' => 4,
+            'items' => [
+                ['kind' => 'exercise', 'exerciseKey' => 'loose_throws'],
+            ],
         ]);
 
         $this->actingAs($player, 'sanctum')
@@ -242,9 +250,6 @@ class TrainingFavoritesTest extends TestCase
 
         $this->asGuest();
         $this->getJson('/api/training/catalog/exercises')->assertUnauthorized();
-        $this->actingAs($player, 'sanctum')
-            ->getJson('/api/training/catalog/events')
-            ->assertNotFound();
 
         $this->actingAs($player, 'sanctum')
             ->getJson('/api/training/catalog/exercises')
@@ -260,16 +265,22 @@ class TrainingFavoritesTest extends TestCase
             ->postJson('/api/training/favorites', ['exerciseKey' => 'loose_throws'])
             ->assertCreated();
         $this->actingAs($player, 'sanctum')
-            ->postJson('/api/training/favorites', ['exerciseKey' => 'nine_darts'])
-            ->assertCreated();
+            ->postJson('/api/training/favorites', ['exerciseKey' => 'nine_darts', 'variant' => '9'])
+            ->assertCreated()
+            ->assertJsonPath('item.variant', '9')
+            ->assertJsonPath('item.name', '9/18 lotek — 9 lotek');
 
         $this->actingAs($player, 'sanctum')
             ->putJson('/api/training/favorites', [
                 'kind' => 'exercises',
-                'exerciseKeys' => ['nine_darts', 'loose_throws'],
+                'items' => [
+                    ['exerciseKey' => 'nine_darts', 'variant' => '9'],
+                    ['exerciseKey' => 'loose_throws'],
+                ],
             ])
             ->assertOk()
             ->assertJsonPath('items.0.id', 'nine_darts')
+            ->assertJsonPath('items.0.variant', '9')
             ->assertJsonPath('items.1.id', 'loose_throws');
 
         $this->actingAs($player, 'sanctum')
@@ -291,6 +302,55 @@ class TrainingFavoritesTest extends TestCase
         $this->actingAs($player, 'sanctum')
             ->postJson('/api/training/favorites', ['definitionId' => 99999])
             ->assertNotFound();
+    }
+
+    public function test_exercise_favorites_are_per_variant(): void
+    {
+        $player = User::factory()->create();
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', ['exerciseKey' => 'nine_darts'])
+            ->assertStatus(422);
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', [
+                'exerciseKey' => 'nine_darts',
+                'variant' => '9',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('item.variant', '9');
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', [
+                'exerciseKey' => 'nine_darts',
+                'variant' => '18',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('item.variant', '18')
+            ->assertJsonPath('item.name', '9/18 lotek — 18 lotek');
+
+        $this->actingAs($player, 'sanctum')
+            ->postJson('/api/training/favorites', [
+                'exerciseKey' => 'clock_1_20_bull',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('item.name', 'Zegar — Szybki');
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/favorites')
+            ->assertOk()
+            ->assertJsonCount(3, 'exercises');
+
+        $this->actingAs($player, 'sanctum')
+            ->deleteJson('/api/training/favorites/exercises/nine_darts?variant=9')
+            ->assertOk()
+            ->assertJsonPath('removed', true);
+
+        $this->actingAs($player, 'sanctum')
+            ->getJson('/api/training/favorites')
+            ->assertOk()
+            ->assertJsonCount(2, 'exercises')
+            ->assertJsonPath('exercises.0.variant', '18');
     }
 
     private function asGuest(): void

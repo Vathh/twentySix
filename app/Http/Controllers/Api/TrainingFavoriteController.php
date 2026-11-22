@@ -24,11 +24,16 @@ class TrainingFavoriteController
         $request->validate([
             'definitionId' => ['nullable', 'integer', 'min:1', 'required_without:exerciseKey', 'prohibits:exerciseKey'],
             'exerciseKey' => ['nullable', 'string', 'max:64', 'required_without:definitionId', 'prohibits:definitionId'],
+            'variant' => ['nullable', 'string', 'max:32'],
         ]);
 
         $exerciseKey = $request->input('exerciseKey');
         $result = is_string($exerciseKey) && $exerciseKey !== ''
-            ? $this->favorites->addExercise($this->user($request), $exerciseKey)
+            ? $this->favorites->addExercise(
+                $this->user($request),
+                $exerciseKey,
+                is_string($request->input('variant')) ? $request->input('variant') : null,
+            )
             : $this->favorites->add($this->user($request), $request->integer('definitionId'));
 
         return response()->json($result, $result['created'] ? 201 : 200);
@@ -42,10 +47,14 @@ class TrainingFavoriteController
 
         if ($request->input('kind') === 'exercises') {
             $request->validate([
-                'exerciseKeys' => ['required', 'array', 'min:1', 'max:200'],
-                'exerciseKeys.*' => ['string', 'distinct', 'max:64'],
+                'items' => ['required_without:exerciseKeys', 'array', 'min:1', 'max:200'],
+                'items.*.exerciseKey' => ['required_with:items', 'string', 'max:64'],
+                'items.*.variant' => ['nullable', 'string', 'max:32'],
+                'exerciseKeys' => ['required_without:items', 'array', 'min:1', 'max:200'],
+                'exerciseKeys.*' => ['string', 'max:64'],
             ]);
-            $items = $this->favorites->reorderExercises($this->user($request), $request->input('exerciseKeys'));
+            $refs = $request->input('items') ?? $request->input('exerciseKeys');
+            $items = $this->favorites->reorderExercises($this->user($request), $refs);
 
             return response()->json(['items' => $items]);
         }
@@ -71,7 +80,17 @@ class TrainingFavoriteController
 
     public function destroyExercise(Request $request, string $exercise): JsonResponse
     {
-        return response()->json($this->favorites->removeExercise($this->user($request), $exercise));
+        $request->validate([
+            'variant' => ['nullable', 'string', 'max:32'],
+        ]);
+
+        return response()->json($this->favorites->removeExercise(
+            $this->user($request),
+            $exercise,
+            is_string($request->query('variant')) ? $request->query('variant') : (
+                is_string($request->input('variant')) ? $request->input('variant') : null
+            ),
+        ));
     }
 
     private function user(Request $request): User

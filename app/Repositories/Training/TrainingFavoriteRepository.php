@@ -60,11 +60,12 @@ class TrainingFavoriteRepository
             ->all();
     }
 
-    public function exerciseExists(int $userId, string $exerciseKey): bool
+    public function exerciseExists(int $userId, string $exerciseKey, string $variant = ''): bool
     {
         return TrainingFavorite::query()
             ->where('user_id', $userId)
             ->where('exercise_key', $exerciseKey)
+            ->where('variant', $variant)
             ->exists();
     }
 
@@ -93,6 +94,8 @@ class TrainingFavoriteRepository
         TrainingFavorite::query()->create([
             'user_id' => $userId,
             'definition_id' => $definitionId,
+            'exercise_key' => null,
+            'variant' => '',
             'kind' => $kind,
             'position' => $max + 1,
         ]);
@@ -100,11 +103,12 @@ class TrainingFavoriteRepository
         return true;
     }
 
-    public function addExercise(int $userId, string $exerciseKey): bool
+    public function addExercise(int $userId, string $exerciseKey, string $variant = ''): bool
     {
         $existing = TrainingFavorite::query()
             ->where('user_id', $userId)
             ->where('exercise_key', $exerciseKey)
+            ->where('variant', $variant)
             ->lockForUpdate()
             ->first();
         if ($existing instanceof TrainingFavorite) {
@@ -126,6 +130,7 @@ class TrainingFavoriteRepository
             'user_id' => $userId,
             'definition_id' => null,
             'exercise_key' => $exerciseKey,
+            'variant' => $variant,
             'kind' => TrainingKind::Exercise,
             'position' => $max + 1,
         ]);
@@ -151,11 +156,12 @@ class TrainingFavoriteRepository
         return true;
     }
 
-    public function removeExercise(int $userId, string $exerciseKey): bool
+    public function removeExercise(int $userId, string $exerciseKey, string $variant = ''): bool
     {
         $row = TrainingFavorite::query()
             ->where('user_id', $userId)
             ->where('exercise_key', $exerciseKey)
+            ->where('variant', $variant)
             ->lockForUpdate()
             ->first();
         if (! $row instanceof TrainingFavorite) {
@@ -214,9 +220,9 @@ class TrainingFavoriteRepository
     }
 
     /**
-     * @param  list<string>  $exerciseKeys
+     * @param  list<array{exerciseKey: string, variant?: string|null}>  $refs
      */
-    public function replaceExerciseOrder(int $userId, array $exerciseKeys): void
+    public function replaceExerciseOrder(int $userId, array $refs): void
     {
         $rows = TrainingFavorite::query()
             ->where('user_id', $userId)
@@ -225,8 +231,24 @@ class TrainingFavoriteRepository
             ->lockForUpdate()
             ->get();
 
-        $current = $rows->map(fn (TrainingFavorite $row) => (string) $row->exercise_key)->all();
-        $wanted = array_map(static fn ($key) => (string) $key, $exerciseKeys);
+        $refKey = static fn (string $exerciseKey, string $variant): string => $exerciseKey."\0".$variant;
+
+        $current = $rows->map(
+            fn (TrainingFavorite $row) => $refKey((string) $row->exercise_key, (string) ($row->variant ?? '')),
+        )->all();
+        $wanted = [];
+        foreach ($refs as $ref) {
+            if (! is_array($ref) || ! is_string($ref['exerciseKey'] ?? null)) {
+                throw new TrainingException(
+                    'Kolejność dotyczy tylko pozycji na tej zakładce.',
+                    'training_favorite_order',
+                );
+            }
+            $wanted[] = $refKey(
+                (string) $ref['exerciseKey'],
+                is_string($ref['variant'] ?? null) ? (string) $ref['variant'] : '',
+            );
+        }
         $currentSorted = $current;
         $wantedSorted = $wanted;
         sort($currentSorted);
@@ -239,13 +261,15 @@ class TrainingFavoriteRepository
             );
         }
 
-        $byKey = $rows->keyBy(fn (TrainingFavorite $row) => (string) $row->exercise_key);
+        $byKey = $rows->keyBy(
+            fn (TrainingFavorite $row) => $refKey((string) $row->exercise_key, (string) ($row->variant ?? '')),
+        );
         foreach ($rows as $offset => $row) {
             $row->position = 1000 + $offset;
             $row->save();
         }
-        foreach ($wanted as $index => $exerciseKey) {
-            $row = $byKey->get($exerciseKey);
+        foreach ($wanted as $index => $key) {
+            $row = $byKey->get($key);
             if (! $row instanceof TrainingFavorite) {
                 throw new TrainingException(
                     'Kolejność dotyczy tylko pozycji na tej zakładce.',

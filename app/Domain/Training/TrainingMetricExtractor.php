@@ -69,6 +69,15 @@ final class TrainingMetricExtractor
         }
 
         if ($exerciseKey === 'catch_20' || $exerciseKey === 'checkout_41') {
+            $aims = $stats['aims'] ?? null;
+            if (is_array($aims) && $aims !== []) {
+                return self::sumAims(
+                    $aims,
+                    static fn (string $aim): bool => preg_match('/^D([1-9]|1[0-9]|20)$/', $aim) === 1,
+                );
+            }
+
+            // Legacy: starsze sesje miały stats.doubles z label.
             return self::sumDoublesList($stats['doubles'] ?? null);
         }
 
