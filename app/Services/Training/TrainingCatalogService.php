@@ -39,15 +39,10 @@ class TrainingCatalogService
 
         if ($kind === TrainingKind::Challenge) {
             $favoriteIds = array_fill_keys($this->favorites->idsFor((int) $user->id, $kind), true);
-            $items = [];
-            foreach ($this->definitions->catalogChallenges() as $definition) {
-                if ($definition->status !== TrainingDefinitionStatus::Active) {
-                    continue;
-                }
-                $items[] = TrainingCatalogCard::from($definition, isset($favoriteIds[$definition->id]));
-            }
 
-            return $items;
+            return $this->definitions->activeOfKind($kind)
+                ->map(fn ($definition) => TrainingCatalogCard::from($definition, isset($favoriteIds[$definition->id])))
+                ->all();
         }
 
         if ($kind === TrainingKind::Event) {

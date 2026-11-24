@@ -97,7 +97,7 @@ Pozycję można dodać bez wcześniejszego rozegrania.
 
 ## 5. Biblioteka
 
-W UI nazwa to **Biblioteka**. Lista łączy ćwiczenia z aktywnymi wyzwaniami (np. 54-Dart Challenge). Biblioteka i szybki start korzystają z tej samej, stałej listy ćwiczeń. Ta lista jest całym katalogiem sposobów rozgrywki. Administrator jej nie zakłada, nie nazywa po swojemu i nie wyłącza.
+W UI nazwa to **Biblioteka**. Lista łączy ćwiczenia z aktywnymi wyzwaniami. Biblioteka i szybki start korzystają z tej samej, stałej listy ćwiczeń (w tym Shanghai 10–15, Doubles, Shanghai 16–20). Ta lista jest całym katalogiem sposobów rozgrywki. Administrator jej nie zakłada, nie nazywa po swojemu i nie wyłącza.
 
 Każde ćwiczenie ma jedną zmienną. Albo czas, albo liczbę lotek. Druga zostaje pusta. Scoring z presją ma drugą zmienną: wariant. Wartości w punktach 5.1–5.15 są domyślne: tak ćwiczenie startuje z biblioteki i z szybkiego startu. Wariant z biblioteki wybiera gracz.
 
@@ -444,7 +444,7 @@ Są dwie kategorie treści rywalizacyjnej: wyzwania i eventy. Nie ma osobnej kat
 
 Wyzwanie jest indywidualne, bezterminowe i powtarzalne. Event jest czasowy, z limitem prób, klasyfikacją i medalami.
 
-Wyzwania MVP są gotową listą katalogu (jak ćwiczenia) — na start: 54-Dart Challenge. Nie tworzy się ich od zera w panelu. Administrator włącza, wyłącza i ustawia progi odznaki. Po pierwszej aktywacji nie edytuje się nazwy, opisu, grafiki, punktacji ani zasad. Zmiana to dezaktywacja albo anulowanie.
+Wyzwania składa administrator z ćwiczeń biblioteki (jak plany/eventy, ale **bez przerw**). W panelu: nazwa, opis, grafika, opcjonalne progi odznaki, lista ćwiczeń. Po pierwszej aktywacji nie edytuje się układu — zmiana to nowa treść albo dezaktywacja/anulowanie.
 
 Dezaktywacja jest odwracalna i wymaga zwykłego potwierdzenia, bez hasła. Wyzwanie znika z katalogu. Próby w toku są unieważnione. Użytkownik widzi: „Wyzwanie zostało dezaktywowane przez administratora”. Unieważniona próba nie wchodzi do historii i nie rusza statystyk, rekordów, celów ani odznak. Ranking znika z widoku. W ulubionych zostaje oznaczenie „Nieaktywne”. Po ponownym włączeniu ranking wraca razem z wcześniejszymi opublikowanymi wynikami. Włączyć można, edytować nie.
 
@@ -472,31 +472,19 @@ Remis: miejsca konkursowe, na przykład 1, 1, 3. Przy równym wyniku kolejność
 
 Ranking jest zakładką szczegółów aktywnego wyzwania. Pusto: „Brak opublikowanych wyników. Podejmij wyzwanie jako pierwszy”. Domyślnie 10 najlepszych, „Pokaż więcej” ładuje kolejne 10. Gracz poza dziesiątką jest pokazany osobno. Wiersz: miejsce, nazwa, awatar, wynik, data. Po publikacji komunikat z miejscem i wynikiem. Nie ma powiadomienia, gdy ktoś wyprzedzi.
 
-### 8.1. 54-Dart Challenge
+### 8.1. Ćwiczenia Shanghai / Doubles (dawniej 54-Dart)
 
-Zwykłe wyzwanie, dostępne stale, dopóki administrator go nie wyłączy albo nie anuluje. Trzy etapy, 54 rzuty. Kolejność etapów: Shanghai 10–15, Doubles, Shanghai 16–20.
+Gotowe wyzwanie katalogowe `fifty_four_dart` zostało usunięte. W bibliotece są trzy ćwiczenia:
 
-**Shanghai 10–15.** Sześć sektorów, 3 rzuty na sektor. Wartość pojedyncza daje 15 punktów, podwójna 30 punktów, potrójna 45 punktów. Za komplet trafień (pojedyncza, podwójna, potrójna) w jednym podejściu dodatkowo doliczane jest 100 punktów. Najbardziej optymalne jest trafienie pełnego shanghai (S, D, T). Maksimum 1140.
+- **Shanghai 10–15** (`shanghai_10_15`) — 18 lotek
+- **Doubles** (`doubles_54`) — 21 lotek (D1–D20 + Inner Bull)
+- **Shanghai 16–20** (`shanghai_16_20`) — 15 lotek
 
-**Doubles 1–20 i Bull.** Po jednej lotce w D1–D20 + Inner Bull. Outer bull traktowany jest jako pudło. Double 50. Inner bull 100. Maksimum 1100.
+Punktacja jak wcześniej (S/D/T 15/30/45 + bonus 100; double 50; Inner Bull 100). Administrator może złożyć z nich wyzwanie „54-Dart” (kolejność jak wyżej; bez pauzy i bez pomijania).
 
-**Shanghai 16–20.** Pięć sektorów, ta sama punktacja i ten sam bonus. Maksimum 950.
+#### Ekran próby wyzwania
 
-Maksimum całości: 3190.
-
-Podsumowanie pokazuje wynik łączny. Etapy są w historii. Progi kolorystyczne wyniku nie istnieją.
-
-Cele tego wyzwania: od 100 do 3100 co 100, według najlepszego ukończonego wyniku. Progi odznaki ustala administrator (domyślne są w katalogu). Nie ma jednej drabinki dla wszystkich wyzwań.
-
-#### Ekran próby (uzgodniony)
-
-Nagłówek: tylko nazwa wyzwania. Bez paska postępu i bez numeru etapu. Przycisk tylko Przerwij (z potwierdzeniem). Bez pauzy i bez wznowienia.
-
-Nad celem krótka wskazówka: „Celuj w sektor n”, „Celuj w D-n” albo „Celuj w Inner Bull”. W trakcie widać tylko cel (sektor / D-n / Bull), bez sumy punktów. Jest licznik lotek w wizycie („Lotka 1 z 3”). Po domknięciu wizyty (3 lotki) gra dźwięk `click`.
-
-Szczegółowa instrukcja (cel / jak / punktacja / limit lotek) jest na ekranie definicji wyzwania — tak samo jak przy ćwiczeniach w Bibliotece.
-
-Shanghai: przyciski Single / Double / Triple / Pudło, wpis lotka po lotce. Komplet S+D+T liczy aplikacja.
+Pasek postępu `n/m` ćwiczeń. Bez pauzy i bez pomijania. Przerwanie pyta i kończy próbę. Pomoc (⋯) pokazuje opis aktualnego ćwiczenia. Keep-awake włączony.
 
 Doubles: Trafiona / Pudło; przy Bull — Inner bull / Pudło. Ten sam licznik lotek do 3 i dźwięk po wizycie (także gdy cele są po jednej lotce — trzy kolejne cele tworzą wizytę UI).
 

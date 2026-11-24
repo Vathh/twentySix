@@ -110,17 +110,25 @@ final readonly class TrainingDefinitionDraft
         }
 
         if ($kind === TrainingKind::Challenge) {
-            if ($mechanic === null || ! TrainingChallengeCatalog::exists($mechanic)) {
+            if ($mechanic !== null) {
                 throw new TrainingException(
-                    'Wyzwania są gotową listą katalogu.',
-                    'training_challenge_is_catalog',
-                );
-            }
-            if ($items !== []) {
-                throw new TrainingException(
-                    'Gotowe wyzwanie nie składa się z listy ćwiczeń.',
+                    'Wyzwanie składa się z ćwiczeń — bez gotowej mechaniki katalogu.',
                     'training_definition_invalid',
                 );
+            }
+            if ($items === []) {
+                throw new TrainingException(
+                    'Wyzwanie wymaga co najmniej jednego ćwiczenia.',
+                    'training_definition_invalid',
+                );
+            }
+            foreach ($items as $item) {
+                if ($item->kind === TrainingItemKind::Break) {
+                    throw new TrainingException(
+                        'Wyzwanie nie ma przerw — tylko ćwiczenia.',
+                        'training_definition_invalid',
+                    );
+                }
             }
         }
 
@@ -135,11 +143,11 @@ final readonly class TrainingDefinitionDraft
 
         $badgeThresholds = null;
         if ($kind === TrainingKind::Challenge) {
-            if ($mechanic === FiftyFourDartChallenge::MECHANIC || array_key_exists('badgeThresholds', $payload)) {
-                $badgeThresholds = TrainingBadgeThresholds::normalize($payload['badgeThresholds'] ?? null);
-                if ($mechanic === FiftyFourDartChallenge::MECHANIC && $badgeThresholds === null) {
+            if (array_key_exists('badgeThresholds', $payload) && $payload['badgeThresholds'] !== null) {
+                $badgeThresholds = TrainingBadgeThresholds::normalize($payload['badgeThresholds']);
+                if ($badgeThresholds === null) {
                     throw new TrainingException(
-                        'Wyzwanie 54-Dart wymaga pięciu progów odznaki.',
+                        'Progi odznaki są nieprawidłowe.',
                         'training_badge_thresholds_invalid',
                     );
                 }
@@ -411,14 +419,14 @@ final readonly class TrainingDefinitionDraft
             }
             if ($kind !== TrainingKind::Plan && (array_key_exists('durationSeconds', $item) || array_key_exists('dartCount', $item))) {
                 throw new TrainingException(
-                    'Czas i liczbę lotek zmieniasz w planie. Event bierze domyślne.',
+                    'Czas i liczbę lotek zmieniasz w planie. Wyzwanie i event biorą domyślne.',
                     'training_exercise_limit_on_plan',
                 );
             }
-            if ($kind !== TrainingKind::Plan && $kind !== TrainingKind::Event
+            if ($kind !== TrainingKind::Plan && $kind !== TrainingKind::Event && $kind !== TrainingKind::Challenge
                 && (array_key_exists('scored', $item) || array_key_exists('variant', $item))) {
                 throw new TrainingException(
-                    'Punktowanie i wariant ustawiasz w planie albo evencie.',
+                    'Punktowanie i wariant ustawiasz w planie, wyzwaniu albo evencie.',
                     'training_definition_invalid',
                 );
             }
@@ -490,10 +498,10 @@ final readonly class TrainingDefinitionDraft
             return null;
         }
 
-        if ($kind !== TrainingKind::Plan && $kind !== TrainingKind::Event) {
+        if ($kind !== TrainingKind::Plan && $kind !== TrainingKind::Event && $kind !== TrainingKind::Challenge) {
             if ($value !== null && $value !== '') {
                 throw new TrainingException(
-                    'Wariant Scoringu z presją ustawiasz w planie albo evencie.',
+                    'Wariant Scoringu z presją ustawiasz w planie, wyzwaniu albo evencie.',
                     'training_definition_invalid',
                 );
             }

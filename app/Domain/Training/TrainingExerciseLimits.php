@@ -18,7 +18,9 @@ final class TrainingExerciseLimits
     {
         return match ($exerciseKey) {
             'nine_darts' => [36, 72],
-            'clock_1_20_bull', 'doubles_clock' => [21],
+            'clock_1_20_bull', 'doubles_clock', 'doubles_54' => [21],
+            'shanghai_10_15' => [18],
+            'shanghai_16_20' => [15],
             default => null,
         };
     }
@@ -35,8 +37,14 @@ final class TrainingExerciseLimits
                 ['value' => 36, 'label' => '9 lotek'],
                 ['value' => 72, 'label' => '18 lotek'],
             ],
-            'clock_1_20_bull', 'doubles_clock' => [
+            'clock_1_20_bull', 'doubles_clock', 'doubles_54' => [
                 ['value' => 21, 'label' => '21 lotek'],
+            ],
+            'shanghai_10_15' => [
+                ['value' => 18, 'label' => '18 lotek'],
+            ],
+            'shanghai_16_20' => [
+                ['value' => 15, 'label' => '15 lotek'],
             ],
             default => null,
         };

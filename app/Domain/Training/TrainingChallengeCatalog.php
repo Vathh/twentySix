@@ -3,11 +3,12 @@
 namespace App\Domain\Training;
 
 /**
- * Stały katalog wyzwań — jak ćwiczenia. Nie tworzy się ich z panelu.
- * Administrator włącza / wyłącza i ustawia progi odznaki.
+ * Dawny katalog gotowych wyzwań. Wyzwania składa się teraz z ćwiczeń w panelu.
+ * Klasa zostaje pod legacy (stare mechanic / testy / findCatalogChallenge).
  */
 final class TrainingChallengeCatalog
 {
+    /** @deprecated Katalogowe 54-Dart usunięte — składa się z trzech ćwiczeń. */
     public const FIFTY_FOUR_DART = 'fifty_four_dart';
 
     /**
@@ -15,12 +16,7 @@ final class TrainingChallengeCatalog
      */
     public static function all(): array
     {
-        return [
-            self::FIFTY_FOUR_DART => [
-                'name' => '54-Dart Challenge',
-                'description' => 'Trzy etapy, 54 rzuty: Shanghai 10–15, Doubles, Shanghai 16–20.',
-            ],
-        ];
+        return [];
     }
 
     public static function exists(string $challengeKey): bool
@@ -62,8 +58,6 @@ final class TrainingChallengeCatalog
     }
 
     /**
-     * Domyślne progi odznaki (Żelazo→Diament). Admin może zmienić przed pierwszą aktywacją.
-     *
      * @return array<string, int>
      */
     public static function defaultBadgeThresholds(string $challengeKey): array

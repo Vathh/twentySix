@@ -18,11 +18,13 @@ class TrainingFavoritesTest extends TestCase
         $admin = $this->admin();
         $player = User::factory()->create();
         $other = User::factory()->create();
-        $challenge = (int) \App\Models\Training\TrainingDefinition::query()
-            ->where('kind', 'challenge')
-            ->where('mechanic', 'fifty_four_dart')
-            ->where('status', 'active')
-            ->value('id');
+        $challenge = $this->publish($admin, [
+            'kind' => 'challenge',
+            'name' => 'Challenge testowy',
+            'items' => [
+                ['kind' => 'exercise', 'exerciseKey' => 'shanghai_10_15', 'scored' => true],
+            ],
+        ]);
         $first = $this->publish($admin, [
             'kind' => 'plan',
             'name' => 'Pierwszy',
@@ -50,8 +52,7 @@ class TrainingFavoritesTest extends TestCase
             ->postJson('/api/training/favorites', ['definitionId' => $challenge])
             ->assertCreated()
             ->assertJsonPath('created', true)
-            ->assertJsonPath('item.name', '54-Dart Challenge')
-            ->assertJsonPath('item.challengeKey', 'fifty_four_dart')
+            ->assertJsonPath('item.name', 'Challenge testowy')
             ->assertJsonPath('item.favorite', true);
 
         $this->actingAs($player, 'sanctum')

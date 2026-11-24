@@ -280,7 +280,7 @@ class TrainingFoundationTest extends TestCase
         ]);
     }
 
-    public function test_catalog_challenge_is_ready_and_admin_cannot_create_one(): void
+    public function test_admin_can_create_challenge_from_exercises(): void
     {
         $admin = $this->admin();
         $player = User::factory()->create();
@@ -289,7 +289,11 @@ class TrainingFoundationTest extends TestCase
             ->postJson('/api/training/definitions', [
                 'kind' => 'challenge',
                 'name' => '54 lotki',
-                'mechanic' => 'fifty_four_dart',
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'shanghai_10_15', 'scored' => true],
+                    ['kind' => 'exercise', 'exerciseKey' => 'doubles_54', 'scored' => true],
+                    ['kind' => 'exercise', 'exerciseKey' => 'shanghai_16_20', 'scored' => true],
+                ],
                 'badgeThresholds' => [
                     'iron' => 500,
                     'bronze' => 1000,
@@ -298,26 +302,31 @@ class TrainingFoundationTest extends TestCase
                     'diamond' => 2500,
                 ],
             ])
-            ->assertStatus(422)
-            ->assertJsonPath('reason', 'training_challenge_is_catalog');
+            ->assertCreated()
+            ->assertJsonPath('kind', 'challenge')
+            ->assertJsonPath('status', 'inactive')
+            ->assertJsonPath('items.0.exerciseKey', 'shanghai_10_15')
+            ->assertJsonPath('items.1.exerciseKey', 'doubles_54')
+            ->assertJsonPath('items.2.exerciseKey', 'shanghai_16_20');
 
         $this->actingAs($player, 'sanctum')
             ->getJson('/api/training/challenges/fifty_four_dart')
-            ->assertOk()
-            ->assertJsonPath('kind', 'challenge')
-            ->assertJsonPath('challengeKey', 'fifty_four_dart')
-            ->assertJsonPath('name', '54-Dart Challenge')
-            ->assertJsonPath('inactive', false);
+            ->assertNotFound();
 
         $this->actingAs($player, 'sanctum')
             ->getJson('/api/training/catalog/challenges')
             ->assertOk()
-            ->assertJsonPath('items.0.challengeKey', 'fifty_four_dart');
+            ->assertJsonPath('items', []);
 
         $this->actingAs($admin, 'sanctum')
             ->postJson('/api/training/definitions', [
                 'kind' => 'event',
                 'name' => 'Sierpień',
+                'startsAt' => now()->subHour()->toIso8601String(),
+                'endsAt' => now()->addDays(7)->toIso8601String(),
+                'attemptsPerWindow' => 1,
+                'windowMode' => 'calendar_week',
+                'attemptTimeoutHours' => 4,
                 'items' => [
                     ['kind' => 'exercise', 'exerciseKey' => 'clock_1_20_bull'],
                 ],

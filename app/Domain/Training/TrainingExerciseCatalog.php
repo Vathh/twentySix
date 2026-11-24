@@ -29,6 +29,9 @@ final class TrainingExerciseCatalog
             'checkout_41' => ['durationSeconds' => 600, 'dartCount' => null],
             'checkout_bull_81' => ['durationSeconds' => 480, 'dartCount' => null],
             'bull_counter' => ['durationSeconds' => 180, 'dartCount' => null],
+            'shanghai_10_15' => ['durationSeconds' => null, 'dartCount' => 18],
+            'doubles_54' => ['durationSeconds' => null, 'dartCount' => 21],
+            'shanghai_16_20' => ['durationSeconds' => null, 'dartCount' => 15],
         ];
     }
 
@@ -72,6 +75,9 @@ final class TrainingExerciseCatalog
             'checkout_41' => 'Checkout 41+',
             'checkout_bull_81' => 'Checkout Bull 81+',
             'bull_counter' => 'Walka o licznik',
+            'shanghai_10_15' => 'Shanghai 10–15',
+            'doubles_54' => 'Doubles',
+            'shanghai_16_20' => 'Shanghai 16–20',
         ];
     }
 }

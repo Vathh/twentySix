@@ -27,6 +27,9 @@ class TrainingFoundationRulesTest extends TestCase
             'checkout_41' => ['durationSeconds' => 600, 'dartCount' => null],
             'checkout_bull_81' => ['durationSeconds' => 480, 'dartCount' => null],
             'bull_counter' => ['durationSeconds' => 180, 'dartCount' => null],
+            'shanghai_10_15' => ['durationSeconds' => null, 'dartCount' => 18],
+            'doubles_54' => ['durationSeconds' => null, 'dartCount' => 21],
+            'shanghai_16_20' => ['durationSeconds' => null, 'dartCount' => 15],
         ], TrainingExerciseCatalog::all());
     }
 

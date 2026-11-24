@@ -86,13 +86,24 @@ class TrainingChallengeTest extends TestCase
 
     private function publishChallenge(User $admin): int
     {
-        unset($admin);
+        $id = (int) $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions', [
+                'kind' => 'challenge',
+                'name' => 'Challenge ranking',
+                'items' => [
+                    ['kind' => 'exercise', 'exerciseKey' => 'shanghai_10_15', 'scored' => true],
+                    ['kind' => 'exercise', 'exerciseKey' => 'doubles_54', 'scored' => true],
+                    ['kind' => 'exercise', 'exerciseKey' => 'shanghai_16_20', 'scored' => true],
+                ],
+            ])
+            ->assertCreated()
+            ->json('id');
 
-        return (int) \App\Models\Training\TrainingDefinition::query()
-            ->where('kind', 'challenge')
-            ->where('mechanic', 'fifty_four_dart')
-            ->where('status', 'active')
-            ->value('id');
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/training/definitions/'.$id.'/activate')
+            ->assertOk();
+
+        return $id;
     }
 
     private function completeAttempt(User $user, int $definitionId, int $score): int
@@ -104,13 +115,36 @@ class TrainingChallengeTest extends TestCase
                 'completedAt' => now()->toIso8601String(),
                 'score' => $score,
                 'stats' => [
-                    'challengeKey' => 'fifty_four_dart',
-                    'stages' => [
-                        ['id' => 'shanghai_10_15', 'label' => 'Shanghai 10–15', 'score' => 0],
-                        ['id' => 'doubles', 'label' => 'Doubles', 'score' => 0],
-                        ['id' => 'shanghai_16_20', 'label' => 'Shanghai 16–20', 'score' => 0],
+                    'aims' => [],
+                ],
+                'items' => [
+                    [
+                        'position' => 1,
+                        'kind' => 'exercise',
+                        'exerciseKey' => 'shanghai_10_15',
+                        'status' => 'completed',
+                        'score' => $score,
+                        'scored' => true,
+                        'aims' => [],
                     ],
-                    'thrown' => 54,
+                    [
+                        'position' => 2,
+                        'kind' => 'exercise',
+                        'exerciseKey' => 'doubles_54',
+                        'status' => 'completed',
+                        'score' => 0,
+                        'scored' => true,
+                        'aims' => [],
+                    ],
+                    [
+                        'position' => 3,
+                        'kind' => 'exercise',
+                        'exerciseKey' => 'shanghai_16_20',
+                        'status' => 'completed',
+                        'score' => 0,
+                        'scored' => true,
+                        'aims' => [],
+                    ],
                 ],
             ])
             ->assertCreated()

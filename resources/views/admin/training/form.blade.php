@@ -26,16 +26,33 @@
             : [];
     }
     $exerciseOptions = collect(\App\Domain\Training\TrainingExerciseCatalog::all())
-        ->map(fn ($limits, $key) => [
-            'key' => $key,
-            'name' => \App\Domain\Training\TrainingExerciseCatalog::label($key),
-            'durationSeconds' => $limits['durationSeconds'],
-            'dartCount' => $limits['dartCount'],
-            'dartCountOptions' => \App\Domain\Training\TrainingExerciseLimits::dartCountSelectOptions($key),
-        ])->values();
+        ->map(function ($limits, $key) {
+            $name = \App\Domain\Training\TrainingExerciseCatalog::label($key);
+            $dartCountOptions = \App\Domain\Training\TrainingExerciseLimits::dartCountSelectOptions($key);
+            if ($limits['durationSeconds']) {
+                $label = $name.' · '.$limits['durationSeconds'].' s';
+            } elseif (is_array($dartCountOptions) && $dartCountOptions !== []) {
+                $match = collect($dartCountOptions)->first(
+                    fn ($option) => (int) ($option['value'] ?? 0) === (int) $limits['dartCount']
+                );
+                $label = $name.' · '.($match['label'] ?? ($limits['dartCount'].' lotek'));
+            } else {
+                $label = $name.' · '.$limits['dartCount'].' lotek';
+            }
+
+            return [
+                'key' => $key,
+                'name' => $name,
+                'label' => $label,
+                'durationSeconds' => $limits['durationSeconds'],
+                'dartCount' => $limits['dartCount'],
+                'dartCountOptions' => $dartCountOptions,
+            ];
+        })->values();
     $allowsBreaks = $kind === \App\Domain\Training\TrainingKind::Plan;
     $allowsLimits = $kind === \App\Domain\Training\TrainingKind::Plan;
-    $allowsEventItems = $kind === \App\Domain\Training\TrainingKind::Event;
+    $allowsEventItems = $kind === \App\Domain\Training\TrainingKind::Event
+        || $kind === \App\Domain\Training\TrainingKind::Challenge;
     $allowsItemEditor = $allowsBreaks || $allowsEventItems;
 @endphp
 <div class="max-w-3xl mx-auto px-4 pt-6 pb-12">
@@ -103,19 +120,12 @@
                 if (! is_array($thresholds)) {
                     $thresholds = [];
                 }
-                $isCatalogChallenge = is_string($selectedMechanic)
-                    && \App\Domain\Training\TrainingChallengeCatalog::exists($selectedMechanic);
             @endphp
-            @if($isCatalogChallenge)
-                <input type="hidden" name="mechanic" value="{{ $selectedMechanic }}">
-                <p class="text-text-muted text-sm">
-                    Gotowe wyzwanie:
-                    <span class="text-text font-medium">{{ \App\Domain\Training\TrainingChallengeCatalog::name($selectedMechanic) }}</span>.
-                    Nazwy i zasad nie zmieniasz — tylko progi odznaki przed pierwszą aktywacją.
-                </p>
-            @endif
+            <p class="text-text-muted text-sm">
+                Składasz wyzwanie z ćwiczeń biblioteki (poniżej). Bez przerw, bez pauzy i bez pomijania w aplikacji.
+            </p>
             <div class="space-y-2">
-                <span class="form-label">Progi odznaki (wynik)</span>
+                <span class="form-label">Progi odznaki (wynik, opcjonalne)</span>
                 <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                     @foreach([
                         'iron' => 'Żelazo',
@@ -130,15 +140,14 @@
                                 class="input-field"
                                 type="number"
                                 min="0"
-                                max="3190"
+                                max="99999"
                                 name="badge_{{ $level }}"
                                 value="{{ old('badge_'.$level, $thresholds[$level] ?? '') }}"
-                                required
                             >
                         </label>
                     @endforeach
                 </div>
-                <p class="text-text-muted text-xs">Pięć rosnących progów. Odznaki nalicza numer 13.</p>
+                <p class="text-text-muted text-xs">Jeśli uzupełnisz — pięć rosnących progów. Puste = bez odznak dla tego wyzwania.</p>
             </div>
         @endif
 
@@ -202,11 +211,17 @@
                         <input type="hidden" :name="`items[${index}][kind]`" :value="row.kind">
                         <div class="flex-1 min-w-[12rem]" x-show="row.kind === 'exercise'">
                             <span class="form-label">Ćwiczenie</span>
-                            <select class="select-field" :name="`items[${index}][exercise_key]`" x-model="row.exercise_key" @change="applyExercise(row)">
+                            {{-- Opcje z Blade (nie Alpine x-for): inaczej x-model gubi wartość przy edycji. --}}
+                            <select
+                                class="select-field"
+                                :name="`items[${index}][exercise_key]`"
+                                :value="row.exercise_key"
+                                @change="row.exercise_key = $event.target.value; applyExercise(row)"
+                            >
                                 <option value="">Wybierz</option>
-                                <template x-for="exercise in exercises" :key="exercise.key">
-                                    <option :value="exercise.key" x-text="exerciseLabel(exercise)"></option>
-                                </template>
+                                @foreach($exerciseOptions as $exercise)
+                                    <option value="{{ $exercise['key'] }}">{{ $exercise['label'] }}</option>
+                                @endforeach
                             </select>
                         </div>
                         @if($allowsLimits || $allowsEventItems)
@@ -217,8 +232,14 @@
                                 </div>
                                 <div class="w-40" x-show="row.kind === 'exercise' && usesDarts(row)">
                                     <span class="form-label">Liczba lotek</span>
-                                    <select class="select-field" :name="`items[${index}][dart_count]`" x-model="row.dart_count">
-                                        <template x-for="option in dartCountOptions(row)" :key="option.value">
+                                    <select
+                                        class="select-field"
+                                        :name="`items[${index}][dart_count]`"
+                                        :value="String(row.dart_count ?? '')"
+                                        x-effect="$nextTick(() => { $el.value = String(row.dart_count ?? '') })"
+                                        @change="row.dart_count = $event.target.value"
+                                    >
+                                        <template x-for="option in dartCountOptions(row)" :key="String(option.value)">
                                             <option :value="String(option.value)" x-text="option.label"></option>
                                         </template>
                                     </select>
@@ -226,10 +247,15 @@
                             @endif
                             <div class="w-40" x-show="row.kind === 'exercise' && usesVariant(row)">
                                 <span class="form-label">Wariant</span>
-                                <select class="select-field" :name="`items[${index}][variant]`" x-model="row.variant">
-                                    <template x-for="option in pressureVariants" :key="option">
-                                        <option :value="option" x-text="option"></option>
-                                    </template>
+                                <select
+                                    class="select-field"
+                                    :name="`items[${index}][variant]`"
+                                    :value="row.variant"
+                                    @change="row.variant = $event.target.value"
+                                >
+                                    @foreach(['20', '19', '18', '20/19/18'] as $pressureVariant)
+                                        <option value="{{ $pressureVariant }}">{{ $pressureVariant }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <label class="flex items-center gap-2 text-sm text-text pb-2" x-show="row.kind === 'exercise'">

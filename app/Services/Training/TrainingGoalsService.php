@@ -218,7 +218,7 @@ class TrainingGoalsService
         $scores = $agg['challengeRecentScores'];
         $definition = TrainingDefinition::query()
             ->where('kind', TrainingKind::Challenge)
-            ->where('mechanic', 'fifty_four_dart')
+            ->whereNotNull('badge_thresholds')
             ->whereIn('status', [
                 TrainingDefinitionStatus::Active->value,
                 TrainingDefinitionStatus::Inactive->value,

@@ -42,18 +42,6 @@ class TrainingAdminController extends Controller
             ]);
         }
 
-        if ($trainingKind === TrainingKind::Challenge) {
-            $rows = $this->definitions->catalog($this->admin($request), $trainingKind);
-
-            return view('admin.training.list', [
-                'kind' => $trainingKind,
-                'active' => $rows['active'],
-                'inactive' => $rows['inactive'],
-                'catalog' => false,
-                'challengeCatalog' => true,
-            ]);
-        }
-
         $catalog = $this->definitions->catalog($this->admin($request), $trainingKind);
 
         return view('admin.training.list', [
@@ -68,7 +56,7 @@ class TrainingAdminController extends Controller
     public function create(Request $request, string $kind): View
     {
         $trainingKind = $this->kind($kind);
-        if ($trainingKind === TrainingKind::Exercise || $trainingKind === TrainingKind::Challenge) {
+        if ($trainingKind === TrainingKind::Exercise) {
             abort(404);
         }
 
@@ -78,7 +66,7 @@ class TrainingAdminController extends Controller
     public function store(TrainingDefinitionRequest $request, string $kind): RedirectResponse
     {
         $trainingKind = $this->kind($kind);
-        if ($trainingKind === TrainingKind::Exercise || $trainingKind === TrainingKind::Challenge) {
+        if ($trainingKind === TrainingKind::Exercise) {
             abort(404);
         }
 

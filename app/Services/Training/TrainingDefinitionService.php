@@ -2,7 +2,6 @@
 
 namespace App\Services\Training;
 
-use App\Domain\Training\TrainingChallengeCatalog;
 use App\Domain\Training\TrainingDefinitionDraft;
 use App\Domain\Training\TrainingDefinitionRules;
 use App\Domain\Training\TrainingDefinitionStatus;
@@ -35,12 +34,6 @@ class TrainingDefinitionService
         $this->assertAdmin($actor);
         $binary = $this->encodedImage($image);
         $draft = TrainingDefinitionDraft::fromPayload($payload);
-        if ($draft->kind === TrainingKind::Challenge) {
-            throw new TrainingException(
-                'Wyzwania są gotową listą. Nie tworzy się ich od zera.',
-                'training_challenge_is_catalog',
-            );
-        }
 
         return DB::transaction(function () use ($draft, $binary): TrainingDefinition {
             $this->assertReferencedExercises($draft);

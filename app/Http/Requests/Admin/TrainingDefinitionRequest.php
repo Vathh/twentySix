@@ -39,11 +39,11 @@ class TrainingDefinitionRequest extends FormRequest
                 Rule::in([30, 60, 90, 120]),
             ],
             'mechanic' => ['nullable', 'string', 'max:64'],
-            'badge_iron' => ['nullable', 'integer', 'min:0', 'max:3190'],
-            'badge_bronze' => ['nullable', 'integer', 'min:0', 'max:3190'],
-            'badge_gold' => ['nullable', 'integer', 'min:0', 'max:3190'],
-            'badge_platinum' => ['nullable', 'integer', 'min:0', 'max:3190'],
-            'badge_diamond' => ['nullable', 'integer', 'min:0', 'max:3190'],
+            'badge_iron' => ['nullable', 'integer', 'min:0', 'max:99999'],
+            'badge_bronze' => ['nullable', 'integer', 'min:0', 'max:99999'],
+            'badge_gold' => ['nullable', 'integer', 'min:0', 'max:99999'],
+            'badge_platinum' => ['nullable', 'integer', 'min:0', 'max:99999'],
+            'badge_diamond' => ['nullable', 'integer', 'min:0', 'max:99999'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after:starts_at'],
             'attempts_per_window' => ['nullable', 'integer', 'min:1', 'max:20'],
@@ -103,15 +103,21 @@ class TrainingDefinitionRequest extends FormRequest
             $payload['declaredMinutes'] = $this->input('declared_minutes');
         }
 
-        if ($kind === TrainingKind::Challenge && $this->filled('mechanic')) {
-            $payload['mechanic'] = $this->input('mechanic');
-            $payload['badgeThresholds'] = [
-                'iron' => $this->input('badge_iron'),
-                'bronze' => $this->input('badge_bronze'),
-                'gold' => $this->input('badge_gold'),
-                'platinum' => $this->input('badge_platinum'),
-                'diamond' => $this->input('badge_diamond'),
-            ];
+        if ($kind === TrainingKind::Challenge) {
+            $hasBadge = $this->filled('badge_iron')
+                || $this->filled('badge_bronze')
+                || $this->filled('badge_gold')
+                || $this->filled('badge_platinum')
+                || $this->filled('badge_diamond');
+            if ($hasBadge) {
+                $payload['badgeThresholds'] = [
+                    'iron' => $this->input('badge_iron'),
+                    'bronze' => $this->input('badge_bronze'),
+                    'gold' => $this->input('badge_gold'),
+                    'platinum' => $this->input('badge_platinum'),
+                    'diamond' => $this->input('badge_diamond'),
+                ];
+            }
         }
 
         if ($kind === TrainingKind::Event) {

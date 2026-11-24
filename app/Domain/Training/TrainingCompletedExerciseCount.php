@@ -16,7 +16,7 @@ final class TrainingCompletedExerciseCount
         return match ($kind) {
             TrainingKind::Exercise => 1,
             TrainingKind::Plan, TrainingKind::Event => self::completedPlanExercises($stats),
-            TrainingKind::Challenge => self::challengeStages($stats),
+            TrainingKind::Challenge => self::challengeExercises($stats),
         };
     }
 
@@ -48,15 +48,21 @@ final class TrainingCompletedExerciseCount
     }
 
     /**
+     * Nowe wyzwania = lista ćwiczeń (jak plan/event). Stare 54-Dart = stats.stages.
+     *
      * @param  array<string, mixed>|null  $stats
      */
-    private static function challengeStages(?array $stats): int
+    private static function challengeExercises(?array $stats): int
     {
+        $fromItems = self::completedPlanExercises($stats);
+        if ($fromItems > 0) {
+            return $fromItems;
+        }
         $stages = is_array($stats) ? ($stats['stages'] ?? null) : null;
-        if (! is_array($stages) || $stages === []) {
-            return 1;
+        if (is_array($stages) && $stages !== []) {
+            return count($stages);
         }
 
-        return count($stages);
+        return 1;
     }
 }
