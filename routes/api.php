@@ -189,8 +189,10 @@ Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
     Route::get('/training/challenges/{definition}/attempts', [TrainingChallengeController::class, 'attempts'])
         ->whereNumber('definition');
     Route::get('/training/records', [TrainingProgressController::class, 'records']);
-    Route::get('/training/goals', [TrainingProgressController::class, 'goals']);
+    Route::get('/training/medals', [TrainingProgressController::class, 'medals']);
     Route::get('/training/analysis', [TrainingProgressController::class, 'analysis']);
+    Route::get('/training/skill-stats', [TrainingProgressController::class, 'skillStats']);
+    Route::get('/training/sector-stats', [TrainingProgressController::class, 'sectorStats']);
     Route::get('/training/catalog/{kind}', [TrainingCatalogController::class, 'index'])
         ->whereIn('kind', ['exercises', 'plans', 'challenges', 'events']);
     Route::post('/training/events/{definition}/attempts', [TrainingEventController::class, 'start'])

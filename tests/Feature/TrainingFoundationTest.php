@@ -467,7 +467,7 @@ class TrainingFoundationTest extends TestCase
             ->assertJsonPath('stats.elapsedSeconds', 180);
     }
 
-    public function test_records_and_dry_goals_endpoints(): void
+    public function test_records_and_medals_endpoints(): void
     {
         $player = User::factory()->create();
 
@@ -494,18 +494,14 @@ class TrainingFoundationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('items.0.exerciseKey', 'bull_counter')
             ->assertJsonPath('items.0.score', 20)
-            ->assertJsonPath('items.0.name', 'Walka o licznik');
+            ->assertJsonPath('items.0.name', 'Walka o licznik')
+            ->assertJsonPath('definitions', []);
 
         $this->actingAs($player, 'sanctum')
-            ->getJson('/api/training/goals')
+            ->getJson('/api/training/medals')
             ->assertOk()
-            ->assertJsonCount(5, 'goals')
-            ->assertJsonPath('goals.0.value', 0)
-            ->assertJsonPath('goals.0.progress', 0)
-            ->assertJsonCount(4, 'badges')
-            ->assertJsonPath('badges.0.placeholder', true)
-            ->assertJsonPath('badges.0.level', null)
-            ->assertJsonCount(1, 'medals');
+            ->assertJsonCount(1, 'medals')
+            ->assertJsonPath('medals.0.placeholder', true);
     }
 
     public function test_clock_summary_is_stored_once_and_a_repeat_does_not_add_history(): void

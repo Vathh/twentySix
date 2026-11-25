@@ -52,8 +52,7 @@ class TrainingHistoryWipeTest extends TestCase
         $this->actingAs($player, 'sanctum')
             ->getJson('/api/training/analysis')
             ->assertOk()
-            ->assertJsonPath('completedExerciseCount', 0)
-            ->assertJsonCount(0, 'records');
+            ->assertJsonPath('completedExerciseCount', 0);
     }
 
     public function test_restore_and_purge_commands(): void

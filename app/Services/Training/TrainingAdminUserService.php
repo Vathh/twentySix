@@ -13,7 +13,7 @@ class TrainingAdminUserService
         private TrainingSessionRepository $sessions,
         private TrainingExerciseCountService $exerciseCount,
         private TrainingRecordsService $records,
-        private TrainingGoalsService $goals,
+        private TrainingMedalsService $medals,
     ) {}
 
     /**
@@ -21,20 +21,16 @@ class TrainingAdminUserService
      * @return array{
      *     completedExerciseCount: int,
      *     records: list<array<string, mixed>>,
-     *     badges: list<array<string, mixed>>,
      *     medals: list<array<string, mixed>>,
      *     history: array{items: list<array<string, mixed>>, hasMore: bool}
      * }
      */
     public function present(User $user, array $query = []): array
     {
-        $progress = $this->goals->dryProgress($user);
-
         return [
             'completedExerciseCount' => $this->exerciseCount->forUser($user),
             'records' => $this->records->forUser($user),
-            'badges' => $progress['badges'],
-            'medals' => $progress['medals'],
+            'medals' => $this->medals->forUser($user),
             'history' => $this->history($user, $query),
         ];
     }

@@ -25,7 +25,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         <div class="card p-4">
             <p class="text-text-secondary text-xs mb-1">Ukończone ćwiczenia</p>
             <p class="text-xl font-semibold text-text">{{ $training['completedExerciseCount'] }}</p>
@@ -35,12 +35,8 @@
             <p class="text-xl font-semibold text-text">{{ count($training['records']) }}</p>
         </div>
         <div class="card p-4">
-            <p class="text-text-secondary text-xs mb-1">Odznaki</p>
-            <p class="text-xl font-semibold text-text">{{ count($training['badges']) }}</p>
-        </div>
-        <div class="card p-4">
             <p class="text-text-secondary text-xs mb-1">Medale</p>
-            <p class="text-xl font-semibold text-text">{{ count($training['medals']) }}</p>
+            <p class="text-xl font-semibold text-text">{{ count(array_filter($training['medals'], fn ($m) => empty($m['placeholder']))) }}</p>
         </div>
     </div>
 
@@ -63,16 +59,14 @@
         </div>
 
         <div class="card p-5">
-            <h2 class="text-accent font-semibold mb-4">Odznaki i medale</h2>
-            <p class="text-text-secondary text-xs mb-2">Odznaki (na sucho do numeru 13)</p>
-            @foreach($training['badges'] as $badge)
-                <div class="flex flex-wrap justify-between gap-2 text-sm border-b border-border/40 py-2">
-                    <span class="text-text">{{ $badge['name'] }}</span>
-                    <span class="text-text-secondary">{{ $badge['levelLabel'] ?? '—' }}</span>
-                </div>
-            @endforeach
-            <p class="text-text-secondary text-xs mt-4 mb-2">Medale eventów</p>
-            @forelse($training['medals'] as $medal)
+            <h2 class="text-accent font-semibold mb-4">Medale eventów</h2>
+            @php
+                $earnedMedals = array_values(array_filter(
+                    $training['medals'] ?? [],
+                    fn ($medal) => empty($medal['placeholder']),
+                ));
+            @endphp
+            @forelse($earnedMedals as $medal)
                 <div class="flex flex-wrap justify-between gap-2 text-sm border-b border-border/40 py-2">
                     <span class="text-text">{{ $medal['eventName'] ?? $medal['name'] ?? 'Event' }}</span>
                     <span class="text-text-secondary">
