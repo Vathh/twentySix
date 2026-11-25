@@ -123,18 +123,6 @@
         x-cloak
     >Kliknij nazwę drugiego zawodnika, aby zmienić rozpoczynającego.</p>
 
-    <div class="mb-4" x-show="!isFinished" x-cloak>
-        <button
-            type="button"
-            class="btn btn-secondary w-full !py-3"
-            @click="undo()"
-            :disabled="busy || openerOpen || !openerChosen"
-        >
-            Undo
-        </button>
-        <p class="text-center text-xs text-text-muted mt-1.5">Ctrl+Z cofa ostatnią wizytę.</p>
-    </div>
-
     <p class="text-center text-sm text-text-secondary mb-3">
         Tura:
         <span class="text-accent font-semibold" x-text="currentPlayer?.name ?? '—'"></span>
@@ -186,19 +174,41 @@
         ></div>
     </div>
 
-    <div class="rounded-xl border border-border bg-bg-deep px-4 py-5 mb-4 text-center">
-        <div class="text-xs text-text-muted mb-1">Wynik wizyty</div>
-        <div class="text-5xl font-bold tabular-nums text-text tracking-wider min-h-[3.5rem]" x-text="input === '' ? '—' : input"></div>
+    <div class="flex gap-3 mb-4 items-stretch">
+        <div class="flex-1 min-w-0 rounded-xl border border-border bg-bg-deep px-4 py-5 text-center flex flex-col justify-center">
+            <div class="text-xs text-text-muted mb-1">Wynik wizyty</div>
+            <div class="text-5xl font-bold tabular-nums text-text tracking-wider min-h-[3.5rem]" x-text="input === '' ? '—' : input"></div>
+        </div>
+        <div
+            class="flex-1 min-w-0 flex flex-col gap-2"
+            x-show="!isFinished && !isCancelled"
+            x-cloak
+        >
+            <button
+                type="button"
+                class="btn btn-primary flex-1 !py-2"
+                @click="submitCheck()"
+                :disabled="!canCheck()"
+            >Check</button>
+            <button
+                type="button"
+                class="btn btn-secondary flex-1 !py-2"
+                @click="submitRemaining()"
+                :disabled="!canRemaining()"
+            >Zostało</button>
+            <button
+                type="button"
+                class="btn btn-secondary flex-1 !py-2"
+                @click="undo()"
+                :disabled="busy || openerOpen || !openerChosen"
+            >Undo</button>
+        </div>
     </div>
-
-    <div class="mb-4" x-show="!isFinished && !isCancelled" x-cloak>
-        <button
-            type="button"
-            class="btn btn-primary w-full !py-3"
-            @click="submitCheck()"
-            :disabled="!canCheck()"
-        >Check</button>
-    </div>
+    <p
+        class="text-center text-xs text-text-muted -mt-2 mb-4"
+        x-show="!isFinished && !isCancelled"
+        x-cloak
+    >Ctrl+Z cofa ostatnią wizytę.</p>
 
     <div class="referee-numpad mb-4" x-show="!isFinished && !isCancelled" x-cloak>
         <template x-for="row in [['1','2','3'],['4','5','6'],['7','8','9'],['C','0','OK']]" :key="row.join('-')">
@@ -253,6 +263,23 @@
                     ></button>
                 </template>
             </div>
+        </div>
+    </div>
+
+    {{-- Potwierdzenie cofnięcia wizyty --}}
+    <div
+        x-show="undoConfirmOpen"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+    >
+        <div class="w-full max-w-sm rounded-xl border border-border bg-bg-deep p-5 text-center">
+            <p class="text-lg font-semibold text-accent mb-2">Cofnij wizytę</p>
+            <p class="text-text-secondary text-sm mb-4" x-text="undoConfirmMessage"></p>
+            <div class="flex gap-2">
+                <button type="button" class="btn btn-secondary flex-1" @click="cancelUndo()" :disabled="busy">Nie</button>
+                <button type="button" class="btn btn-primary flex-1" @click="confirmUndo()" :disabled="busy">Tak</button>
+            </div>
+            <p class="text-xs text-text-muted mt-3">Enter — Tak · Esc — Nie</p>
         </div>
     </div>
 

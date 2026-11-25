@@ -77,6 +77,8 @@ export function registerRefereeScoring(Alpine) {
         checkoutOpen: false,
         checkoutDartsOpen: false,
         pendingCheckoutScore: null,
+        undoConfirmOpen: false,
+        undoConfirmClosedLeg: false,
         leaving: false,
         openerOpen: false,
         openerChosen: false,
@@ -173,6 +175,12 @@ export function registerRefereeScoring(Alpine) {
             return player?.name ?? 'tego zawodnika';
         },
 
+        get undoConfirmMessage() {
+            return this.undoConfirmClosedLeg
+                ? 'To cofnie ostatnią wizytę i ponownie otworzy zakończony leg. Kontynuować?'
+                : 'Cofnąć ostatnią wizytę?';
+        },
+
         get startingScore() {
             return (
                 this.state?.game?.matchFormat?.startingScore ??
@@ -253,6 +261,37 @@ export function registerRefereeScoring(Alpine) {
                 return;
             }
             this.input = String(this.remaining(this.currentPlayer));
+            this.submitVisit();
+        },
+
+        canRemaining() {
+            if (
+                this.busy
+                || this.isFinished
+                || this.inputLocked
+                || this.openerOpen
+                || !this.openerChosen
+                || this.switchOpenerOpen
+                || this.bullOffRequired
+                || this.lossThresholdOpen
+            ) {
+                return false;
+            }
+            const typed = this.inputValue();
+            if (typed == null || typed < 0) {
+                return false;
+            }
+            const visitScore = this.remaining(this.currentPlayer) - typed;
+            return visitScore >= 0 && visitScore <= 180;
+        },
+
+        submitRemaining() {
+            if (!this.canRemaining()) {
+                return;
+            }
+            const typed = this.inputValue();
+            const visitScore = this.remaining(this.currentPlayer) - typed;
+            this.input = String(visitScore);
             this.submitVisit();
         },
 
@@ -760,6 +799,7 @@ export function registerRefereeScoring(Alpine) {
                 || !this.openerChosen
                 || this.checkoutOpen
                 || this.checkoutDartsOpen
+                || this.undoConfirmOpen
                 || this.switchOpenerOpen
                 || this.bullOffRequired
                 || this.lossThresholdOpen
@@ -810,6 +850,18 @@ export function registerRefereeScoring(Alpine) {
                 if (event.key === 'Escape') {
                     event.preventDefault();
                     this.cancelCheckout();
+                }
+                return;
+            }
+
+            if (this.undoConfirmOpen) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    this.confirmUndo();
+                }
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    this.cancelUndo();
                 }
                 return;
             }
@@ -882,7 +934,17 @@ export function registerRefereeScoring(Alpine) {
         },
 
         async submitVisit() {
-            if (this.busy || this.isFinished || this.inputLocked || this.openerOpen || !this.openerChosen || this.switchOpenerOpen || this.bullOffRequired || this.lossThresholdOpen) {
+            if (
+                this.busy
+                || this.isFinished
+                || this.inputLocked
+                || this.openerOpen
+                || !this.openerChosen
+                || this.switchOpenerOpen
+                || this.undoConfirmOpen
+                || this.bullOffRequired
+                || this.lossThresholdOpen
+            ) {
                 return;
             }
             const score = this.inputValue();
@@ -1082,8 +1144,20 @@ export function registerRefereeScoring(Alpine) {
             }
         },
 
-        async undo() {
-            if (this.busy || this.isFinished || this.inputLocked || this.openerOpen || !this.openerChosen) {
+        undo() {
+            if (
+                this.busy
+                || this.isFinished
+                || this.inputLocked
+                || this.openerOpen
+                || !this.openerChosen
+                || this.undoConfirmOpen
+                || this.checkoutOpen
+                || this.checkoutDartsOpen
+                || this.switchOpenerOpen
+                || this.bullOffRequired
+                || this.lossThresholdOpen
+            ) {
                 return;
             }
             const legId = this.resolveUndoLegId();
@@ -1091,13 +1165,29 @@ export function registerRefereeScoring(Alpine) {
                 this.error = 'Brak lega do cofnięcia.';
                 return;
             }
-            const closedLegUndo = this.wouldUndoClosedLeg();
-            const msg = closedLegUndo
-                ? 'To cofnie ostatnią wizytę i ponownie otworzy zakończony leg. Kontynuować?'
-                : 'Cofnąć ostatnią wizytę?';
-            if (!window.confirm(msg)) {
+            this.undoConfirmClosedLeg = this.wouldUndoClosedLeg();
+            this.undoConfirmOpen = true;
+        },
+
+        cancelUndo() {
+            this.undoConfirmOpen = false;
+            this.undoConfirmClosedLeg = false;
+        },
+
+        async confirmUndo() {
+            if (!this.undoConfirmOpen || this.busy) {
                 return;
             }
+            const closedLegUndo = this.undoConfirmClosedLeg;
+            this.undoConfirmOpen = false;
+            this.undoConfirmClosedLeg = false;
+
+            const legId = this.resolveUndoLegId();
+            if (!legId) {
+                this.error = 'Brak lega do cofnięcia.';
+                return;
+            }
+
             this.error = '';
             if (closedLegUndo) {
                 this.busy = true;
